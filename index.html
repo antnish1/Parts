@@ -85,7 +85,13 @@ async function login() {
 
 function logout() {
   localStorage.removeItem("user");
-  loadLogin();
+
+  // Clear any pending UI
+  document.getElementById("app").innerHTML = "";
+
+  setTimeout(() => {
+    loadLogin();
+  }, 100);
 }
 
 // ---------- BRANCH ----------
