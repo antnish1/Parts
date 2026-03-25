@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Parts Management System</title>
+  <title>Parts System</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -9,21 +9,49 @@
 
 <div id="app"></div>
 
+<!-- Loader -->
+<div id="loader" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+  <div class="bg-white p-5 rounded shadow">Loading...</div>
+</div>
+
+<!-- Popup -->
+<div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-30">
+  <div class="bg-white p-6 rounded shadow text-center">
+    <p id="popupMsg" class="mb-4"></p>
+    <button onclick="closePopup()" class="bg-blue-600 text-white px-4 py-2 rounded">OK</button>
+  </div>
+</div>
+
 <script>
 const API = "https://script.google.com/macros/s/AKfycbzRNr0TPfv1y91aBPclvX_0bwAMPiQ2OPVmbBFzJWi8nWpX_bI79RJzEEB_8hROiyaV/exec";
+
+// ---------- UTIL ----------
+function showLoader() {
+  document.getElementById("loader").classList.remove("hidden");
+}
+
+function hideLoader() {
+  document.getElementById("loader").classList.add("hidden");
+}
+
+function showPopup(msg) {
+  document.getElementById("popupMsg").innerText = msg;
+  document.getElementById("popup").classList.remove("hidden");
+}
+
+function closePopup() {
+  document.getElementById("popup").classList.add("hidden");
+}
 
 // ---------- INIT ----------
 window.onload = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
-    if (user.role === "admin") loadAdmin();
-    else loadBranch();
-  } else {
-    loadLogin();
-  }
+    user.role === "admin" ? loadAdmin() : loadBranch();
+  } else loadLogin();
 };
 
-// ---------- LOGIN UI ----------
+// ---------- LOGIN ----------
 function loadLogin() {
   document.getElementById("app").innerHTML = `
     <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
@@ -35,45 +63,43 @@ function loadLogin() {
   `;
 }
 
-// ---------- LOGIN FUNCTION ----------
 async function login() {
+  showLoader();
+
   const payload = {
     action: "login",
     email: document.getElementById("email").value,
     password: document.getElementById("password").value
   };
 
-  const res = await fetch(API, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  });
-
+  const res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
   const data = await res.json();
+
+  hideLoader();
 
   if (data.status === "success") {
     localStorage.setItem("user", JSON.stringify(data));
-
-    if (data.role === "admin") loadAdmin();
-    else loadBranch();
-
-  } else {
-    alert("Invalid login");
-  }
+    data.role === "admin" ? loadAdmin() : loadBranch();
+  } else showPopup("Invalid login!");
 }
 
-// ---------- LOGOUT ----------
 function logout() {
   localStorage.removeItem("user");
   loadLogin();
 }
 
-// ---------- BRANCH UI ----------
+// ---------- BRANCH ----------
 function loadBranch() {
+  const user = JSON.parse(localStorage.getItem("user"));
+
   document.getElementById("app").innerHTML = `
     <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
-      
+
       <div class="flex justify-between mb-4">
-        <h2 class="text-xl font-bold">Branch Panel</h2>
+        <div>
+          <h2 class="text-xl font-bold">Branch Panel</h2>
+          <p class="text-gray-600">Branch: ${user.branch}</p>
+        </div>
         <button onclick="logout()" class="text-red-600">Logout</button>
       </div>
 
@@ -93,64 +119,56 @@ function loadBranch() {
 
       <div class="mt-4 flex gap-3">
         <button onclick="addRow()" class="bg-green-600 text-white px-4 py-2 rounded">+ Add Row</button>
-        <button onclick="submitAll()" class="bg-blue-600 text-white px-4 py-2 rounded">Submit All</button>
+        <button onclick="submitAll()" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
       </div>
-
     </div>
   `;
 
   addRow();
 }
 
-// ---------- ADD ROW ----------
 function addRow() {
   const row = document.createElement("tr");
 
   row.innerHTML = `
-    <td class="border p-2">
-      <select class="sop border p-1">
-        <option>SOP</option>
-        <option>VOR</option>
-      </select>
-    </td>
-
-    <td class="border p-2">
-      <input class="partNo border p-1 w-full"/>
-    </td>
-
-    <td class="border p-2">
-      <input type="number" class="qty border p-1 w-full"/>
-    </td>
-
-    <td class="border p-2">
-      <input class="comment border p-1 w-full"/>
-    </td>
-
-    <td class="border p-2 desc text-gray-600"></td>
-
-    <td class="border p-2 text-center">
-      <button onclick="this.closest('tr').remove()" class="text-red-600">X</button>
-    </td>
+    <td class="border p-2"><select class="sop border p-1"><option>SOP</option><option>VOR</option></select></td>
+    <td class="border p-2"><input class="partNo border p-1 w-full"/></td>
+    <td class="border p-2"><input type="number" class="qty border p-1 w-full"/></td>
+    <td class="border p-2"><input class="comment border p-1 w-full"/></td>
+    <td class="border p-2 desc"></td>
+    <td class="border p-2 text-center"><button onclick="this.closest('tr').remove()">X</button></td>
   `;
 
   row.querySelector(".partNo").addEventListener("blur", async function () {
     const partNo = this.value;
-
     if (!partNo) return;
 
     const res = await fetch(`${API}?partNo=${partNo}`);
     const data = await res.json();
-
     row.querySelector(".desc").innerText = data.description;
   });
 
   document.getElementById("tableBody").appendChild(row);
 }
 
-// ---------- SUBMIT ----------
+// ---------- VALIDATION + SUBMIT ----------
 async function submitAll() {
   const rows = document.querySelectorAll("#tableBody tr");
   const user = JSON.parse(localStorage.getItem("user"));
+
+  for (let row of rows) {
+    const partNo = row.querySelector(".partNo").value;
+    const qty = row.querySelector(".qty").value;
+    const comment = row.querySelector(".comment").value;
+    const desc = row.querySelector(".desc").innerText;
+
+    if (!partNo || !qty || !comment || !desc) {
+      showPopup("All fields are mandatory!");
+      return;
+    }
+  }
+
+  showLoader();
 
   for (let row of rows) {
     const payload = {
@@ -164,51 +182,98 @@ async function submitAll() {
       description: row.querySelector(".desc").innerText
     };
 
-    await fetch(API, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
   }
 
-  alert("Submitted Successfully!");
+  hideLoader();
+  showPopup("Data submitted successfully!");
   document.getElementById("tableBody").innerHTML = "";
   addRow();
 }
 
-// ---------- ADMIN PANEL ----------
+// ---------- ADMIN ----------
 function loadAdmin() {
   document.getElementById("app").innerHTML = `
     <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
-      
       <div class="flex justify-between mb-4">
         <h2 class="text-xl font-bold">Admin Panel</h2>
         <button onclick="logout()" class="text-red-600">Logout</button>
       </div>
 
       <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-2 rounded mb-3">
-        Load Requests
+        Load Data
       </button>
 
       <table class="w-full border text-sm">
         <thead class="bg-gray-200">
           <tr>
-            <th class="border p-2">Branch</th>
-            <th class="border p-2">Part No</th>
-            <th class="border p-2">Qty</th>
-            <th class="border p-2">Order No</th>
-            <th class="border p-2">Status</th>
+            <th>Branch</th>
+            <th>Part No</th>
+            <th>Qty</th>
+            <th>Order No</th>
+            <th>Status</th>
+            <th>Save</th>
           </tr>
         </thead>
         <tbody id="adminTable"></tbody>
       </table>
-
     </div>
   `;
 }
 
-// ---------- LOAD DATA (ADMIN) ----------
 async function loadData() {
-  alert("Next step: we will connect admin data API");
+  showLoader();
+
+  const res = await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ action: "getRequests" })
+  });
+
+  const data = await res.json();
+  hideLoader();
+
+  let html = "";
+
+  data.forEach(d => {
+    html += `
+      <tr>
+        <td>${d.branch}</td>
+        <td>${d.partNo}</td>
+        <td>${d.qty}</td>
+        <td><input value="${d.orderNo || ""}" id="order${d.row}" class="border p-1"/></td>
+        <td>
+          <select id="status${d.row}">
+            <option ${d.status=="Pending"?"selected":""}>Pending</option>
+            <option ${d.status=="Ordered"?"selected":""}>Ordered</option>
+            <option ${d.status=="Delivered"?"selected":""}>Delivered</option>
+          </select>
+        </td>
+        <td><button onclick="saveRow(${d.row})" class="bg-green-600 text-white px-2 py-1">Save</button></td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("adminTable").innerHTML = html;
+}
+
+async function saveRow(row) {
+  showLoader();
+
+  const orderNo = document.getElementById("order"+row).value;
+  const status = document.getElementById("status"+row).value;
+
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateOrder",
+      row: row,
+      orderNo: orderNo,
+      status: status
+    })
+  });
+
+  hideLoader();
+  showPopup("Updated!");
 }
 </script>
 
