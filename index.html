@@ -1,65 +1,214 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Parts Request</title>
+  <title>Parts Management System</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-100 p-10">
+<body class="bg-gray-100 p-6">
 
-<div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
-
-  <h2 class="text-xl font-bold mb-4">Parts Request</h2>
-
-  <select id="sop" class="w-full p-2 border mb-3">
-    <option value="SOP">SOP</option>
-    <option value="VOR">VOR</option>
-  </select>
-
-  <input id="partNo" placeholder="Part No" class="w-full p-2 border mb-3"/>
-
-  <input id="qty" type="number" placeholder="Quantity" class="w-full p-2 border mb-3"/>
-
-  <input id="comment" placeholder="Comment" class="w-full p-2 border mb-3"/>
-
-  <div id="desc" class="text-gray-600 mb-3"></div>
-
-  <button onclick="submitData()" class="bg-blue-600 text-white px-4 py-2 rounded">
-    Submit
-  </button>
-
-</div>
+<div id="app"></div>
 
 <script>
-const API = "YOUR_WEB_APP_URL";
+const API = "https://script.google.com/macros/s/AKfycbzRNr0TPfv1y91aBPclvX_0bwAMPiQ2OPVmbBFzJWi8nWpX_bI79RJzEEB_8hROiyaV/exec";
 
-// Fetch description
-document.getElementById("partNo").addEventListener("blur", async () => {
-  const partNo = document.getElementById("partNo").value;
+// ---------- INIT ----------
+window.onload = () => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user) {
+    if (user.role === "admin") loadAdmin();
+    else loadBranch();
+  } else {
+    loadLogin();
+  }
+};
 
-  const res = await fetch(`${API}?partNo=${partNo}`);
-  const data = await res.json();
+// ---------- LOGIN UI ----------
+function loadLogin() {
+  document.getElementById("app").innerHTML = `
+    <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+      <h2 class="text-xl font-bold mb-4">Login</h2>
+      <input id="email" placeholder="Email" class="w-full p-2 border mb-3"/>
+      <input id="password" type="password" placeholder="Password" class="w-full p-2 border mb-3"/>
+      <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 w-full rounded">Login</button>
+    </div>
+  `;
+}
 
-  document.getElementById("desc").innerText = data.description;
-});
-
-// Submit
-async function submitData() {
+// ---------- LOGIN FUNCTION ----------
+async function login() {
   const payload = {
-    branch: "Branch A",
-    sop: document.getElementById("sop").value,
-    partNo: document.getElementById("partNo").value,
-    qty: document.getElementById("qty").value,
-    comment: document.getElementById("comment").value,
-    description: document.getElementById("desc").innerText
+    action: "login",
+    email: document.getElementById("email").value,
+    password: document.getElementById("password").value
   };
 
-  await fetch(API, {
+  const res = await fetch(API, {
     method: "POST",
     body: JSON.stringify(payload)
   });
 
-  alert("Submitted!");
+  const data = await res.json();
+
+  if (data.status === "success") {
+    localStorage.setItem("user", JSON.stringify(data));
+
+    if (data.role === "admin") loadAdmin();
+    else loadBranch();
+
+  } else {
+    alert("Invalid login");
+  }
+}
+
+// ---------- LOGOUT ----------
+function logout() {
+  localStorage.removeItem("user");
+  loadLogin();
+}
+
+// ---------- BRANCH UI ----------
+function loadBranch() {
+  document.getElementById("app").innerHTML = `
+    <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+      
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold">Branch Panel</h2>
+        <button onclick="logout()" class="text-red-600">Logout</button>
+      </div>
+
+      <table class="w-full border text-sm">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="border p-2">SOP/VOR</th>
+            <th class="border p-2">Part No</th>
+            <th class="border p-2">Qty</th>
+            <th class="border p-2">Comment</th>
+            <th class="border p-2">Description</th>
+            <th class="border p-2">Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <div class="mt-4 flex gap-3">
+        <button onclick="addRow()" class="bg-green-600 text-white px-4 py-2 rounded">+ Add Row</button>
+        <button onclick="submitAll()" class="bg-blue-600 text-white px-4 py-2 rounded">Submit All</button>
+      </div>
+
+    </div>
+  `;
+
+  addRow();
+}
+
+// ---------- ADD ROW ----------
+function addRow() {
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td class="border p-2">
+      <select class="sop border p-1">
+        <option>SOP</option>
+        <option>VOR</option>
+      </select>
+    </td>
+
+    <td class="border p-2">
+      <input class="partNo border p-1 w-full"/>
+    </td>
+
+    <td class="border p-2">
+      <input type="number" class="qty border p-1 w-full"/>
+    </td>
+
+    <td class="border p-2">
+      <input class="comment border p-1 w-full"/>
+    </td>
+
+    <td class="border p-2 desc text-gray-600"></td>
+
+    <td class="border p-2 text-center">
+      <button onclick="this.closest('tr').remove()" class="text-red-600">X</button>
+    </td>
+  `;
+
+  row.querySelector(".partNo").addEventListener("blur", async function () {
+    const partNo = this.value;
+
+    if (!partNo) return;
+
+    const res = await fetch(`${API}?partNo=${partNo}`);
+    const data = await res.json();
+
+    row.querySelector(".desc").innerText = data.description;
+  });
+
+  document.getElementById("tableBody").appendChild(row);
+}
+
+// ---------- SUBMIT ----------
+async function submitAll() {
+  const rows = document.querySelectorAll("#tableBody tr");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  for (let row of rows) {
+    const payload = {
+      action: "submit",
+      email: user.email,
+      branch: user.branch,
+      sop: row.querySelector(".sop").value,
+      partNo: row.querySelector(".partNo").value,
+      qty: row.querySelector(".qty").value,
+      comment: row.querySelector(".comment").value,
+      description: row.querySelector(".desc").innerText
+    };
+
+    await fetch(API, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  alert("Submitted Successfully!");
+  document.getElementById("tableBody").innerHTML = "";
+  addRow();
+}
+
+// ---------- ADMIN PANEL ----------
+function loadAdmin() {
+  document.getElementById("app").innerHTML = `
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
+      
+      <div class="flex justify-between mb-4">
+        <h2 class="text-xl font-bold">Admin Panel</h2>
+        <button onclick="logout()" class="text-red-600">Logout</button>
+      </div>
+
+      <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-2 rounded mb-3">
+        Load Requests
+      </button>
+
+      <table class="w-full border text-sm">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="border p-2">Branch</th>
+            <th class="border p-2">Part No</th>
+            <th class="border p-2">Qty</th>
+            <th class="border p-2">Order No</th>
+            <th class="border p-2">Status</th>
+          </tr>
+        </thead>
+        <tbody id="adminTable"></tbody>
+      </table>
+
+    </div>
+  `;
+}
+
+// ---------- LOAD DATA (ADMIN) ----------
+async function loadData() {
+  alert("Next step: we will connect admin data API");
 }
 </script>
 
