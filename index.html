@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Parts Request</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-10">
+
+<div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow">
+
+  <h2 class="text-xl font-bold mb-4">Parts Request</h2>
+
+  <select id="sop" class="w-full p-2 border mb-3">
+    <option value="SOP">SOP</option>
+    <option value="VOR">VOR</option>
+  </select>
+
+  <input id="partNo" placeholder="Part No" class="w-full p-2 border mb-3"/>
+
+  <input id="qty" type="number" placeholder="Quantity" class="w-full p-2 border mb-3"/>
+
+  <input id="comment" placeholder="Comment" class="w-full p-2 border mb-3"/>
+
+  <div id="desc" class="text-gray-600 mb-3"></div>
+
+  <button onclick="submitData()" class="bg-blue-600 text-white px-4 py-2 rounded">
+    Submit
+  </button>
+
+</div>
+
+<script>
+const API = "YOUR_WEB_APP_URL";
+
+// Fetch description
+document.getElementById("partNo").addEventListener("blur", async () => {
+  const partNo = document.getElementById("partNo").value;
+
+  const res = await fetch(`${API}?partNo=${partNo}`);
+  const data = await res.json();
+
+  document.getElementById("desc").innerText = data.description;
+});
+
+// Submit
+async function submitData() {
+  const payload = {
+    branch: "Branch A",
+    sop: document.getElementById("sop").value,
+    partNo: document.getElementById("partNo").value,
+    qty: document.getElementById("qty").value,
+    comment: document.getElementById("comment").value,
+    description: document.getElementById("desc").innerText
+  };
+
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+  alert("Submitted!");
+}
+</script>
+
+</body>
+</html>
