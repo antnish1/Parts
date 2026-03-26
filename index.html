@@ -134,6 +134,7 @@ async function login() {
     });
 
     const data = await res.json();
+    console.log("LOGIN RESPONSE:", data);
 
     if (data.status === "success") {
       localStorage.setItem("user", JSON.stringify(data));
