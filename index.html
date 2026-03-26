@@ -328,9 +328,9 @@ async function submitAll() {
       }
 
       if (!desc || desc === "Not Found") {
-        showPopup("Invalid Part Number");
-        return;
-      }
+          showPopup("Invalid Part Number in one of the rows");
+          continue; // skip instead of stopping everything
+        }
 
       const payload = {
         action: "submit",
