@@ -58,10 +58,18 @@ function closePopup() {
 
 // ---------- INIT ----------
 window.onload = () => {
-  const user = getUser();
-  if (user) {
-    user.role === "admin" ? loadAdmin() : loadBranch();
-  } else {
+  try {
+    const user = getUser();
+
+    if (user && user.branch && user.role) {
+      user.role === "admin" ? loadAdmin() : loadBranch();
+    } else {
+      localStorage.clear(); // 🔥 important
+      loadLogin();
+    }
+
+  } catch (e) {
+    localStorage.clear();
     loadLogin();
   }
 };
