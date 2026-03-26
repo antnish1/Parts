@@ -71,6 +71,7 @@ function loadLogin() {
   document.getElementById("app").innerHTML = `
     <div class="max-w-md mx-auto bg-white p-6 rounded shadow">
       <h2 class="text-xl font-bold mb-4">Login</h2>
+
       <select id="branch" class="w-full p-2 border mb-3">
         <option value="">Select Branch</option>
         <option>DAMOH</option>
@@ -84,7 +85,12 @@ function loadLogin() {
         <option>JABALPUR</option>
         <option>HQ</option>
       </select>
-      <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 w-full rounded">Login</button>
+
+      <input id="password" type="password" placeholder="Password" class="w-full p-2 border mb-3"/>
+
+      <button onclick="login()" class="bg-blue-600 text-white px-4 py-2 w-full rounded">
+        Login
+      </button>
     </div>
   `;
 }
