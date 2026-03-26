@@ -320,7 +320,7 @@ async function submitAll() {
 
       const partNo = row.querySelector(".partNo").value.trim();
       const qty = row.querySelector(".qty").value;
-      const desc = row.querySelector(".desc").innerText;
+      const desc = row.querySelector(".desc").innerText.trim();
 
       if (!partNo || !qty) {
         showPopup("Part No and Qty required");
