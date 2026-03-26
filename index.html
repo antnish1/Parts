@@ -174,32 +174,53 @@ function logout() {
 function loadBranch() {
   const user = getUser();
 
-    if (!user || !user.branch) {
-      showPopup("Session error, please login again");
-      logout();
-      return;
-    }
+  if (!user || !user.branch) {
+    showPopup("Session error, please login again");
+    logout();
+    return;
+  }
 
   document.getElementById("app").innerHTML = `
     <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
 
       <div class="flex justify-between mb-4">
-        <div>
-         
-          <p class="text-gray-600">Branch: ${user.branch}</p>
-        </div>
+        <p class="font-semibold">Branch: ${user.branch}</p>
         <button onclick="logout()" class="text-red-600">Logout</button>
       </div>
 
+      <!-- HEADER -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <select id="orderType" class="border p-2">
+          <option value="">Order Type</option>
+          <option>SOP</option>
+          <option>VOR</option>
+          <option>SPL</option>
+          <option>ZMAC</option>
+        </select>
+
+        <select id="orderFor" class="border p-2">
+          <option value="">Order For</option>
+          <option>Customer</option>
+          <option>Stock</option>
+        </select>
+
+        <input id="machineNo" placeholder="Machine Number" class="border p-2"/>
+        <input id="contactNo" placeholder="Contact Number" class="border p-2"/>
+      </div>
+
+      <div class="mb-4">
+        <p>Customer Name:</p>
+        <p id="customerName" class="font-semibold text-blue-600">--</p>
+      </div>
+
+      <!-- TABLE -->
       <table class="w-full border text-sm">
         <thead class="bg-gray-200">
           <tr>
-            <th class="border p-2">SOP/VOR</th>
-            <th class="border p-2">Part No</th>
-            <th class="border p-2">Qty</th>
-            <th class="border p-2">Comment</th>
-            <th class="border p-2">Description</th>
-            <th class="border p-2">Action</th>
+            <th>Part No</th>
+            <th>Qty</th>
+            <th>Part Name</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -212,6 +233,17 @@ function loadBranch() {
     </div>
   `;
 
+  // MACHINE → CUSTOMER FETCH
+  document.getElementById("machineNo").addEventListener("blur", async function () {
+    const machineNo = this.value.trim();
+    if (!machineNo) return;
+
+    const res = await fetch(`${API}?machineNo=${machineNo}`);
+    const data = await res.json();
+
+    document.getElementById("customerName").innerText = data.customer || "Not Found";
+  });
+
   addRow();
 }
 
@@ -219,19 +251,10 @@ function addRow() {
   const row = document.createElement("tr");
 
   row.innerHTML = `
-    <td class="border p-2">
-      <select class="sop border p-1">
-        <option>SOP</option>
-        <option>VOR</option>
-      </select>
-    </td>
-    <td class="border p-2"><input class="partNo border p-1 w-full"/></td>
-    <td class="border p-2"><input type="number" class="qty border p-1 w-full"/></td>
-    <td class="border p-2"><input class="comment border p-1 w-full"/></td>
-    <td class="border p-2 desc text-gray-600"></td>
-    <td class="border p-2 text-center">
-      <button onclick="this.closest('tr').remove()">X</button>
-    </td>
+    <td><input class="partNo border p-1 w-full"/></td>
+    <td><input type="number" class="qty border p-1 w-full"/></td>
+    <td class="desc text-gray-600"></td>
+    <td><button onclick="this.closest('tr').remove()">X</button></td>
   `;
 
   row.querySelector(".partNo").addEventListener("blur", async function () {
@@ -240,6 +263,7 @@ function addRow() {
 
     const res = await fetch(`${API}?partNo=${partNo}`);
     const data = await res.json();
+
     row.querySelector(".desc").innerText = data.description;
   });
 
@@ -250,42 +274,47 @@ function addRow() {
 async function submitAll() {
   if (isSubmitting) return;
 
-  const rows = document.querySelectorAll("#tableBody tr");
   const user = getUser();
 
-  // VALIDATION
-  for (let row of rows) {
-    const partNo = row.querySelector(".partNo").value.trim();
-    const qty = row.querySelector(".qty").value.trim();
-    const comment = row.querySelector(".comment").value.trim();
-    const desc = row.querySelector(".desc").innerText.trim();
+  const orderType = document.getElementById("orderType").value;
+  const orderFor = document.getElementById("orderFor").value;
+  const machineNo = document.getElementById("machineNo").value;
+  const customerName = document.getElementById("customerName").innerText;
+  const contactNo = document.getElementById("contactNo").value;
 
-    if (!partNo || !qty || !comment || !desc) {
-      showPopup("All fields are mandatory!");
-      return;
-    }
+  if (!orderType || !orderFor || !machineNo || !contactNo) {
+    showPopup("Fill all header fields!");
+    return;
   }
+
+  const rows = document.querySelectorAll("#tableBody tr");
 
   isSubmitting = true;
   showLoader();
 
   try {
     for (let row of rows) {
+      const partNo = row.querySelector(".partNo").value.trim();
+      const qty = row.querySelector(".qty").value;
+      const desc = row.querySelector(".desc").innerText;
+
+      if (!partNo || !qty || !desc) continue;
+
       const payload = {
         action: "submit",
         branch: user.branch,
-        sop: row.querySelector(".sop").value,
-        partNo: row.querySelector(".partNo").value.trim(),
-        qty: row.querySelector(".qty").value,
-        comment: row.querySelector(".comment").value.trim(),
-        description: row.querySelector(".desc").innerText.trim()
+        orderType,
+        orderFor,
+        machineNo,
+        customerName,
+        contactNo,
+        partNo,
+        qty,
+        description: desc
       };
-
-      if (!payload.partNo) continue;
 
       await fetch(API, {
         method: "POST",
-       
         body: JSON.stringify(payload)
       });
     }
@@ -295,13 +324,12 @@ async function submitAll() {
     addRow();
 
   } catch (err) {
-    showPopup("Error submitting data!");
+    showPopup("Error submitting!");
   }
 
   hideLoader();
   isSubmitting = false;
 }
-
 // ---------- ADMIN ----------
 function loadAdmin() {
   document.getElementById("app").innerHTML = `
