@@ -173,12 +173,18 @@ function logout() {
 function loadBranch() {
   const user = getUser();
 
+    if (!user || !user.branch) {
+      showPopup("Session error, please login again");
+      logout();
+      return;
+    }
+
   document.getElementById("app").innerHTML = `
     <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
 
       <div class="flex justify-between mb-4">
         <div>
-          <h2 class="text-xl font-bold">Branch Panel</h2>
+         
           <p class="text-gray-600">Branch: ${user.branch}</p>
         </div>
         <button onclick="logout()" class="text-red-600">Logout</button>
