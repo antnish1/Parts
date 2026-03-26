@@ -96,39 +96,25 @@ function loadLogin() {
 }
 
 async function login() {
-  if (isLoggingIn) return;
-  isLoggingIn = true;
 
-  showLoader();
+  const branchEl = document.getElementById("branch");
+  const passwordEl = document.getElementById("password");
 
-  const payload = {
-    action: "login",
-    branch: document.getElementById("branch").value,
-    password: document.getElementById("password").value.trim()
-  };
-
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-
-    if (data.status === "success") {
-      localStorage.setItem("user", JSON.stringify(data));
-      data.role === "admin" ? loadAdmin() : loadBranch();
-    } else {
-      showPopup("Invalid login!");
-    }
-
-  } catch (err) {
-    showPopup("Network error!");
+  // ✅ Safety check
+  if (!branchEl || !passwordEl) {
+    showPopup("UI error: reload page");
+    return;
   }
 
-  hideLoader();
-  isLoggingIn = false;
+  const branch = branchEl.value;
+  const password = passwordEl.value;
+
+  if (!branch || !password) {
+    showPopup("Please select branch and enter password");
+    return;
+  }
+
+  // rest of your code...
 }
 
 function logout() {
