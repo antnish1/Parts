@@ -29,7 +29,18 @@ let isSubmitting = false;
 let isLoggingIn = false;
 
 // ---------- SAFE STORAGE ----------
-function getUser() {
+
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}  
+  
+  
+  
+ function getUser() {
   try {
     return JSON.parse(localStorage.getItem("user"));
   } catch (e) {
@@ -278,27 +289,33 @@ function addRow() {
   `;
 
   // ✅ PART FETCH (POST — FIXED)
-  row.querySelector(".partNo").addEventListener("blur", async function () {
+  row.querySelector(".partNo").addEventListener("input", debounce(async function () {
+  
     const partNo = this.value.trim();
     if (!partNo) return;
-
+  
     try {
       const res = await fetch(API, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           action: "getPart",
           partNo: partNo
         })
       });
-      
+  
       const data = await res.json();
       console.log("PART RESPONSE:", data);
+  
       row.querySelector(".desc").innerText = data.description || "Not Found";
-
+  
     } catch (err) {
       row.querySelector(".desc").innerText = "Error";
     }
-  });
+  
+  }, 400)); // ⏱ 400ms delay
 
   document.getElementById("tableBody").appendChild(row);
 }
