@@ -295,24 +295,19 @@ function addRow() {
     if (!partNo) return;
   
     try {
-      const res = await fetch(API, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "getPart",
-          partNo: partNo
-        })
-      });
-  
+      const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
       const data = await res.json();
+  
       console.log("PART RESPONSE:", data);
   
       row.querySelector(".desc").innerText = data.description || "Not Found";
   
     } catch (err) {
+      console.error(err);
       row.querySelector(".desc").innerText = "Error";
     }
   
-  }, 400)); // ⏱ 400ms delay
+  }, 400));
 
   document.getElementById("tableBody").appendChild(row);
 }
