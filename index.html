@@ -86,7 +86,9 @@ async function login() {
 function logout() {
   localStorage.removeItem("user");
 
-  // Clear any pending UI
+  // Prevent any async leftover calls
+  window.stop(); 
+
   document.getElementById("app").innerHTML = "";
 
   setTimeout(() => {
