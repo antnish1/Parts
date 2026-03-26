@@ -24,7 +24,7 @@
 
 <script>
 const API = "https://script.google.com/macros/s/AKfycbzRNr0TPfv1y91aBPclvX_0bwAMPiQ2OPVmbBFzJWi8nWpX_bI79RJzEEB_8hROiyaV/exec";
-
+let isSubmitting = false;
 // ---------- UTIL ----------
 function showLoader() {
   document.getElementById("loader").classList.remove("hidden");
@@ -161,6 +161,11 @@ function addRow() {
 
 // ---------- VALIDATION + SUBMIT ----------
 async function submitAll() {
+
+  if (isSubmitting) return;
+
+  isSubmitting = true;
+
   const rows = document.querySelectorAll("#tableBody tr");
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -172,33 +177,43 @@ async function submitAll() {
 
     if (!partNo || !qty || !comment || !desc) {
       showPopup("All fields are mandatory!");
+      isSubmitting = false;
       return;
     }
   }
 
   showLoader();
 
-  for (let row of rows) {
-    const payload = {
-      action: "submit",
-      email: user.email,
-      branch: user.branch,
-      sop: row.querySelector(".sop").value,
-      partNo: row.querySelector(".partNo").value,
-      qty: row.querySelector(".qty").value,
-      comment: row.querySelector(".comment").value,
-      description: row.querySelector(".desc").innerText
-    };
+  try {
+    for (let row of rows) {
+      const payload = {
+        action: "submit",
+        email: user.email,
+        branch: user.branch,
+        sop: row.querySelector(".sop").value,
+        partNo: row.querySelector(".partNo").value,
+        qty: row.querySelector(".qty").value,
+        comment: row.querySelector(".comment").value,
+        description: row.querySelector(".desc").innerText
+      };
 
-    await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+      await fetch(API, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    }
+
+    showPopup("Data submitted successfully!");
+    document.getElementById("tableBody").innerHTML = "";
+    addRow();
+
+  } catch (err) {
+    showPopup("Error submitting data!");
   }
 
   hideLoader();
-  showPopup("Data submitted successfully!");
-  document.getElementById("tableBody").innerHTML = "";
-  addRow();
+  isSubmitting = false;
 }
-
 // ---------- ADMIN ----------
 function loadAdmin() {
   document.getElementById("app").innerHTML = `
