@@ -84,10 +84,13 @@ async function login() {
 }
 
 function logout() {
-  localStorage.removeItem("user");
 
-  // Prevent any async leftover calls
-  window.stop(); 
+  if (isSubmitting) {
+    showPopup("Please wait, data is being submitted...");
+    return;
+  }
+
+  localStorage.removeItem("user");
 
   document.getElementById("app").innerHTML = "";
 
