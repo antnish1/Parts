@@ -97,12 +97,15 @@ function loadLogin() {
 
 async function login() {
 
+  if (isLoggingIn) return;
+  isLoggingIn = true;
+
   const branchEl = document.getElementById("branch");
   const passwordEl = document.getElementById("password");
 
-  // ✅ Safety check
   if (!branchEl || !passwordEl) {
     showPopup("UI error: reload page");
+    isLoggingIn = false;
     return;
   }
 
@@ -111,10 +114,47 @@ async function login() {
 
   if (!branch || !password) {
     showPopup("Please select branch and enter password");
+    isLoggingIn = false;
     return;
   }
 
-  // rest of your code...
+  showLoader();
+
+  try {
+    const payload = {
+      action: "login",
+      branch: branch,
+      password: password
+    };
+
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (data.status === "success") {
+      localStorage.setItem("user", JSON.stringify(data));
+
+      if (data.role === "admin") {
+        loadAdmin();
+      } else {
+        loadBranch();
+      }
+
+    } else {
+      showPopup("Invalid credentials!");
+    }
+
+  } catch (err) {
+    console.error(err);
+    showPopup("Network error!");
+  }
+
+  hideLoader();
+  isLoggingIn = false;
 }
 
 function logout() {
