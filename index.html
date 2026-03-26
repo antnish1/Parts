@@ -254,8 +254,9 @@ function loadBranch() {
           machineNo: machineNo
         })
       });
-
+      
       const data = await res.json();
+      console.log("MACHINE RESPONSE:", data);
       document.getElementById("customerName").innerText = data.customer || "Not Found";
 
     } catch (err) {
@@ -289,8 +290,9 @@ function addRow() {
           partNo: partNo
         })
       });
-
+      
       const data = await res.json();
+      console.log("PART RESPONSE:", data);
       row.querySelector(".desc").innerText = data.description || "Not Found";
 
     } catch (err) {
