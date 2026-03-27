@@ -756,16 +756,30 @@ async function loadTrackOrders() {
 
       if (d.branch !== user.branch) return;
 
-      const rowDate = new Date(d.date);
+      // Convert "3/26/2026 18:33:05" → proper Date
+        const parts = d.date.split(" ")[0].split("/");
+        const rowDate = new Date(parts[2], parts[0] - 1, parts[1]); // YYYY, MM-1, DD
 
       // ✅ default 7 days
       if (!fromDate && !toDate) {
-        if (rowDate < sevenDaysAgo) return;
+        const cleanSevenDaysAgo = new Date(sevenDaysAgo);
+          cleanSevenDaysAgo.setHours(0,0,0,0);
+          
+          if (rowDate < cleanSevenDaysAgo) return;
       }
 
       // ✅ date filter
-      if (fromDate && rowDate < new Date(fromDate)) return;
-      if (toDate && rowDate > new Date(toDate)) return;
+      if (fromDate) {
+        const from = new Date(fromDate);
+        from.setHours(0,0,0,0);
+        if (rowDate < from) return;
+      }
+      
+      if (toDate) {
+        const to = new Date(toDate);
+        to.setHours(23,59,59,999);
+        if (rowDate > to) return;
+      }
 
       // ✅ search filter
       if (searchPart && !d.partNo.toLowerCase().includes(searchPart)) return;
