@@ -102,8 +102,17 @@ function hideLoader() {
 }
 
 function showPopup(msg) {
-  document.getElementById("popupMsg").innerText = msg;
-  document.getElementById("popup").classList.remove("hidden");
+  const popup = document.getElementById("popup");
+  const msgEl = document.getElementById("popupMsg");
+
+  msgEl.innerText = msg;
+  popup.classList.remove("hidden");
+
+  // small animation
+  popup.style.opacity = "0";
+  setTimeout(() => {
+    popup.style.opacity = "1";
+  }, 50);
 }
 
 function closePopup() {
