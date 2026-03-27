@@ -265,34 +265,12 @@ function loadBranch() {
     return;
   }
 
+  // ✅ No sidebar anymore
   document.getElementById("app").innerHTML = `
-
-  <div class="flex h-screen">
-
-    <!-- SIDEBAR -->
-    <div class="w-60 bg-gray-900 border-r border-gray-800 p-4 space-y-3">
-
-      <h2 class="text-gray-400 text-xs uppercase tracking-wider mb-4">   Menu </h2>
-
-      <button onclick="loadCreateOrder()"
-        class="w-full text-left px-3 py-2 rounded-lg bg-gray-800 text-yellow-400 hover:bg-gray-700 transition">
-        Create New Order
-      </button>
-
-      <button onclick="loadTrackOrders()"
-        class="w-full text-left px-3 py-2 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-yellow-400 transition">
-        Track Orders
-      </button>
-
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="mainContent" class="flex-1 p-6 overflow-auto"></div>
-
-  </div>
+    <div id="mainContent" class="p-6"></div>
   `;
 
-  // 👉 Load default page
+  // Load default page
   loadCreateOrder();
 }
 
