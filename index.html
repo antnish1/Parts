@@ -256,7 +256,6 @@ function logout() {
   setTimeout(loadLogin, 100);
 }
 
-// ---------- BRANCH ----------
 function loadBranch() {
   const user = getUser();
 
@@ -266,92 +265,132 @@ function loadBranch() {
     return;
   }
 
-document.getElementById("app").innerHTML = `
+  document.getElementById("app").innerHTML = `
 
-<div class="max-w-6xl mx-auto space-y-4">
+  <div class="flex h-screen">
 
-  <!-- TOP BAR -->
-  <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
-    <p class="font-semibold text-yellow-400 text-lg">
-      ${user.branch}
-    </p>
+    <!-- SIDEBAR -->
+    <div class="w-60 bg-black border-r border-gray-700 p-4 space-y-4">
 
-    <button onclick="logout()"
-      class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
-      Logout
-    </button>
-  </div>
+      <h2 class="text-yellow-400 text-lg font-bold mb-6">Menu</h2>
 
-  <!-- HEADER -->
-  <div class="bg-gray-900 p-5 rounded-xl border border-gray-700 space-y-4">
+      <button onclick="loadCreateOrder()"
+        class="w-full text-left px-3 py-2 rounded bg-yellow-400 text-black font-semibold">
+        Create New Order
+      </button>
 
-    <div class="grid grid-cols-2 gap-4">
-      <select id="orderType" class="bg-black border border-gray-600 rounded p-2 text-white">
-        <option value="">Order Type</option>
-        <option>SOP</option>
-        <option>VOR</option>
-        <option>SPL</option>
-        <option>ZMAC</option>
-      </select>
+      <button onclick="loadTrackOrders()"
+        class="w-full text-left px-3 py-2 rounded hover:bg-gray-800">
+        Track Orders
+      </button>
 
-      <select id="orderFor" class="bg-black border border-gray-600 rounded p-2 text-white">
-        <option value="">Order For</option>
-        <option>Customer</option>
-        <option>Stock</option>
-      </select>
     </div>
 
-    <div class="grid grid-cols-2 gap-4">
+    <!-- MAIN CONTENT -->
+    <div id="mainContent" class="flex-1 p-6 overflow-auto"></div>
 
-      <div>
-        <input id="machineNo" placeholder="Machine Number"
-          class="bg-black border border-gray-600 rounded p-2 w-full text-white"/>
+  </div>
+  `;
 
-        <p id="customerName" class="text-sm text-gray-400 mt-1">--</p>
+  // 👉 Load default page
+  loadCreateOrder();
+}
+
+function loadCreateOrder() {
+
+  const user = getUser();
+
+  document.getElementById("mainContent").innerHTML = `
+
+  <div class="max-w-6xl mx-auto space-y-4">
+
+    <!-- TOP BAR -->
+    <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
+      <p class="font-semibold text-yellow-400 text-lg">
+        ${user.branch}
+      </p>
+
+      <button onclick="logout()"
+        class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+        Logout
+      </button>
+    </div>
+
+    <!-- HEADER -->
+    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700 space-y-4">
+
+      <div class="grid grid-cols-2 gap-4">
+        <select id="orderType" class="bg-black border border-gray-600 rounded p-2 text-white">
+          <option value="">Order Type</option>
+          <option>SOP</option>
+          <option>VOR</option>
+          <option>SPL</option>
+          <option>ZMAC</option>
+        </select>
+
+        <select id="orderFor" class="bg-black border border-gray-600 rounded p-2 text-white">
+          <option value="">Order For</option>
+          <option>Customer</option>
+          <option>Stock</option>
+        </select>
       </div>
 
-      <input id="contactNo" placeholder="Contact Number"
-        class="bg-black border border-gray-600 rounded p-2 text-white"/>
+      <div class="grid grid-cols-2 gap-4">
+
+        <div>
+          <input id="machineNo" placeholder="Machine Number"
+            class="bg-black border border-gray-600 rounded p-2 w-full text-white"/>
+
+          <p id="customerName" class="text-sm text-gray-400 mt-1">--</p>
+        </div>
+
+        <input id="contactNo" placeholder="Contact Number"
+          class="bg-black border border-gray-600 rounded p-2 text-white"/>
+      </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
+
+      <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
+        <thead class="bg-black text-yellow-400">
+          <tr>
+            <th class="p-2 text-center w-[200px]">Part No</th>
+            <th class="p-2 text-center w-[90px]">Qty</th>
+            <th class="p-2 text-center">Part Name</th>
+            <th class="p-2 text-center w-[60px] border-l border-gray-700"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <div class="mt-4 flex gap-3">
+        <button onclick="addRow()"
+          class="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500">
+          + Add Item
+        </button>
+
+        <button onclick="submitAll()"
+          class="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600">
+          Submit
+        </button>
+      </div>
+
     </div>
 
   </div>
+  `;
 
-  <!-- TABLE -->
-  <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
-
-    <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
-      <thead class="bg-black text-yellow-400">
-        <tr>
-          <th class="p-2 text-center w-[200px]">Part No</th>
-          <th class="p-2 text-center w-[90px]">Qty</th>
-          <th class="p-2 text-center">Part Name</th>
-          <th class="p-2 text-center w-[60px] border-l border-gray-700"></th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-
-    <div class="mt-4 flex gap-3">
-      <button onclick="addRow()"
-        class="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500">
-        + Add Item
-      </button>
-
-      <button onclick="submitAll()"
-        class="bg-yellow-500 text-black px-4 py-2 rounded hover:bg-yellow-600">
-        Submit
-      </button>
-    </div>
-
-  </div>
-
-</div>
-`;
-
-  // MACHINE FETCH
+  // MACHINE FETCH (same logic)
   document.getElementById("machineNo").addEventListener("blur", async function () {
     const machineNo = this.value.trim();
     if (!machineNo) return;
+
+    const customerEl = document.getElementById("customerName");
+
+    customerEl.classList.add("shimmer");
+    customerEl.innerText = "";
 
     try {
       const res = await fetch(API, {
@@ -362,40 +401,20 @@ document.getElementById("app").innerHTML = `
         })
       });
 
-      const customerEl = document.getElementById("customerName");
+      const data = await res.json();
 
-        // START loading animation
-        customerEl.classList.add("shimmer");
-        customerEl.innerText = "";
-        
-        try {
-          const res = await fetch(API, {
-            method: "POST",
-            body: JSON.stringify({
-              action: "getMachine",
-              machineNo: machineNo
-            })
-          });
-        
-          const data = await res.json();
-        
-          // STOP loading animation
-          customerEl.classList.remove("shimmer");
-          customerEl.innerText = data.customer || "Not Found";
-        
-        } catch (err) {
-          customerEl.classList.remove("shimmer");
-          customerEl.innerText = "Error";
-        }
+      customerEl.classList.remove("shimmer");
+      customerEl.innerText = data.customer || "Not Found";
 
     } catch (err) {
-      document.getElementById("customerName").innerText = "Error";
+      customerEl.classList.remove("shimmer");
+      customerEl.innerText = "Error";
     }
   });
 
   addRow();
 }
-
+  
 function addRow() {
   const row = document.createElement("tr");
 
@@ -637,6 +656,73 @@ async function saveRow(row) {
   hideLoader();
   showPopup("Updated!");
 }
+
+async function loadTrackOrders() {
+
+  showLoader();
+
+  const user = getUser();
+
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getRequests"
+      })
+    });
+
+    const data = await res.json();
+
+    let html = `
+      <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
+
+        <h2 class="text-yellow-400 text-lg mb-4">Track Orders</h2>
+
+        <table class="w-full text-sm border border-gray-700">
+          <thead class="bg-black text-yellow-400">
+            <tr>
+              <th class="p-2">Branch</th>
+              <th class="p-2">Part No</th>
+              <th class="p-2">Qty</th>
+              <th class="p-2">Order No</th>
+              <th class="p-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    data.forEach(d => {
+
+      // 🔥 FILTER ONLY CURRENT BRANCH
+      if (d.branch !== user.branch) return;
+
+      html += `
+        <tr class="border-t border-gray-700 text-center">
+          <td>${d.branch}</td>
+          <td>${d.partNo}</td>
+          <td>${d.qty}</td>
+          <td>${d.orderNo || "-"}</td>
+          <td>${d.status}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("mainContent").innerHTML = html;
+
+  } catch (err) {
+    showPopup("Error loading orders");
+  }
+
+  hideLoader();
+}
+
+  
 </script>
 
 </body>
