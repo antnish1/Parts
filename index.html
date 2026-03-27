@@ -319,7 +319,7 @@ document.getElementById("app").innerHTML = `
   <!-- TABLE -->
   <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
 
-    <table class="w-full text-sm border border-gray-700 table-fixed">
+    <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
       <thead class="bg-black text-yellow-400">
         <tr>
           <th class="p-2 text-center w-[200px]">Part No</th>
@@ -401,16 +401,16 @@ function addRow() {
 
   row.innerHTML = `
     <td class="p-1">
-      <input class="partNo border rounded px-2 py-1 w-full focus:ring-2 focus:ring-blue-400"/>
+      <input class="partNo bg-black text-white border border-gray-600 rounded px-2 py-1 w-full focus:ring-2 focus:ring-yellow-400"/>
     </td>
 
     <td class="p-1">
       <input type="number" max="99999"
-        class="qty border rounded px-2 py-1 w-full text-center focus:ring-2 focus:ring-blue-400"/>
+      class="qty bg-black text-white border border-gray-600 rounded px-2 py-1 w-full text-center focus:ring-2 focus:ring-yellow-400"/>
     </td>
 
     <td class="p-1">
-      <div class="desc text-gray-700 truncate text-center"></div>
+      <div class="desc text-gray-200 truncate text-center"></div>
     </td>
 
     <td class="p-1 text-center border-l">
@@ -454,7 +454,9 @@ function addRow() {
   }, 400));
 
 const index = document.querySelectorAll("#tableBody tr").length;
-row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+row.className = index % 2 === 0 
+  ? "bg-gray-800" 
+  : "bg-gray-900";
   
   document.getElementById("tableBody").appendChild(row);
 }
