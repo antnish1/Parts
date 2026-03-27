@@ -7,6 +7,7 @@
 
 
 <style>
+  
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
@@ -24,6 +25,14 @@
   border-radius: 6px;
   height: 14px;
 }
+
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  
 </style>
 
 
@@ -705,10 +714,10 @@ async function loadTrackOrders() {
       <!-- 🔷 FILTERS -->
       <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex gap-4 flex-wrap">
 
-        <input type="date" id="fromDate"
+        <input id="fromDate" placeholder="From Date"
           class="bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
-
-        <input type="date" id="toDate"
+        
+        <input id="toDate" placeholder="To Date"
           class="bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
 
         <input type="text" id="searchPart"
@@ -790,6 +799,16 @@ async function loadTrackOrders() {
     html += `</tbody></table></div></div>`;
 
     document.getElementById("mainContent").innerHTML = html;
+
+    flatpickr("#fromDate", {
+      dateFormat: "Y-m-d",
+      maxDate: "today"
+    });
+    
+    flatpickr("#toDate", {
+      dateFormat: "Y-m-d",
+      maxDate: "today"
+    });
 
   } catch (err) {
     console.error(err);
