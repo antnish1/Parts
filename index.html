@@ -256,13 +256,13 @@ function loadBranch() {
       <!-- 🔷 SECTION 3: TABLE -->
       <div class="bg-white p-5 rounded-xl shadow">
 
-        <table class="w-full text-sm border rounded-lg overflow-hidden">
+        <table class="w-full text-sm border rounded-lg overflow-hidden table-fixed">
           <thead class="bg-gray-100">
             <tr>
-              <th class="p-2 text-left">Part No</th>
-              <th class="p-2 text-left">Qty</th>
+              <th class="p-2 text-left w-[200px]">Part No</th>
+              <th class="p-2 text-left w-[90px]">Qty</th>
               <th class="p-2 text-left">Part Name</th>
-              <th class="p-2 text-left">Action</th>
+              <th class="p-2 text-center w-[60px] border-l"> </th>
             </tr>
           </thead>
           <tbody id="tableBody"></tbody>
@@ -271,7 +271,7 @@ function loadBranch() {
         <div class="mt-4 flex gap-3">
           <button onclick="addRow()"
             class="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:shadow-md hover:scale-105 transition">
-            + Add Row
+            + Add Item
           </button>
 
           <button onclick="submitAll()"
@@ -315,31 +315,43 @@ function addRow() {
   const row = document.createElement("tr");
 
   row.innerHTML = `
-    <td><input class="partNo border p-1 w-full"/></td>
-    <td><input type="number" class="qty border p-1 w-full"/></td>
-    <td class="desc text-gray-600"></td>
-    <td><button onclick="this.closest('tr').remove()">X</button></td>
+    <td class="p-1">
+      <input class="partNo border rounded px-2 py-1 w-full focus:ring-2 focus:ring-blue-400"/>
+    </td>
+
+    <td class="p-1">
+      <input type="number" max="99999"
+        class="qty border rounded px-2 py-1 w-full text-center focus:ring-2 focus:ring-blue-400"/>
+    </td>
+
+    <td class="p-1">
+      <div class="desc text-gray-700 truncate"></div>
+    </td>
+
+    <td class="p-1 text-center border-l">
+      <button onclick="this.closest('tr').remove()"
+        class="w-7 h-7 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:scale-110 transition">
+        ✕
+      </button>
+    </td>
   `;
 
-  // ✅ PART FETCH (POST — FIXED)
+  // PART FETCH (unchanged logic)
   row.querySelector(".partNo").addEventListener("input", debounce(async function () {
-  
+
     const partNo = this.value.trim();
     if (!partNo) return;
-  
+
     try {
       const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
       const data = await res.json();
-  
-      console.log("PART RESPONSE:", data);
-  
+
       row.querySelector(".desc").innerText = data.description || "Not Found";
-  
+
     } catch (err) {
-      console.error(err);
       row.querySelector(".desc").innerText = "Error";
     }
-  
+
   }, 400));
 
   document.getElementById("tableBody").appendChild(row);
