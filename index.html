@@ -693,7 +693,11 @@ async function loadTrackOrders() {
       if (!d.date || typeof d.date !== "string") return false;
               
         // ✅ USE ISO DATE DIRECTLY
-        const rowDateStr = d.date.split("T")[0];
+       // ✅ Convert UTC → Local date (IST)
+        const localDate = new Date(d.date);
+        
+        // format YYYY-MM-DD in LOCAL time
+        const rowDateStr = `${localDate.getFullYear()}-${(localDate.getMonth()+1).toString().padStart(2,'0')}-${localDate.getDate().toString().padStart(2,'0')}`;
 
       // Default 7 days
         if (!fromDateVal && !toDateVal) {
