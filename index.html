@@ -663,12 +663,14 @@ async function loadTrackOrders() {
   try {
     const res = await fetch(API, {
       method: "POST",
-      body: JSON.stringify({
-        action: "getRequests"
-      })
+      body: JSON.stringify({ action: "getRequests" })
     });
 
     const data = await res.json();
+
+    const today = new Date();
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
 
     let html = `
 
@@ -677,48 +679,65 @@ async function loadTrackOrders() {
       <!-- 🔷 TOP BAR -->
       <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
 
-        <!-- Branch -->
         <p class="font-semibold text-yellow-400 text-lg">
           ${user.branch}
         </p>
 
-        <!-- Menu -->
         <div class="flex gap-3">
-
           <button onclick="loadCreateOrder()"
-            class="px-4 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-yellow-400 transition">
+            class="px-4 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-yellow-400">
             Create New Order
           </button>
 
-          <button onclick="loadTrackOrders()"
+          <button
             class="px-4 py-1.5 rounded-lg bg-gray-800 text-yellow-400 border border-gray-700">
             Track Orders
           </button>
-
         </div>
 
-        <!-- Logout -->
         <button onclick="logout()"
-          class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+          class="px-4 py-2 bg-yellow-400 text-black rounded-lg">
           Logout
         </button>
 
       </div>
 
-      <!-- 🔷 TABLE SECTION -->
-      <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
+      <!-- 🔷 FILTERS -->
+      <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex gap-4 flex-wrap">
 
-        <h2 class="text-yellow-400 mb-4 text-lg font-semibold">
-          Track Orders
-        </h2>
+        <input type="date" id="fromDate"
+          class="bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
+
+        <input type="date" id="toDate"
+          class="bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
+
+        <input type="text" id="searchPart"
+          placeholder="Search Part No"
+          class="bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
+
+        <button onclick="loadTrackOrders()"
+          class="bg-yellow-400 text-black px-4 py-2 rounded">
+          Apply
+        </button>
+
+      </div>
+
+      <!-- 🔷 TABLE -->
+      <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
 
         <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
           <thead class="bg-black text-yellow-400">
             <tr>
-              <th class="p-2 text-center">Part No</th>
-              <th class="p-2 text-center">Qty</th>
-              <th class="p-2 text-center">Order No</th>
-              <th class="p-2 text-center">Status</th>
+              <th class="p-2">Date</th>
+              <th class="p-2">Type</th>
+              <th class="p-2">For</th>
+              <th class="p-2">Machine</th>
+              <th class="p-2">Customer</th>
+              <th class="p-2">Part</th>
+              <th class="p-2">Qty</th>
+              <th class="p-2">Description</th>
+              <th class="p-2">Order No</th>
+              <th class="p-2">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -726,42 +745,49 @@ async function loadTrackOrders() {
 
     let index = 0;
 
+    const fromDate = document.getElementById("fromDate")?.value;
+    const toDate = document.getElementById("toDate")?.value;
+    const searchPart = document.getElementById("searchPart")?.value?.toLowerCase();
+
     data.forEach(d => {
 
-      // ✅ Only show current branch data
       if (d.branch !== user.branch) return;
+
+      const rowDate = new Date(d.date);
+
+      // ✅ default 7 days
+      if (!fromDate && !toDate) {
+        if (rowDate < sevenDaysAgo) return;
+      }
+
+      // ✅ date filter
+      if (fromDate && rowDate < new Date(fromDate)) return;
+      if (toDate && rowDate > new Date(toDate)) return;
+
+      // ✅ search filter
+      if (searchPart && !d.partNo.toLowerCase().includes(searchPart)) return;
 
       const rowClass = index % 2 === 0 ? "bg-gray-800" : "bg-gray-900";
 
       html += `
-        <tr class="${rowClass} border-t border-gray-700 text-center text-gray-200">
-          <td class="p-2">${d.partNo}</td>
-          <td class="p-2">${d.qty}</td>
-          <td class="p-2">${d.orderNo || "-"}</td>
-          <td class="p-2">
-            <span class="
-              px-2 py-1 rounded text-xs font-semibold
-              ${d.status === "Pending" ? "bg-yellow-400 text-black" : ""}
-              ${d.status === "Ordered" ? "bg-blue-500 text-white" : ""}
-              ${d.status === "Delivered" ? "bg-green-500 text-white" : ""}
-            ">
-              ${d.status}
-            </span>
-          </td>
+        <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center">
+          <td>${new Date(d.date).toLocaleDateString()}</td>
+          <td>${d.orderType}</td>
+          <td>${d.orderFor}</td>
+          <td>${d.machineNo}</td>
+          <td>${d.customerName}</td>
+          <td>${d.partNo}</td>
+          <td>${d.qty}</td>
+          <td>${d.description}</td>
+          <td>${d.orderNo || "-"}</td>
+          <td>${d.status}</td>
         </tr>
       `;
 
       index++;
     });
 
-    html += `
-          </tbody>
-        </table>
-
-      </div>
-
-    </div>
-    `;
+    html += `</tbody></table></div></div>`;
 
     document.getElementById("mainContent").innerHTML = html;
 
