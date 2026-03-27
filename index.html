@@ -200,59 +200,92 @@ function loadBranch() {
   }
 
   document.getElementById("app").innerHTML = `
-    <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
 
-      <div class="flex justify-between mb-4">
-        <p class="font-semibold">Branch: ${user.branch}</p>
-        <button onclick="logout()" class="text-red-600">Logout</button>
+    <div class="max-w-6xl mx-auto space-y-4">
+
+      <!-- 🔷 SECTION 1: TOP BAR -->
+      <div class="flex justify-between items-center bg-white px-5 py-3 rounded-xl shadow">
+        <p class="font-semibold text-gray-700 text-lg">
+          ${user.branch}
+        </p>
+
+        <button onclick="logout()"
+          class="px-4 py-2 rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all duration-200">
+          Logout
+        </button>
       </div>
 
-      <!-- HEADER -->
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <select id="orderType" class="border p-2">
-          <option value="">Order Type</option>
-          <option>SOP</option>
-          <option>VOR</option>
-          <option>SPL</option>
-          <option>ZMAC</option>
-        </select>
+      <!-- 🔷 SECTION 2: HEADER -->
+      <div class="bg-white p-5 rounded-xl shadow space-y-4">
 
-        <select id="orderFor" class="border p-2">
-          <option value="">Order For</option>
-          <option>Customer</option>
-          <option>Stock</option>
-        </select>
+        <!-- Row 1 -->
+        <div class="grid grid-cols-2 gap-4">
+          <select id="orderType" class="border rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+            <option value="">Order Type</option>
+            <option>SOP</option>
+            <option>VOR</option>
+            <option>SPL</option>
+            <option>ZMAC</option>
+          </select>
 
-        <input id="machineNo" placeholder="Machine Number" class="border p-2"/>
-        <input id="contactNo" placeholder="Contact Number" class="border p-2"/>
+          <select id="orderFor" class="border rounded-lg p-2 focus:ring-2 focus:ring-blue-400">
+            <option value="">Order For</option>
+            <option>Customer</option>
+            <option>Stock</option>
+          </select>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="grid grid-cols-2 gap-4 items-start">
+
+          <!-- Machine + Customer -->
+          <div>
+            <input id="machineNo" placeholder="Machine Number"
+              class="border rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-400"/>
+
+            <!-- Customer name (faded, compact) -->
+            <p id="customerName" class="text-sm text-gray-400 mt-1">--</p>
+          </div>
+
+          <input id="contactNo" placeholder="Contact Number"
+            class="border rounded-lg p-2 focus:ring-2 focus:ring-blue-400"/>
+        </div>
+
       </div>
 
-      <div class="mb-4">
-        <p>Customer Name:</p>
-        <p id="customerName" class="font-semibold text-blue-600">--</p>
+      <!-- 🔷 SECTION 3: TABLE -->
+      <div class="bg-white p-5 rounded-xl shadow">
+
+        <table class="w-full text-sm border rounded-lg overflow-hidden">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="p-2 text-left">Part No</th>
+              <th class="p-2 text-left">Qty</th>
+              <th class="p-2 text-left">Part Name</th>
+              <th class="p-2 text-left">Action</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+
+        <div class="mt-4 flex gap-3">
+          <button onclick="addRow()"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:shadow-md hover:scale-105 transition">
+            + Add Row
+          </button>
+
+          <button onclick="submitAll()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:shadow-md hover:scale-105 transition">
+            Submit
+          </button>
+        </div>
+
       </div>
 
-      <!-- TABLE -->
-      <table class="w-full border text-sm">
-        <thead class="bg-gray-200">
-          <tr>
-            <th>Part No</th>
-            <th>Qty</th>
-            <th>Part Name</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-
-      <div class="mt-4 flex gap-3">
-        <button onclick="addRow()" class="bg-green-600 text-white px-4 py-2 rounded">+ Add Row</button>
-        <button onclick="submitAll()" class="bg-blue-600 text-white px-4 py-2 rounded">Submit</button>
-      </div>
     </div>
   `;
 
-  // ✅ MACHINE FETCH (POST — FIXED)
+  // MACHINE FETCH
   document.getElementById("machineNo").addEventListener("blur", async function () {
     const machineNo = this.value.trim();
     if (!machineNo) return;
@@ -265,10 +298,10 @@ function loadBranch() {
           machineNo: machineNo
         })
       });
-      
+
       const data = await res.json();
-      console.log("MACHINE RESPONSE:", data);
-      document.getElementById("customerName").innerText = data.customer || "Not Found";
+      document.getElementById("customerName").innerText =
+        data.customer || "Not Found";
 
     } catch (err) {
       document.getElementById("customerName").innerText = "Error";
