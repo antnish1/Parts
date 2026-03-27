@@ -364,6 +364,24 @@ async function submitAll() {
 
   const rows = document.querySelectorAll("#tableBody tr");
 
+  // ✅ NEW: Check if at least ONE valid row exists
+  let hasValidRow = false;
+
+  for (let row of rows) {
+    const partNo = row.querySelector(".partNo").value.trim();
+    const qty = row.querySelector(".qty").value;
+
+    if (partNo && qty) {
+      hasValidRow = true;
+      break;
+    }
+  }
+
+  if (!hasValidRow) {
+    showPopup("Please enter at least one valid part");
+    return;
+  }
+
   isSubmitting = true;
   showLoader();
 
@@ -374,15 +392,13 @@ async function submitAll() {
       const qty = row.querySelector(".qty").value;
       const desc = row.querySelector(".desc").innerText.trim();
 
-      if (!partNo || !qty) {
-        showPopup("Part No and Qty required");
-        return;
-      }
+      // ✅ Skip empty rows instead of breaking app
+      if (!partNo || !qty) continue;
 
       if (!desc || desc === "Not Found") {
-          showPopup("Invalid Part Number in one of the rows");
-          continue; // skip instead of stopping everything
-        }
+        showPopup("Invalid Part Number in one of the rows");
+        continue;
+      }
 
       const payload = {
         action: "submit",
@@ -396,8 +412,6 @@ async function submitAll() {
         qty,
         description: desc
       };
-
-      console.log("SENDING:", payload);
 
       const res = await fetch(API, {
         method: "POST",
@@ -417,6 +431,7 @@ async function submitAll() {
     showPopup("Error submitting!");
   }
 
+  // ✅ ALWAYS RESET
   hideLoader();
   isSubmitting = false;
 }
