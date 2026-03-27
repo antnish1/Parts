@@ -680,6 +680,8 @@ async function loadTrackOrders() {
     const toDateVal = document.getElementById("toDate")?.value || "";
     const searchPartVal = (document.getElementById("searchPart")?.value || "").toLowerCase();
 
+    console.log("DATA SAMPLE:", data[0]);
+    
     // ✅ FILTER DATA FIRST (IMPORTANT FIX)
     const filteredData = data.filter(d => {
 
@@ -687,8 +689,15 @@ async function loadTrackOrders() {
 
       // Convert "3/26/2026 18:33:05"
         // Convert to YYYY-MM-DD string
-        const parts = d.date.split(" ")[0].split("/");
-        const rowDateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+      // ✅ SAFE DATE PARSING
+      if (!d.date || typeof d.date !== "string") return false;
+      
+      const datePart = d.date.split(" ")[0];
+      const parts = datePart.split("/");
+      
+      if (parts.length !== 3) return false;
+      
+      const rowDateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
 
       // Default 7 days
         if (!fromDateVal && !toDateVal) {
@@ -709,7 +718,7 @@ async function loadTrackOrders() {
         if (toDateVal && rowDateStr > toDateVal) return false;
 
       // Search
-      if (searchPartVal && !d.partNo.toLowerCase().includes(searchPartVal)) {
+      if (searchPartVal && !(d.partNo || "").toLowerCase().includes(searchPartVal)) {
         return false;
       }
 
