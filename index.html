@@ -686,29 +686,27 @@ async function loadTrackOrders() {
       if (d.branch !== user.branch) return false;
 
       // Convert "3/26/2026 18:33:05"
-      const parts = d.date.split(" ")[0].split("/");
-      const rowDate = new Date(parts[2], parts[0] - 1, parts[1]);
+        // Convert to YYYY-MM-DD string
+        const parts = d.date.split(" ")[0].split("/");
+        const rowDateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
 
       // Default 7 days
-      if (!fromDateVal && !toDateVal) {
-        const cleanSevenDaysAgo = new Date(sevenDaysAgo);
-        cleanSevenDaysAgo.setHours(0,0,0,0);
-        if (rowDate < cleanSevenDaysAgo) return false;
-      }
+        if (!fromDateVal && !toDateVal) {
+        
+          const todayStr = new Date().toISOString().split("T")[0];
+        
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
+        
+          if (rowDateStr < sevenDaysAgoStr) return false;
+        }
 
-      // From date
-      if (fromDateVal) {
-        const from = new Date(fromDateVal);
-        from.setHours(0,0,0,0);
-        if (rowDate < from) return false;
-      }
-
-      // To date
-      if (toDateVal) {
-        const to = new Date(toDateVal);
-        to.setHours(23,59,59,999);
-        if (rowDate > to) return false;
-      }
+        // From date
+        if (fromDateVal && rowDateStr < fromDateVal) return false;
+        
+        // To date
+        if (toDateVal && rowDateStr > toDateVal) return false;
 
       // Search
       if (searchPartVal && !d.partNo.toLowerCase().includes(searchPartVal)) {
