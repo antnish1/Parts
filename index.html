@@ -306,14 +306,33 @@ function loadCreateOrder() {
 
     <!-- TOP BAR -->
     <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
+
+      <!-- LEFT: Branch -->
       <p class="font-semibold text-yellow-400 text-lg">
         ${user.branch}
       </p>
-
+    
+      <!-- CENTER: MENU -->
+      <div class="flex gap-3">
+    
+        <button onclick="loadCreateOrder()"
+          class="px-4 py-1.5 rounded-lg bg-gray-800 text-yellow-400 border border-gray-700">
+          Create New Order
+        </button>
+    
+        <button onclick="loadTrackOrders()"
+          class="px-4 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-yellow-400 transition">
+          Track Orders
+        </button>
+    
+      </div>
+    
+      <!-- RIGHT: LOGOUT -->
       <button onclick="logout()"
         class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
         Logout
       </button>
+    
     </div>
 
     <!-- HEADER -->
@@ -674,48 +693,102 @@ async function loadTrackOrders() {
     const data = await res.json();
 
     let html = `
+
+    <div class="space-y-4">
+
+      <!-- 🔷 TOP BAR -->
+      <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
+
+        <!-- Branch -->
+        <p class="font-semibold text-yellow-400 text-lg">
+          ${user.branch}
+        </p>
+
+        <!-- Menu -->
+        <div class="flex gap-3">
+
+          <button onclick="loadCreateOrder()"
+            class="px-4 py-1.5 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-yellow-400 transition">
+            Create New Order
+          </button>
+
+          <button onclick="loadTrackOrders()"
+            class="px-4 py-1.5 rounded-lg bg-gray-800 text-yellow-400 border border-gray-700">
+            Track Orders
+          </button>
+
+        </div>
+
+        <!-- Logout -->
+        <button onclick="logout()"
+          class="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition">
+          Logout
+        </button>
+
+      </div>
+
+      <!-- 🔷 TABLE SECTION -->
       <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
 
-        <h2 class="text-yellow-400 text-lg mb-4">Track Orders</h2>
+        <h2 class="text-yellow-400 mb-4 text-lg font-semibold">
+          Track Orders
+        </h2>
 
-        <table class="w-full text-sm border border-gray-700">
+        <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
           <thead class="bg-black text-yellow-400">
             <tr>
-              <th class="p-2">Branch</th>
-              <th class="p-2">Part No</th>
-              <th class="p-2">Qty</th>
-              <th class="p-2">Order No</th>
-              <th class="p-2">Status</th>
+              <th class="p-2 text-center">Part No</th>
+              <th class="p-2 text-center">Qty</th>
+              <th class="p-2 text-center">Order No</th>
+              <th class="p-2 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
     `;
 
+    let index = 0;
+
     data.forEach(d => {
 
-      // 🔥 FILTER ONLY CURRENT BRANCH
+      // ✅ Only show current branch data
       if (d.branch !== user.branch) return;
 
+      const rowClass = index % 2 === 0 ? "bg-gray-800" : "bg-gray-900";
+
       html += `
-        <tr class="border-t border-gray-700 text-center">
-          <td>${d.branch}</td>
-          <td>${d.partNo}</td>
-          <td>${d.qty}</td>
-          <td>${d.orderNo || "-"}</td>
-          <td>${d.status}</td>
+        <tr class="${rowClass} border-t border-gray-700 text-center text-gray-200">
+          <td class="p-2">${d.partNo}</td>
+          <td class="p-2">${d.qty}</td>
+          <td class="p-2">${d.orderNo || "-"}</td>
+          <td class="p-2">
+            <span class="
+              px-2 py-1 rounded text-xs font-semibold
+              ${d.status === "Pending" ? "bg-yellow-400 text-black" : ""}
+              ${d.status === "Ordered" ? "bg-blue-500 text-white" : ""}
+              ${d.status === "Delivered" ? "bg-green-500 text-white" : ""}
+            ">
+              ${d.status}
+            </span>
+          </td>
         </tr>
       `;
+
+      index++;
     });
 
     html += `
           </tbody>
         </table>
+
       </div>
+
+    </div>
     `;
 
     document.getElementById("mainContent").innerHTML = html;
 
   } catch (err) {
+    console.error(err);
     showPopup("Error loading orders");
   }
 
