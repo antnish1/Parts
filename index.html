@@ -748,7 +748,9 @@ async function loadTrackOrders() {
 
     let index = 0;
 
-
+    const fromDate = (document.getElementById("fromDate")?.value || "");
+    const toDate = (document.getElementById("toDate")?.value || "");
+    const searchPart = (document.getElementById("searchPart")?.value || "").toLowerCase();
 
     data.forEach(d => {
 
@@ -792,9 +794,7 @@ async function loadTrackOrders() {
 
     document.getElementById("mainContent").innerHTML = html;
 
-    const fromDate = document.getElementById("fromDate")?.value || "";
-    const toDate = document.getElementById("toDate")?.value || "";
-    const searchPart = (document.getElementById("searchPart")?.value || "").toLowerCase();
+
     
 
     flatpickr("#fromDate", {
