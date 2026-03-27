@@ -691,13 +691,9 @@ async function loadTrackOrders() {
         // Convert to YYYY-MM-DD string
       // ✅ SAFE DATE PARSING
       if (!d.date || typeof d.date !== "string") return false;
-      
-      const datePart = d.date.split(" ")[0];
-      const parts = datePart.split("/");
-      
-      if (parts.length !== 3) return false;
-      
-      const rowDateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+              
+        // ✅ USE ISO DATE DIRECTLY
+        const rowDateStr = d.date.split("T")[0];
 
       // Default 7 days
         if (!fromDateVal && !toDateVal) {
