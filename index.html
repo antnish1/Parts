@@ -25,17 +25,11 @@
   border-radius: 6px;
   height: 14px;
 }
-
-
+</style>
 
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
-  
-</style>
-
-
   
 <body class="bg-black text-white p-6">
 
@@ -754,9 +748,7 @@ async function loadTrackOrders() {
 
     let index = 0;
 
-    const fromDate = document.getElementById("fromDate")?.value;
-    const toDate = document.getElementById("toDate")?.value;
-    const searchPart = document.getElementById("searchPart")?.value?.toLowerCase();
+
 
     data.forEach(d => {
 
@@ -799,6 +791,11 @@ async function loadTrackOrders() {
     html += `</tbody></table></div></div>`;
 
     document.getElementById("mainContent").innerHTML = html;
+
+    const fromDate = document.getElementById("fromDate")?.value || "";
+    const toDate = document.getElementById("toDate")?.value || "";
+    const searchPart = (document.getElementById("searchPart")?.value || "").toLowerCase();
+    
 
     flatpickr("#fromDate", {
       dateFormat: "Y-m-d",
