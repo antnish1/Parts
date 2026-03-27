@@ -5,6 +5,29 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
+
+<style>
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    to right,
+    #f0f0f0 8%,
+    #e0e0e0 18%,
+    #f0f0f0 33%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.2s infinite linear;
+  border-radius: 6px;
+  height: 14px;
+}
+</style>
+
+
+  
 <body class="bg-gray-100 p-6">
 
 <div id="app"></div>
@@ -299,9 +322,31 @@ function loadBranch() {
         })
       });
 
-      const data = await res.json();
-      document.getElementById("customerName").innerText =
-        data.customer || "Not Found";
+      const customerEl = document.getElementById("customerName");
+
+        // START loading animation
+        customerEl.classList.add("shimmer");
+        customerEl.innerText = "";
+        
+        try {
+          const res = await fetch(API, {
+            method: "POST",
+            body: JSON.stringify({
+              action: "getMachine",
+              machineNo: machineNo
+            })
+          });
+        
+          const data = await res.json();
+        
+          // STOP loading animation
+          customerEl.classList.remove("shimmer");
+          customerEl.innerText = data.customer || "Not Found";
+        
+        } catch (err) {
+          customerEl.classList.remove("shimmer");
+          customerEl.innerText = "Error";
+        }
 
     } catch (err) {
       document.getElementById("customerName").innerText = "Error";
@@ -337,16 +382,30 @@ function addRow() {
   `;
 
   // PART FETCH (unchanged logic)
-  row.querySelector(".partNo").addEventListener("input", debounce(async function () {
-
-    const partNo = this.value.trim();
-    if (!partNo) return;
-
+      row.querySelector(".partNo").addEventListener("input", debounce(async function () {
+    
+        const partNo = this.value.trim();
+        if (!partNo) return;
+    
+        try {
+          const descEl = row.querySelector(".desc");
+    
+    // START loading animation
+    descEl.classList.add("shimmer");
+    descEl.innerText = "";
+    
     try {
       const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
       const data = await res.json();
-
-      row.querySelector(".desc").innerText = data.description || "Not Found";
+    
+      // STOP loading
+      descEl.classList.remove("shimmer");
+      descEl.innerText = data.description || "Not Found";
+    
+    } catch (err) {
+      descEl.classList.remove("shimmer");
+      descEl.innerText = "Error";
+    }
 
     } catch (err) {
       row.querySelector(".desc").innerText = "Error";
@@ -354,6 +413,9 @@ function addRow() {
 
   }, 400));
 
+const index = document.querySelectorAll("#tableBody tr").length;
+row.className = index % 2 === 0 ? "bg-white" : "bg-gray-50";
+  
   document.getElementById("tableBody").appendChild(row);
 }
 
