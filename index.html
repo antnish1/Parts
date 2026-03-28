@@ -792,32 +792,24 @@ async function submitAll() {
 // ---------- ADMIN ----------
 function loadAdmin() {
   document.getElementById("app").innerHTML = `
-    <div class="max-w-7xl mx-auto bg-white p-6 rounded shadow">
-      <div class="flex justify-between mb-4">
-        <h2 class="text-xl font-bold">Admin Panel</h2>
-        <button onclick="logout()" class="text-red-600">Logout</button>
+      <div class="flex gap-3">
+      
+        <button onclick="loadHQOrders('Pending')" 
+          class="px-4 py-2 bg-yellow-400 text-black rounded">
+          Pending
+        </button>
+      
+        <button onclick="loadHQOrders('Processed')" 
+          class="px-4 py-2 bg-gray-800 text-gray-300 rounded">
+          Processed
+        </button>
+      
+        <button onclick="loadHQOrders('All')" 
+          class="px-4 py-2 bg-gray-800 text-gray-300 rounded">
+          All
+        </button>
+      
       </div>
-
-      <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-2 rounded mb-3">
-        Load Data
-      </button>
-
-      <table class="w-full border text-sm">
-        <thead class="bg-gray-200">
-          <tr>
-            <th>Branch</th>
-            <th>Part No</th>
-            <th>Qty</th>
-            <th>Order No</th>
-            <th>Status</th>
-            <th>Save</th>
-          </tr>
-        </thead>
-        <tbody id="adminTable"></tbody>
-      </table>
-    </div>
-  `;
-}
 
 async function loadData() {
   showLoader();
@@ -1119,6 +1111,70 @@ function updateTotal() {
 function toggleItems(i) {
   const row = document.getElementById("items-" + i);
   if (row) row.classList.toggle("hidden");
+}
+
+async function loadHQOrders(filter = "Pending") {
+
+  showLoader();
+
+  const res = await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ action: "getRequests" })
+  });
+
+  const data = await res.json();
+
+  let html = "";
+
+  data.forEach((d, index) => {
+
+    html += `
+      <div class="bg-gray-900 border border-gray-700 rounded-xl p-4">
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-center cursor-pointer"
+             onclick="toggleItems(${index})">
+
+          <div>
+            <p class="text-yellow-400 font-semibold">${d.orderNo}</p>
+            <p class="text-gray-400 text-sm">${d.branch} | ${d.machineNo}</p>
+          </div>
+
+          <p class="text-gray-300">${d.items.length} Items</p>
+
+        </div>
+
+        <!-- EXPAND -->
+        <div id="hq-${index}" class="hidden mt-3 space-y-2">
+
+          ${d.items.map(item => `
+            <div class="flex justify-between text-sm border-b border-gray-700 pb-1">
+              <span>${item.partNo}</span>
+              <span>${item.description}</span>
+              <span>Qty: ${item.qty}</span>
+            </div>
+          `).join("")}
+
+          <!-- INPUT -->
+          <div class="flex gap-2 mt-3">
+            <input id="po-${index}" placeholder="Enter PO Number"
+              class="bg-black border border-gray-600 px-3 py-2 rounded w-full"/>
+
+            <button onclick="processOrder('${d.orderNo}', ${index})"
+              class="bg-green-500 text-black px-4 rounded">
+              Process
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("hqOrders").innerHTML = html;
+
+  hideLoader();
 }
 
   
