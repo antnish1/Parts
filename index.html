@@ -495,36 +495,43 @@ function addRow() {
   `;
 
   // PART FETCH (unchanged logic)
-      row.querySelector(".partNo").addEventListener("input", debounce(async function () {
-    
-        const partNo = this.value.trim();
-        if (!partNo) return;
-    
-        try {
-          const descEl = row.querySelector(".desc");
-    
-    // START loading animation
-    descEl.classList.add("shimmer-text");
-    descEl.innerText = "";
-    
-    try {
-      const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
-      const data = await res.json();
-    
-      // STOP loading
-      descEl.classList.remove("shimmer-text");
-      descEl.innerText = data.description || "Not Found";
-    
-    } catch (err) {
-      descEl.classList.remove("shimmer-text");
-      descEl.innerText = "Error";
+let currentRequest = 0;
+
+row.querySelector(".partNo").addEventListener("input", debounce(async function () {
+
+  const partNo = this.value.trim();
+  if (!partNo) return;
+
+  const descEl = row.querySelector(".desc");
+
+  currentRequest++;  
+  const requestId = currentRequest;
+
+  descEl.classList.add("shimmer-text");
+  descEl.innerText = "";
+
+  try {
+    const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
+    const data = await res.json();
+
+    // ✅ IGNORE OLD RESPONSES
+    if (requestId !== currentRequest) return;
+
+    descEl.classList.remove("shimmer-text");
+    if (!data.description || data.description === "Not Found") {
+      descEl.innerText = "Checking...";
+    } else {
+      descEl.innerText = data.description;
     }
 
-    } catch (err) {
-      row.querySelector(".desc").innerText = "Error";
-    }
+  } catch (err) {
+    if (requestId !== currentRequest) return;
 
-  }, 400));
+    descEl.classList.remove("shimmer-text");
+    descEl.innerText = "Error";
+  }
+
+}, 400));
 
 const index = document.querySelectorAll("#tableBody tr").length;
 row.className = index % 2 === 0 
