@@ -715,7 +715,7 @@ async function submitAll() {
 
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-
+  const tempOrderNo = "TMP-" + Date.now();
   for (let row of rows) {
     const partNo = row.querySelector(".partNo").value.trim();
     const qty = row.querySelector(".qty").value;
@@ -764,6 +764,7 @@ async function submitAll() {
         partNo,
         qty,
         description: desc
+        tempOrderNo: tempOrderNo,
       };
 
       const res = await fetch(API, {
