@@ -316,37 +316,69 @@ function loadCreateOrder() {
     
     </div>
 
-    <!-- HEADER -->
-    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700 space-y-4">
+<!-- HEADER -->
+<div class="bg-gray-900 p-5 rounded-xl border border-gray-700 space-y-4">
 
-      <div class="grid grid-cols-2 gap-4">
-        <select id="orderType" class="bg-black border border-gray-600 rounded p-2 text-white">
-          <option value="">Order Type</option>
-          <option>SOP</option>
-          <option>VOR</option>
-          <option>SPL</option>
-          <option>ZMAC</option>
-        </select>
+  <!-- ROW 1 -->
+  <div class="grid grid-cols-3 gap-4">
 
-        <select id="orderFor" class="bg-black border border-gray-600 rounded p-2 text-white">
-          <option value="">Order For</option>
-          <option>Customer</option>
-          <option>Stock</option>
-        </select>
-      </div>
+    <select id="orderType" class="bg-black border border-gray-600 rounded p-2 text-white">
+      <option value="">Order Type</option>
+      <option>SOP</option>
+      <option>VOR</option>
+      <option>SPL</option>
+      <option>ZMAC</option>
+    </select>
 
-      <div class="grid grid-cols-2 gap-4">
+    <select id="orderFor" class="bg-black border border-gray-600 rounded p-2 text-white">
+      <option value="">Order For</option>
+      <option>Customer</option>
+      <option>Stock</option>
+    </select>
 
-        <div>
-          <input id="machineNo" placeholder="Machine Number"
-            class="bg-black border border-gray-600 rounded p-2 w-full text-white"/>
+    <!-- NEW -->
+    <select id="warrantyStatus" class="bg-black border border-gray-600 rounded p-2 text-white">
+      <option value="">Warranty Status</option>
+      <option>UW</option>
+      <option>BW</option>
+      <option>ASC</option>
+      <option>CARE</option>
+    </select>
 
-          <p id="customerName" class="text-sm text-gray-400 mt-1">--</p>
-        </div>
+  </div>
 
-        <input id="contactNo" placeholder="Contact Number"
-          class="bg-black border border-gray-600 rounded p-2 text-white"/>
-      </div>
+  <!-- ROW 2 -->
+  <div class="grid grid-cols-3 gap-4">
+
+    <input id="employeeName" placeholder="Employee Name"
+      class="bg-black border border-gray-600 rounded p-2 text-white"/>
+
+    <input id="approvedBy" placeholder="Approved By (VOR Only)"
+      class="bg-black border border-gray-600 rounded p-2 text-white"/>
+
+    <input id="callId" placeholder="Call ID (VOR Only)"
+      class="bg-black border border-gray-600 rounded p-2 text-white"/>
+
+  </div>
+
+  <!-- ROW 3 -->
+  <div class="grid grid-cols-2 gap-4">
+
+    <input id="machineNo" placeholder="Machine Number"
+      class="bg-black border border-gray-600 rounded p-2 w-full text-white"/>
+
+    <input id="contactNo" placeholder="Contact Number"
+      class="bg-black border border-gray-600 rounded p-2 text-white"/>
+
+  </div>
+
+  <!-- OPTIONAL FILE -->
+  <input type="file" id="approvalDoc"
+    class="bg-black border border-gray-600 rounded p-2 text-white"/>
+
+  <p id="customerName" class="text-sm text-gray-400">--</p>
+
+</div>
 
     </div>
 
@@ -492,11 +524,23 @@ async function submitAll() {
   const customerName = document.getElementById("customerName").innerText;
   const contactNo = document.getElementById("contactNo").value;
 
-  if (!orderType || !orderFor || !machineNo || !contactNo) {
-    showPopup("Fill all header fields!");
+  const warrantyStatus = document.getElementById("warrantyStatus").value;
+  const employeeName = document.getElementById("employeeName").value;
+  const approvedBy = document.getElementById("approvedBy").value;
+  const callId = document.getElementById("callId").value;
+  
+  if (!orderType || !orderFor || !machineNo || !contactNo || !warrantyStatus || !employeeName) {
+    showPopup("Fill all mandatory fields!");
     return;
   }
-
+  
+  // VOR specific validation
+  if (orderType === "VOR") {
+    if (!callId || !approvedBy) {
+      showPopup("Call ID & Approved By required for VOR");
+      return;
+    }
+  }
   const rows = document.querySelectorAll("#tableBody tr");
 
   // ✅ NEW: Check if at least ONE valid row exists
@@ -540,6 +584,10 @@ async function submitAll() {
         branch: user.branch,
         orderType,
         orderFor,
+        warrantyStatus,
+        employeeName,
+        approvedBy,
+        callId,
         machineNo,
         customerName,
         contactNo,
