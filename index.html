@@ -27,7 +27,7 @@
 
   
   
-.shimmer {
+.shimmer-text {
   background: linear-gradient(
     to right,
     #1f2937 8%,
@@ -37,10 +37,24 @@
   background-size: 800px 100%;
   animation: shimmer 1.2s infinite linear;
   border-radius: 6px;
-
-  height: 100%;        /* 🔥 FULL HEIGHT */
-  width: 100%;         /* 🔥 FULL WIDTH */
+  height: 14px;
 }
+
+
+.shimmer-box {
+  background: linear-gradient(
+    to right,
+    #1f2937 8%,
+    #facc15 18%,
+    #1f2937 33%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.2s infinite linear;
+  border-radius: 6px;
+  width: 100%;
+  height: 100%;
+}
+  
 </style>
 
 
@@ -429,7 +443,7 @@ function loadCreateOrder() {
 
     const box = document.getElementById("customerBox");
     
-    box.classList.add("shimmer");
+    box.classList.add("shimmer-box");
     customerEl.innerText = "";
 
     try {
@@ -443,7 +457,7 @@ function loadCreateOrder() {
 
       const data = await res.json();
 
-      box.classList.remove("shimmer");
+      box.classList.remove("shimmer-box");
       customerEl.innerText = data.customer || "Not Found";
 
     } catch (err) {
@@ -490,7 +504,7 @@ function addRow() {
           const descEl = row.querySelector(".desc");
     
     // START loading animation
-    descEl.classList.add("shimmer");
+    descEl.classList.add("shimmer-text");
     descEl.innerText = "";
     
     try {
@@ -498,11 +512,11 @@ function addRow() {
       const data = await res.json();
     
       // STOP loading
-      descEl.classList.remove("shimmer");
+      descEl.classList.remove("shimmer-text");
       descEl.innerText = data.description || "Not Found";
     
     } catch (err) {
-      descEl.classList.remove("shimmer");
+      descEl.classList.remove("shimmer-text");
       descEl.innerText = "Error";
     }
 
