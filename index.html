@@ -1191,7 +1191,7 @@ async function loadHQOrders(filter = "Pending") {
             <input id="po-${index}" placeholder="Enter PO Number"
               class="bg-black border border-gray-600 px-3 py-2 rounded w-full"/>
 
-            <button onclick="processOrder('${d.orderNo}', ${index})"
+            <button onclick="processOrder('${d.tempOrderNo}', ${index})"
               class="bg-green-500 text-black px-4 rounded">
               Process
             </button>
@@ -1213,6 +1213,33 @@ function toggleHQ(i) {
   if (row) row.classList.toggle("hidden");
 }
   
+
+async function processOrder(tempOrderNo, index) {
+
+  const poNo = document.getElementById("po-" + index).value;
+
+  if (!poNo) {
+    showPopup("Enter PO Number");
+    return;
+  }
+
+  showLoader();
+
+  await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "updateOrder",
+      tempOrderNo: tempOrderNo,
+      orderNo: poNo
+    })
+  });
+
+  hideLoader();
+  showPopup("Order Processed!");
+
+  loadHQOrders("Pending");
+}
+
   
 </script>
 
