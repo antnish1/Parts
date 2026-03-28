@@ -1145,7 +1145,8 @@ async function loadHQOrders(filter = "Pending") {
     const isVOR = d.orderType === "VOR";
 
     html += `
-      <tr onclick="toggleHQ(${index})"     class="border-t border-gray-700 cursor-pointer ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}"> ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
+     <tr onclick="toggleHQ(${index})"
+      class="border-t border-gray-700 cursor-pointer ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
 
         <td class="text-yellow-400 font-semibold">${d.tempOrderNo}</td>
         <td class="text-center">${new Date(d.date).toLocaleDateString()}</td>
@@ -1153,22 +1154,12 @@ async function loadHQOrders(filter = "Pending") {
         <td class="text-center">${d.employeeName || "-"}</td>
         <td class="text-center">${d.orderType}</td>
         <td class="text-center">${d.orderFor}</td>
-        <td class="text-center">${d.items.length}</td>
         <td class="text-center">${d.approvedBy || "-"}</td>
         <td class="text-green-400">₹ ${d.totalValue || 0}</td>
+        <td class="text-center">${d.items.length}</td>
         <td class="text-center">${d.status}</td>
 
-        <td>
-          ${d.status === "Pending" ? `
-            <input id="po-${index}" placeholder="PO"
-              class="bg-black border border-gray-600 px-2 py-1 w-20 text-xs rounded"/>
 
-            <button onclick="processOrder('${d.tempOrderNo}', ${index})"
-              class="bg-green-500 px-2 py-1 text-xs rounded">
-              ✔
-            </button>
-          ` : "-"}
-        </td>
 
       </tr>
 
@@ -1190,7 +1181,7 @@ async function loadHQOrders(filter = "Pending") {
             <input id="po-${index}" placeholder="Enter PO Number"
               class="bg-black border border-gray-600 px-3 py-2 rounded w-60 text-center"/>
     
-            <button onclick="processOrder('${d.tempOrderNo}', ${index})"
+            <button onclick="event.stopPropagation(); processOrder('${d.tempOrderNo}', ${index})"
               class="bg-green-500 px-4 py-2 rounded">
               Process
             </button>
