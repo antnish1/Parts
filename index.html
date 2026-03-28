@@ -250,6 +250,11 @@ async function login() {
   const branchEl = document.getElementById("branch");
   const passwordEl = document.getElementById("password");
 
+  // 🔥 NEW: Button elements
+  const btn = document.getElementById("loginBtn");
+  const text = document.getElementById("loginText");
+  const spinner = document.getElementById("loginSpinner");
+
   if (!branchEl || !passwordEl) {
     showPopup("UI error: reload page");
     isLoggingIn = false;
@@ -265,7 +270,14 @@ async function login() {
     return;
   }
 
-  showLoader();
+  // 🔥 START BUTTON LOADING
+  if (btn && text && spinner) {
+    btn.disabled = true;
+    text.innerText = "Signing in...";
+    spinner.classList.remove("hidden");
+  }
+
+  showLoader(); // (optional: you can remove later if button loader feels enough)
 
   try {
     const payload = {
@@ -276,7 +288,6 @@ async function login() {
 
     const res = await fetch(API, {
       method: "POST",
-      
       body: JSON.stringify(payload)
     });
 
@@ -301,10 +312,19 @@ async function login() {
     showPopup("Network error!");
   }
 
+  // 🔥 STOP BUTTON LOADING (ALWAYS RUNS)
+  if (btn && text && spinner) {
+    btn.disabled = false;
+    text.innerText = "Login";
+    spinner.classList.add("hidden");
+  }
+
   hideLoader();
   isLoggingIn = false;
 }
 
+
+  
 function logout() {
   if (isSubmitting) {
     showPopup("Please wait, submitting...");
