@@ -715,7 +715,11 @@ async function submitAll() {
 
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-  const tempOrderNo = "TMP-" + Date.now();
+  let last = Number(localStorage.getItem("lastOrderNo") || 1000);
+    last++;
+    localStorage.setItem("lastOrderNo", last);
+    
+    const tempOrderNo = "TMP-" + last;
   for (let row of rows) {
     const partNo = row.querySelector(".partNo").value.trim();
     const qty = row.querySelector(".qty").value;
@@ -1157,51 +1161,38 @@ async function loadHQOrders(filter = "Pending") {
   
   let html = "";
 
-  filtered.forEach((d, index) => {
-
-    html += `
-      <div class="bg-gray-900 border border-gray-700 rounded-xl p-4">
-
-        <!-- HEADER -->
-        <div class="flex justify-between items-center cursor-pointer"
-             onclick="toggleHQ(${index})">
-
-          <div>
-            <p class="text-yellow-400 font-semibold">${d.orderNo}</p>
-            <p class="text-gray-400 text-sm">${d.branch} | ${d.machineNo}</p>
-          </div>
-
-          <p class="text-gray-300">${d.items.length} Items</p>
-
-        </div>
-
-        <!-- EXPAND -->
-        <div id="hq-${index}" class="hidden mt-3 space-y-2">
-
-          ${d.items.map(item => `
-            <div class="flex justify-between text-sm border-b border-gray-700 pb-1">
-              <span>${item.partNo}</span>
-              <span>${item.description}</span>
-              <span>Qty: ${item.qty}</span>
-            </div>
-          `).join("")}
-
-          <!-- INPUT -->
-          <div class="flex gap-2 mt-3">
-            <input id="po-${index}" placeholder="Enter PO Number"
-              class="bg-black border border-gray-600 px-3 py-2 rounded w-full"/>
-
-            <button onclick="processOrder('${d.tempOrderNo}', ${index})"
-              class="bg-green-500 text-black px-4 rounded">
-              Process
-            </button>
-          </div>
-
-        </div>
-
-      </div>
-    `;
-  });
+    filtered.forEach((d, index) => {
+    
+      const isVOR = d.orderType === "VOR";
+    
+      html += `
+        <tr class="border-t border-gray-700 ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
+    
+          <td class="text-yellow-400 font-semibold">${d.tempOrderNo}</td>
+          <td>${new Date(d.date).toLocaleDateString()}</td>
+          <td>${d.branch}</td>
+          <td>${d.employeeName || "-"}</td>
+          <td>${d.orderType}</td>
+          <td>${d.orderFor}</td>
+          <td>${d.approvedBy || "-"}</td>
+          <td class="text-green-400">₹ ${d.totalValue || 0}</td>
+          <td>${d.status}</td>
+    
+          <td>
+            ${d.status === "Pending" ? `
+              <input id="po-${index}" placeholder="PO No"
+                class="bg-black border border-gray-600 px-2 py-1 w-24 text-xs rounded"/>
+    
+              <button onclick="processOrder('${d.tempOrderNo}', ${index})"
+                class="bg-green-500 px-2 py-1 text-xs rounded">
+                ✔
+              </button>
+            ` : "-"}
+          </td>
+    
+        </tr>
+      `;
+    });
 
   document.getElementById("hqOrders").innerHTML = html;
 
