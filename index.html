@@ -791,25 +791,50 @@ async function submitAll() {
 }
 // ---------- ADMIN ----------
 function loadAdmin() {
+
   document.getElementById("app").innerHTML = `
+    <div class="max-w-7xl mx-auto space-y-4">
+
+      <!-- TOP BAR -->
+      <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
+
+        <p class="text-yellow-400 font-semibold text-lg">
+          HQ Dashboard
+        </p>
+
+        <button onclick="logout()"
+          class="bg-yellow-400 text-black px-4 py-2 rounded">
+          Logout
+        </button>
+
+      </div>
+
+      <!-- FILTER TABS -->
       <div class="flex gap-3">
-      
         <button onclick="loadHQOrders('Pending')" 
           class="px-4 py-2 bg-yellow-400 text-black rounded">
           Pending
         </button>
-      
+
         <button onclick="loadHQOrders('Processed')" 
           class="px-4 py-2 bg-gray-800 text-gray-300 rounded">
           Processed
         </button>
-      
+
         <button onclick="loadHQOrders('All')" 
           class="px-4 py-2 bg-gray-800 text-gray-300 rounded">
           All
         </button>
-      
       </div>
+
+      <!-- ORDERS -->
+      <div id="hqOrders"></div>
+
+    </div>
+  `;
+
+  loadHQOrders("Pending"); // default
+}
 
 async function loadData() {
   showLoader();
@@ -1124,16 +1149,22 @@ async function loadHQOrders(filter = "Pending") {
 
   const data = await res.json();
 
+  let filtered = data;
+
+    if (filter !== "All") {
+      filtered = data.filter(d => d.status === filter);
+    }
+  
   let html = "";
 
-  data.forEach((d, index) => {
+  filtered.forEach((d, index) => {
 
     html += `
       <div class="bg-gray-900 border border-gray-700 rounded-xl p-4">
 
         <!-- HEADER -->
         <div class="flex justify-between items-center cursor-pointer"
-             onclick="toggleItems(${index})">
+             onclick="toggleHQ(${index})">
 
           <div>
             <p class="text-yellow-400 font-semibold">${d.orderNo}</p>
@@ -1177,6 +1208,11 @@ async function loadHQOrders(filter = "Pending") {
   hideLoader();
 }
 
+function toggleHQ(i) {
+  const row = document.getElementById("hq-" + i);
+  if (row) row.classList.toggle("hidden");
+}
+  
   
 </script>
 
