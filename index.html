@@ -478,16 +478,27 @@ function addRow() {
     <td class="p-1">
       <input class="partNo bg-black text-white border border-gray-600 rounded px-2 py-1 w-full focus:ring-2 focus:ring-yellow-400"/>
     </td>
-
+  
     <td class="p-1">
       <input type="number" max="99999"
-      class="qty bg-black text-white border border-gray-600 rounded px-2 py-1 w-full text-center focus:ring-2 focus:ring-yellow-400"/>
+        class="qty bg-black text-white border border-gray-600 rounded px-2 py-1 w-full text-center focus:ring-2 focus:ring-yellow-400"/>
     </td>
-
+  
     <td class="p-1">
       <div class="desc text-gray-200 truncate text-center"></div>
     </td>
-
+  
+    <!-- ✅ NEW DNP COLUMN -->
+    <td class="p-1">
+      <div class="dnp text-yellow-400 text-center"></div>
+    </td>
+  
+    <!-- ✅ NEW CATEGORY COLUMN -->
+    <td class="p-1">
+      <div class="cat1 text-blue-400 text-center"></div>
+    </td>
+  
+    <!-- DELETE BUTTON -->
     <td class="p-1 text-center border-l">
       <button onclick="this.closest('tr').remove()"
         class="w-7 h-7 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:scale-110 transition">
@@ -505,12 +516,19 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
   if (!partNo) return;
 
   const descEl = row.querySelector(".desc");
+  const dnpEl = row.querySelector(".dnp");
+  const cat1El = row.querySelector(".cat1");
 
   currentRequest++;  
   const requestId = currentRequest;
 
-  descEl.classList.add("shimmer-text");
-  descEl.innerText = "";
+    descEl.classList.add("shimmer-text");
+    dnpEl.classList.add("shimmer-text");
+    cat1El.classList.add("shimmer-text");
+    
+    descEl.innerText = "";
+    dnpEl.innerText = "";
+    cat1El.innerText = "";
 
   try {
     const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
@@ -520,17 +538,32 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
     if (requestId !== currentRequest) return;
 
     descEl.classList.remove("shimmer-text");
+    dnpEl.classList.remove("shimmer-text");
+    cat1El.classList.remove("shimmer-text");
+    
+    // Description
     if (!data.description || data.description === "Not Found") {
       descEl.innerText = "Checking...";
     } else {
       descEl.innerText = data.description;
     }
 
+// DNP
+dnpEl.innerText = data.dnp || "-";
+
+// Category
+cat1El.innerText = data.cat1 || "-";
+
   } catch (err) {
     if (requestId !== currentRequest) return;
 
-    descEl.classList.remove("shimmer-text");
-    descEl.innerText = "Error";
+      descEl.classList.remove("shimmer-text");
+      dnpEl.classList.remove("shimmer-text");
+      cat1El.classList.remove("shimmer-text");
+      
+      descEl.innerText = "Error";
+      dnpEl.innerText = "-";
+      cat1El.innerText = "-";
   }
 
 }, 400));
