@@ -331,10 +331,10 @@ function loadCreateOrder() {
     </div>
 
 <!-- HEADER -->
-<div class="bg-gray-900 p-5 rounded-xl border border-gray-700 space-y-4">
+<div class="bg-gray-900 p-4 rounded-xl border border-gray-700 space-y-3">
 
   <!-- ROW 1 -->
-  <div class="grid grid-cols-3 gap-4">
+  <div class="grid grid-cols-4 gap-3">
     <select id="orderType" class="input">
       <option value="">Order Type</option>
       <option>SOP</option>
@@ -349,38 +349,44 @@ function loadCreateOrder() {
       <option>Stock</option>
     </select>
 
+    <input id="employeeName" placeholder="Employee Name" class="input"/>
+
+    <input id="approvedBy" placeholder="Approved By" class="input"/>
+  </div>
+
+  <!-- ROW 2 -->
+  <div class="grid grid-cols-4 gap-3">
+
+    <!-- MACHINE + CUSTOMER STACK -->
+    <div class="flex flex-col">
+      <input id="machineNo" placeholder="Machine Number" class="input"/>
+      <p id="customerName" class="text-xs text-gray-400 mt-1">--</p>
+    </div>
+
     <select id="warrantyStatus" class="input">
-      <option value="">Warranty Status</option>
+      <option value="">Warranty</option>
       <option>UW</option>
       <option>BW</option>
       <option>ASC</option>
       <option>CARE</option>
     </select>
-  </div>
 
-  <!-- ROW 2 -->
-  <div class="grid grid-cols-3 gap-4">
-    <input id="employeeName" placeholder="Employee Name" class="input"/>
-    <input id="approvedBy" placeholder="Approved By" class="input"/>
-    <input id="callId" placeholder="Call ID" class="input"/>
+    <input id="contactNo" placeholder="Contact No" class="input"/>
+
+    <input id="callId" placeholder="DBMS Call ID" class="input"/>
   </div>
 
   <!-- ROW 3 -->
-  <div class="grid grid-cols-3 gap-4">
-    <input id="machineNo" placeholder="Machine Number" class="input"/>
-    <input id="contactNo" placeholder="Contact Number" class="input"/>
+  <div class="grid grid-cols-4 gap-3">
 
-    <!-- EMPTY SPACE TO BALANCE GRID -->
+    <!-- EMPTY SPACE TO ALIGN WITH ABOVE -->
     <div></div>
-  </div>
 
-  <!-- ROW 4 (FILE + CUSTOMER) -->
-  <div class="grid grid-cols-3 gap-4">
-    <input type="file" id="approvalDoc" class="input"/>
+    <!-- FILE UPLOAD (SPAN 3 COLUMNS) -->
+    <div class="col-span-3">
+      <input type="file" id="approvalDoc" class="input"/>
+    </div>
 
-    <p id="customerName" class="text-sm text-gray-400 col-span-2 flex items-center">
-      --
-    </p>
   </div>
 
 </div>
