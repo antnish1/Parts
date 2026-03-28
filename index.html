@@ -13,6 +13,22 @@
   100% { background-position: 400px 0; }
 }
 
+.input {
+  @apply bg-black border border-gray-600 rounded p-2 text-white w-full;
+}
+
+<style>
+.input {
+  background: black;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  padding: 8px;
+  color: white;
+  width: 100%;
+}
+</style>
+  
+  
 .shimmer {
   background: linear-gradient(
     to right,
@@ -321,8 +337,7 @@ function loadCreateOrder() {
 
   <!-- ROW 1 -->
   <div class="grid grid-cols-3 gap-4">
-
-    <select id="orderType" class="bg-black border border-gray-600 rounded p-2 text-white">
+    <select id="orderType" class="input">
       <option value="">Order Type</option>
       <option>SOP</option>
       <option>VOR</option>
@@ -330,57 +345,47 @@ function loadCreateOrder() {
       <option>ZMAC</option>
     </select>
 
-    <select id="orderFor" class="bg-black border border-gray-600 rounded p-2 text-white">
+    <select id="orderFor" class="input">
       <option value="">Order For</option>
       <option>Customer</option>
       <option>Stock</option>
     </select>
 
-    <!-- NEW -->
-    <select id="warrantyStatus" class="bg-black border border-gray-600 rounded p-2 text-white">
+    <select id="warrantyStatus" class="input">
       <option value="">Warranty Status</option>
       <option>UW</option>
       <option>BW</option>
       <option>ASC</option>
       <option>CARE</option>
     </select>
-
   </div>
 
   <!-- ROW 2 -->
   <div class="grid grid-cols-3 gap-4">
-
-    <input id="employeeName" placeholder="Employee Name"
-      class="bg-black border border-gray-600 rounded p-2 text-white"/>
-
-    <input id="approvedBy" placeholder="Approved By (VOR Only)"
-      class="bg-black border border-gray-600 rounded p-2 text-white"/>
-
-    <input id="callId" placeholder="Call ID (VOR Only)"
-      class="bg-black border border-gray-600 rounded p-2 text-white"/>
-
+    <input id="employeeName" placeholder="Employee Name" class="input"/>
+    <input id="approvedBy" placeholder="Approved By" class="input"/>
+    <input id="callId" placeholder="Call ID" class="input"/>
   </div>
 
   <!-- ROW 3 -->
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-3 gap-4">
+    <input id="machineNo" placeholder="Machine Number" class="input"/>
+    <input id="contactNo" placeholder="Contact Number" class="input"/>
 
-    <input id="machineNo" placeholder="Machine Number"
-      class="bg-black border border-gray-600 rounded p-2 w-full text-white"/>
-
-    <input id="contactNo" placeholder="Contact Number"
-      class="bg-black border border-gray-600 rounded p-2 text-white"/>
-
+    <!-- EMPTY SPACE TO BALANCE GRID -->
+    <div></div>
   </div>
 
-  <!-- OPTIONAL FILE -->
-  <input type="file" id="approvalDoc"
-    class="bg-black border border-gray-600 rounded p-2 text-white"/>
+  <!-- ROW 4 (FILE + CUSTOMER) -->
+  <div class="grid grid-cols-3 gap-4">
+    <input type="file" id="approvalDoc" class="input"/>
 
-  <p id="customerName" class="text-sm text-gray-400">--</p>
+    <p id="customerName" class="text-sm text-gray-400 col-span-2 flex items-center">
+      --
+    </p>
+  </div>
 
 </div>
-
-    </div>
 
     <!-- TABLE -->
     <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
