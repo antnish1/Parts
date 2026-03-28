@@ -521,6 +521,7 @@ function addRow() {
   `;
 
   // PART FETCH (unchanged logic)
+// PART FETCH (unchanged logic)
 let currentRequest = 0;
 
 row.querySelector(".partNo").addEventListener("input", debounce(async function () {
@@ -536,27 +537,34 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
   currentRequest++;  
   const requestId = currentRequest;
 
-    descEl.classList.add("shimmer-text");
-    dnpEl.classList.add("shimmer-text");
-    cat1El.classList.add("shimmer-text");
-    valueEl.classList.add("shimmer-text");   // ✅ ADD
-    
-    descEl.innerText = "";
-    dnpEl.innerText = "";
-    cat1El.innerText = "";
-    valueEl.innerText = "";                  // ✅ ADD
+  descEl.classList.add("shimmer-text");
+  dnpEl.classList.add("shimmer-text");
+  cat1El.classList.add("shimmer-text");
+  valueEl.classList.add("shimmer-text");
+
+  descEl.innerText = "";
+  dnpEl.innerText = "";
+  cat1El.innerText = "";
+  valueEl.innerText = "";
 
   try {
     const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
     const data = await res.json();
 
-    // ✅ IGNORE OLD RESPONSES
-    if (requestId !== currentRequest) return;
+    // 🔥 FIX 1: HANDLE OLD REQUEST PROPERLY
+    if (requestId !== currentRequest) {
+      descEl.classList.remove("shimmer-text");
+      dnpEl.classList.remove("shimmer-text");
+      cat1El.classList.remove("shimmer-text");
+      valueEl.classList.remove("shimmer-text");
+      return;
+    }
 
     descEl.classList.remove("shimmer-text");
     dnpEl.classList.remove("shimmer-text");
     cat1El.classList.remove("shimmer-text");
-    valueEl.classList.remove("shimmer-text");   // 🔥 MUST ADD
+    valueEl.classList.remove("shimmer-text");
+
     // Description
     if (!data.description || data.description === "Not Found") {
       descEl.innerText = "Checking...";
@@ -564,52 +572,60 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
       descEl.innerText = data.description;
     }
 
-// DNP
-dnpEl.innerText = data.dnp || "-";
+    // DNP
+    dnpEl.innerText = data.dnp || "-";
 
-// Category
-cat1El.innerText = data.cat1 || "-";
+    // Category
+    cat1El.innerText = data.cat1 || "-";
 
     const qty = Number(row.querySelector(".qty").value) || 0;
     const dnp = Number(data.dnp) || 0;
-    
+
     const value = qty * dnp;
-    
+
     valueEl.innerText = value ? value.toLocaleString() : "-";
 
-  updateTotal();
-    
-  } catch (err) {
-    if (requestId !== currentRequest) return;
+    updateTotal();
 
+  } catch (err) {
+
+    // 🔥 FIX 2: HANDLE OLD REQUEST IN ERROR ALSO
+    if (requestId !== currentRequest) {
       descEl.classList.remove("shimmer-text");
       dnpEl.classList.remove("shimmer-text");
       cat1El.classList.remove("shimmer-text");
       valueEl.classList.remove("shimmer-text");
-    
-      descEl.innerText = "Error";
-      dnpEl.innerText = "-";
-      cat1El.innerText = "-";
-      valueEl.innerText = "-";
-      valueEl.classList.remove("shimmer-text");   // 🔥 MUST ADD
+      return;
+    }
+
+    descEl.classList.remove("shimmer-text");
+    dnpEl.classList.remove("shimmer-text");
+    cat1El.classList.remove("shimmer-text");
+    valueEl.classList.remove("shimmer-text");
+
+    descEl.innerText = "Error";
+    dnpEl.innerText = "-";
+    cat1El.innerText = "-";
+    valueEl.innerText = "-";
   }
 
-  }, 400));
-  
-  
-  row.querySelector(".qty").addEventListener("input", function () {
-  
-    const dnp = Number(row.querySelector(".dnp").innerText) || 0;
-    const qty = Number(this.value) || 0;
-  
-    const valueEl = row.querySelector(".value");
-  
-    const value = qty * dnp;
-  
-    valueEl.innerText = value ? value.toLocaleString() : "-";
-  
-    updateTotal();   // 🔥 updates total instantly
-  });
+}, 400));
+
+
+// QTY CHANGE (UNCHANGED)
+row.querySelector(".qty").addEventListener("input", function () {
+
+  const dnp = Number(row.querySelector(".dnp").innerText) || 0;
+  const qty = Number(this.value) || 0;
+
+  const valueEl = row.querySelector(".value");
+
+  const value = qty * dnp;
+
+  valueEl.innerText = value ? value.toLocaleString() : "-";
+
+  updateTotal();
+});
   
 
 const index = document.querySelectorAll("#tableBody tr").length;
