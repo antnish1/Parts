@@ -556,7 +556,7 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
     descEl.classList.remove("shimmer-text");
     dnpEl.classList.remove("shimmer-text");
     cat1El.classList.remove("shimmer-text");
-    
+    valueEl.classList.remove("shimmer-text");   // 🔥 MUST ADD
     // Description
     if (!data.description || data.description === "Not Found") {
       descEl.innerText = "Checking...";
@@ -591,6 +591,7 @@ cat1El.innerText = data.cat1 || "-";
       dnpEl.innerText = "-";
       cat1El.innerText = "-";
       valueEl.innerText = "-";
+      valueEl.classList.remove("shimmer-text");   // 🔥 MUST ADD
   }
 
   }, 400));
