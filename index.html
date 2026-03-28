@@ -377,8 +377,8 @@ function loadCreateOrder() {
   <div class="grid grid-cols-2 gap-3">
 
     <!-- CUSTOMER NAME -->
-    <div class="flex items-center bg-black border border-gray-600 rounded px-3 text-gray-400 text-sm">
-      <span id="customerName">--</span>
+    <div id="customerBox" class="flex items-center bg-black border border-gray-600 rounded px-3 text-sm text-gray-400 h-[34px]">
+      <span id="customerName" class="w-full">--</span>
     </div>
 
     <!-- FILE UPLOAD -->
@@ -427,7 +427,9 @@ function loadCreateOrder() {
 
     const customerEl = document.getElementById("customerName");
 
-    customerEl.classList.add("shimmer");
+    const box = document.getElementById("customerBox");
+    
+    box.classList.add("shimmer");
     customerEl.innerText = "";
 
     try {
@@ -441,7 +443,7 @@ function loadCreateOrder() {
 
       const data = await res.json();
 
-      customerEl.classList.remove("shimmer");
+      box.classList.remove("shimmer");
       customerEl.innerText = data.customer || "Not Found";
 
     } catch (err) {
