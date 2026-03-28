@@ -1159,39 +1159,28 @@ async function loadHQOrders(filter = "Pending") {
       filtered = data.filter(d => d.status === filter);
     }
   
-  let html = "";
-
-    filtered.forEach((d, index) => {
+    let html = `
+    <div class="mb-3 text-sm text-gray-300">
+      Processed Today: <span class="text-yellow-400 font-semibold" id="todayCount">0</span>
+    </div>
     
-      const isVOR = d.orderType === "VOR";
-    
-      html += `
-        <tr class="border-t border-gray-700 ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
-    
-          <td class="text-yellow-400 font-semibold">${d.tempOrderNo}</td>
-          <td>${new Date(d.date).toLocaleDateString()}</td>
-          <td>${d.branch}</td>
-          <td>${d.employeeName || "-"}</td>
-          <td>${d.orderType}</td>
-          <td>${d.orderFor}</td>
-          <td>${d.approvedBy || "-"}</td>
-          <td class="text-green-400">₹ ${d.totalValue || 0}</td>
-          <td>${d.status}</td>
-    
-          <td>
-            ${d.status === "Pending" ? `
-              <input id="po-${index}" placeholder="PO No"
-                class="bg-black border border-gray-600 px-2 py-1 w-24 text-xs rounded"/>
-    
-              <button onclick="processOrder('${d.tempOrderNo}', ${index})"
-                class="bg-green-500 px-2 py-1 text-xs rounded">
-                ✔
-              </button>
-            ` : "-"}
-          </td>
-    
+    <table class="w-full text-sm border border-gray-700 bg-gray-800">
+      <thead class="bg-black text-yellow-400">
+        <tr>
+          <th class="p-2">Temp / PO</th>
+          <th class="p-2">Date</th>
+          <th class="p-2">Branch</th>
+          <th class="p-2">Employee</th>
+          <th class="p-2">Type</th>
+          <th class="p-2">For</th>
+          <th class="p-2">Approved By</th>
+          <th class="p-2">Value</th>
+          <th class="p-2">Status</th>
+          <th class="p-2">Action</th>
         </tr>
-      `;
+      </thead>
+      <tbody>
+    `;
     });
 
   document.getElementById("hqOrders").innerHTML = html;
