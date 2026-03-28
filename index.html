@@ -356,12 +356,7 @@ function loadCreateOrder() {
 
   <!-- ROW 2 -->
   <div class="grid grid-cols-4 gap-3">
-
-    <!-- MACHINE + CUSTOMER STACK -->
-    <div class="flex flex-col">
-      <input id="machineNo" placeholder="Machine Number" class="input"/>
-      <p id="customerName" class="text-xs text-gray-400 mt-1">--</p>
-    </div>
+    <input id="machineNo" placeholder="Machine Number" class="input"/>
 
     <select id="warrantyStatus" class="input">
       <option value="">Warranty</option>
@@ -377,15 +372,15 @@ function loadCreateOrder() {
   </div>
 
   <!-- ROW 3 -->
-  <div class="grid grid-cols-4 gap-3">
+  <div class="grid grid-cols-2 gap-3">
 
-    <!-- EMPTY SPACE TO ALIGN WITH ABOVE -->
-    <div></div>
-
-    <!-- FILE UPLOAD (SPAN 3 COLUMNS) -->
-    <div class="col-span-3">
-      <input type="file" id="approvalDoc" class="input"/>
+    <!-- CUSTOMER NAME -->
+    <div class="flex items-center bg-black border border-gray-600 rounded px-3 text-gray-400 text-sm">
+      <span id="customerName">--</span>
     </div>
+
+    <!-- FILE UPLOAD -->
+    <input type="file" id="approvalDoc" class="input"/>
 
   </div>
 
