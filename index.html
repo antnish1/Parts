@@ -1002,6 +1002,7 @@ async function loadTrackOrders() {
           <td>${new Date(d.date).toLocaleDateString()}</td>
           <td>${d.orderType}</td>
           <td>${d.orderFor}</td>
+          
           <td>${d.machineNo}</td>
           <td>${d.customerName}</td>
           <td>${d.items.length} Items</td>
@@ -1119,19 +1120,20 @@ async function loadHQOrders(filter = "Pending") {
       Processed Today: <span class="text-yellow-400 font-semibold">${processedToday}</span>
     </div>
 
-    <table class="w-full text-sm border border-gray-700 bg-gray-800">
+    <table class="w-full text-sm text-center border border-gray-700 bg-gray-800">
       <thead class="bg-black text-yellow-400">
         <tr>
-          <th class="p-2">Temp / PO</th>
-          <th class="p-2">Date</th>
-          <th class="p-2">Branch</th>
-          <th class="p-2">Employee</th>
-          <th class="p-2">Type</th>
-          <th class="p-2">For</th>
-          <th class="p-2">Approved By</th>
-          <th class="p-2">Value</th>
-          <th class="p-2">Status</th>
-          <th class="p-2">Action</th>
+          <th class="p-2 text-center">Temp / PO</th>
+          <th class="p-2 text-center">Date</th>
+          <th class="p-2 text-center">Branch</th>
+          <th class="p-2 text-center">Employee</th>
+          <th class="p-2 text-center">Type</th>
+          <th class="p-2 text-center">For</th>
+          <th class="p-2 text-center">Approved By</th>
+          <th class="p-2 text-center">Value</th>
+          <th class="p-2 text-center">Items</th>
+          <th class="p-2 text-center">Status</th>
+          <th class="p-2 text-center">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -1143,17 +1145,18 @@ async function loadHQOrders(filter = "Pending") {
     const isVOR = d.orderType === "VOR";
 
     html += `
-      <tr class="border-t border-gray-700 ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
+      <tr onclick="toggleHQ(${index})"     class="border-t border-gray-700 cursor-pointer ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}"> ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
 
         <td class="text-yellow-400 font-semibold">${d.tempOrderNo}</td>
-        <td>${new Date(d.date).toLocaleDateString()}</td>
-        <td>${d.branch}</td>
-        <td>${d.employeeName || "-"}</td>
-        <td>${d.orderType}</td>
-        <td>${d.orderFor}</td>
-        <td>${d.approvedBy || "-"}</td>
+        <td class="text-center">${new Date(d.date).toLocaleDateString()}</td>
+        <td class="text-center">${d.branch}</td>
+        <td class="text-center">${d.employeeName || "-"}</td>
+        <td class="text-center">${d.orderType}</td>
+        <td class="text-center">${d.orderFor}</td>
+        <td class="text-center">${d.items.length}</td>
+        <td class="text-center">${d.approvedBy || "-"}</td>
         <td class="text-green-400">₹ ${d.totalValue || 0}</td>
-        <td>${d.status}</td>
+        <td class="text-center">${d.status}</td>
 
         <td>
           ${d.status === "Pending" ? `
@@ -1168,6 +1171,37 @@ async function loadHQOrders(filter = "Pending") {
         </td>
 
       </tr>
+
+    <tr id="hq-${index}" class="hidden bg-black">
+      <td colspan="11" class="p-3">
+    
+        <div class="space-y-2 text-sm">
+    
+          ${d.items.map(item => `
+            <div class="flex justify-between border-b border-gray-700 py-1">
+              <span class="w-[30%]">${item.partNo}</span>
+              <span class="w-[50%]">${item.description}</span>
+              <span class="w-[20%] text-right">Qty: ${item.qty}</span>
+            </div>
+          `).join("")}
+    
+          <!-- PO INPUT -->
+          <div class="flex justify-center gap-2 mt-3">
+            <input id="po-${index}" placeholder="Enter PO Number"
+              class="bg-black border border-gray-600 px-3 py-2 rounded w-60 text-center"/>
+    
+            <button onclick="processOrder('${d.tempOrderNo}', ${index})"
+              class="bg-green-500 px-4 py-2 rounded">
+              Process
+            </button>
+          </div>
+    
+        </div>
+    
+      </td>
+    </tr>
+
+      
     `;
   });
 
