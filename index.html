@@ -513,7 +513,7 @@ function addRow() {
   
     <!-- DELETE BUTTON -->
     <td class="p-1 text-center border-l">
-      <button onclick="this.closest('tr').remove()"
+      <button onclick="this.closest('tr').remove(); updateTotal();"
         class="w-7 h-7 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 hover:scale-110 transition">
         ✕
       </button>
