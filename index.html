@@ -1309,81 +1309,102 @@ async function loadHQOrders(filter = "Pending") {
       Processed Today: <span class="text-yellow-400 font-semibold">${processedToday}</span>
     </div>
 
-    <table class="w-full text-sm text-center border border-gray-700 bg-gray-800">
-      <thead class="bg-black text-yellow-400">
-        <tr>
-          <th class="p-2 text-center">Temp / PO</th>
-          <th class="p-2 text-center">Date</th>
-          <th class="p-2 text-center">Branch</th>
-          <th class="p-2 text-center">Employee</th>
-          <th class="p-2 text-center">Type</th>
-          <th class="p-2 text-center">For</th>
-          <th class="p-2 text-center">Approved By</th>
-          <th class="p-2 text-center">Value</th>
-          <th class="p-2 text-center">Items</th>
-          <th class="p-2 text-center">Status</th>
-          <th class="p-2 text-center">Action</th>
-        </tr>
-      </thead>
+        <table class="min-w-[1400px] text-sm border border-gray-700 bg-gray-800">
+          <thead class="bg-black text-yellow-400">
+            <tr>
+              <th class="p-3 whitespace-nowrap">Date</th>
+              <th class="p-3 whitespace-nowrap">Branch</th>
+              <th class="p-3 whitespace-nowrap">Type</th>
+              <th class="p-3 whitespace-nowrap">For</th>
+              <th class="p-3 whitespace-nowrap">Warranty</th>
+              <th class="p-3 whitespace-nowrap">Employee</th>
+              <th class="p-3 whitespace-nowrap">Approved By</th>
+              <th class="p-3 whitespace-nowrap">Call ID</th>
+              <th class="p-3 whitespace-nowrap">Machine</th>
+              <th class="p-3 whitespace-nowrap">Customer</th>
+              <th class="p-3 whitespace-nowrap">Contact</th>
+              <th class="p-3 whitespace-nowrap">Parts</th>
+              <th class="p-3 whitespace-nowrap">Total Qty</th>
+              <th class="p-3 whitespace-nowrap">Order No</th>
+              <th class="p-3 whitespace-nowrap">Value</th>
+              <th class="p-3 whitespace-nowrap">Status</th>
+            </tr>
+          </thead>
       <tbody>
   `;
 
   // 🔥 LOOP (THIS WAS MISSING)
-  filtered.forEach((d, index) => {
+ filtered.forEach((d, index) => {
 
-    const isVOR = d.orderType === "VOR";
+  const isVOR = d.orderType === "VOR";
+  const rowClass = isVOR ? "bg-red-900/30" : (index % 2 === 0 ? "bg-gray-800" : "bg-gray-900");
 
-    html += `
-     <tr onclick="toggleHQ(${index})"
-      class="border-t border-gray-700 cursor-pointer ${isVOR ? 'bg-red-900/30' : 'bg-gray-900'}">
+  const totalQty = d.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
 
-        <td class="text-yellow-400 font-semibold">${d.tempOrderNo}</td>
-        <td class="text-center">${new Date(d.date).toLocaleDateString()}</td>
-        <td class="text-center">${d.branch}</td>
-        <td class="text-center">${d.employeeName || "-"}</td>
-        <td class="text-center">${d.orderType}</td>
-        <td class="text-center">${d.orderFor}</td>
-        <td class="text-center">${d.approvedBy || "-"}</td>
-        <td class="text-green-400">₹ ${d.totalValue || 0}</td>
-        <td class="text-center">${d.items.length}</td>
-        <td class="text-center">${d.status}</td>
+  html += `
+    <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center cursor-pointer"
+        onclick="toggleHQ(${index})">
 
-
-
-      </tr>
+      <td class="p-3 whitespace-nowrap">${new Date(d.date).toLocaleDateString()}</td>
+      <td class="p-3 whitespace-nowrap">${d.branch}</td>
+      <td class="p-3 whitespace-nowrap">${d.orderType}</td>
+      <td class="p-3 whitespace-nowrap">${d.orderFor}</td>
+      <td class="p-3 whitespace-nowrap">${d.warrantyStatus || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.employeeName || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.approvedBy || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.callId || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.machineNo || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.customerName || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.contactNo || "-"}</td>
+      <td class="p-3 whitespace-nowrap">${d.items.length}</td>
+      <td class="p-3 whitespace-nowrap">${totalQty}</td>
+      <td class="p-3 whitespace-nowrap text-yellow-400 font-semibold">${d.tempOrderNo}</td>
+      <td class="p-3 whitespace-nowrap text-green-400 font-semibold">
+        ₹ ${Number(d.totalValue || 0).toLocaleString()}
+      </td>
+      <td class="p-3 whitespace-nowrap">${d.status}</td>
+    </tr>
 
     <tr id="hq-${index}" class="hidden bg-black">
-      <td colspan="11" class="p-3">
-    
-        <div class="space-y-2 text-sm">
-    
-          ${d.items.map(item => `
-            <div class="flex justify-between border-b border-gray-700 py-1">
-              <span class="w-[30%]">${item.partNo}</span>
-              <span class="w-[50%]">${item.description}</span>
-              <span class="w-[20%] text-right">Qty: ${item.qty}</span>
-            </div>
-          `).join("")}
-    
-          <!-- PO INPUT -->
+      <td colspan="16" class="p-3 text-left">
+
+        <!-- HEADER -->
+        <div class="flex justify-between text-yellow-400 font-semibold border-b border-gray-600 pb-1 mb-2">
+          <span class="w-[20%]">Part</span>
+          <span class="w-[35%]">Description</span>
+          <span class="w-[15%] text-right">Qty</span>
+          <span class="w-[25%] text-right">Value</span>
+        </div>
+
+        <!-- ITEMS -->
+        ${d.items.map(item => `
+          <div class="flex justify-between border-b border-gray-700 py-1 text-sm">
+            <span class="w-[20%]">${item.partNo}</span>
+            <span class="w-[35%]">${item.description}</span>
+            <span class="w-[15%] text-right">Qty: ${item.qty}</span>
+            <span class="w-[25%] text-right text-green-400">
+              ₹ ${Number(item.value || 0).toLocaleString()}
+            </span>
+          </div>
+        `).join("")}
+
+        <!-- 🔥 PROCESS SECTION -->
+        ${d.status === "Pending" ? `
           <div class="flex justify-center gap-2 mt-3">
             <input id="po-${index}" placeholder="Enter PO Number"
               class="bg-black border border-gray-600 px-3 py-2 rounded w-60 text-center"/>
-    
+
             <button onclick="event.stopPropagation(); processOrder('${d.tempOrderNo}', ${index})"
               class="bg-green-500 px-4 py-2 rounded">
               Process
             </button>
           </div>
-    
-        </div>
-    
+        ` : ""}
+
       </td>
     </tr>
-
-      
-    `;
-  });
+  `;
+});
 
   // 🔥 CLOSE TABLE
   html += `</tbody></table>`;
