@@ -877,9 +877,11 @@ async function submitAll() {
       // ✅ Skip empty rows instead of breaking app
       if (!partNo || !qty) continue;
 
-      if (!desc || desc === "Not Found") {
-        showPopup("Invalid Part Number in one of the rows");
-        continue;
+      if (!desc || desc === "Not Found" || desc === "Checking...") {
+        showPopup("Invalid or loading Part Number ❗ Please fix before submitting");
+        hideLoader();
+        isSubmitting = false;
+        return; // 🔥 STOP ENTIRE SUBMISSION
       }
 
       const payload = {
@@ -906,10 +908,16 @@ async function submitAll() {
       });
 
       const result = await res.json();
-      console.log("RESPONSE:", result);
+      
+      if (result.status !== "success") {
+        showPopup("Failed to save order ❗ Please try again");
+        hideLoader();
+        isSubmitting = false;
+        return;
+      }
     }
 
-    showPopup("Submitted successfully!");
+    showPopup(`Submitted successfully! ✅\nTemp Order No: ${tempOrderNo}`);
     document.getElementById("tableBody").innerHTML = "";
     addRow();
 
