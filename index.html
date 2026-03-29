@@ -857,7 +857,7 @@ async function submitAll() {
 
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-
+console.log("FINAL PAYLOAD:", payload);
   // 🔥 GET SAFE TEMP ORDER ID FROM SERVER
             const tempRes = await fetch(API, {
               method: "POST",
@@ -914,28 +914,24 @@ console.log("TEMP ID:", tempOrderNo);
         return;
       }
 
-      // 🔥 GET DNP & VALUE FROM UI
-      const dnp = Number(row.querySelector(".dnp").innerText.replace(/,/g, "")) || 0;
-      const value = Number(row.querySelector(".value").innerText.replace(/,/g, "")) || 0;
+
       
 const payload = {
   action: "submit",
-  branch: user.branch || "",
-  orderType: orderType || "",
-  orderFor: orderFor || "",
-  warrantyStatus: warrantyStatus || "",
-  employeeName: employeeName || "",
-  approvedBy: approvedBy || "",
-  callId: callId || "",
-  machineNo: machineNo || "",
-  customerName: customerName || "",
-  contactNo: contactNo || "",
-  partNo: partNo || "",
-  qty: qty || 0,
-  description: desc || "",
-  tempOrderNo: tempOrderNo || "TMP-ERROR",
-  dnp: dnp,
-  value: value
+  branch: user.branch,
+  orderType,
+  orderFor,
+  warrantyStatus,
+  employeeName,
+  approvedBy,
+  callId,
+  machineNo,
+  customerName,
+  contactNo,
+  partNo,
+  qty,
+  description: desc,
+  tempOrderNo
 };
           
           const res = await fetch(API, {
