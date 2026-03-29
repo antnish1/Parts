@@ -806,7 +806,7 @@ async function submitAll() {
   const approvedBy = document.getElementById("approvedBy").value;
   const callId = document.getElementById("callId").value;
 
-  // ✅ BASIC MANDATORY CHECK
+  // ✅ BASIC VALIDATION
   if (!orderType || !orderFor || !employeeName) {
     showPopup("Please fill mandatory fields ❗");
     hideLoader();
@@ -824,10 +824,8 @@ async function submitAll() {
     const qty = r.querySelector(".qty").value;
     const desc = r.querySelector(".desc").innerText.trim();
 
-    // ❗ SKIP EMPTY ROWS
     if (!partNo || !qty) continue;
 
-    // ❗ BLOCK INVALID PARTS
     if (!desc || desc === "Not Found" || desc === "Checking...") {
       showPopup("Invalid or loading Part Number ❗");
       hideLoader();
@@ -838,7 +836,6 @@ async function submitAll() {
     validRows.push(r);
   }
 
-  // ❗ NO VALID ROWS
   if (validRows.length === 0) {
     showPopup("Enter at least one valid part");
     hideLoader();
@@ -848,7 +845,7 @@ async function submitAll() {
 
   try {
 
-    // 🔥 GET TEMP ORDER ID (SAFE)
+    // 🔥 GET TEMP ORDER ID
     const tempRes = await fetch(API, {
       method: "POST",
       headers: {
@@ -868,8 +865,10 @@ async function submitAll() {
     }
 
     console.log("TEMP ID:", tempOrderNo);
+
     let successCount = 0;
-    // 🔥 LOOP THROUGH ROWS
+
+    // 🔥 LOOP WITH DELAY (CRITICAL FIX)
     for (let row of validRows) {
 
       const partNo = row.querySelector(".partNo").value.trim();
@@ -896,24 +895,33 @@ async function submitAll() {
 
       console.log("SENDING:", payload);
 
-      const res = await fetch(API, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await fetch(API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
 
-      const result = await res.json();
+        const result = await res.json();
 
-      if (result.status !== "success") {
-        console.error("FAILED ROW:", payload);
-        continue; // 🔥 DO NOT STOP LOOP
+        if (result.status === "success") {
+          successCount++;
+        } else {
+          console.error("FAILED ROW:", payload);
+        }
+
+      } catch (err) {
+        console.error("ROW ERROR:", err);
       }
+
+      // 🔥 VERY IMPORTANT DELAY (PREVENTS CORS FAILURE)
+      await new Promise(resolve => setTimeout(resolve, 400));
     }
 
-    // ✅ SUCCESS
-    showPopup(`Submitted successfully! ✅\nTemp Order No: ${tempOrderNo}`);
+    // ✅ SUCCESS MESSAGE
+    showPopup(`Submitted ${successCount} parts ✅\nTemp Order No: ${tempOrderNo}`);
 
     document.getElementById("tableBody").innerHTML = "";
     addRow();
@@ -923,11 +931,9 @@ async function submitAll() {
     showPopup("Submission failed ❗");
   }
 
-  // ✅ RESET
   hideLoader();
   isSubmitting = false;
 }
-
 
 
 
