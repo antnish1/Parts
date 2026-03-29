@@ -857,7 +857,7 @@ async function submitAll() {
 
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-console.log("FINAL PAYLOAD:", payload);
+
   // 🔥 GET SAFE TEMP ORDER ID FROM SERVER
             const tempRes = await fetch(API, {
               method: "POST",
@@ -933,6 +933,9 @@ const payload = {
   description: desc,
   tempOrderNo
 };
+
+
+      console.log("FINAL PAYLOAD:", payload);
           
           const res = await fetch(API, {
             method: "POST",
