@@ -491,39 +491,89 @@ function loadCreateOrder() {
   `;
 
   // MACHINE FETCH (same logic)
-  document.getElementById("machineNo").addEventListener("blur", async function () {
-    const machineNo = this.value.trim();
-    if (!machineNo) return;
+document.getElementById("machineNo").addEventListener("blur", async function () {
+  const machineNo = this.value.trim();
+  if (!machineNo) return;
 
-    const customerEl = document.getElementById("customerName");
+  const customerEl = document.getElementById("customerName");
+  const box = document.getElementById("customerBox");
 
-    const box = document.getElementById("customerBox");
-    
-    box.classList.add("shimmer-box");
-    customerEl.innerText = "";
+  box.classList.add("shimmer-box");
+  customerEl.innerText = "";
 
-    try {
-      const res = await fetch(API, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "getMachine",
-          machineNo: machineNo
-        })
-      });
+  try {
+    const res = await fetch(API, {
+      method: "POST",
+      body: JSON.stringify({
+        action: "getMachine",
+        machineNo: machineNo
+      })
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      box.classList.remove("shimmer-box");
-      customerEl.innerText = data.customer || "Not Found";
+    box.classList.remove("shimmer-box");
 
-    } catch (err) {
-      customerEl.classList.remove("shimmer");
-      customerEl.innerText = "Error";
+    // ✅ CASE 1: FOUND
+    if (data.customer && data.customer !== "Not Found") {
+      customerEl.innerText = data.customer;
+      return;
     }
-  });
 
-  addRow();
+    // ❗ CASE 2: NOT FOUND → CUSTOM POPUP INPUT
+    showCustomerInputPopup();
+
+  } catch (err) {
+    box.classList.remove("shimmer-box");
+    customerEl.innerText = "Error";
+  }
+});
+
+addRow();
 }
+
+
+
+function showCustomerInputPopup() {
+  const popup = document.getElementById("popup");
+  const msgEl = document.getElementById("popupMsg");
+
+  // Inject input UI inside popup
+  msgEl.innerHTML = `
+    <div class="text-center space-y-3">
+      <p class="text-white text-sm">Customer not found ❗</p>
+      
+      <input id="manualCustomer"
+        placeholder="Enter Customer Name"
+        class="w-full bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
+
+      <button onclick="saveManualCustomer()"
+        class="bg-yellow-400 text-black px-4 py-2 rounded font-semibold hover:bg-yellow-500">
+        Save
+      </button>
+    </div>
+  `;
+
+  popup.classList.remove("hidden");
+}
+
+
+
+function saveManualCustomer() {
+  const input = document.getElementById("manualCustomer");
+  const customerName = input.value.trim();
+
+  if (!customerName) {
+    alert("Please enter customer name");
+    return;
+  }
+
+  document.getElementById("customerName").innerText = customerName;
+
+  closePopup();
+}
+  
+
   
 function addRow() {
   const row = document.createElement("tr");
