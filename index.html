@@ -1308,29 +1308,32 @@ async function loadHQOrders(filter = "Pending") {
     <div class="mb-3 text-sm text-gray-300">
       Processed Today: <span class="text-yellow-400 font-semibold">${processedToday}</span>
     </div>
-
-        <table class="min-w-[1400px] text-sm border border-gray-700 bg-gray-800">
-          <thead class="bg-black text-yellow-400">
-            <tr>
-              <th class="p-3 whitespace-nowrap">Date</th>
-              <th class="p-3 whitespace-nowrap">Branch</th>
-              <th class="p-3 whitespace-nowrap">Type</th>
-              <th class="p-3 whitespace-nowrap">For</th>
-              <th class="p-3 whitespace-nowrap">Warranty</th>
-              <th class="p-3 whitespace-nowrap">Employee</th>
-              <th class="p-3 whitespace-nowrap">Approved By</th>
-              <th class="p-3 whitespace-nowrap">Call ID</th>
-              <th class="p-3 whitespace-nowrap">Machine</th>
-              <th class="p-3 whitespace-nowrap">Customer</th>
-              <th class="p-3 whitespace-nowrap">Contact</th>
-              <th class="p-3 whitespace-nowrap">Parts</th>
-              <th class="p-3 whitespace-nowrap">Total Qty</th>
-              <th class="p-3 whitespace-nowrap">Order No</th>
-              <th class="p-3 whitespace-nowrap">Value</th>
-              <th class="p-3 whitespace-nowrap">Status</th>
-            </tr>
-          </thead>
-      <tbody>
+  
+    <!-- 🔥 SCROLL WRAPPER -->
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 overflow-x-auto">
+  
+      <table class="min-w-[1400px] text-sm border border-gray-700 bg-gray-800">
+        <thead class="bg-black text-yellow-400">
+          <tr>
+            <th class="p-3 whitespace-nowrap">Date</th>
+            <th class="p-3 whitespace-nowrap">Branch</th>
+            <th class="p-3 whitespace-nowrap">Type</th>
+            <th class="p-3 whitespace-nowrap">For</th>
+            <th class="p-3 whitespace-nowrap">Warranty</th>
+            <th class="p-3 whitespace-nowrap">Employee</th>
+            <th class="p-3 whitespace-nowrap">Approved By</th>
+            <th class="p-3 whitespace-nowrap">Call ID</th>
+            <th class="p-3 whitespace-nowrap">Machine</th>
+            <th class="p-3 whitespace-nowrap">Customer</th>
+            <th class="p-3 whitespace-nowrap">Contact</th>
+            <th class="p-3 whitespace-nowrap">Parts</th>
+            <th class="p-3 whitespace-nowrap">Total Qty</th>
+            <th class="p-3 whitespace-nowrap">Order No</th>
+            <th class="p-3 whitespace-nowrap">Value</th>
+            <th class="p-3 whitespace-nowrap">Status</th>
+          </tr>
+        </thead>
+        <tbody>
   `;
 
   // 🔥 LOOP (THIS WAS MISSING)
@@ -1407,7 +1410,11 @@ async function loadHQOrders(filter = "Pending") {
 });
 
   // 🔥 CLOSE TABLE
-  html += `</tbody></table>`;
+  html += `
+      </tbody>
+    </table>
+  </div>
+`;
 
   document.getElementById("hqOrders").innerHTML = html;
 
