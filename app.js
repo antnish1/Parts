@@ -4,7 +4,61 @@ const API = "https://script.google.com/macros/s/AKfycbzWsFW_YBfbOwCIg7_fRVP347kb
 let isSubmitting = false;
 let isLoggingIn = false;
 
+let currentPartData = {};
+
+document.addEventListener("input", async (e) => {
+  if (e.target.id === "partNoInput") {
+    const partNo = e.target.value.trim();
+    if (!partNo) return;
+
+    const res = await fetch(`${API}?partNo=${encodeURIComponent(partNo)}`);
+    const data = await res.json();
+
+    currentPartData = data;
+
+    document.getElementById("partDesc").innerText = data.description || "Not Found";
+  }
+});
+
+
+
 // ================= UTIL =================
+
+function addPartToList() {
+  const partNo = document.getElementById("partNoInput").value.trim();
+  const qty = Number(document.getElementById("qtyInput").value);
+
+  if (!partNo || !qty) {
+    showPopup("Enter part & qty");
+    return;
+  }
+
+  const dnp = Number(currentPartData.dnp) || 0;
+  const value = qty * dnp;
+
+  const data = {
+    partNo,
+    qty,
+    description: currentPartData.description || "-",
+    value: value.toLocaleString()
+  };
+
+  const container = document.getElementById("partsList");
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = PartCard(data);
+
+  container.appendChild(wrapper.firstElementChild);
+
+  updateTotal();
+
+  // 🔥 RESET INPUT
+  document.getElementById("partNoInput").value = "";
+  document.getElementById("qtyInput").value = "";
+  document.getElementById("partDesc").innerText = "Description";
+}
+
+
 function debounce(fn, delay) {
   let timer;
   return function (...args) {
@@ -210,9 +264,9 @@ function calculateCard(card) {
 function updateTotal() {
   let total = 0;
 
-  document.querySelectorAll(".value").forEach(el => {
-    const v = Number(el.innerText.replace(/[^\d]/g, "")) || 0;
-    total += v;
+  document.querySelectorAll("#partsList .text-green-400").forEach(el => {
+    const val = Number(el.innerText.replace(/[^\d]/g, "")) || 0;
+    total += val;
   });
 
   document.getElementById("totalValue").innerText = total.toLocaleString();
