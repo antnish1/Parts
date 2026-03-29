@@ -5,15 +5,18 @@ body {
 /* App feel */
 .card {
   background: #111827;
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 18px;
+  padding: 20px; /* 🔥 more padding */
   border: 1px solid #1f2937;
 }
 
 .label {
-  font-size: 13px;
-  color: #9ca3af;
-  margin-bottom: 4px;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+h2 {
+  font-size: 18px;
 }
 
 .input {
@@ -48,7 +51,8 @@ body {
   background: #facc15;
   color: black;
   font-weight: 600;
-  border-radius: 12px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 16px; /* 🔥 bigger tap area */
   width: 100%;
+  font-size: 16px;
 }
