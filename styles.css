@@ -21,18 +21,18 @@ h2 {
 
 .input {
   width: 100%;
-  height: 56px; /* 🔥 bigger */
-  border-radius: 14px;
+  height: 64px; /* 🔥 BIG */
+  border-radius: 16px;
   background: #020617;
   border: 1px solid #374151;
-  padding: 14px;
-  font-size: 16px; /* 🔥 important for mobile */
+  padding: 16px;
+  font-size: 17px; /* 🔥 BIG TEXT */
   color: white;
 }
 
 .input:focus {
   border-color: #facc15;
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.2);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
   outline: none;
 }
 /* Sticky footer */
