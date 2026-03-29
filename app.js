@@ -262,3 +262,17 @@ async function submitAll() {
 function loadAdmin() {
   document.getElementById("app").innerHTML = `<div class="p-4">Admin Panel</div>`;
 }
+
+
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+
+  if (!el) return;
+
+  if (el.classList.contains("hidden")) {
+    el.classList.remove("hidden");
+  } else {
+    el.classList.add("hidden");
+  }
+}
