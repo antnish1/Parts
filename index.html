@@ -538,7 +538,6 @@ function showCustomerInputPopup() {
   const popup = document.getElementById("popup");
   const msgEl = document.getElementById("popupMsg");
 
-  // Inject input UI inside popup
   msgEl.innerHTML = `
     <div class="text-center space-y-3">
       <p class="text-white text-sm">Customer not found ❗</p>
@@ -547,15 +546,48 @@ function showCustomerInputPopup() {
         placeholder="Enter Customer Name"
         class="w-full bg-black border border-gray-600 text-white px-3 py-2 rounded"/>
 
-      <button onclick="saveManualCustomer()"
-        class="bg-yellow-400 text-black px-4 py-2 rounded font-semibold hover:bg-yellow-500">
-        Save
-      </button>
+      <!-- 🔥 BUTTON ROW -->
+      <div class="flex gap-3 justify-center">
+        
+        <button onclick="saveManualCustomer()"
+          class="bg-yellow-400 text-black px-4 py-2 rounded font-semibold hover:bg-yellow-500 w-1/2">
+          Save
+        </button>
+
+        <button onclick="cancelCustomerInput()"
+          class="bg-gray-700 text-white px-4 py-2 rounded font-semibold hover:bg-gray-600 w-1/2">
+          Cancel
+        </button>
+
+      </div>
     </div>
   `;
 
   popup.classList.remove("hidden");
+
+  // ✅ Auto focus + Enter support
+  setTimeout(() => {
+    const input = document.getElementById("manualCustomer");
+
+    if (input) {
+      input.focus();
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          saveManualCustomer();
+        }
+      });
+    }
+  }, 100);
 }
+
+function cancelCustomerInput() {
+  closePopup();
+
+  // Optional: reset UI
+  document.getElementById("customerName").innerText = "--";
+}
+  
 
 
 
