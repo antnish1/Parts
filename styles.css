@@ -1,5 +1,5 @@
 body {
-  font-size: 20px; font-family: system-ui, sans-serif;
+  font-size: 26px; font-family: system-ui, sans-serif;
 }
 
 
@@ -28,7 +28,7 @@ h2 {
   background: #010d3d;
   border: 1px solid #666f7d;
   padding: 20px;
-  font-size: 24px;
+  font-size: 48px;
   color: white;
 }
 
