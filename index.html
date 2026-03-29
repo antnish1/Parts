@@ -840,11 +840,15 @@ async function submitAll() {
 
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-  let last = Number(localStorage.getItem("lastOrderNo") || 1000);
-    last++;
-    localStorage.setItem("lastOrderNo", last);
-    
-    const tempOrderNo = "TMP-" + last;
+// 🔥 GET SAFE TEMP ORDER ID FROM SERVER
+  const tempRes = await fetch(API, {
+    method: "POST",
+    body: JSON.stringify({ action: "getNextTempId" })
+  });
+  
+  const tempData = await tempRes.json();
+  
+  const tempOrderNo = tempData.tempOrderNo;
   for (let row of rows) {
     const partNo = row.querySelector(".partNo").value.trim();
     const qty = row.querySelector(".qty").value;
