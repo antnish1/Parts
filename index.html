@@ -1122,26 +1122,26 @@ async function loadTrackOrders() {
       </div>
 
       <!-- TABLE -->
-      <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
-
-        <table class="w-full text-sm border border-gray-700 table-fixed bg-gray-800">
+    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700 overflow-x-auto">
+    
+      <table class="min-w-[1400px] text-sm border border-gray-700 bg-gray-800">
           <thead class="bg-black text-yellow-400">
             <tr>
-              <th class="p-2">Date</th>
-              <th class="p-2">Type</th>
-              <th class="p-2">For</th>
-              <th class="p-2">Warranty</th>
-              <th class="p-2">Employee</th>
-              <th class="p-2">Approved By</th>
-              <th class="p-2">Call ID</th>
-              <th class="p-2">Machine</th>
-              <th class="p-2">Customer</th>
-              <th class="p-2">Contact</th>
-              <th class="p-2">Parts</th>
-              <th class="p-2">Total Qty</th>
-              <th class="p-2">Order No</th>
-              <th class="p-2">Value</th>
-              <th class="p-2">Status</th>
+              <th class="p-3 whitespace-nowrap">Date</th>
+              <th class="p-3 whitespace-nowrap">Type</th>
+              <th class="p-3 whitespace-nowrap">For</th>
+              <th class="p-3 whitespace-nowrap">Warranty</th>
+              <th class="p-3 whitespace-nowrap">Employee</th>
+              <th class="p-3 whitespace-nowrap">Approved By</th>
+              <th class="p-3 whitespace-nowrap">Call ID</th>
+              <th class="p-3 whitespace-nowrap">Machine</th>
+              <th class="p-3 whitespace-nowrap">Customer</th>
+              <th class="p-3 whitespace-nowrap">Contact</th>
+              <th class="p-3 whitespace-nowrap">Parts</th>
+              <th class="p-3 whitespace-nowrap">Total Qty</th>
+              <th class="p-3 whitespace-nowrap">Order No</th>
+              <th class="p-3 whitespace-nowrap">Value</th>
+              <th class="p-3 whitespace-nowrap">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -1160,21 +1160,21 @@ async function loadTrackOrders() {
           <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center cursor-pointer"
               onclick="toggleItems(${index})">
       
-            <td>${new Date(d.date).toLocaleDateString()}</td>
-            <td>${d.orderType}</td>
-            <td>${d.orderFor}</td>
-            <td>${d.warrantyStatus || "-"}</td>
-            <td>${d.employeeName || "-"}</td>
-            <td>${d.approvedBy || "-"}</td>
-            <td>${d.callId || "-"}</td>
-            <td>${d.machineNo || "-"}</td>
-            <td>${d.customerName || "-"}</td>
-            <td>${d.contactNo || "-"}</td>
-            <td>${d.items.length}</td>
-            <td>${totalQty}</td>
-            <td>${d.orderNo || "-"}</td>
-            <td>₹ ${d.totalValue || 0}</td>
-            <td>${d.status}</td>
+              <td class="p-3 whitespace-nowrap">${new Date(d.date).toLocaleDateString()}</td>
+              <td class="p-3 whitespace-nowrap">${d.orderType}</td>
+              <td class="p-3 whitespace-nowrap">${d.orderFor}</td>
+              <td class="p-3 whitespace-nowrap">${d.warrantyStatus || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.employeeName || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.approvedBy || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.callId || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.machineNo || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.customerName || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.contactNo || "-"}</td>
+              <td class="p-3 whitespace-nowrap">${d.items.length}</td>
+              <td class="p-3 whitespace-nowrap">${totalQty}</td>
+              <td class="p-3 whitespace-nowrap">${d.orderNo || "-"}</td>
+              <td class="p-3 whitespace-nowrap">₹ ${d.totalValue || 0}</td>
+              <td class="p-3 whitespace-nowrap">${d.status}</td>
           </tr>
       
           <tr id="items-${index}" class="hidden bg-black">
