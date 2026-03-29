@@ -83,16 +83,11 @@
 </div>
 
 <!-- Popup -->
-<div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+<div id="popup" onclick="closePopup()" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
 
-  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl text-center w-[300px]">
+  <div onclick="event.stopPropagation()" class="bg-gray-900 border border-gray-700 p-6 rounded-xl text-center w-[300px]">
 
     <p id="popupMsg" class="mb-5 text-white text-sm"></p>
-
-    <button onclick="closePopup()"
-      class="bg-yellow-400 text-black px-5 py-2 rounded font-semibold hover:bg-yellow-500 transition">
-      OK
-    </button>
 
   </div>
 
@@ -585,7 +580,7 @@ function showCustomerInputPopup() {
       </div>
     </div>
   `;
-  document.querySelector("#popup button")?.classList.add("hidden");
+  
   popup.classList.remove("hidden");
 
   // ✅ Auto focus + Enter support
