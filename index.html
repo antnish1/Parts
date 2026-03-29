@@ -896,6 +896,10 @@ async function submitAll() {
         return;
       }
 
+      // 🔥 GET DNP & VALUE FROM UI
+      const dnp = Number(row.querySelector(".dnp").innerText.replace(/,/g, "")) || 0;
+      const value = Number(row.querySelector(".value").innerText.replace(/,/g, "")) || 0;
+      
       const payload = {
         action: "submit",
         branch: user.branch,
@@ -912,6 +916,8 @@ async function submitAll() {
         qty,
         description: desc,
         tempOrderNo: tempOrderNo,
+        dnp: dnp,        // ✅ NEW
+        value: value     // ✅ NEW
       };
 
       const res = await fetch(API, {
