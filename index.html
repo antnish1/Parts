@@ -825,6 +825,19 @@ async function submitAll() {
   }
   const rows = document.querySelectorAll("#tableBody tr");
 
+
+  // ❗ CHECK IF ANY PART IS STILL LOADING
+  for (let row of rows) {
+    const descEl = row.querySelector(".desc");
+  
+    if (descEl && descEl.classList.contains("shimmer-text")) {
+      showPopup("Please wait ❗ Part details are still loading.\nDo not proceed until all part names are loaded.");
+      return;
+    }
+  }
+
+  
+
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
   let last = Number(localStorage.getItem("lastOrderNo") || 1000);
