@@ -1157,29 +1157,34 @@ async function loadTrackOrders() {
         <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center cursor-pointer"
             onclick="toggleItems(${index})">
     
-          // 🔥 CALCULATE TOTAL QTY
+          // 🔥 CALCULATE TOTAL QTY (OUTSIDE HTML)
           const totalQty = d.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
           
-          <td>${new Date(d.date).toLocaleDateString()}</td>
-          <td>${d.orderType}</td>
-          <td>${d.orderFor}</td>
-          <td>${d.warrantyStatus || "-"}</td>
-          <td>${d.employeeName || "-"}</td>
-          <td>${d.approvedBy || "-"}</td>
-          <td>${d.callId || "-"}</td>
-          <td>${d.machineNo || "-"}</td>
-          <td>${d.customerName || "-"}</td>
-          <td>${d.contactNo || "-"}</td>
-          <td>${d.items.length}</td>
-          <td>${totalQty}</td>
-          <td>${d.orderNo || "-"}</td>
-          <td>₹ ${d.totalValue || 0}</td>
-          <td>${d.status}</td>
-        </tr>
+          html += `
+          <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center cursor-pointer"
+              onclick="toggleItems(${index})">
+          
+            <td>${new Date(d.date).toLocaleDateString()}</td>
+            <td>${d.orderType}</td>
+            <td>${d.orderFor}</td>
+            <td>${d.warrantyStatus || "-"}</td>
+            <td>${d.employeeName || "-"}</td>
+            <td>${d.approvedBy || "-"}</td>
+            <td>${d.callId || "-"}</td>
+            <td>${d.machineNo || "-"}</td>
+            <td>${d.customerName || "-"}</td>
+            <td>${d.contactNo || "-"}</td>
+            <td>${d.items.length}</td>
+            <td>${totalQty}</td>
+            <td>${d.orderNo || "-"}</td>
+            <td>₹ ${d.totalValue || 0}</td>
+            <td>${d.status}</td>
+          </tr>
+          `;
     
         <!-- EXPANDABLE ROW -->
         <tr id="items-${index}" class="hidden bg-black">
-          <td colspan="10" class="p-3 text-left">
+          <td colspan="15" class="p-3 text-left">
     
             ${d.items.map(item => `
               <div class="flex justify-between border-b border-gray-700 py-1 text-sm">
