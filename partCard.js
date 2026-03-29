@@ -1,12 +1,10 @@
 function PartCard() {
   return `
-    <div class="bg-black p-3 rounded-xl space-y-2 border border-gray-700">
+    <div class="bg-black p-4 rounded-2xl space-y-3 border border-gray-700">
 
       <input class="partNo input" placeholder="Part No"/>
 
-      <div class="flex gap-2">
-        <input type="number" class="qty input" placeholder="Qty"/>
-      </div>
+      <input type="number" class="qty input" placeholder="Quantity"/>
 
       <div class="text-sm text-gray-400 desc">Description</div>
 
