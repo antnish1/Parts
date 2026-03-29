@@ -278,9 +278,9 @@ async function submitAll() {
 
   const items = [];
 
-  document.querySelectorAll("#partsContainer > div").forEach(card => {
-    const partNo = card.querySelector(".partNo").value.trim();
-    const qty = card.querySelector(".qty").value;
+  document.querySelectorAll("#partsList > div").forEach(card => {
+    const partNo = card.querySelector(".font-semibold").innerText;
+    const qty = card.innerText.match(/Qty: (\d+)/)?.[1];
     const desc = card.querySelector(".desc").innerText;
 
     if (!partNo || !qty) return;
