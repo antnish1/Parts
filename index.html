@@ -1130,12 +1130,17 @@ async function loadTrackOrders() {
               <th class="p-2">Date</th>
               <th class="p-2">Type</th>
               <th class="p-2">For</th>
+              <th class="p-2">Warranty</th>
+              <th class="p-2">Employee</th>
+              <th class="p-2">Approved By</th>
+              <th class="p-2">Call ID</th>
               <th class="p-2">Machine</th>
               <th class="p-2">Customer</th>
-              <th class="p-2">Part</th>
-              <th class="p-2">Qty</th>
-              <th class="p-2">Description</th>
+              <th class="p-2">Contact</th>
+              <th class="p-2">Parts</th>
+              <th class="p-2">Total Qty</th>
               <th class="p-2">Order No</th>
+              <th class="p-2">Value</th>
               <th class="p-2">Status</th>
             </tr>
           </thead>
@@ -1152,16 +1157,23 @@ async function loadTrackOrders() {
         <tr class="${rowClass} border-t border-gray-700 text-gray-200 text-center cursor-pointer"
             onclick="toggleItems(${index})">
     
+          // 🔥 CALCULATE TOTAL QTY
+          const totalQty = d.items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+          
           <td>${new Date(d.date).toLocaleDateString()}</td>
           <td>${d.orderType}</td>
           <td>${d.orderFor}</td>
-          
-          <td>${d.machineNo}</td>
-          <td>${d.customerName}</td>
-          <td>${d.items.length} Items</td>
-          <td>-</td>
-          <td>-</td>
+          <td>${d.warrantyStatus || "-"}</td>
+          <td>${d.employeeName || "-"}</td>
+          <td>${d.approvedBy || "-"}</td>
+          <td>${d.callId || "-"}</td>
+          <td>${d.machineNo || "-"}</td>
+          <td>${d.customerName || "-"}</td>
+          <td>${d.contactNo || "-"}</td>
+          <td>${d.items.length}</td>
+          <td>${totalQty}</td>
           <td>${d.orderNo || "-"}</td>
+          <td>₹ ${d.totalValue || 0}</td>
           <td>${d.status}</td>
         </tr>
     
