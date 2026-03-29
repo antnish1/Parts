@@ -284,10 +284,13 @@ async function login() {
       password: password
     };
 
-    const res = await fetch(API, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+              const res = await fetch(API, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "text/plain;charset=utf-8"
+                },
+                body: JSON.stringify(payload)
+              });
 
     const data = await res.json();
     console.log("LOGIN RESPONSE:", data);
@@ -853,11 +856,13 @@ async function submitAll() {
   let hasValidRow = false;
 
   // 🔥 GET SAFE TEMP ORDER ID FROM SERVER
-  const tempRes = await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({ action: "getNextTempId" })
-  });
-  
+            const tempRes = await fetch(API, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify({ action: "getNextTempId" })
+            });
   const tempData = await tempRes.json();
   
   const tempOrderNo = tempData.tempOrderNo;
@@ -920,10 +925,13 @@ async function submitAll() {
         value: value     // ✅ NEW
       };
 
-      const res = await fetch(API, {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
+                  const res = await fetch(API, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "text/plain;charset=utf-8"
+                    },
+                    body: JSON.stringify(payload)
+                  });
 
       const result = await res.json();
       
@@ -1006,10 +1014,13 @@ async function loadTrackOrders() {
   const user = getUser();
 
   try {
-    const res = await fetch(API, {
-      method: "POST",
-      body: JSON.stringify({ action: "getRequests" })
-    });
+            const res = await fetch(API, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify({ action: "getRequests" })
+            });
 
     const data = await res.json();
 
@@ -1283,10 +1294,13 @@ async function loadHQOrders(filter = "Pending") {
 
   showLoader();
 
-  const res = await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({ action: "getRequests" })
-  });
+            const res = await fetch(API, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify({ action: "getRequests" })
+            });
 
   const data = await res.json();
 
@@ -1438,14 +1452,17 @@ async function processOrder(tempOrderNo, index) {
 
   showLoader();
 
-  await fetch(API, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "updateOrder",
-      tempOrderNo: tempOrderNo,
-      orderNo: poNo
-    })
-  });
+            await fetch(API, {
+              method: "POST",
+              headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+              },
+              body: JSON.stringify({
+                action: "updateOrder",
+                tempOrderNo: tempOrderNo,
+                orderNo: poNo
+              })
+            });
 
   hideLoader();
   showPopup("Order Processed!");
