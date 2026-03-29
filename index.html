@@ -868,7 +868,7 @@ async function submitAll() {
     }
 
     console.log("TEMP ID:", tempOrderNo);
-
+    let successCount = 0;
     // 🔥 LOOP THROUGH ROWS
     for (let row of validRows) {
 
@@ -907,10 +907,8 @@ async function submitAll() {
       const result = await res.json();
 
       if (result.status !== "success") {
-        showPopup("Failed to save one part ❗");
-        hideLoader();
-        isSubmitting = false;
-        return;
+        console.error("FAILED ROW:", payload);
+        continue; // 🔥 DO NOT STOP LOOP
       }
     }
 
