@@ -1,23 +1,24 @@
-function PartCard() {
+function PartCard(data) {
   return `
-    <div class="bg-black p-4 rounded-2xl space-y-4 border border-gray-700">
+    <div class="bg-black p-4 rounded-2xl border border-gray-700">
 
-      <div class="grid grid-cols-2 gap-3">
-        <input class="partNo input" placeholder="Part No"/>
-        <input type="number" class="qty input" placeholder="Qty"/>
+      <div class="flex justify-between">
+        <div>
+          <div class="font-semibold">${data.partNo}</div>
+          <div class="text-sm text-gray-400">${data.description}</div>
+        </div>
+
+        <div class="text-right">
+          <div>Qty: ${data.qty}</div>
+          <div class="text-green-400">₹ ${data.value}</div>
+        </div>
       </div>
 
-      <div class="text-base text-gray-300 desc">Description</div>
-
-      <div class="flex justify-between text-base">
-        <span class="text-yellow-400 dnp">₹0</span>
-        <span class="text-green-400 value">₹0</span>
-      </div>
-
-      <button onclick="this.closest('div').remove(); updateTotal();" 
-        class="text-red-400 text-sm">
+      <button onclick="this.parentElement.remove(); updateTotal();" 
+        class="text-red-400 mt-2">
         Remove
       </button>
+
     </div>
   `;
 }
