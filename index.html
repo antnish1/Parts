@@ -806,7 +806,6 @@ async function submitAll() {
   const approvedBy = document.getElementById("approvedBy").value;
   const callId = document.getElementById("callId").value;
 
-  // ✅ BASIC VALIDATION
   if (!orderType || !orderFor || !employeeName) {
     showPopup("Please fill mandatory fields ❗");
     hideLoader();
@@ -816,8 +815,7 @@ async function submitAll() {
 
   const rows = document.querySelectorAll("#tableBody tr");
 
-  // ✅ COLLECT VALID ROWS
-  const validRows = [];
+  const items = [];
 
   for (let r of rows) {
     const partNo = r.querySelector(".partNo").value.trim();
@@ -833,109 +831,65 @@ async function submitAll() {
       return;
     }
 
-    validRows.push(r);
+    items.push({
+      partNo,
+      qty,
+      description: desc
+    });
   }
 
-  if (validRows.length === 0) {
+  if (items.length === 0) {
     showPopup("Enter at least one valid part");
     hideLoader();
     isSubmitting = false;
     return;
   }
 
-  try {
+  const payload = {
+    action: "submitBulk",   // 🔥 NEW ACTION
+    branch: user.branch,
+    orderType,
+    orderFor,
+    warrantyStatus,
+    employeeName,
+    approvedBy,
+    callId,
+    machineNo,
+    customerName,
+    contactNo,
+    items: items
+  };
 
-    // 🔥 GET TEMP ORDER ID
-    const tempRes = await fetch(API, {
+  console.log("BULK PAYLOAD:", payload);
+
+  try {
+    const res = await fetch(API, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain;charset=utf-8"
       },
-      body: JSON.stringify({ action: "getNextTempId" })
+      body: JSON.stringify(payload)
     });
 
-    const tempData = await tempRes.json();
-    const tempOrderNo = tempData.tempOrderNo;
+    const result = await res.json();
 
-    if (!tempOrderNo) {
-      showPopup("Failed to generate Order ID ❗");
-      hideLoader();
-      isSubmitting = false;
-      return;
+    if (result.status === "success") {
+      showPopup(`Submitted successfully ✅\nTemp Order No: ${result.tempOrderNo}`);
+
+      document.getElementById("tableBody").innerHTML = "";
+      addRow();
+    } else {
+      showPopup("Submit failed ❗");
     }
-
-    console.log("TEMP ID:", tempOrderNo);
-
-    let successCount = 0;
-
-    // 🔥 LOOP WITH DELAY (CRITICAL FIX)
-    for (let row of validRows) {
-
-      const partNo = row.querySelector(".partNo").value.trim();
-      const qty = row.querySelector(".qty").value;
-      const desc = row.querySelector(".desc").innerText.trim();
-
-      const payload = {
-        action: "submit",
-        branch: user.branch,
-        orderType,
-        orderFor,
-        warrantyStatus,
-        employeeName,
-        approvedBy,
-        callId,
-        machineNo,
-        customerName,
-        contactNo,
-        partNo,
-        qty,
-        description: desc,
-        tempOrderNo
-      };
-
-      console.log("SENDING:", payload);
-
-      try {
-        const res = await fetch(API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await res.json();
-
-        if (result.status === "success") {
-          successCount++;
-        } else {
-          console.error("FAILED ROW:", payload);
-        }
-
-      } catch (err) {
-        console.error("ROW ERROR:", err);
-      }
-
-      // 🔥 VERY IMPORTANT DELAY (PREVENTS CORS FAILURE)
-      await new Promise(resolve => setTimeout(resolve, 400));
-    }
-
-    // ✅ SUCCESS MESSAGE
-    showPopup(`Submitted ${successCount} parts ✅\nTemp Order No: ${tempOrderNo}`);
-
-    document.getElementById("tableBody").innerHTML = "";
-    addRow();
 
   } catch (err) {
-    console.error("SUBMIT ERROR:", err);
+    console.error(err);
     showPopup("Submission failed ❗");
   }
 
   hideLoader();
   isSubmitting = false;
 }
-
-
 
 
   
