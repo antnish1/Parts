@@ -788,77 +788,153 @@ row.className = index % 2 === 0
 // ---------- SUBMIT ----------
 async function submitAll() {
 
+  if (isSubmitting) return;
+  isSubmitting = true;
+
   showLoader();
 
   const user = getUser();
 
+  const orderType = document.getElementById("orderType").value;
+  const orderFor = document.getElementById("orderFor").value;
+  const machineNo = document.getElementById("machineNo").value;
+  const customerName = document.getElementById("customerName").innerText;
+  const contactNo = document.getElementById("contactNo").value;
+
+  const warrantyStatus = document.getElementById("warrantyStatus").value;
+  const employeeName = document.getElementById("employeeName").value;
+  const approvedBy = document.getElementById("approvedBy").value;
+  const callId = document.getElementById("callId").value;
+
+  // ✅ BASIC MANDATORY CHECK
+  if (!orderType || !orderFor || !employeeName) {
+    showPopup("Please fill mandatory fields ❗");
+    hideLoader();
+    isSubmitting = false;
+    return;
+  }
+
   const rows = document.querySelectorAll("#tableBody tr");
 
-  // 🔥 TAKE FIRST VALID ROW ONLY
-  let row = null;
+  // ✅ COLLECT VALID ROWS
+  const validRows = [];
 
   for (let r of rows) {
     const partNo = r.querySelector(".partNo").value.trim();
     const qty = r.querySelector(".qty").value;
+    const desc = r.querySelector(".desc").innerText.trim();
 
-    if (partNo && qty) {
-      row = r;
-      break;
+    // ❗ SKIP EMPTY ROWS
+    if (!partNo || !qty) continue;
+
+    // ❗ BLOCK INVALID PARTS
+    if (!desc || desc === "Not Found" || desc === "Checking...") {
+      showPopup("Invalid or loading Part Number ❗");
+      hideLoader();
+      isSubmitting = false;
+      return;
     }
+
+    validRows.push(r);
   }
 
-  if (!row) {
-    showPopup("Enter at least one part");
+  // ❗ NO VALID ROWS
+  if (validRows.length === 0) {
+    showPopup("Enter at least one valid part");
     hideLoader();
+    isSubmitting = false;
     return;
   }
 
-  const payload = {
-    action: "submit",
-    branch: user.branch,
-    orderType: document.getElementById("orderType").value,
-    orderFor: document.getElementById("orderFor").value,
-    warrantyStatus: document.getElementById("warrantyStatus").value,
-    employeeName: document.getElementById("employeeName").value,
-    approvedBy: document.getElementById("approvedBy").value,
-    callId: document.getElementById("callId").value,
-    machineNo: document.getElementById("machineNo").value,
-    customerName: document.getElementById("customerName").innerText,
-    contactNo: document.getElementById("contactNo").value,
-    partNo: row.querySelector(".partNo").value,
-    qty: row.querySelector(".qty").value,
-    description: row.querySelector(".desc").innerText,
-    tempOrderNo: "TEST-1"
-  };
-
-  console.log("TEST PAYLOAD:", payload);
-
   try {
-    const res = await fetch(API, {
+
+    // 🔥 GET TEMP ORDER ID (SAFE)
+    const tempRes = await fetch(API, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain;charset=utf-8"
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ action: "getNextTempId" })
     });
 
-    const result = await res.json();
+    const tempData = await tempRes.json();
+    const tempOrderNo = tempData.tempOrderNo;
 
-    console.log("RESULT:", result);
-
-    if (result.status === "success") {
-      showPopup("Submit working ✅");
-    } else {
-      showPopup("Backend rejected ❗");
+    if (!tempOrderNo) {
+      showPopup("Failed to generate Order ID ❗");
+      hideLoader();
+      isSubmitting = false;
+      return;
     }
 
+    console.log("TEMP ID:", tempOrderNo);
+
+    // 🔥 LOOP THROUGH ROWS
+    for (let row of validRows) {
+
+      const partNo = row.querySelector(".partNo").value.trim();
+      const qty = row.querySelector(".qty").value;
+      const desc = row.querySelector(".desc").innerText.trim();
+
+      const payload = {
+        action: "submit",
+        branch: user.branch,
+        orderType,
+        orderFor,
+        warrantyStatus,
+        employeeName,
+        approvedBy,
+        callId,
+        machineNo,
+        customerName,
+        contactNo,
+        partNo,
+        qty,
+        description: desc,
+        tempOrderNo
+      };
+
+      console.log("SENDING:", payload);
+
+      const res = await fetch(API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await res.json();
+
+      if (result.status !== "success") {
+        showPopup("Failed to save one part ❗");
+        hideLoader();
+        isSubmitting = false;
+        return;
+      }
+    }
+
+    // ✅ SUCCESS
+    showPopup(`Submitted successfully! ✅\nTemp Order No: ${tempOrderNo}`);
+
+    document.getElementById("tableBody").innerHTML = "";
+    addRow();
+
   } catch (err) {
-    console.error("ERROR:", err);
-    showPopup("Fetch failed ❗");
+    console.error("SUBMIT ERROR:", err);
+    showPopup("Submission failed ❗");
   }
 
+  // ✅ RESET
   hideLoader();
+  isSubmitting = false;
 }
+
+
+
+
+
+  
 function loadAdmin() {
 
   document.getElementById("app").innerHTML = `
