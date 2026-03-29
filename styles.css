@@ -8,33 +8,33 @@ body {
   background: #111827;
   border-radius: 20px;
   padding: 20px;
-  border: 1px solid #5b7fb3;
+  border: 1px solid #86a9db;
 }
 
 /* LABEL */
 .label {
-  font-size: 18px;
+  font-size: 24px;
   margin-bottom: 6px;
 }
 
 h2 {
-  font-size: 20px;
+  font-size: 30px;
 }
 
 .input {
   width: 100%;
-  height: 84px; /* 🔥 VERY BIG */
+  height: 104px; /* 🔥 VERY BIG */
   border-radius: 18px;
   background: #010d3d;
-  border: 1px solid #374151;
+  border: 1px solid #666f7d;
   padding: 20px;
-  font-size: 20px;
+  font-size: 24px;
   color: white;
 }
 
 .input:focus {
-  border-color: #facc15;
-  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25);
+  border-color: #99d280;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.45);
   outline: none;
 }
 /* Sticky footer */
@@ -44,7 +44,7 @@ h2 {
   left: 0;
   right: 0;
   background: #020617;
-  border-top: 1px solid #374151;
+  border-top: 2px solid #374151;
   padding: 18px;
 }
 
@@ -52,9 +52,9 @@ h2 {
 .btn-primary {
   background: #facc15;
   color: black;
-  font-weight: 900;
+  font-weight: 1100;
   border-radius: 18px;
   padding: 24px;
   width: 100%;
-  font-size: 26px;
+  font-size: 32px;
 }
