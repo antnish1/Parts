@@ -782,6 +782,11 @@ row.className = index % 2 === 0
 // ---------- SUBMIT ----------
 async function submitAll() {
   if (isSubmitting) return;
+  isSubmitting = true;
+  showLoader(); // 🔥 already correct
+
+  // 🔥 FORCE UI RENDER (IMPORTANT FIX)
+  await new Promise(resolve => setTimeout(resolve, 50));
 
   const user = getUser();
 
@@ -796,9 +801,11 @@ async function submitAll() {
   const approvedBy = document.getElementById("approvedBy").value;
   const callId = document.getElementById("callId").value;
   
-// ✅ ALWAYS MANDATORY
+  // ✅ ALWAYS MANDATORY
   if (!orderType || !orderFor || !employeeName) {
     showPopup("Please fill all mandatory (*) fields");
+    hideLoader();
+    isSubmitting = false;
     return;
   }
   
@@ -812,6 +819,8 @@ async function submitAll() {
       !callId
     ) {
       showPopup("All fields are mandatory for VOR order ❗");
+      hideLoader(); // 🔥 FIX (missing earlier)
+      isSubmitting = false;
       return;
     }
   }
@@ -820,11 +829,13 @@ async function submitAll() {
   if (orderFor === "Customer") {
     if (!machineNo || !contactNo || !warrantyStatus) {
       showPopup("Machine No, Warranty & Contact No required for Customer order");
+      hideLoader(); // 🔥 FIX (missing earlier)
+      isSubmitting = false;
       return;
     }
   }
-  const rows = document.querySelectorAll("#tableBody tr");
 
+  const rows = document.querySelectorAll("#tableBody tr");
 
   // ❗ CHECK IF ANY PART IS STILL LOADING
   for (let row of rows) {
@@ -832,15 +843,16 @@ async function submitAll() {
   
     if (descEl && descEl.classList.contains("shimmer-text")) {
       showPopup("Please wait ❗ Part details are still loading.\nDo not proceed until all part names are loaded.");
+      hideLoader(); // 🔥 FIX (missing earlier)
+      isSubmitting = false;
       return;
     }
   }
 
-  
-
   // ✅ NEW: Check if at least ONE valid row exists
   let hasValidRow = false;
-// 🔥 GET SAFE TEMP ORDER ID FROM SERVER
+
+  // 🔥 GET SAFE TEMP ORDER ID FROM SERVER
   const tempRes = await fetch(API, {
     method: "POST",
     body: JSON.stringify({ action: "getNextTempId" })
@@ -849,6 +861,7 @@ async function submitAll() {
   const tempData = await tempRes.json();
   
   const tempOrderNo = tempData.tempOrderNo;
+
   for (let row of rows) {
     const partNo = row.querySelector(".partNo").value.trim();
     const qty = row.querySelector(".qty").value;
@@ -861,11 +874,10 @@ async function submitAll() {
 
   if (!hasValidRow) {
     showPopup("Please enter at least one valid part");
+    hideLoader(); // 🔥 FIX (missing earlier)
+    isSubmitting = false;
     return;
   }
-
-  isSubmitting = true;
-  showLoader();
 
   try {
     for (let row of rows) {
@@ -881,7 +893,7 @@ async function submitAll() {
         showPopup("Invalid or loading Part Number ❗ Please fix before submitting");
         hideLoader();
         isSubmitting = false;
-        return; // 🔥 STOP ENTIRE SUBMISSION
+        return;
       }
 
       const payload = {
