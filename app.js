@@ -124,7 +124,7 @@ function loadCreateOrder() {
   document.getElementById("app").innerHTML = `
     ${Header(user)}
 
-    <div class="p-4 space-y-4 pb-24">
+    <div class="p-5 space-y-5 pb-24">
       ${OrderForm()}
       ${CustomerForm()}
       ${PartsSection()}
