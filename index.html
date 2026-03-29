@@ -150,8 +150,11 @@ function showPopup(msg) {
 
 function closePopup() {
   document.getElementById("popup").classList.add("hidden");
-}
 
+  // restore OK button
+  const btn = document.querySelector("#popup button");
+  if (btn) btn.classList.remove("hidden");
+}
 // ---------- INIT ----------
 window.onload = () => {
   try {
@@ -440,12 +443,11 @@ function loadCreateOrder() {
   <div class="grid grid-cols-2 gap-3">
 
     <!-- CUSTOMER NAME -->
-    <div id="customerBox" class="flex items-center bg-black border border-gray-600 rounded px-3 text-sm text-gray-400 h-[34px]">
-      <span id="customerName" class="w-full">--</span>
-    </div>
+      <div id="customerBox" class="text-gray-500 text-sm px-1 py-2">
+        <span id="customerName">--</span>
+      </div>
 
-    <!-- FILE UPLOAD -->
-    <input type="file" id="approvalDoc" class="input"/>
+
 
   </div>
 
@@ -561,7 +563,7 @@ function showCustomerInputPopup() {
 
   msgEl.innerHTML = `
     <div class="text-center space-y-3">
-      <p class="text-white text-sm">Customer not found ❗</p>
+      <p class="text-white text-sm">Enter Customer Name</p>
       
       <input id="manualCustomer"
         placeholder="Enter Customer Name"
@@ -583,7 +585,7 @@ function showCustomerInputPopup() {
       </div>
     </div>
   `;
-
+  document.querySelector("#popup button")?.classList.add("hidden");
   popup.classList.remove("hidden");
 
   // ✅ Auto focus + Enter support
@@ -715,9 +717,11 @@ row.querySelector(".partNo").addEventListener("input", debounce(async function (
     valueEl.classList.remove("shimmer-text");
 
     // Description
-    if (!data.description || data.description === "Not Found") {
-      descEl.innerText = "Checking...";
-    } else {
+   if (!data.description || data.description === "Not Found") {
+        descEl.innerText = "";
+        showPopup("Part Details are still Loading ❗");
+      }
+   else {
       descEl.innerText = data.description;
     }
 
@@ -806,12 +810,35 @@ async function submitAll() {
   const approvedBy = document.getElementById("approvedBy").value;
   const callId = document.getElementById("callId").value;
 
-  if (!orderType || !orderFor || !employeeName) {
+// BASIC
+if (!orderType || !orderFor || !employeeName) {
     showPopup("Please fill mandatory fields ❗");
     hideLoader();
     isSubmitting = false;
     return;
   }
+  
+  // VOR → ALL REQUIRED
+  if (orderType === "VOR") {
+    if (!machineNo || !contactNo || !warrantyStatus || !approvedBy || !callId || !customerName || customerName === "--") {
+      showPopup("All fields mandatory for VOR ❗");
+      hideLoader();
+      isSubmitting = false;
+      return;
+    }
+  }
+  
+  // SOP → CUSTOMER
+  if (orderType === "SOP" && orderFor === "Customer") {
+    if (!machineNo || !contactNo || !warrantyStatus || !customerName || customerName === "--") {
+      showPopup("All fields mandatory for SOP Customer ❗");
+      hideLoader();
+      isSubmitting = false;
+      return;
+    }
+  }
+  
+  // SOP → STOCK (only global fields required)
 
   const rows = document.querySelectorAll("#tableBody tr");
 
@@ -822,7 +849,14 @@ async function submitAll() {
     const qty = r.querySelector(".qty").value;
     const desc = r.querySelector(".desc").innerText.trim();
 
-    if (!partNo || !qty) continue;
+    if (!partNo) continue;
+
+      if (!qty || Number(qty) < 1) {
+        showPopup("Please Enter Quantity ❗");
+        hideLoader();
+        isSubmitting = false;
+        return;
+      }
 
     if (!desc || desc === "Not Found" || desc === "Checking...") {
       showPopup("Invalid or loading Part Number ❗");
