@@ -989,7 +989,7 @@ async function loadTrackOrders() {
       // Convert "3/26/2026 18:33:05"
         // Convert to YYYY-MM-DD string
       // ✅ SAFE DATE PARSING
-      if (!d.date || typeof d.date !== "string") return false;
+      if (!d.date) return false;
               
         // ✅ USE ISO DATE DIRECTLY
        // ✅ Convert UTC → Local date (IST)
@@ -1017,9 +1017,13 @@ async function loadTrackOrders() {
         if (toDateVal && rowDateStr > toDateVal) return false;
 
       // Search
-      if (searchPartVal && !(d.partNo || "").toLowerCase().includes(searchPartVal)) {
-        return false;
-      }
+        if (searchPartVal) {
+          const found = d.items.some(item =>
+            (item.partNo || "").toLowerCase().includes(searchPartVal)
+          );
+        
+          if (!found) return false;
+        }
 
       return true;
     });
