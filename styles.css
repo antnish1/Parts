@@ -1,17 +1,19 @@
 body {
-  font-family: system-ui, sans-serif;
+  font-size: 18px; font-family: system-ui, sans-serif;
 }
 
-/* App feel */
+
+/* CARD */
 .card {
   background: #111827;
-  border-radius: 18px;
-  padding: 20px; /* 🔥 more padding */
+  border-radius: 20px;
+  padding: 20px;
   border: 1px solid #1f2937;
 }
 
+/* LABEL */
 .label {
-  font-size: 14px;
+  font-size: 15px;
   margin-bottom: 6px;
 }
 
@@ -21,12 +23,12 @@ h2 {
 
 .input {
   width: 100%;
-  height: 64px; /* 🔥 BIG */
-  border-radius: 16px;
+  height: 72px; /* 🔥 VERY BIG */
+  border-radius: 18px;
   background: #020617;
   border: 1px solid #374151;
-  padding: 16px;
-  font-size: 17px; /* 🔥 BIG TEXT */
+  padding: 18px;
+  font-size: 18px;
   color: white;
 }
 
@@ -50,9 +52,9 @@ h2 {
 .btn-primary {
   background: #facc15;
   color: black;
-  font-weight: 600;
-  border-radius: 14px;
-  padding: 16px; /* 🔥 bigger tap area */
+  font-weight: 700;
+  border-radius: 18px;
+  padding: 20px;
   width: 100%;
-  font-size: 16px;
+  font-size: 18px;
 }
