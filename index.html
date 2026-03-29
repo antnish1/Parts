@@ -870,6 +870,16 @@ async function submitAll() {
   
   const tempOrderNo = tempData.tempOrderNo;
 
+    
+      if (!tempOrderNo) {
+        showPopup("Failed to generate Order ID ❗ Try again");
+        hideLoader();
+        isSubmitting = false;
+        return;
+      }
+
+console.log("TEMP ID:", tempOrderNo);
+  
   for (let row of rows) {
     const partNo = row.querySelector(".partNo").value.trim();
     const qty = row.querySelector(".qty").value;
@@ -908,35 +918,35 @@ async function submitAll() {
       const dnp = Number(row.querySelector(".dnp").innerText.replace(/,/g, "")) || 0;
       const value = Number(row.querySelector(".value").innerText.replace(/,/g, "")) || 0;
       
-      const payload = {
-        action: "submit",
-        branch: user.branch,
-        orderType,
-        orderFor,
-        warrantyStatus,
-        employeeName,
-        approvedBy,
-        callId,
-        machineNo,
-        customerName,
-        contactNo,
-        partNo,
-        qty,
-        description: desc,
-        tempOrderNo: tempOrderNo,
-        dnp: dnp,        // ✅ NEW
-        value: value     // ✅ NEW
-      };
-
-                  const res = await fetch(API, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "text/plain;charset=utf-8"
-                    },
-                    body: JSON.stringify(payload)
-                  });
-
-      const result = await res.json();
+const payload = {
+  action: "submit",
+  branch: user.branch || "",
+  orderType: orderType || "",
+  orderFor: orderFor || "",
+  warrantyStatus: warrantyStatus || "",
+  employeeName: employeeName || "",
+  approvedBy: approvedBy || "",
+  callId: callId || "",
+  machineNo: machineNo || "",
+  customerName: customerName || "",
+  contactNo: contactNo || "",
+  partNo: partNo || "",
+  qty: qty || 0,
+  description: desc || "",
+  tempOrderNo: tempOrderNo || "TMP-ERROR",
+  dnp: Number(row.querySelector(".dnp")?.value) || 0,
+  value: Number(row.querySelector(".value")?.value) || 0
+};
+          
+          const res = await fetch(API, {
+            method: "POST",
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          const result = await res.json();
       
       if (result.status !== "success") {
         showPopup("Failed to save order ❗ Please try again");
