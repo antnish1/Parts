@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loading...</title>
+  <script>
+    const user = localStorage.getItem("user");
+
+    if (user) {
+      // Already logged in
+      window.location.href = "app.html";
+    } else {
+      // Not logged in
+      window.location.href = "login.html";
+    }
+  </script>
+</head>
+<body></body>
+</html>
