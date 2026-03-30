@@ -1,31 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login - Frontier CV</title>
+  <title>Parts Connect Portal</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="login.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body class="bg-gradient-to-br from-blue-100 to-gray-200 min-h-screen flex items-center justify-center">
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex items-center justify-center">
 
-<div class="w-full max-w-lg px-4">
+<div class="w-full max-w-md px-4">
 
-  <!-- Company -->
-  <div class="text-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">
-      Frontier Commercial Vehicles Pvt. Ltd.
+  <!-- App Name -->
+  <div class="text-center mb-8">
+    <h1 class="text-2xl font-semibold text-gray-800 tracking-wide">
+      Parts Connect Portal
     </h1>
   </div>
 
   <!-- Login Card -->
-  <div class="bg-white shadow-2xl rounded-3xl p-8 md:p-10 animate-fade">
-
-    <h2 class="text-2xl font-semibold text-center mb-2">Login to Your Account</h2>
-    <p class="text-sm text-gray-500 text-center mb-6">Branch & Admin Access</p>
+  <div class="bg-white rounded-2xl shadow-lg p-6">
 
     <!-- Branch -->
-    <select id="branch" class="input mb-3" onchange="fetchRole()">
+    <select id="branch" class="input mb-4" onchange="fetchRole()">
       <option value="">Select Branch</option>
       <option>DAMOH</option>
       <option>ANUPPUR</option>
@@ -39,26 +38,21 @@
       <option>HQ</option>
     </select>
 
-    <!-- Role -->
-    <div class="mb-3">
-      <input id="role" class="input bg-gray-100" placeholder="Role" readonly>
-    </div>
-
     <!-- Password -->
-    <div class="relative mb-3">
-      <input id="password" type="password" placeholder="Enter Password" class="input w-full pr-10">
-      <span onclick="togglePass()" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+    <div class="relative mb-4">
+      <input id="password" type="password" placeholder="Password" class="input pr-10">
+
+      <span id="eyeIcon" onclick="togglePass()" class="absolute right-3 top-3 cursor-pointer text-gray-500">
+        👁️
+      </span>
     </div>
 
-    <!-- Remember -->
-    <div class="flex items-center mb-4">
-      <input type="checkbox" id="remember" class="mr-2">
-      <label class="text-sm">Remember Me</label>
-    </div>
+    <!-- Login Button -->
+    <button onclick="login()" class="btn w-full">
+      Login
+    </button>
 
-    <!-- Button -->
-    <button onclick="login()" class="btn w-full">Login</button>
-
+    <!-- Error -->
     <p id="error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
 
   </div>
