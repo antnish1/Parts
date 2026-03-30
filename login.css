@@ -1,0 +1,33 @@
+.input {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.btn {
+  background: #3b82f6;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn:hover {
+  background: #2563eb;
+}
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade {
+  animation: fade 0.5s ease;
+}
