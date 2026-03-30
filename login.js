@@ -1,6 +1,14 @@
 function togglePass() {
   const p = document.getElementById("password");
-  p.type = p.type === "password" ? "text" : "password";
+  const eye = document.getElementById("eyeIcon");
+
+  if (p.type === "password") {
+    p.type = "text";
+    eye.innerText = "🙈"; // open
+  } else {
+    p.type = "password";
+    eye.innerText = "👁️"; // closed
+  }
 }
 
 // Auto role based on branch
