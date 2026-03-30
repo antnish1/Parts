@@ -24,7 +24,7 @@
     <p class="text-sm text-gray-500 text-center mb-4">Branch & Admin Access</p>
 
     <!-- Branch -->
-    <select id="branch" class="input mb-3" onchange="setRole()">
+    <select id="branch" class="input mb-3" onchange="fetchRole()">
       <option value="">Select Branch</option>
       <option>DAMOH</option>
       <option>ANUPPUR</option>
@@ -39,9 +39,8 @@
     </select>
 
     <!-- Role -->
-    <div class="flex gap-4 mb-3">
-      <label><input type="radio" name="role" value="branch"> Branch</label>
-      <label><input type="radio" name="role" value="admin"> Admin</label>
+    <div class="mb-3">
+      <input id="role" class="input bg-gray-100" placeholder="Role" readonly>
     </div>
 
     <!-- Password -->
