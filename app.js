@@ -1,40 +1,34 @@
 let isSubmitting = false;
 
+// ---------- UI ----------
 function showLoader() {
   document.getElementById("loader").classList.remove("hidden");
 }
-
 function hideLoader() {
   document.getElementById("loader").classList.add("hidden");
 }
-
 function showPopup(msg) {
   document.getElementById("popupMsg").innerText = msg;
   document.getElementById("popup").classList.remove("hidden");
 }
 
-function closePopup() {
-  document.getElementById("popup").classList.add("hidden");
-}
-
 // ---------- INIT ----------
-window.onload = () => loadApp();
-
-function loadApp() {
+window.onload = () => {
   document.getElementById("app").innerHTML = `
-    <div class="max-w-5xl mx-auto">
-      <button onclick="addRow()" class="bg-yellow-400 text-black px-4 py-2 rounded">+ Add Item</button>
-      <button onclick="submitAll()" class="bg-yellow-500 text-black px-4 py-2 rounded ml-2">Submit</button>
-      <table class="w-full mt-4">
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
+    <button onclick="addRow()" class="bg-yellow-400 text-black px-4 py-2">+ Add Item</button>
+    <button onclick="submitAll()" class="bg-yellow-500 text-black px-4 py-2 ml-2">Submit</button>
+
+    <table class="w-full mt-4">
+      <tbody id="tableBody"></tbody>
+    </table>
   `;
+
   addRow();
-}
+};
 
 // ---------- ADD ROW ----------
 function addRow() {
+
   const row = document.createElement("tr");
 
   row.innerHTML = `
@@ -43,7 +37,7 @@ function addRow() {
     <td><div class="desc"></div></td>
     <td><div class="dnp text-yellow-400"></div></td>
     <td><div class="value text-green-400"></div></td>
-    <td><button onclick="this.closest('tr').remove()">✕</button></td>
+    <td><button onclick="this.closest('tr').remove()">X</button></td>
   `;
 
   document.getElementById("tableBody").appendChild(row);
@@ -58,55 +52,62 @@ async function submitAll() {
   showLoader();
 
   const rows = document.querySelectorAll("#tableBody tr");
-  const items = [];
-
-  for (let r of rows) {
-
-    const partNo = r.querySelector(".partNo").value.trim();
-    const qty = r.querySelector(".qty").value;
-    const desc = r.querySelector(".desc").innerText;
-    const dnp = Number(r.querySelector(".dnp").innerText) || 0;
-
-    if (!partNo) continue;
-
-    if (!qty || qty < 1) {
-      showPopup("Please Enter Quantity ❗");
-      hideLoader();
-      isSubmitting = false;
-      return;
-    }
-
-    const value = dnp * qty;
-
-    items.push({
-      partNo,
-      qty,
-      description: desc,
-      dnp,
-      value
-    });
-  }
 
   try {
 
-    for (let item of items) {
+    for (let r of rows) {
 
-      await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
+      const partNo = r.querySelector(".partNo").value.trim();
+      const qty = r.querySelector(".qty").value;
+
+      if (!partNo) continue;
+
+      if (!qty || qty < 1) {
+        showPopup("Please Enter Quantity ❗");
+        hideLoader();
+        isSubmitting = false;
+        return;
+      }
+
+      const dnp = 0;   // TEMP (we will fetch later)
+      const value = dnp * qty;
+
+      // 🔥 MAIN SUPABASE CALL
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/requests`, {
         method: "POST",
         headers: {
           "apikey": SUPABASE_KEY,
           "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Prefer": "return=representation"
         },
         body: JSON.stringify({
-          part_no: item.partNo,
-          qty: Number(item.qty),
-          description: item.description,
-          dnp: item.dnp,
-          value: item.value,
-          status: "Pending"
+          branch: "TEST",
+          order_type: "SOP",
+          order_for: "Stock",
+          warranty_status: "",
+          employee_name: "TEST",
+          approved_by: "",
+          call_id: "",
+          machine_no: "",
+          customer_name: "",
+          contact_no: "",
+          part_no: partNo,
+          qty: Number(qty),
+          description: "",
+          temp_order_no: "T" + Date.now(),
+          status: "Pending",
+          dnp: dnp,
+          value: value
         })
       });
+
+      const text = await res.text();
+      console.log("SUPABASE RESPONSE:", text);
+
+      if (!res.ok) {
+        throw new Error(text);
+      }
 
     }
 
