@@ -1,7 +1,8 @@
 .input {
   border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
   width: 100%;
 }
 
@@ -13,8 +14,9 @@
 .btn {
   background: #3b82f6;
   color: white;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 10px;
   font-weight: bold;
   transition: 0.3s;
 }
