@@ -133,3 +133,9 @@ async function fetchRole() {
     document.getElementById("role").value = "";
   }
 }
+
+
+function showLoader(show) {
+  document.getElementById("btnText").classList.toggle("hidden", show);
+  document.getElementById("btnLoader").classList.toggle("hidden", !show);
+}
