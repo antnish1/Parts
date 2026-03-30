@@ -2,11 +2,9 @@
 <html>
 <head>
   <title>Parts System</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css">
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 </head>
 
 <body class="bg-black text-white p-6">
@@ -14,17 +12,14 @@
 <div id="app"></div>
 
 <!-- Loader -->
-<div id="loader" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-  <div class="bg-gray-900 border border-gray-700 px-6 py-5 rounded-xl flex flex-col items-center gap-4">
-    <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-    <p class="text-yellow-400 font-semibold">Processing...</p>
-  </div>
+<div id="loader" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center">
+  <div class="text-yellow-400">Processing...</div>
 </div>
 
 <!-- Popup -->
-<div id="popup" onclick="closePopup()" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-  <div onclick="event.stopPropagation()" class="bg-gray-900 border border-gray-700 p-6 rounded-xl text-center w-[300px]">
-    <p id="popupMsg" class="mb-5 text-white text-sm"></p>
+<div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-70">
+  <div class="bg-gray-900 p-5 rounded">
+    <p id="popupMsg"></p>
   </div>
 </div>
 
