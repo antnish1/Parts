@@ -20,7 +20,7 @@ async function login() {
 
   const branch = document.getElementById("branch").value;
   const password = document.getElementById("password").value;
-  const role = document.querySelector('input[name="role"]:checked')?.value;
+  const role = document.getElementById("role").value;
 
   const errorEl = document.getElementById("error");
 
@@ -88,6 +88,9 @@ async function fetchRole() {
 
   if (!branch) return;
 
+  // ✅ ADD THIS LINE HERE
+  document.getElementById("role").value = "Loading...";
+
   try {
 
     const res = await fetch(
@@ -104,16 +107,18 @@ async function fetchRole() {
 
     if (data.length === 0) {
       showError("User not found");
+      document.getElementById("role").value = "";
       return;
     }
 
     const user = data[0];
 
-    // 🔥 SET ROLE (LOCKED)
+    // 🔥 FINAL VALUE SET
     document.getElementById("role").value = user.Role;
 
   } catch (err) {
     console.error(err);
     showError("Error fetching role");
+    document.getElementById("role").value = "";
   }
 }
