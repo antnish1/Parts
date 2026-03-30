@@ -860,11 +860,13 @@ if (!orderType || !orderFor || !employeeName) {
       return;
     }
 
-    items.push({
-      partNo,
-      qty,
-      description: desc
-    });
+      items.push({
+        partNo,
+        qty,
+        description: desc,
+        dnp: Number(dnpEl.innerText) || 0,
+        value: (Number(dnpEl.innerText) || 0) * (Number(qty) || 0)
+      });
   }
 
   if (items.length === 0) {
