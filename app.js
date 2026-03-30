@@ -81,25 +81,25 @@ async function submitAll() {
           "Content-Type": "application/json",
           "Prefer": "return=representation"
         },
-        body: JSON.stringify({
-          branch: "TEST",
-          order_type: "SOP",
-          order_for: "Stock",
-          warranty_status: "",
-          employee_name: "TEST",
-          approved_by: "",
-          call_id: "",
-          machine_no: "",
-          customer_name: "",
-          contact_no: "",
-          part_no: partNo,
-          qty: Number(qty),
-          description: "",
-          temp_order_no: "T" + Date.now(),
-          status: "Pending",
-          dnp: dnp,
-          value: value
-        })
+       body: JSON.stringify({
+        Branch: "TEST",
+        OrderType: "SOP",
+        OrderFor: "Stock",
+        WarrantyStatus: "",
+        EmployeeName: "TEST",
+        ApprovedBy: "",
+        CallID: "",
+        MachineNo: "",
+        CustomerName: "",
+        ContactNo: "",
+        PartNo: partNo,
+        Qty: Number(qty),
+        Description: "",
+        OrderNo: "T" + Date.now(),
+        Status: "Pending",
+        DNP: dnp,
+        Value: value
+      })
       });
 
       const text = await res.text();
