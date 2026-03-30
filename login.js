@@ -28,19 +28,19 @@ async function login() {
 
   const branch = document.getElementById("branch").value;
   const password = document.getElementById("password").value;
-  const role = document.getElementById("role").value;
-
   const errorEl = document.getElementById("error");
 
-  if (!branch || !password || !role) {
+  if (!branch || !password) {
     showError("Please fill all fields");
     return;
   }
 
+  showLoader(true);
+
   try {
 
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/users?Branch=eq.${branch}&Role=eq.${role}`,
+      `${SUPABASE_URL}/rest/v1/users?Branch=eq.${branch}`,
       {
         headers: {
           "apikey": SUPABASE_KEY,
@@ -51,8 +51,9 @@ async function login() {
 
     const data = await res.json();
 
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       showError("Invalid credentials");
+      showLoader(false);
       return;
     }
 
@@ -60,14 +61,14 @@ async function login() {
 
     if (user.Password !== password) {
       showError("Invalid credentials");
+      showLoader(false);
       return;
     }
 
-    // Save session
     localStorage.setItem("user", JSON.stringify(user));
 
-    // Redirect
-    if (role === "admin") {
+    // redirect
+    if (user.Role === "admin") {
       window.location.href = "admin.html";
     } else {
       window.location.href = "app.html";
@@ -77,6 +78,8 @@ async function login() {
     console.error(err);
     showError("Login failed");
   }
+
+  showLoader(false);
 }
 
 function showError(msg) {
