@@ -1,13 +1,10 @@
 function togglePass() {
   const p = document.getElementById("password");
-  const eye = document.getElementById("eyeIcon");
 
   if (p.type === "password") {
     p.type = "text";
-    eye.innerText = "🙈"; // open
   } else {
     p.type = "password";
-    eye.innerText = "👁️"; // closed
   }
 }
 
