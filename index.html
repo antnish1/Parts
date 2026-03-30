@@ -840,33 +840,40 @@ if (!orderType || !orderFor || !employeeName) {
   const items = [];
 
   for (let r of rows) {
+  
     const partNo = r.querySelector(".partNo").value.trim();
     const qty = r.querySelector(".qty").value;
     const desc = r.querySelector(".desc").innerText.trim();
-
+  
+    // 🔥 ADD THIS LINE (FIX)
+    const dnpEl = r.querySelector(".dnp");
+  
     if (!partNo) continue;
-
-      if (!qty || Number(qty) < 1) {
-        showPopup("Please Enter Quantity ❗");
-        hideLoader();
-        isSubmitting = false;
-        return;
-      }
-
+  
+    if (!qty || Number(qty) < 1) {
+      showPopup("Please Enter Quantity ❗");
+      hideLoader();
+      isSubmitting = false;
+      return;
+    }
+  
     if (!desc || desc === "Not Found" || desc === "Checking...") {
       showPopup("Invalid or loading Part Number ❗");
       hideLoader();
       isSubmitting = false;
       return;
     }
-
-      items.push({
-        partNo,
-        qty,
-        description: desc,
-        dnp: Number(dnpEl.innerText) || 0,
-        value: (Number(dnpEl.innerText) || 0) * (Number(qty) || 0)
-      });
+  
+    const dnp = Number(dnpEl?.innerText.replace(/,/g, "")) || 0;
+    const value = dnp * (Number(qty) || 0);
+  
+    items.push({
+      partNo,
+      qty,
+      description: desc,
+      dnp: dnp,
+      value: value
+    });
   }
 
   if (items.length === 0) {
