@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login - Frontier CV</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="login.css">
+</head>
+
+<body class="bg-gradient-to-br from-blue-100 to-gray-200 min-h-screen flex items-center justify-center">
+
+<div class="w-full max-w-md">
+
+  <!-- Company -->
+  <div class="text-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">
+      Frontier Commercial Vehicles Pvt. Ltd.
+    </h1>
+  </div>
+
+  <!-- Login Card -->
+  <div class="bg-white shadow-xl rounded-2xl p-6 animate-fade">
+
+    <h2 class="text-xl font-semibold text-center mb-1">Login to Your Account</h2>
+    <p class="text-sm text-gray-500 text-center mb-4">Branch & Admin Access</p>
+
+    <!-- Branch -->
+    <select id="branch" class="input mb-3" onchange="setRole()">
+      <option value="">Select Branch</option>
+      <option>DAMOH</option>
+      <option>ANUPPUR</option>
+      <option>DINDORI</option>
+      <option>MANDLA</option>
+      <option>NARSINGHPUR</option>
+      <option>BALAGHAT</option>
+      <option>SEONI</option>
+      <option>KATNI</option>
+      <option>JABALPUR</option>
+      <option>HQ</option>
+    </select>
+
+    <!-- Role -->
+    <div class="flex gap-4 mb-3">
+      <label><input type="radio" name="role" value="branch"> Branch</label>
+      <label><input type="radio" name="role" value="admin"> Admin</label>
+    </div>
+
+    <!-- Password -->
+    <div class="relative mb-3">
+      <input id="password" type="password" placeholder="Enter Password" class="input w-full pr-10">
+      <span onclick="togglePass()" class="absolute right-3 top-2 cursor-pointer">👁️</span>
+    </div>
+
+    <!-- Remember -->
+    <div class="flex items-center mb-4">
+      <input type="checkbox" id="remember" class="mr-2">
+      <label class="text-sm">Remember Me</label>
+    </div>
+
+    <!-- Button -->
+    <button onclick="login()" class="btn w-full">Login</button>
+
+    <p id="error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+
+  </div>
+
+</div>
+
+<script src="config.js"></script>
+<script src="login.js"></script>
+
+</body>
+</html>
