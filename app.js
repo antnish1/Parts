@@ -12,6 +12,11 @@ function showPopup(msg) {
   document.getElementById("popup").classList.remove("hidden");
 }
 
+function logout() {
+  localStorage.removeItem("user");
+  window.location.href = "login.html";
+}
+
 // ---------- INIT ----------
 window.onload = () => {
   document.getElementById("app").innerHTML = `
