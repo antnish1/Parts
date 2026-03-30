@@ -80,3 +80,40 @@ function showError(msg) {
   el.style.animation = "shake 0.3s";
   setTimeout(() => el.style.animation = "", 300);
 }
+
+
+async function fetchRole() {
+
+  const branch = document.getElementById("branch").value;
+
+  if (!branch) return;
+
+  try {
+
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/users?Branch=eq.${branch}`,
+      {
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+
+    const data = await res.json();
+
+    if (data.length === 0) {
+      showError("User not found");
+      return;
+    }
+
+    const user = data[0];
+
+    // 🔥 SET ROLE (LOCKED)
+    document.getElementById("role").value = user.Role;
+
+  } catch (err) {
+    console.error(err);
+    showError("Error fetching role");
+  }
+}
