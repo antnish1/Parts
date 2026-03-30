@@ -6,54 +6,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ICONS -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
   <link rel="stylesheet" href="login.css">
 </head>
 
-<body class="bg-gradient-to-br from-gray-100 to-gray-200 min-h-screen flex items-center justify-center">
+<body class="bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800 min-h-screen flex items-center justify-center">
 
 <div class="w-full max-w-md px-4">
 
-  <!-- App Name -->
+  <!-- Title -->
   <div class="text-center mb-8">
-    <h1 class="text-2xl font-semibold text-gray-800 tracking-wide">
+    <h1 class="text-3xl font-semibold text-white tracking-wide">
       Parts Connect Portal
     </h1>
   </div>
 
-  <!-- Login Card -->
-  <div class="bg-white rounded-2xl shadow-lg p-6">
+  <!-- Glass Card -->
+  <div class="glass p-6 rounded-2xl">
 
     <!-- Branch -->
-    <select id="branch" class="input mb-4" onchange="fetchRole()">
-      <option value="">Select Branch</option>
-      <option>DAMOH</option>
-      <option>ANUPPUR</option>
-      <option>DINDORI</option>
-      <option>MANDLA</option>
-      <option>NARSINGHPUR</option>
-      <option>BALAGHAT</option>
-      <option>SEONI</option>
-      <option>KATNI</option>
-      <option>JABALPUR</option>
-      <option>HQ</option>
-    </select>
-
-    <!-- Password -->
-    <div class="relative mb-4">
-      <input id="password" type="password" placeholder="Password" class="input pr-10">
-
-      <span id="eyeIcon" onclick="togglePass()" class="absolute right-3 top-3 cursor-pointer text-gray-500">
-        👁️
-      </span>
+    <div class="field">
+      <select id="branch" required>
+        <option value=""></option>
+        <option>DAMOH</option>
+        <option>ANUPPUR</option>
+        <option>DINDORI</option>
+        <option>MANDLA</option>
+        <option>NARSINGHPUR</option>
+        <option>BALAGHAT</option>
+        <option>SEONI</option>
+        <option>KATNI</option>
+        <option>JABALPUR</option>
+        <option>HQ</option>
+      </select>
+      <label>Branch</label>
     </div>
 
-    <!-- Login Button -->
-    <button onclick="login()" class="btn w-full">
-      Login
+    <!-- Password -->
+    <div class="field mt-4 relative">
+      <input id="password" type="password" required>
+      <label>Password</label>
+
+      <i id="eyeIcon" onclick="togglePass()" class="icon"></i>
+    </div>
+
+    <!-- Button -->
+    <button onclick="login()" class="login-btn mt-6">
+      <span id="btnText">Login</span>
+      <span id="btnLoader" class="hidden"></span>
     </button>
 
     <!-- Error -->
-    <p id="error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+    <p id="error" class="text-red-400 text-sm text-center mt-3 hidden"></p>
 
   </div>
 
