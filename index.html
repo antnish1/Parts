@@ -271,13 +271,28 @@ document.getElementById("main").innerHTML = `
 <tbody id="tbody"></tbody>
 </table>
 
-<div class="flex gap-2 mt-4">
-<button onclick="addRow()" class="bg-yellow-400 px-3 py-1 text-black">+ Add</button>
-<button onclick="submitOrder()" class="bg-green-500 px-3 py-1 text-black">Submit</button>
-</div>
+<hr class="border-gray-700 my-4">
 
-<div class="text-right mt-2 text-yellow-400">
-Total: ₹ <span id="total">0</span>
+
+<div class="mt-6 flex items-center justify-between">
+
+  <!-- LEFT -->
+  <button onclick="addRow()" 
+  class="bg-yellow-400 hover:bg-yellow-300 transition px-5 py-2 text-black rounded-lg font-semibold shadow-md">
+    + Add Item
+  </button>
+
+  <!-- CENTER -->
+  <div class="text-yellow-400 text-lg font-semibold tracking-wide">
+    Total: ₹ <span id="total">0</span>
+  </div>
+
+  <!-- RIGHT -->
+  <button onclick="submitOrder()" 
+  class="bg-green-500 hover:bg-green-400 transition px-6 py-2 text-black rounded-lg font-semibold shadow-md">
+    Submit Order
+  </button>
+
 </div>
 
 </div>
