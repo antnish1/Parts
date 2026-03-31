@@ -11,7 +11,68 @@
 <div id="app">Loading...</div>
 
 <script>
-document.getElementById("app").innerHTML = "JS WORKING";
+const SUPABASE_URL = "https://ubkwtjyvbdvepzbxoikq.supabase.co";
+const SUPABASE_KEY = "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3";
+
+// ✅ FIXED INIT
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---------- INIT ----------
+window.onload = () => {
+  loadLogin();
+};
+
+// ---------- LOGIN UI ----------
+function loadLogin() {
+  document.getElementById("app").innerHTML = `
+    <div class="min-h-screen flex flex-col justify-center items-center">
+      <h1 class="text-3xl text-yellow-400 mb-6">Parts Connect Portal</h1>
+
+      <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4">
+        <select id="branch" class="w-full p-2 bg-black border border-gray-600">
+          <option value="">Select Branch</option>
+          <option>HQ</option>
+          <option>JABALPUR</option>
+        </select>
+
+        <input id="password" type="password" placeholder="Password"
+          class="w-full p-2 bg-black border border-gray-600"/>
+
+        <button onclick="login()"
+          class="w-full bg-yellow-400 text-black py-2 rounded">
+          Login
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ---------- LOGIN ----------
+async function login() {
+  const branch = document.getElementById("branch").value;
+  const password = document.getElementById("password").value;
+
+  if (!branch || !password) {
+    alert("Fill all fields");
+    return;
+  }
+
+  const { data, error } = await db
+    .from("users")
+    .select("*")
+    .eq("Branch", branch)
+    .eq("Password", password)
+    .single();
+
+  if (error || !data) {
+    alert("Invalid credentials");
+    console.error(error);
+    return;
+  }
+
+  alert("Login success ✅");
+}
 </script>
 
 </body>
