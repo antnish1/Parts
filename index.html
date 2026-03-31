@@ -383,11 +383,6 @@ const main = document.getElementById("main");
 main.innerHTML = `
 <div class="space-y-4">
 
-  <div class="bg-gray-900 p-5 rounded-xl border mt-6">
-  
-    <h2 class="text-center text-sm text-yellow-400 mb-3 tracking-wide font-semibold">
-      FILL PARTS DETAIL
-    </h2>
 
   <!-- ================= ORDER FORM ================= -->
   <div class="bg-black/40 p-4 rounded-lg border border-gray-700">
@@ -447,10 +442,26 @@ main.innerHTML = `
 
 <div class="bg-gray-900 p-5 rounded-xl border mt-6">
 
+  <!-- 🔥 TITLE NOW PERFECTLY PLACED -->
+  <div class="text-center mb-4">
+    <span class="text-xs uppercase tracking-widest text-gray-400">
+      Parts Entry Section
+    </span>
+    <h2 class="text-yellow-400 font-semibold text-sm tracking-wide">
+      FILL PARTS DETAIL
+    </h2>
+  </div>
+
 <table class="w-full text-sm bg-gray-900 text-center border border-gray-700 rounded-lg overflow-hidden">
-<thead class="bg-gray-800 text-yellow-400 uppercase text-xs tracking-wider">
+<thead class="bg-gradient-to-r from-gray-800 to-gray-900 text-gray-300 text-xs uppercase tracking-wider border-b border-gray-700">
 <tr>
-<th>Part</th><th>Qty</th><th>Desc</th><th>DNP</th><th>Cat</th><th>Value</th><th></th>
+<th class="py-3 font-semibold text-yellow-400">Part</th>
+<th class="py-3 font-semibold text-yellow-400">Qty</th>
+<th class="py-3 font-semibold text-yellow-400">Desc</th>
+<th class="py-3 font-semibold text-yellow-400">DNP</th>
+<th class="py-3 font-semibold text-yellow-400">Cat</th>
+<th class="py-3 font-semibold text-yellow-400">Value</th>
+<th class="py-3 font-semibold text-yellow-400"></th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -516,13 +527,27 @@ function addRow(){
 const tr = document.createElement("tr");
 
 tr.innerHTML = `
-<td class="w-[120px]">
-  <input class="part bg-black w-full py-3 px-2 rounded border border-gray-700"/>
+<tr class="border-t border-gray-800 hover:bg-gray-800/40 transition">
+
+<td class="p-2">
+  <input class="part bg-black w-full py-3 px-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"/>
 </td>
 
-<td class="w-[80px]">
-  <input type="number" class="qty bg-black w-full py-3 px-2 rounded border border-gray-700"/>
+<td class="p-2">
+  <input type="number" class="qty bg-black w-full py-3 px-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"/>
 </td>
+
+<td class="desc py-3"></td>
+<td class="dnp py-3"></td>
+<td class="cat py-3"></td>
+<td class="val py-3 font-semibold text-yellow-400"></td>
+
+<td class="py-3">
+  <button class="text-red-400 hover:text-red-300 font-bold"
+  onclick="this.closest('tr').remove(); calcTotal()">✕</button>
+</td>
+
+</tr>
 <td class="desc py-3"></td>
 <td class="dnp py-3"></td>
 <td class="cat py-3"></td>
