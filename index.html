@@ -739,8 +739,15 @@ Status:"Pending"
 });
 });
 
-if(!inserts.length) return showPopup("Add items");
 
+if(part && !qty){
+  showPopup("Qty is required for all parts ❗");
+  throw new Error("Qty missing");
+}
+
+if(!part) return;
+
+showLoader();
 showLoader();
 
 const { error } = await db.from("requests").insert(inserts);
