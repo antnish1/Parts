@@ -580,8 +580,6 @@ function addRow(){
 const tr = document.createElement("tr");
 
 tr.innerHTML = `
-<tr class="border-t border-gray-800/60 hover:bg-gray-700/30 transition">
-
 <td class="p-2">
   <input class="part bg-black w-full py-3 px-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"/>
 </td>
@@ -599,15 +597,7 @@ tr.innerHTML = `
   <button class="text-red-400 hover:text-red-300 font-bold"
   onclick="this.closest('tr').remove(); calcTotal()">✕</button>
 </td>
-
-</tr>
-<td class="desc py-3"></td>
-<td class="dnp py-3"></td>
-<td class="cat py-3"></td>
-<td class="val py-3 font-semibold text-yellow-400"></td>
-
 `;
-
 tr.querySelector(".part").addEventListener("blur", async function(){
 
 const partNo = this.value.trim();
@@ -685,7 +675,7 @@ const machineType = document.getElementById("machineType").value;
 
 // BASIC REQUIRED
 if(!orderType || !orderFor){
-  return showPopup("Order Type & Order For are mandatory ❗");
+  return showPopup("Order Details are mandatory ❗");
 }
 
 // VOR RULE
@@ -709,7 +699,9 @@ if(orderType === "SOP" || orderType === "ZSPL"){
   }
 }
   
-if(!machineNo || !customerName) return showPopup("Fill machine & customer");
+if(orderFor === "Customer" && (!machineNo || !customerName)){
+  return showPopup("Fill machine & customer ❗");
+}
 
 const rows = document.querySelectorAll("#tbody tr");
 
@@ -718,35 +710,40 @@ const orderNo = "T" + Math.floor(1000000 + Math.random()*9000000);
 const inserts = [];
 
 rows.forEach(r=>{
-const part = r.querySelector(".part").value;
-const qty = r.querySelector(".qty").value;
-const desc = r.querySelector(".desc").innerText;
-const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
-if(!part || !qty) return;
+  const part = r.querySelector(".part").value.trim();
+  const qty = r.querySelector(".qty").value.trim();
+  const desc = r.querySelector(".desc").innerText;
+  const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
-inserts.push({
-Branch:user.Branch,
-MachineNo:machineNo,
-CustomerName:customerName,
-PartNo:part,
-Qty:qty,
-Description:desc,
-DNP:dnp,
-Value:dnp*qty,
-OrderNo:orderNo,
-Status:"Pending"
+  // ❗ VALIDATION
+  if(part && !qty){
+    showPopup("Qty is required for all parts ❗");
+    throw new Error("Qty missing");
+  }
+
+  if(!part) return;
+
+  inserts.push({
+    Branch:user.Branch,
+    MachineNo:machineNo,
+    CustomerName:customerName,
+    PartNo:part,
+    Qty:qty,
+    Description:desc,
+    DNP:dnp,
+    Value:dnp*qty,
+    OrderNo:orderNo,
+    Status:"Pending"
+  });
+
 });
-});
 
 
-if(part && !qty){
-  showPopup("Qty is required for all parts ❗");
-  throw new Error("Qty missing");
+
+if(!inserts.length){
+  return showPopup("At least one Part Number is required ❗");
 }
-
-if(!part) return;
-
 
 showLoader();
 
