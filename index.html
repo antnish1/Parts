@@ -22,7 +22,7 @@
 <div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 z-50">
   <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl text-center w-[300px]">
     <p id="popupMsg"></p>
-    <button onclick="closePopup()" class="mt-4 bg-yellow-400 px-4 py-2 text-black rounded">OK</button>
+    <div id="popupActions" class="mt-4 flex justify-center"></div>
   </div>
 </div>
 
@@ -39,10 +39,20 @@ function showLoader(){ document.getElementById("loader").classList.remove("hidde
 function hideLoader(){ document.getElementById("loader").classList.add("hidden"); }
 
 function showPopup(msg){
-  document.getElementById("popupMsg").innerText = msg;
-  document.getElementById("popup").classList.remove("hidden");
+
+document.getElementById("popupMsg").innerText = msg;
+
+document.getElementById("popupActions").innerHTML = `
+<button onclick="closePopup()"
+class="bg-yellow-400 px-5 py-2 text-black rounded">
+OK
+</button>
+`;
+
+document.getElementById("popup").classList.remove("hidden");
 }
 
+  
 function closePopup(){
   document.getElementById("popup").classList.add("hidden");
 }
@@ -651,35 +661,41 @@ const popup = document.getElementById("popup");
 const msg = document.getElementById("popupMsg");
 
 msg.innerHTML = `
-<div class="space-y-3">
+<div class="space-y-4 text-center">
 
-<p>Machine not found ❗</p>
+<p class="text-yellow-400 font-semibold">
+Machine not found ❗
+</p>
+
 <p class="text-sm text-gray-400">
 Enter Customer Name
 </p>
 
 <input id="manualCustomer"
-  class="w-full bg-black border border-gray-600 px-3 py-2 rounded"
+  class="w-full bg-black border border-gray-600 px-3 py-2 rounded text-center"
   placeholder="Customer Name"/>
-
-<div class="flex gap-2 justify-center">
-
-<button onclick="saveNewMachine('${machineNo}')"
-  class="bg-yellow-400 px-4 py-2 text-black rounded">
-  Save
-</button>
-
-<button onclick="closePopup()"
-  class="bg-gray-700 px-4 py-2 rounded">
-  Cancel
-</button>
-
-</div>
 
 </div>
 `;
 
-popup.classList.remove("hidden");
+// ✅ BUTTONS BELOW (clean separation)
+document.getElementById("popupActions").innerHTML = `
+<div class="flex gap-3 justify-center w-full">
+
+<button onclick="saveNewMachine('${machineNo}')"
+  class="bg-yellow-400 px-5 py-2 text-black rounded min-w-[100px]">
+  Save
+</button>
+
+<button onclick="closePopup()"
+  class="bg-gray-700 px-5 py-2 rounded min-w-[100px]">
+  Cancel
+</button>
+
+</div>
+`;
+
+document.getElementById("popup").classList.remove("hidden");
 
 // autofocus
 setTimeout(()=>{
