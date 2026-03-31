@@ -76,7 +76,36 @@
   box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
 }
 
+.top-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: #111827;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+  font-weight: 500;
+  transition: all 0.25s ease;
+}
 
+.top-btn:hover {
+  background: linear-gradient(135deg, #facc15, #fde047);
+  color: black;
+  transform: translateY(-1px);
+}
+
+.active-top-btn {
+  background: linear-gradient(135deg, #facc15, #fde047);
+  color: black;
+}
+
+.logout-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
   
 </style>
 
@@ -354,13 +383,17 @@ const main = document.getElementById("main");
 main.innerHTML = `
 <div class="space-y-4">
 
-<div class="bg-gray-900 p-5 rounded-xl border space-y-6">
+  <div class="bg-gray-900 p-5 rounded-xl border mt-6">
+  
+    <h2 class="text-center text-sm text-yellow-400 mb-3 tracking-wide font-semibold">
+      FILL PARTS DETAIL
+    </h2>
 
   <!-- ================= ORDER FORM ================= -->
   <div class="bg-black/40 p-4 rounded-lg border border-gray-700">
     <h2 class="text-yellow-400 font-semibold mb-3">Order Form</h2>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-4 gap-3">
 
       <select id="orderType" class="bg-black p-2 border rounded">
         <option value="">Order Type</option>
@@ -388,7 +421,7 @@ main.innerHTML = `
   <div class="bg-black/40 p-4 rounded-lg border border-gray-700">
     <h2 class="text-yellow-400 font-semibold mb-3">Customer Form</h2>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-4 gap-3">
 
       <input id="machineNo" placeholder="Machine No"
         class="bg-black p-2 border rounded"/>
@@ -414,8 +447,8 @@ main.innerHTML = `
 
 <div class="bg-gray-900 p-5 rounded-xl border mt-6">
 
-<table class="w-full text-sm bg-gray-800 text-center">
-<thead class="bg-black text-yellow-400 text-center">
+<table class="w-full text-sm bg-gray-900 text-center border border-gray-700 rounded-lg overflow-hidden">
+<thead class="bg-gray-800 text-yellow-400 uppercase text-xs tracking-wider">
 <tr>
 <th>Part</th><th>Qty</th><th>Desc</th><th>DNP</th><th>Cat</th><th>Value</th><th></th>
 </tr>
@@ -483,12 +516,17 @@ function addRow(){
 const tr = document.createElement("tr");
 
 tr.innerHTML = `
-<td><input class="part bg-black w-full"/></td>
-<td><input type="number" class="qty bg-black w-full"/></td>
-<td class="desc text-center"></td>
-<td class="dnp text-center"></td>
-<td class="cat text-center"></td>
-<td class="val text-center"></td>
+<td class="w-[120px]">
+  <input class="part bg-black w-full py-3 px-2 rounded border border-gray-700"/>
+</td>
+
+<td class="w-[80px]">
+  <input type="number" class="qty bg-black w-full py-3 px-2 rounded border border-gray-700"/>
+</td>
+<td class="desc py-3"></td>
+<td class="dnp py-3"></td>
+<td class="cat py-3"></td>
+<td class="val py-3 font-semibold text-yellow-400"></td>
 <td><button onclick="this.closest('tr').remove(); calcTotal()">X</button></td>
 `;
 
@@ -737,7 +775,7 @@ Processed
 <!-- TABLE -->
 <div class="bg-gray-900 p-4 rounded-xl border overflow-x-auto">
 
-<table class="w-full text-sm bg-gray-800 text-center">
+<table class="w-full text-sm bg-gray-900 text-center border border-gray-700 rounded-lg overflow-hidden">
 <thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
