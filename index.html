@@ -8,13 +8,21 @@
 
 <body class="bg-black text-white p-6">
 
-<div id="app"></div>
+<div id="app">Loading...</div>
 
 <script>
 const SUPABASE_URL = "https://ubkwtjyvbdvepzbxoikq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ✅ SAFE INIT
+let supabase;
+
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  document.getElementById("app").innerHTML = "Supabase failed to load";
+  console.error(e);
+}
 
 // ---------- SAFE STORAGE ----------
 function getUser() {
@@ -28,11 +36,18 @@ function getUser() {
 
 // ---------- INIT ----------
 window.onload = () => {
-  const user = getUser();
-  if (user) {
-    user.role === "admin" ? loadAdmin() : loadBranch();
-  } else {
-    loadLogin();
+  try {
+    const user = getUser();
+
+    if (user) {
+      user.role === "admin" ? loadAdmin() : loadBranch();
+    } else {
+      loadLogin();
+    }
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById("app").innerHTML = "App crashed. Check console.";
   }
 };
 
@@ -61,39 +76,44 @@ function loadLogin() {
   `;
 }
 
-// ---------- LOGIN (SUPABASE) ----------
+// ---------- LOGIN ----------
 async function login() {
+  try {
+    const branch = document.getElementById("branch").value;
+    const password = document.getElementById("password").value;
 
-  const branch = document.getElementById("branch").value;
-  const password = document.getElementById("password").value;
+    if (!branch || !password) {
+      alert("Fill all fields");
+      return;
+    }
 
-  if (!branch || !password) {
-    alert("Fill all fields");
-    return;
-  }
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("Branch", branch)
+      .eq("Password", password)
+      .single();
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("Branch", branch)
-    .eq("Password", password)
-    .single();
+    if (error || !data) {
+      alert("Invalid credentials");
+      return;
+    }
 
-  if (error || !data) {
-    alert("Invalid credentials");
-    return;
-  }
+    localStorage.setItem("user", JSON.stringify({
+      branch: data.Branch,
+      role: data.Role,
+      name: data.Name
+    }));
 
-  localStorage.setItem("user", JSON.stringify({
-    branch: data.Branch,
-    role: data.Role,
-    name: data.Name
-  }));
+    if (data.Role === "admin") {
+      loadAdmin();
+    } else {
+      loadBranch();
+    }
 
-  if (data.Role === "admin") {
-    loadAdmin();
-  } else {
-    loadBranch();
+  } catch (e) {
+    console.error(e);
+    alert("Login error");
   }
 }
 
