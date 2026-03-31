@@ -129,23 +129,25 @@ document.getElementById("app").innerHTML = `
 
   
   
-  <div class="flex gap-2">
-  
-    <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">
-      Create
-    </button>
-  
-    <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">
-      Track
-    </button>
-  
-    ${isAdmin ? `
-      <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">
-        HQ
-      </button>
-    ` : ""}
-  
-  </div>
+ const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+    
+    <div class="flex gap-2">
+    
+      ${isAdmin ? `
+        <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">
+          Pending
+        </button>
+      ` : `
+        <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">
+          Create
+        </button>
+    
+        <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">
+          Track
+        </button>
+      `}
+    
+    </div>
 
   <button onclick="logout()" class="bg-yellow-400 px-3 py-1 text-black rounded">Logout</button>
 </div>
@@ -431,7 +433,7 @@ document.getElementById("row-"+i).classList.toggle("hidden");
 }
 
 // ---------- ADMIN ----------
-async function loadAdmin(){
+async function loadAdmin(activeTab = "Pending"){
 
 showLoader();
 
@@ -442,7 +444,7 @@ const { data } = await db
 
 hideLoader();
 
-// GROUP
+// GROUP BY ORDER
 const grouped = {};
 data.forEach(r=>{
 if(!grouped[r.OrderNo]){
@@ -453,24 +455,102 @@ grouped[r.OrderNo].items.push(r);
 
 const orders = Object.values(grouped);
 
-let html = `
-<div class="space-y-3">
+// FILTER
+const filtered = orders.filter(o => o.Status === activeTab);
 
+// UI
+let html = `
+<div class="space-y-4">
+
+<!-- TABS -->
 <div class="flex gap-2">
-<button onclick="filterHQ('Pending')" class="bg-yellow-400 px-3 py-1 text-black">Pending</button>
-<button onclick="filterHQ('Processed')" class="bg-gray-700 px-3 py-1">Processed</button>
+
+<button onclick="loadAdmin('Pending')"
+class="${activeTab==='Pending' ? 'bg-yellow-400 text-black' : 'bg-gray-700'} px-4 py-2 rounded">
+Pending
+</button>
+
+<button onclick="loadAdmin('Processed')"
+class="${activeTab==='Processed' ? 'bg-yellow-400 text-black' : 'bg-gray-700'} px-4 py-2 rounded">
+Processed
+</button>
+
 </div>
 
-<div id="hqTable"></div>
+<!-- TABLE -->
+<div class="bg-gray-900 p-4 rounded-xl border overflow-x-auto">
+
+<table class="w-full text-sm bg-gray-800">
+<thead class="text-yellow-400">
+<tr>
+<th>Date</th>
+<th>Branch</th>
+<th>Machine</th>
+<th>Customer</th>
+<th>Parts</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+filtered.forEach((o,i)=>{
+
+const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
+
+html += `
+<tr onclick="toggleHQ(${i})" class="border-t cursor-pointer">
+<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${o.Branch}</td>
+<td>${o.MachineNo}</td>
+<td>${o.CustomerName}</td>
+<td>${o.items.length}</td>
+<td>₹ ${total}</td>
+<td>${o.Status}</td>
+</tr>
+
+<tr id="hq-${i}" class="hidden bg-black">
+<td colspan="7">
+
+${o.items.map(it=>`
+<div class="flex justify-between border-b py-1">
+<span>${it.PartNo}</span>
+<span>${it.Description}</span>
+<span>${it.Qty}</span>
+<span>₹ ${it.Value}</span>
+</div>
+`).join("")}
+
+${o.Status==="Pending" ? `
+<div class="mt-3 flex gap-2 justify-center">
+
+<input id="po-${i}"
+placeholder="Enter PO Number"
+class="bg-black border px-3 py-2 rounded text-center"/>
+
+<button onclick="event.stopPropagation(); processOrder('${o.OrderNo}', ${i})"
+class="bg-green-500 px-4 py-2 rounded">
+Process
+</button>
+
+</div>
+` : ""}
+
+</td>
+</tr>
+`;
+});
+
+html += `
+</tbody>
+</table>
+</div>
 </div>
 `;
 
 document.getElementById("main").innerHTML = html;
-
-window.HQ_DATA = orders;
-renderHQ("Pending");
 }
-
 function filterHQ(status){
 renderHQ(status);
 }
@@ -560,7 +640,7 @@ hideLoader();
 
 showPopup("Processed ✅");
 
-loadAdmin();
+loadAdmin("Pending");
 }
 
 
