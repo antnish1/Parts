@@ -202,11 +202,22 @@ addRow();
 // MACHINE FETCH
 document.getElementById("machineNo").addEventListener("blur", async function(){
 
-const { data } = await db
+const machineNo = this.value.trim();
+
+if(!machineNo) return;
+
+const { data, error } = await db
 .from("machine_master")
 .select("*")
-.eq("MachineNo", this.value)
-.single();
+.eq("MachineNo", machineNo);
+
+// ✅ SAFE: no 406 now
+if(data && data.length > 0){
+  document.getElementById("customerName").value = data[0].CustomerName;
+}
+else{
+  showManualCustomerPopup(machineNo);
+}
 
 if(data) document.getElementById("customerName").value = data.CustomerName;
 });
@@ -551,6 +562,83 @@ showPopup("Processed ✅");
 
 loadAdmin();
 }
+
+
+function showManualCustomerPopup(machineNo){
+
+const popup = document.getElementById("popup");
+const msg = document.getElementById("popupMsg");
+
+msg.innerHTML = `
+<div class="space-y-3">
+
+<p>Machine not found ❗</p>
+<p class="text-sm text-gray-400">
+Enter Customer Name
+</p>
+
+<input id="manualCustomer"
+  class="w-full bg-black border border-gray-600 px-3 py-2 rounded"
+  placeholder="Customer Name"/>
+
+<div class="flex gap-2 justify-center">
+
+<button onclick="saveNewMachine('${machineNo}')"
+  class="bg-yellow-400 px-4 py-2 text-black rounded">
+  Save
+</button>
+
+<button onclick="closePopup()"
+  class="bg-gray-700 px-4 py-2 rounded">
+  Cancel
+</button>
+
+</div>
+
+</div>
+`;
+
+popup.classList.remove("hidden");
+
+// autofocus
+setTimeout(()=>{
+  document.getElementById("manualCustomer")?.focus();
+},100);
+}
+
+
+
+async function saveNewMachine(machineNo){
+
+const customer = document.getElementById("manualCustomer").value.trim();
+
+if(!customer){
+  showPopup("Enter customer name");
+  return;
+}
+
+// save to DB
+const { error } = await db
+.from("machine_master")
+.insert([{
+  MachineNo: machineNo,
+  CustomerName: customer
+}]);
+
+if(error){
+  console.error(error);
+  showPopup("Error saving machine");
+  return;
+}
+
+// update UI
+document.getElementById("customerName").value = customer;
+
+closePopup();
+showPopup("Saved ✅");
+}
+  
+
   
 </script>
 
