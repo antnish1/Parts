@@ -564,8 +564,8 @@ const orders = Object.values(grouped);
 let html = `
 <div class="bg-gray-900 p-4 rounded-xl border">
 
-<table class="w-full text-sm">
-<thead class="text-yellow-400">
+<table class="w-full text-sm text-center">
+<thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
 <th>Machine</th>
@@ -666,7 +666,7 @@ Processed
 <div class="bg-gray-900 p-4 rounded-xl border overflow-x-auto">
 
 <table class="w-full text-sm bg-gray-800">
-<thead class="text-yellow-400">
+<thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
 <th>Branch</th>
@@ -746,7 +746,7 @@ const data = window.HQ_DATA.filter(o=> status==="All" || o.Status===status);
 
 let html = `
 <table class="w-full text-sm bg-gray-800">
-<thead class="text-yellow-400">
+<thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
 <th>Branch</th>
