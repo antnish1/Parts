@@ -8,7 +8,7 @@
 
 <body class="bg-black text-white p-6">
 
-<div id="app">Loading...</div>
+<div id="app"></div>
 
 <script>
 const SUPABASE_URL = "https://ubkwtjyvbdvepzbxoikq.supabase.co";
@@ -17,12 +17,23 @@ const SUPABASE_KEY = "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3";
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ---------- STORAGE ----------
+function getUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user"));
+  } catch {
+    return null;
+  }
+}
+
 // ---------- INIT ----------
 window.onload = () => {
-  loadLogin();
+  const user = getUser();
+  if (user) loadBranch();
+  else loadLogin();
 };
 
-// ---------- LOGIN UI ----------
+// ---------- LOGIN ----------
 async function loadLogin() {
 
   document.getElementById("app").innerHTML = `
@@ -32,7 +43,7 @@ async function loadLogin() {
       <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4">
         
         <select id="branch" class="w-full p-2 bg-black border border-gray-600">
-          <option>Loading branches...</option>
+          <option>Loading...</option>
         </select>
 
         <input id="password" type="password" placeholder="Password"
@@ -46,61 +57,96 @@ async function loadLogin() {
     </div>
   `;
 
-  // 🔥 FETCH BRANCHES FROM SUPABASE
-  const { data, error } = await db
-    .from("users")
-    .select("Branch");
+  const { data } = await db.from("users").select("Branch");
 
-  const branchEl = document.getElementById("branch");
+  const unique = [...new Set(data.map(d => d.Branch))];
 
-  if (error || !data) {
-    branchEl.innerHTML = `<option>Error loading</option>`;
-    console.error(error);
-    return;
-  }
-
-  // ✅ UNIQUE BRANCHES
-  const uniqueBranches = [...new Set(data.map(d => d.Branch))];
-
-  branchEl.innerHTML = `<option value="">Select Branch</option>`;
-
-  uniqueBranches.forEach(branch => {
-    branchEl.innerHTML += `<option>${branch}</option>`;
-  });
+  const el = document.getElementById("branch");
+  el.innerHTML = `<option value="">Select Branch</option>`;
+  unique.forEach(b => el.innerHTML += `<option>${b}</option>`);
 }
 
-// ---------- LOGIN ----------
 async function login() {
 
   const branch = document.getElementById("branch").value;
   const password = document.getElementById("password").value;
 
-  if (!branch || !password) {
-    alert("Fill all fields");
-    return;
-  }
-
-  const { data, error } = await db
+  const { data } = await db
     .from("users")
     .select("*")
     .eq("Branch", branch)
     .eq("Password", password)
     .single();
 
-  if (error || !data) {
-    alert("Invalid credentials");
-    console.error(error);
-    return;
-  }
+  if (!data) return alert("Invalid");
 
-  // ✅ SAVE USER
-  localStorage.setItem("user", JSON.stringify({
-    branch: data.Branch,
-    role: data.Role,
-    name: data.Name
-  }));
+  localStorage.setItem("user", JSON.stringify(data));
+  loadBranch();
+}
 
-  alert(`Login success ✅\nRole: ${data.Role}`);
+// ---------- BRANCH PANEL ----------
+function loadBranch() {
+
+  const user = getUser();
+
+  document.getElementById("app").innerHTML = `
+    <div class="max-w-6xl mx-auto space-y-4">
+
+      <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
+        <p class="text-yellow-400 font-semibold">${user.Branch}</p>
+
+        <button onclick="logout()"
+          class="bg-yellow-400 px-4 py-2 text-black rounded">
+          Logout
+        </button>
+      </div>
+
+      <div id="main"></div>
+    </div>
+  `;
+
+  loadCreateOrder();
+}
+
+function logout() {
+  localStorage.clear();
+  loadLogin();
+}
+
+// ---------- CREATE ORDER ----------
+function loadCreateOrder() {
+
+  document.getElementById("main").innerHTML = `
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 space-y-3">
+
+      <div class="grid grid-cols-4 gap-3">
+        <input id="machineNo" placeholder="Machine Number" class="input"/>
+        <input id="customerName" placeholder="Customer Name" class="input"/>
+      </div>
+
+    </div>
+  `;
+
+  // 🔥 MACHINE FETCH (SUPABASE)
+  document.getElementById("machineNo").addEventListener("blur", async function () {
+
+    const machineNo = this.value.trim();
+    if (!machineNo) return;
+
+    const { data, error } = await db
+      .from("machine_master")
+      .select("*")
+      .eq("MachineNo", machineNo)
+      .single();
+
+    if (data) {
+      document.getElementById("customerName").value = data.CustomerName;
+    } else {
+      document.getElementById("customerName").value = "";
+      alert("Machine not found");
+    }
+
+  });
 }
 </script>
 
