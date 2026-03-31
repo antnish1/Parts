@@ -126,10 +126,24 @@ document.getElementById("app").innerHTML = `
 <div class="flex justify-between bg-gray-900 p-3 rounded-xl border border-gray-700">
   <span class="text-yellow-400 font-semibold">${user.Branch}</span>
 
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+  
   <div class="flex gap-2">
-        <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">Create</button>
-        <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">Track</button>
-        <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">HQ</button>
+  
+    <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">
+      Create
+    </button>
+  
+    <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">
+      Track
+    </button>
+  
+    ${isAdmin ? `
+      <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">
+        HQ
+      </button>
+    ` : ""}
+  
   </div>
 
   <button onclick="logout()" class="bg-yellow-400 px-3 py-1 text-black rounded">Logout</button>
@@ -214,13 +228,38 @@ tr.innerHTML = `
 
 tr.querySelector(".part").addEventListener("blur", async function(){
 
+const partNo = this.value.trim();
+
+// ✅ FIX 1: ignore empty input
+if(!partNo){
+  tr.querySelector(".desc").innerText = "";
+  tr.querySelector(".dnp").innerText = "";
+  tr.querySelector(".cat").innerText = "";
+  tr.querySelector(".val").innerText = "";
+  calcTotal();
+  return;
+}
+
+// FETCH
 const { data } = await db
 .from("part_master")
 .select("*")
-.eq("PartNo", this.value)
+.eq("PartNo", partNo)
 .single();
 
-if(!data) return showPopup("Invalid Part");
+// ✅ FIX 2: show error only if user typed something wrong
+if(!data){
+  showPopup("Invalid Part Number ❗");
+  return;
+}
+
+// SUCCESS
+tr.querySelector(".desc").innerText = data.Description;
+tr.querySelector(".dnp").innerText = data.DNP;
+tr.querySelector(".cat").innerText = data.Cat1;
+
+calc(tr);
+});
 
 tr.querySelector(".desc").innerText = data.Description;
 tr.querySelector(".dnp").innerText = data.DNP;
