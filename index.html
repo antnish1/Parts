@@ -119,14 +119,15 @@ loadBranch();
 function loadBranch(){
 
 const user = getUser();
-
+const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+  
 document.getElementById("app").innerHTML = `
 <div class="max-w-6xl mx-auto p-6 space-y-4">
 
 <div class="flex justify-between bg-gray-900 p-3 rounded-xl border border-gray-700">
   <span class="text-yellow-400 font-semibold">${user.Branch}</span>
 
-  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+  
   
   <div class="flex gap-2">
   
@@ -261,12 +262,7 @@ tr.querySelector(".cat").innerText = data.Cat1;
 calc(tr);
 });
 
-tr.querySelector(".desc").innerText = data.Description;
-tr.querySelector(".dnp").innerText = data.DNP;
-tr.querySelector(".cat").innerText = data.Cat1;
 
-calc(tr);
-});
 
 tr.querySelector(".qty").addEventListener("input", () => calc(tr));
 
