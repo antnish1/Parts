@@ -181,12 +181,69 @@ localStorage.setItem("user", JSON.stringify(data));
 loadBranch();
 }
 
+
+function renderHeader(){
+
+  const user = getUser();
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+
+  return `
+  <div class="space-y-4">
+
+  <!-- HEADER -->
+  <div class="w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 
+  border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items-center">
+
+    <h1 class="text-2xl font-bold text-yellow-400 tracking-wide">
+      PARTS CONNECT PORTAL :
+      <span class="text-white ml-2">${user.Branch}</span>
+    </h1>
+
+    <button onclick="logout()" 
+    class="bg-yellow-400 hover:bg-yellow-300 transition px-4 py-2 text-black rounded-lg font-semibold shadow-md">
+      Logout
+    </button>
+
+  </div>
+
+  <!-- MENU -->
+  <div class="w-full bg-gray-900 px-4 py-3 rounded-xl border border-gray-700">
+
+    <div class="flex gap-3">
+
+      ${!isAdmin ? `
+        <button onclick="loadCreate('create')" 
+        class="menu-btn ${window.activeTab==='create' ? 'active-tab' : ''}">
+          New Order
+        </button>
+
+        <button onclick="loadTrack('track')" 
+        class="menu-btn ${window.activeTab==='track' ? 'active-tab' : ''}">
+          Track Orders
+        </button>
+      ` : ``}
+
+    </div>
+
+  </div>
+
+  </div>
+  `;
+}
+
+
+  
 // ---------- BRANCH ----------
 function loadBranch(){
 
 const user = getUser();
 const isAdmin = user.Role === "admin" || user.Branch === "HQ";
-  
+
+// ✅ IMPORTANT: set default tab BEFORE rendering
+if(!window.activeTab){
+  window.activeTab = isAdmin ? "Pending" : "create";
+}
+
 document.getElementById("app").innerHTML = `
 <div class="max-w-7xl mx-auto px-6 py-5 space-y-5">
 
@@ -208,7 +265,7 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 
 </div>
 
-<!-- MENU (NO LOGOUT HERE) -->
+<!-- MENU -->
 <div class="w-full bg-gray-900 px-4 py-3 rounded-xl border border-gray-700">
 
   <div class="flex gap-3">
@@ -229,18 +286,22 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 
   </div>
 
-  <!-- ✅ IMPORTANT: ADD THIS -->
   <div id="main" class="w-full"></div>
 
 </div>
 `;
 
+// ✅ Load correct screen
 if(isAdmin){
-  loadAdmin("Pending");
+  loadAdmin(window.activeTab || "Pending");
 }else{
-  loadCreate("create");
+  if(window.activeTab === "track"){
+    loadTrack("track");
+  }else{
+    loadCreate("create");
+  }
 }
-  
+
 }
 
 function logout(){
@@ -250,9 +311,15 @@ loadLogin();
 
 // ---------- CREATE ----------
 function loadCreate(tab){
+
 window.activeTab = "create";
 
-document.getElementById("main").innerHTML = `
+// ✅ Re-render header so highlight updates
+loadBranch();
+
+const main = document.getElementById("main");
+
+main.innerHTML = `
 <div class="space-y-4">
 
 <div class="bg-gray-900 p-4 rounded-xl border grid grid-cols-2 gap-3">
@@ -273,21 +340,17 @@ document.getElementById("main").innerHTML = `
 
 <hr class="border-gray-700 my-4">
 
-
 <div class="mt-6 flex items-center justify-between">
 
-  <!-- LEFT -->
   <button onclick="addRow()" 
   class="bg-yellow-400 hover:bg-yellow-300 transition px-5 py-2 text-black rounded-lg font-semibold shadow-md">
     + Add Item
   </button>
 
-  <!-- CENTER -->
   <div class="text-yellow-400 text-lg font-semibold tracking-wide">
     Total: ₹ <span id="total">0</span>
   </div>
 
-  <!-- RIGHT -->
   <button onclick="submitOrder()" 
   class="bg-green-500 hover:bg-green-400 transition px-6 py-2 text-black rounded-lg font-semibold shadow-md">
     Submit Order
@@ -308,12 +371,11 @@ const machineNo = this.value.trim();
 
 if(!machineNo) return;
 
-const { data, error } = await db
+const { data } = await db
 .from("machine_master")
 .select("*")
 .eq("MachineNo", machineNo);
 
-// ✅ correct handling
 if(data && data.length > 0){
   document.getElementById("customerName").value = data[0].CustomerName;
 }
@@ -323,8 +385,8 @@ else{
 }
 
 });
-}   // ✅ THIS WAS MISSING
 
+}
   
 // ---------- ROW ----------
 function addRow(){
@@ -453,7 +515,11 @@ loadCreate();
 
 // ---------- TRACK ----------
 async function loadTrack(tab){
+
 window.activeTab = "track";
+
+// ✅ Re-render header so highlight updates
+loadBranch();
 
 const user = getUser();
 
@@ -467,7 +533,6 @@ const { data } = await db
 
 hideLoader();
 
-// GROUP BY ORDER
 const grouped = {};
 
 data.forEach(r=>{
@@ -528,6 +593,7 @@ ${o.items.map(it=>`
 html += `</tbody></table></div>`;
 
 document.getElementById("main").innerHTML = html;
+
 }
 
 function toggleRow(i){
