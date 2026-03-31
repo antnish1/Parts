@@ -19,11 +19,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---------- STORAGE ----------
 function getUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user"));
-  } catch {
-    return null;
-  }
+  return JSON.parse(localStorage.getItem("user"));
 }
 
 // ---------- INIT ----------
@@ -42,9 +38,7 @@ async function loadLogin() {
 
       <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4">
         
-        <select id="branch" class="w-full p-2 bg-black border border-gray-600">
-          <option>Loading...</option>
-        </select>
+        <select id="branch" class="w-full p-2 bg-black border border-gray-600"></select>
 
         <input id="password" type="password" placeholder="Password"
           class="w-full p-2 bg-black border border-gray-600"/>
@@ -58,7 +52,6 @@ async function loadLogin() {
   `;
 
   const { data } = await db.from("users").select("Branch");
-
   const unique = [...new Set(data.map(d => d.Branch))];
 
   const el = document.getElementById("branch");
@@ -117,36 +110,128 @@ function logout() {
 function loadCreateOrder() {
 
   document.getElementById("main").innerHTML = `
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 space-y-3">
 
-      <div class="grid grid-cols-4 gap-3">
-        <input id="machineNo" placeholder="Machine Number" class="input"/>
-        <input id="customerName" placeholder="Customer Name" class="input"/>
+  <div class="space-y-4">
+
+    <!-- MACHINE -->
+    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 grid grid-cols-2 gap-3">
+      <input id="machineNo" placeholder="Machine Number" class="bg-black border p-2"/>
+      <input id="customerName" placeholder="Customer Name" class="bg-black border p-2"/>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
+
+      <table class="w-full text-sm border border-gray-700 bg-gray-800">
+        <thead class="bg-black text-yellow-400">
+          <tr>
+            <th>Part No</th>
+            <th>Qty</th>
+            <th>Description</th>
+            <th>DNP</th>
+            <th>Category</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+
+      <div class="mt-4 flex gap-3">
+        <button onclick="addRow()" class="bg-yellow-400 px-4 py-2 text-black">+ Add</button>
+      </div>
+
+      <div class="mt-4 text-right text-yellow-400">
+        Total: ₹ <span id="total">0</span>
       </div>
 
     </div>
+  </div>
   `;
 
-  // 🔥 MACHINE FETCH (SUPABASE)
+  addRow();
+
+  // MACHINE FETCH
   document.getElementById("machineNo").addEventListener("blur", async function () {
 
-    const machineNo = this.value.trim();
-    if (!machineNo) return;
-
-    const { data, error } = await db
+    const { data } = await db
       .from("machine_master")
       .select("*")
-      .eq("MachineNo", machineNo)
+      .eq("MachineNo", this.value)
       .single();
 
     if (data) {
       document.getElementById("customerName").value = data.CustomerName;
-    } else {
-      document.getElementById("customerName").value = "";
-      alert("Machine not found");
     }
-
   });
+}
+
+// ---------- ADD ROW ----------
+function addRow() {
+
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td><input class="partNo bg-black w-full"/></td>
+    <td><input type="number" class="qty bg-black w-full"/></td>
+    <td class="desc text-center"></td>
+    <td class="dnp text-center"></td>
+    <td class="cat text-center"></td>
+    <td class="value text-center"></td>
+    <td><button onclick="this.closest('tr').remove(); updateTotal()">X</button></td>
+  `;
+
+  // PART FETCH
+  row.querySelector(".partNo").addEventListener("blur", async function () {
+
+    const partNo = this.value;
+
+    const { data } = await db
+      .from("part_master")
+      .select("*")
+      .eq("PartNo", partNo)
+      .single();
+
+    if (!data) return alert("Part not found");
+
+    row.querySelector(".desc").innerText = data.Description;
+    row.querySelector(".dnp").innerText = data.DNP;
+    row.querySelector(".cat").innerText = data.Cat1;
+
+    calculate(row);
+  });
+
+  // QTY
+  row.querySelector(".qty").addEventListener("input", function () {
+    calculate(row);
+  });
+
+  document.getElementById("tableBody").appendChild(row);
+}
+
+// ---------- CALC ----------
+function calculate(row) {
+
+  const dnp = Number(row.querySelector(".dnp").innerText) || 0;
+  const qty = Number(row.querySelector(".qty").value) || 0;
+
+  const val = dnp * qty;
+
+  row.querySelector(".value").innerText = val;
+
+  updateTotal();
+}
+
+// ---------- TOTAL ----------
+function updateTotal() {
+
+  let total = 0;
+
+  document.querySelectorAll(".value").forEach(v => {
+    total += Number(v.innerText) || 0;
+  });
+
+  document.getElementById("total").innerText = total;
 }
 </script>
 
