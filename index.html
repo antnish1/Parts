@@ -232,6 +232,23 @@ function renderHeader(){
 }
 
 
+function updateMenuHighlight(){
+
+  document.querySelectorAll(".menu-btn").forEach(btn => {
+    btn.classList.remove("active-tab");
+  });
+
+  if(window.activeTab === "create"){
+    document.querySelectorAll(".menu-btn")[0]?.classList.add("active-tab");
+  }
+
+  if(window.activeTab === "track"){
+    document.querySelectorAll(".menu-btn")[1]?.classList.add("active-tab");
+  }
+
+}
+
+  
   
 // ---------- BRANCH ----------
 function loadBranch(){
