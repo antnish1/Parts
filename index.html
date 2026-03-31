@@ -384,8 +384,14 @@ main.innerHTML = `
 
 
   <!-- ================= ORDER FORM ================= -->
-  <div class="bg-black/40 p-4 rounded-lg border border-gray-700">
-    <h2 class="text-yellow-400 font-semibold mb-3">Order Form</h2>
+  <div class="relative bg-black/40 p-4 pt-6 rounded-lg border border-gray-700">
+  
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 bg-black px-3">
+      <span class="text-yellow-400 text-xs font-semibold tracking-wider">
+        ORDER DETAILS
+      </span>
+    </div>
 
     <div class="grid grid-cols-4 gap-3">
 
@@ -412,8 +418,14 @@ main.innerHTML = `
   </div>
 
   <!-- ================= CUSTOMER FORM ================= -->
-  <div class="bg-black/40 p-4 rounded-lg border border-gray-700">
-    <h2 class="text-yellow-400 font-semibold mb-3">Customer Form</h2>
+  <div class="relative bg-black/40 p-4 pt-6 rounded-lg border border-gray-700">
+  
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 bg-black px-3">
+      <span class="text-yellow-400 text-xs font-semibold tracking-wider">
+        CUSTOMER DETAILS
+      </span>
+    </div>
 
     <div class="grid grid-cols-4 gap-3">
 
@@ -495,6 +507,49 @@ const user = getUser();
 document.getElementById("employeeName").value = user.Name || "";
   
 
+  const orderTypeEl = document.getElementById("orderType");
+  const orderForEl = document.getElementById("orderFor");
+  const approvedByEl = document.getElementById("approvedBy");
+  const machineNoEl = document.getElementById("machineNo");
+  const machineTypeEl = document.getElementById("machineType");
+  
+  // ORDER TYPE CHANGE
+  orderTypeEl.addEventListener("change", () => {
+  
+    const type = orderTypeEl.value;
+  
+    // RESET
+    orderForEl.disabled = false;
+    orderForEl.classList.remove("bg-gray-800","text-gray-400");
+  
+    if(type === "VOR"){
+  
+      orderForEl.value = "Customer";
+      orderForEl.disabled = true;
+      orderForEl.classList.add("bg-gray-800","text-gray-400");
+  
+      // MOVE CURSOR
+      approvedByEl.focus();
+    }
+  });
+
+  orderForEl.addEventListener("change", () => {
+  
+    const orderFor = orderForEl.value;
+    const customerSection = machineNoEl.closest(".bg-black/40");
+  
+    if(orderFor === "Stock"){
+  
+      // DISABLE CUSTOMER FORM
+      customerSection.classList.add("opacity-40","pointer-events-none");
+  
+    } else {
+  
+      customerSection.classList.remove("opacity-40","pointer-events-none");
+    }
+  
+  });
+    
 // MACHINE FETCH
 document.getElementById("machineNo").addEventListener("blur", async function(){
 
@@ -593,6 +648,11 @@ calc(tr);
 tr.querySelector(".qty").addEventListener("input", () => calc(tr));
 
 document.getElementById("tbody").appendChild(tr);
+
+  // AUTO FOCUS PART INPUT
+  setTimeout(() => {
+    tr.querySelector(".part")?.focus();
+  }, 50);
 }
 
 // ---------- CALC ----------
@@ -617,6 +677,38 @@ const user = getUser();
 const machineNo = document.getElementById("machineNo").value;
 const customerName = document.getElementById("customerName").value;
 
+
+const orderType = document.getElementById("orderType").value;
+const orderFor = document.getElementById("orderFor").value;
+const approvedBy = document.getElementById("approvedBy").value;
+const machineType = document.getElementById("machineType").value;
+
+// BASIC REQUIRED
+if(!orderType || !orderFor){
+  return showPopup("Order Type & Order For are mandatory ❗");
+}
+
+// VOR RULE
+if(orderType === "VOR"){
+  if(!approvedBy || !machineNo || !customerName || !machineType){
+    return showPopup("All fields mandatory for VOR ❗");
+  }
+}
+
+// SOP / ZSPL RULES
+if(orderType === "SOP" || orderType === "ZSPL"){
+
+  if(!orderFor){
+    return showPopup("Order For required ❗");
+  }
+
+  if(orderFor === "Customer"){
+    if(!machineNo || !machineType){
+      return showPopup("Machine No & Type required ❗");
+    }
+  }
+}
+  
 if(!machineNo || !customerName) return showPopup("Fill machine & customer");
 
 const rows = document.querySelectorAll("#tbody tr");
