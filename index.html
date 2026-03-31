@@ -213,17 +213,16 @@ const { data, error } = await db
 .select("*")
 .eq("MachineNo", machineNo);
 
-// ✅ SAFE: no 406 now
+// ✅ correct handling
 if(data && data.length > 0){
   document.getElementById("customerName").value = data[0].CustomerName;
 }
 else{
+  document.getElementById("customerName").value = "";
   showManualCustomerPopup(machineNo);
 }
 
-if(data) document.getElementById("customerName").value = data.CustomerName;
 });
-}
 
 // ---------- ROW ----------
 function addRow(){
