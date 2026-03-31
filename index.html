@@ -31,20 +31,15 @@ window.onload = () => {
 
 // ---------- LOGIN ----------
 async function loadLogin() {
-
   document.getElementById("app").innerHTML = `
     <div class="min-h-screen flex flex-col justify-center items-center">
       <h1 class="text-3xl text-yellow-400 mb-6">Parts Connect Portal</h1>
 
       <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4">
-        
         <select id="branch" class="w-full p-2 bg-black border border-gray-600"></select>
-
         <input id="password" type="password" placeholder="Password"
           class="w-full p-2 bg-black border border-gray-600"/>
-
-        <button onclick="login()"
-          class="w-full bg-yellow-400 text-black py-2 rounded">
+        <button onclick="login()" class="w-full bg-yellow-400 text-black py-2 rounded">
           Login
         </button>
       </div>
@@ -60,7 +55,6 @@ async function loadLogin() {
 }
 
 async function login() {
-
   const branch = document.getElementById("branch").value;
   const password = document.getElementById("password").value;
 
@@ -79,7 +73,6 @@ async function login() {
 
 // ---------- BRANCH PANEL ----------
 function loadBranch() {
-
   const user = getUser();
 
   document.getElementById("app").innerHTML = `
@@ -113,13 +106,11 @@ function loadCreateOrder() {
 
   <div class="space-y-4">
 
-    <!-- MACHINE -->
     <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 grid grid-cols-2 gap-3">
       <input id="machineNo" placeholder="Machine Number" class="bg-black border p-2"/>
       <input id="customerName" placeholder="Customer Name" class="bg-black border p-2"/>
     </div>
 
-    <!-- TABLE -->
     <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
 
       <table class="w-full text-sm border border-gray-700 bg-gray-800">
@@ -139,6 +130,7 @@ function loadCreateOrder() {
 
       <div class="mt-4 flex gap-3">
         <button onclick="addRow()" class="bg-yellow-400 px-4 py-2 text-black">+ Add</button>
+        <button onclick="submitOrder()" class="bg-green-500 px-4 py-2 text-black">Submit</button>
       </div>
 
       <div class="mt-4 text-right text-yellow-400">
@@ -151,9 +143,7 @@ function loadCreateOrder() {
 
   addRow();
 
-  // MACHINE FETCH
   document.getElementById("machineNo").addEventListener("blur", async function () {
-
     const { data } = await db
       .from("machine_master")
       .select("*")
@@ -181,15 +171,12 @@ function addRow() {
     <td><button onclick="this.closest('tr').remove(); updateTotal()">X</button></td>
   `;
 
-  // PART FETCH
   row.querySelector(".partNo").addEventListener("blur", async function () {
-
-    const partNo = this.value;
 
     const { data } = await db
       .from("part_master")
       .select("*")
-      .eq("PartNo", partNo)
+      .eq("PartNo", this.value)
       .single();
 
     if (!data) return alert("Part not found");
@@ -201,37 +188,87 @@ function addRow() {
     calculate(row);
   });
 
-  // QTY
-  row.querySelector(".qty").addEventListener("input", function () {
-    calculate(row);
-  });
+  row.querySelector(".qty").addEventListener("input", () => calculate(row));
 
   document.getElementById("tableBody").appendChild(row);
 }
 
 // ---------- CALC ----------
 function calculate(row) {
-
   const dnp = Number(row.querySelector(".dnp").innerText) || 0;
   const qty = Number(row.querySelector(".qty").value) || 0;
-
   const val = dnp * qty;
 
   row.querySelector(".value").innerText = val;
-
   updateTotal();
 }
 
 // ---------- TOTAL ----------
 function updateTotal() {
-
   let total = 0;
-
   document.querySelectorAll(".value").forEach(v => {
     total += Number(v.innerText) || 0;
   });
-
   document.getElementById("total").innerText = total;
+}
+
+// ---------- SUBMIT ----------
+async function submitOrder() {
+
+  const user = getUser();
+
+  const machineNo = document.getElementById("machineNo").value;
+  const customerName = document.getElementById("customerName").value;
+
+  if (!machineNo || !customerName) {
+    alert("Fill machine & customer");
+    return;
+  }
+
+  const rows = document.querySelectorAll("#tableBody tr");
+
+  const orderNo = "T" + Math.floor(1000000 + Math.random() * 9000000);
+
+  const inserts = [];
+
+  rows.forEach(r => {
+    const partNo = r.querySelector(".partNo").value;
+    const qty = r.querySelector(".qty").value;
+    const desc = r.querySelector(".desc").innerText;
+    const dnp = Number(r.querySelector(".dnp").innerText) || 0;
+
+    if (!partNo || !qty) return;
+
+    inserts.push({
+      Branch: user.Branch,
+      MachineNo: machineNo,
+      CustomerName: customerName,
+      PartNo: partNo,
+      Qty: qty,
+      Description: desc,
+      DNP: dnp,
+      Value: dnp * qty,
+      OrderNo: orderNo,
+      Status: "Pending"
+    });
+  });
+
+  if (inserts.length === 0) {
+    alert("Add items");
+    return;
+  }
+
+  const { error } = await db.from("requests").insert(inserts);
+
+  if (error) {
+    console.error(error);
+    alert("Submit failed");
+    return;
+  }
+
+  alert("Submitted ✅ Order No: " + orderNo);
+
+  loadCreateOrder();
 }
 </script>
 
