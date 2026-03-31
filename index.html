@@ -1,275 +1,522 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Parts System</title>
+  <title>Parts Connect Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
-<body class="bg-black text-white p-6">
+<body class="bg-black text-white">
 
 <div id="app"></div>
 
+<!-- LOADER -->
+<div id="loader" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+  <div class="bg-gray-900 border border-gray-700 px-6 py-5 rounded-xl flex flex-col items-center gap-4">
+    <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-yellow-400 font-semibold">Processing...</p>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div id="popup" class="hidden fixed inset-0 flex items-center justify-center bg-black/70 z-50">
+  <div class="bg-gray-900 border border-gray-700 p-6 rounded-xl text-center w-[300px]">
+    <p id="popupMsg"></p>
+    <button onclick="closePopup()" class="mt-4 bg-yellow-400 px-4 py-2 text-black rounded">OK</button>
+  </div>
+</div>
+
 <script>
-const SUPABASE_URL = "https://ubkwtjyvbdvepzbxoikq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3";
-
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------- STORAGE ----------
-function getUser() {
-  return JSON.parse(localStorage.getItem("user"));
+const db = createClient(
+  "https://ubkwtjyvbdvepzbxoikq.supabase.co",
+  "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
+);
+
+// ---------- UTIL ----------
+function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
+function hideLoader(){ document.getElementById("loader").classList.add("hidden"); }
+
+function showPopup(msg){
+  document.getElementById("popupMsg").innerText = msg;
+  document.getElementById("popup").classList.remove("hidden");
+}
+
+function closePopup(){
+  document.getElementById("popup").classList.add("hidden");
+}
+
+function getUser(){
+  try { return JSON.parse(localStorage.getItem("user")); }
+  catch { return null; }
 }
 
 // ---------- INIT ----------
 window.onload = () => {
   const user = getUser();
-  if (user) loadBranch();
+  if(user) loadBranch();
   else loadLogin();
 };
 
 // ---------- LOGIN ----------
-async function loadLogin() {
-  document.getElementById("app").innerHTML = `
-    <div class="min-h-screen flex flex-col justify-center items-center">
-      <h1 class="text-3xl text-yellow-400 mb-6">Parts Connect Portal</h1>
+async function loadLogin(){
 
-      <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4">
-        <select id="branch" class="w-full p-2 bg-black border border-gray-600"></select>
-        <input id="password" type="password" placeholder="Password"
-          class="w-full p-2 bg-black border border-gray-600"/>
-        <button onclick="login()" class="w-full bg-yellow-400 text-black py-2 rounded">
-          Login
-        </button>
-      </div>
-    </div>
-  `;
+document.getElementById("app").innerHTML = `
+<div class="min-h-screen flex items-center justify-center">
+  <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4 border border-gray-700">
 
-  const { data } = await db.from("users").select("Branch");
-  const unique = [...new Set(data.map(d => d.Branch))];
+    <h1 class="text-yellow-400 text-xl text-center font-semibold">
+      Parts Connect Portal
+    </h1>
 
-  const el = document.getElementById("branch");
-  el.innerHTML = `<option value="">Select Branch</option>`;
-  unique.forEach(b => el.innerHTML += `<option>${b}</option>`);
-}
+    <select id="branch" class="w-full bg-black p-2 border border-gray-600 rounded"></select>
 
-async function login() {
-  const branch = document.getElementById("branch").value;
-  const password = document.getElementById("password").value;
+    <input id="password" type="password" placeholder="Password"
+      class="w-full bg-black p-2 border border-gray-600 rounded"/>
 
-  const { data } = await db
-    .from("users")
-    .select("*")
-    .eq("Branch", branch)
-    .eq("Password", password)
-    .single();
+    <button onclick="login()" class="w-full bg-yellow-400 text-black py-2 rounded font-semibold">
+      Login
+    </button>
 
-  if (!data) return alert("Invalid");
-
-  localStorage.setItem("user", JSON.stringify(data));
-  loadBranch();
-}
-
-// ---------- BRANCH PANEL ----------
-function loadBranch() {
-  const user = getUser();
-
-  document.getElementById("app").innerHTML = `
-    <div class="max-w-6xl mx-auto space-y-4">
-
-      <div class="flex justify-between items-center bg-gray-900 px-5 py-3 rounded-xl border border-gray-700">
-        <p class="text-yellow-400 font-semibold">${user.Branch}</p>
-
-        <button onclick="logout()"
-          class="bg-yellow-400 px-4 py-2 text-black rounded">
-          Logout
-        </button>
-      </div>
-
-      <div id="main"></div>
-    </div>
-  `;
-
-  loadCreateOrder();
-}
-
-function logout() {
-  localStorage.clear();
-  loadLogin();
-}
-
-// ---------- CREATE ORDER ----------
-function loadCreateOrder() {
-
-  document.getElementById("main").innerHTML = `
-
-  <div class="space-y-4">
-
-    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 grid grid-cols-2 gap-3">
-      <input id="machineNo" placeholder="Machine Number" class="bg-black border p-2"/>
-      <input id="customerName" placeholder="Customer Name" class="bg-black border p-2"/>
-    </div>
-
-    <div class="bg-gray-900 p-5 rounded-xl border border-gray-700">
-
-      <table class="w-full text-sm border border-gray-700 bg-gray-800">
-        <thead class="bg-black text-yellow-400">
-          <tr>
-            <th>Part No</th>
-            <th>Qty</th>
-            <th>Description</th>
-            <th>DNP</th>
-            <th>Category</th>
-            <th>Value</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-
-      <div class="mt-4 flex gap-3">
-        <button onclick="addRow()" class="bg-yellow-400 px-4 py-2 text-black">+ Add</button>
-        <button onclick="submitOrder()" class="bg-green-500 px-4 py-2 text-black">Submit</button>
-      </div>
-
-      <div class="mt-4 text-right text-yellow-400">
-        Total: ₹ <span id="total">0</span>
-      </div>
-
-    </div>
   </div>
-  `;
+</div>
+`;
 
-  addRow();
+const { data } = await db.from("users").select("Branch");
+const unique = [...new Set(data.map(d => d.Branch))];
 
-  document.getElementById("machineNo").addEventListener("blur", async function () {
-    const { data } = await db
-      .from("machine_master")
-      .select("*")
-      .eq("MachineNo", this.value)
-      .single();
-
-    if (data) {
-      document.getElementById("customerName").value = data.CustomerName;
-    }
-  });
+const el = document.getElementById("branch");
+el.innerHTML = `<option value="">Select Branch</option>`;
+unique.forEach(b => el.innerHTML += `<option>${b}</option>`);
 }
 
-// ---------- ADD ROW ----------
-function addRow() {
+async function login(){
 
-  const row = document.createElement("tr");
+const branch = document.getElementById("branch").value;
+const password = document.getElementById("password").value;
 
-  row.innerHTML = `
-    <td><input class="partNo bg-black w-full"/></td>
-    <td><input type="number" class="qty bg-black w-full"/></td>
-    <td class="desc text-center"></td>
-    <td class="dnp text-center"></td>
-    <td class="cat text-center"></td>
-    <td class="value text-center"></td>
-    <td><button onclick="this.closest('tr').remove(); updateTotal()">X</button></td>
-  `;
+if(!branch || !password) return showPopup("Fill all fields");
 
-  row.querySelector(".partNo").addEventListener("blur", async function () {
+showLoader();
 
-    const { data } = await db
-      .from("part_master")
-      .select("*")
-      .eq("PartNo", this.value)
-      .single();
+const { data } = await db
+.from("users")
+.select("*")
+.eq("Branch", branch)
+.eq("Password", password)
+.single();
 
-    if (!data) return alert("Part not found");
+hideLoader();
 
-    row.querySelector(".desc").innerText = data.Description;
-    row.querySelector(".dnp").innerText = data.DNP;
-    row.querySelector(".cat").innerText = data.Cat1;
+if(!data) return showPopup("Invalid credentials");
 
-    calculate(row);
-  });
+localStorage.setItem("user", JSON.stringify(data));
+loadBranch();
+}
 
-  row.querySelector(".qty").addEventListener("input", () => calculate(row));
+// ---------- BRANCH ----------
+function loadBranch(){
 
-  document.getElementById("tableBody").appendChild(row);
+const user = getUser();
+
+document.getElementById("app").innerHTML = `
+<div class="max-w-6xl mx-auto p-6 space-y-4">
+
+<div class="flex justify-between bg-gray-900 p-3 rounded-xl border border-gray-700">
+  <span class="text-yellow-400 font-semibold">${user.Branch}</span>
+
+  <div class="flex gap-2">
+        <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">Create</button>
+        <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">Track</button>
+        <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">HQ</button>
+  </div>
+
+  <button onclick="logout()" class="bg-yellow-400 px-3 py-1 text-black rounded">Logout</button>
+</div>
+
+<div id="main"></div>
+</div>
+`;
+
+loadCreate();
+}
+
+function logout(){
+localStorage.clear();
+loadLogin();
+}
+
+// ---------- CREATE ----------
+function loadCreate(){
+
+document.getElementById("main").innerHTML = `
+<div class="space-y-4">
+
+<div class="bg-gray-900 p-4 rounded-xl border grid grid-cols-2 gap-3">
+  <input id="machineNo" placeholder="Machine No" class="bg-black p-2 border"/>
+  <input id="customerName" placeholder="Customer Name" class="bg-black p-2 border"/>
+</div>
+
+<div class="bg-gray-900 p-5 rounded-xl border">
+
+<table class="w-full text-sm bg-gray-800">
+<thead class="bg-black text-yellow-400">
+<tr>
+<th>Part</th><th>Qty</th><th>Desc</th><th>DNP</th><th>Cat</th><th>Value</th><th></th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<div class="flex gap-2 mt-4">
+<button onclick="addRow()" class="bg-yellow-400 px-3 py-1 text-black">+ Add</button>
+<button onclick="submitOrder()" class="bg-green-500 px-3 py-1 text-black">Submit</button>
+</div>
+
+<div class="text-right mt-2 text-yellow-400">
+Total: ₹ <span id="total">0</span>
+</div>
+
+</div>
+</div>
+`;
+
+addRow();
+
+// MACHINE FETCH
+document.getElementById("machineNo").addEventListener("blur", async function(){
+
+const { data } = await db
+.from("machine_master")
+.select("*")
+.eq("MachineNo", this.value)
+.single();
+
+if(data) document.getElementById("customerName").value = data.CustomerName;
+});
+}
+
+// ---------- ROW ----------
+function addRow(){
+
+const tr = document.createElement("tr");
+
+tr.innerHTML = `
+<td><input class="part bg-black w-full"/></td>
+<td><input type="number" class="qty bg-black w-full"/></td>
+<td class="desc text-center"></td>
+<td class="dnp text-center"></td>
+<td class="cat text-center"></td>
+<td class="val text-center"></td>
+<td><button onclick="this.closest('tr').remove(); calcTotal()">X</button></td>
+`;
+
+tr.querySelector(".part").addEventListener("blur", async function(){
+
+const { data } = await db
+.from("part_master")
+.select("*")
+.eq("PartNo", this.value)
+.single();
+
+if(!data) return showPopup("Invalid Part");
+
+tr.querySelector(".desc").innerText = data.Description;
+tr.querySelector(".dnp").innerText = data.DNP;
+tr.querySelector(".cat").innerText = data.Cat1;
+
+calc(tr);
+});
+
+tr.querySelector(".qty").addEventListener("input", () => calc(tr));
+
+document.getElementById("tbody").appendChild(tr);
 }
 
 // ---------- CALC ----------
-function calculate(row) {
-  const dnp = Number(row.querySelector(".dnp").innerText) || 0;
-  const qty = Number(row.querySelector(".qty").value) || 0;
-  const val = dnp * qty;
+function calc(tr){
+const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
+const qty = Number(tr.querySelector(".qty").value) || 0;
 
-  row.querySelector(".value").innerText = val;
-  updateTotal();
+tr.querySelector(".val").innerText = dnp * qty;
+calcTotal();
 }
 
-// ---------- TOTAL ----------
-function updateTotal() {
-  let total = 0;
-  document.querySelectorAll(".value").forEach(v => {
-    total += Number(v.innerText) || 0;
-  });
-  document.getElementById("total").innerText = total;
+function calcTotal(){
+let t = 0;
+document.querySelectorAll(".val").forEach(v => t += Number(v.innerText)||0);
+document.getElementById("total").innerText = t;
 }
 
 // ---------- SUBMIT ----------
-async function submitOrder() {
+async function submitOrder(){
 
-  const user = getUser();
+const user = getUser();
+const machineNo = document.getElementById("machineNo").value;
+const customerName = document.getElementById("customerName").value;
 
-  const machineNo = document.getElementById("machineNo").value;
-  const customerName = document.getElementById("customerName").value;
+if(!machineNo || !customerName) return showPopup("Fill machine & customer");
 
-  if (!machineNo || !customerName) {
-    alert("Fill machine & customer");
-    return;
-  }
+const rows = document.querySelectorAll("#tbody tr");
 
-  const rows = document.querySelectorAll("#tableBody tr");
+const orderNo = "T" + Math.floor(1000000 + Math.random()*9000000);
 
-  const orderNo = "T" + Math.floor(1000000 + Math.random() * 9000000);
+const inserts = [];
 
-  const inserts = [];
+rows.forEach(r=>{
+const part = r.querySelector(".part").value;
+const qty = r.querySelector(".qty").value;
+const desc = r.querySelector(".desc").innerText;
+const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
-  rows.forEach(r => {
-    const partNo = r.querySelector(".partNo").value;
-    const qty = r.querySelector(".qty").value;
-    const desc = r.querySelector(".desc").innerText;
-    const dnp = Number(r.querySelector(".dnp").innerText) || 0;
+if(!part || !qty) return;
 
-    if (!partNo || !qty) return;
+inserts.push({
+Branch:user.Branch,
+MachineNo:machineNo,
+CustomerName:customerName,
+PartNo:part,
+Qty:qty,
+Description:desc,
+DNP:dnp,
+Value:dnp*qty,
+OrderNo:orderNo,
+Status:"Pending"
+});
+});
 
-    inserts.push({
-      Branch: user.Branch,
-      MachineNo: machineNo,
-      CustomerName: customerName,
-      PartNo: partNo,
-      Qty: qty,
-      Description: desc,
-      DNP: dnp,
-      Value: dnp * qty,
-      OrderNo: orderNo,
-      Status: "Pending"
-    });
-  });
+if(!inserts.length) return showPopup("Add items");
 
-  if (inserts.length === 0) {
-    alert("Add items");
-    return;
-  }
+showLoader();
 
-  const { error } = await db.from("requests").insert(inserts);
+const { error } = await db.from("requests").insert(inserts);
 
-  if (error) {
-    console.error(error);
-    alert("Submit failed");
-    return;
-  }
+hideLoader();
 
-  alert("Submitted ✅ Order No: " + orderNo);
+if(error) return showPopup("Submit failed");
 
-  loadCreateOrder();
+showPopup("Submitted ✅ Order No: "+orderNo);
+
+loadCreate();
 }
+
+
+// ---------- TRACK ----------
+async function loadTrack(){
+
+const user = getUser();
+
+showLoader();
+
+const { data } = await db
+.from("requests")
+.select("*")
+.eq("Branch", user.Branch)
+.order("created_at", { ascending:false });
+
+hideLoader();
+
+// GROUP BY ORDER
+const grouped = {};
+
+data.forEach(r=>{
+if(!grouped[r.OrderNo]){
+grouped[r.OrderNo] = { ...r, items:[] };
+}
+grouped[r.OrderNo].items.push(r);
+});
+
+const orders = Object.values(grouped);
+
+let html = `
+<div class="bg-gray-900 p-4 rounded-xl border">
+
+<table class="w-full text-sm">
+<thead class="text-yellow-400">
+<tr>
+<th>Date</th>
+<th>Machine</th>
+<th>Customer</th>
+<th>Parts</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+orders.forEach((o,i)=>{
+
+const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
+
+html += `
+<tr onclick="toggleRow(${i})" class="border-t cursor-pointer">
+<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${o.MachineNo}</td>
+<td>${o.CustomerName}</td>
+<td>${o.items.length}</td>
+<td>₹ ${total}</td>
+<td>${o.Status}</td>
+</tr>
+
+<tr id="row-${i}" class="hidden bg-black">
+<td colspan="6">
+${o.items.map(it=>`
+<div class="flex justify-between border-b py-1">
+<span>${it.PartNo}</span>
+<span>${it.Description}</span>
+<span>${it.Qty}</span>
+<span>₹ ${it.Value}</span>
+</div>
+`).join("")}
+</td>
+</tr>
+`;
+});
+
+html += `</tbody></table></div>`;
+
+document.getElementById("main").innerHTML = html;
+}
+
+function toggleRow(i){
+document.getElementById("row-"+i).classList.toggle("hidden");
+}
+
+// ---------- ADMIN ----------
+async function loadAdmin(){
+
+showLoader();
+
+const { data } = await db
+.from("requests")
+.select("*")
+.order("created_at",{ascending:false});
+
+hideLoader();
+
+// GROUP
+const grouped = {};
+data.forEach(r=>{
+if(!grouped[r.OrderNo]){
+grouped[r.OrderNo] = { ...r, items:[] };
+}
+grouped[r.OrderNo].items.push(r);
+});
+
+const orders = Object.values(grouped);
+
+let html = `
+<div class="space-y-3">
+
+<div class="flex gap-2">
+<button onclick="filterHQ('Pending')" class="bg-yellow-400 px-3 py-1 text-black">Pending</button>
+<button onclick="filterHQ('Processed')" class="bg-gray-700 px-3 py-1">Processed</button>
+</div>
+
+<div id="hqTable"></div>
+</div>
+`;
+
+document.getElementById("main").innerHTML = html;
+
+window.HQ_DATA = orders;
+renderHQ("Pending");
+}
+
+function filterHQ(status){
+renderHQ(status);
+}
+
+function renderHQ(status){
+
+const data = window.HQ_DATA.filter(o=> status==="All" || o.Status===status);
+
+let html = `
+<table class="w-full text-sm bg-gray-800">
+<thead class="text-yellow-400">
+<tr>
+<th>Date</th>
+<th>Branch</th>
+<th>Machine</th>
+<th>Parts</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+data.forEach((o,i)=>{
+
+const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
+
+html += `
+<tr onclick="toggleHQ(${i})" class="border-t cursor-pointer">
+<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${o.Branch}</td>
+<td>${o.MachineNo}</td>
+<td>${o.items.length}</td>
+<td>₹ ${total}</td>
+<td>${o.Status}</td>
+</tr>
+
+<tr id="hq-${i}" class="hidden bg-black">
+<td colspan="6">
+
+${o.items.map(it=>`
+<div class="flex justify-between border-b py-1">
+<span>${it.PartNo}</span>
+<span>${it.Description}</span>
+<span>${it.Qty}</span>
+<span>₹ ${it.Value}</span>
+</div>
+`).join("")}
+
+${o.Status==="Pending" ? `
+<div class="mt-2 flex gap-2 justify-center">
+<input id="po-${i}" placeholder="PO Number" class="bg-black border px-2 py-1"/>
+<button onclick="processOrder('${o.OrderNo}',${i})"
+class="bg-green-500 px-3 py-1">Process</button>
+</div>
+` : ""}
+
+</td>
+</tr>
+`;
+});
+
+html += "</tbody></table>";
+
+document.getElementById("hqTable").innerHTML = html;
+}
+
+function toggleHQ(i){
+document.getElementById("hq-"+i).classList.toggle("hidden");
+}
+
+// ---------- PROCESS ----------
+async function processOrder(orderNo,i){
+
+const po = document.getElementById("po-"+i).value;
+
+if(!po) return showPopup("Enter PO number");
+
+showLoader();
+
+await db
+.from("requests")
+.update({ Status:"Processed", OrderNo:po })
+.eq("OrderNo", orderNo);
+
+hideLoader();
+
+showPopup("Processed ✅");
+
+loadAdmin();
+}
+  
 </script>
 
 </body>
