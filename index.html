@@ -131,13 +131,9 @@ document.getElementById("app").innerHTML = `
   
  
     
-    <div class="flex gap-2">
-    
-      ${isAdmin ? `
-        <button onclick="loadAdmin()" class="px-3 py-1 bg-gray-800 rounded">
-          Pending
-        </button>
-      ` : `
+   <div class="flex gap-2">
+
+      ${!isAdmin ? `
         <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">
           Create
         </button>
@@ -145,7 +141,7 @@ document.getElementById("app").innerHTML = `
         <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">
           Track
         </button>
-      `}
+      ` : ``}
     
     </div>
 
@@ -156,7 +152,11 @@ document.getElementById("app").innerHTML = `
 </div>
 `;
 
-loadCreate();
+  if(isAdmin){
+    loadAdmin("Pending");
+  }else{
+    loadCreate();
+  }
 }
 
 function logout(){
