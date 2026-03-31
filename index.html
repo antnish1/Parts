@@ -178,13 +178,13 @@ const user = getUser();
 const isAdmin = user.Role === "admin" || user.Branch === "HQ";
   
 document.getElementById("app").innerHTML = `
-<div class="max-w-6xl mx-auto p-6 space-y-4">
+<div class="max-w-7xl mx-auto px-6 py-5 space-y-5">
 
 <div class="space-y-4">
 
   <!-- 🔥 PREMIUM HEADER -->
-  <div class="bg-gradient-to-r from-gray-900 via-black to-gray-900 
-  border border-gray-700 rounded-xl px-6 py-4 shadow-lg">
+    <div class="w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 
+    border border-gray-700 rounded-xl px-6 py-4 shadow-lg">
   
     <h1 class="text-2xl font-bold text-yellow-400 tracking-wide">
       PARTS CONNECT PORTAL :
@@ -194,7 +194,7 @@ document.getElementById("app").innerHTML = `
   </div>
   
   <!-- 🔥 ENTERPRISE MENU BAR -->
-  <div class="flex justify-between items-center bg-gray-900 px-4 py-3 rounded-xl border border-gray-700">
+  <div class="w-full flex justify-between items-center bg-gray-900 px-4 py-3 rounded-xl border border-gray-700">
   
     <!-- LEFT MENU -->
     <div class="flex gap-3">
@@ -227,28 +227,6 @@ document.getElementById("app").innerHTML = `
 
   
   
- 
-    
-   <div class="flex gap-2">
-
-      ${!isAdmin ? `
-        <button onclick="loadCreate()" class="px-3 py-1 bg-gray-800 rounded">
-          Create
-        </button>
-    
-        <button onclick="loadTrack()" class="px-3 py-1 bg-gray-800 rounded">
-          Track
-        </button>
-      ` : ``}
-    
-    </div>
-
-  <button onclick="logout()" class="bg-yellow-400 px-3 py-1 text-black rounded">Logout</button>
-</div>
-
-<div id="main"></div>
-</div>
-`;
 
   if(isAdmin){
     loadAdmin("Pending");
