@@ -1221,23 +1221,45 @@ async function processOrder(orderNo){
     return showPopup("Enter Order No ❗");
   }
 
+  // ✅ SAME ORDER CHECK
+  if(inputOrderNo === orderNo){
+    return showPopup("Already same Order No ❗");
+  }
+
+  // ✅ 🔥 ADD THIS BLOCK HERE
+  const { data: existing } = await db
+    .from("requests")
+    .select("OrderNo")
+    .eq("OrderNo", inputOrderNo);
+
+  if(existing && existing.length > 0){
+    return showPopup("Order No already exists ❗");
+  }
+
+  // ⬇️ THIS WAS ALREADY THERE
   showLoader();
 
   const { error } = await db
     .from("requests")
-    .update({ Status: "Processed" })
+    .update({ 
+      OrderNo: inputOrderNo,
+      Status: "Processed"
+    })
     .eq("OrderNo", orderNo);
 
   hideLoader();
 
   if(error){
-    return showPopup("Error processing ❗");
+    console.error(error);
+    return showPopup("Error updating Order ❗");
   }
 
-  showPopup("Order Processed ✅");
+  showPopup("Order Updated & Processed ✅");
 
   loadAdmin("Processed");
 }
+
+  
 
 function showManualCustomerPopup(machineNo){
 
