@@ -815,14 +815,16 @@ const orders = Object.values(grouped);
 let html = `
 <div class="bg-gray-900 p-4 rounded-xl border">
 
-<table class="w-full text-sm text-center">
+<table class="w-full text-sm text-center border-separate border-spacing-y-2">
 <thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
-<th>Machine</th>
-<th>Customer</th>
-<th>Parts</th>
-<th>Total</th>
+<th>OrderType</th>
+<th>OrderFor</th>
+<th>Branch</th>
+<th>Qty</th>
+<th>Value</th>
+<th>OrderNo</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -834,26 +836,18 @@ orders.forEach((o,i)=>{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="toggleRow(${i})" class="border-t cursor-pointer">
-<td>${new Date(o.created_at).toLocaleDateString()}</td>
-<td class="text-center">${o.MachineNo}</td>
-<td>${o.CustomerName}</td>
-<td>${o.items.length}</td>
-<td>₹ ${total}</td>
-<td>${o.Status}</td>
-</tr>
+<tr onclick="openOrderView('${o.OrderNo}')" 
+class="border-t cursor-pointer hover:bg-gray-800/40 transition-all">
 
-<tr id="row-${i}" class="hidden bg-black">
-<td colspan="6">
-${o.items.map(it=>`
-<div class="grid grid-cols-4 text-center border-b py-1">
-<span>${it.PartNo}</span>
-<span>${it.Description}</span>
-<span>${it.Qty}</span>
-<span>₹ ${it.Value}</span>
-</div>
-`).join("")}
-</td>
+<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${o.OrderType || "-"}</td>
+<td>${o.OrderFor || "-"}</td>
+<td>${o.Branch || "-"}</td>
+<td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+<td>₹ ${total}</td>
+<td class="text-yellow-400 font-semibold">${o.OrderNo}</td>
+<td>${o.Status}</td>
+
 </tr>
 `;
 });
@@ -934,11 +928,12 @@ let html = `
 <thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
+<th>OrderType</th>
+<th>OrderFor</th>
 <th>Branch</th>
-<th>Machine</th>
-<th>Customer</th>
-<th>Parts</th>
-<th>Total</th>
+<th>Qty</th>
+<th>Value</th>
+<th>OrderNo</th>
 <th>Status</th>
 </tr>
 </thead>
@@ -950,7 +945,7 @@ filtered.forEach((o,i)=>{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="toggleHQ(${i})" class="border-t cursor-pointer">
+<tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
 <td>${new Date(o.created_at).toLocaleDateString()}</td>
 <td class="text-center">${o.Branch}</td>
 <td class="text-center">${o.MachineNo}</td>
@@ -1005,6 +1000,117 @@ function filterHQ(status){
 renderHQ(status);
 }
 
+
+async function openOrderView(orderNo){
+
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(!data || !data.length){
+    return showPopup("Order not found ❗");
+  }
+
+  const order = data[0];
+
+  const total = data.reduce((s,x)=>s+Number(x.Value||0),0);
+
+  let partsHTML = data.map(r=>`
+    <tr class="border-b border-gray-700">
+      <td class="p-2">${r.PartNo}</td>
+      <td>${r.Description}</td>
+      <td>${r.Qty}</td>
+      <td>₹ ${r.Value}</td>
+    </tr>
+  `).join("");
+
+  document.getElementById("main").innerHTML = `
+  <div class="space-y-6">
+
+    <!-- 🔥 HEADER -->
+    <div class="flex justify-between items-center">
+      <h2 class="text-yellow-400 text-lg font-semibold">
+        Order Details - ${orderNo}
+      </h2>
+
+      <button onclick="loadBranch()" 
+      class="bg-gray-700 px-4 py-2 rounded">
+        Back
+      </button>
+    </div>
+
+    <!-- 🔥 ORDER INFO -->
+    <div class="bg-gray-900 p-4 rounded-xl border grid grid-cols-4 gap-4 text-sm">
+
+      <div><b>Order Type:</b><br>${order.OrderType || "-"}</div>
+      <div><b>Order For:</b><br>${order.OrderFor || "-"}</div>
+      <div><b>Branch:</b><br>${order.Branch}</div>
+      <div><b>Status:</b><br>${order.Status}</div>
+
+      <div><b>Machine No:</b><br>${order.MachineNo || "-"}</div>
+      <div><b>Customer:</b><br>${order.CustomerName || "-"}</div>
+      <div><b>Machine Type:</b><br>${order.MachineType || "-"}</div>
+      <div><b>Approved By:</b><br>${order.ApprovedBy || "-"}</div>
+
+    </div>
+
+    <!-- 🔥 FUTURE FIELDS PLACEHOLDER -->
+    <div class="bg-gray-900 p-4 rounded-xl border">
+      <h3 class="text-yellow-400 text-sm mb-2">Additional Details (Future)</h3>
+
+      <div class="grid grid-cols-4 gap-3 text-xs text-gray-400">
+
+        <div>Processed Date</div>
+        <div>Order Reg. Dt</div>
+        <div>Delivery No</div>
+        <div>Bill No</div>
+
+        <div>Billing Dt</div>
+        <div>Transport Name</div>
+        <div>Transport Mode</div>
+        <div>Docket</div>
+
+        <div>Packing Detail</div>
+        <div>E-Way Bill No</div>
+        <div>GST Invoice No</div>
+
+      </div>
+    </div>
+
+    <!-- 🔥 PARTS TABLE -->
+    <div class="bg-gray-900 p-4 rounded-xl border">
+
+      <table class="w-full text-sm text-center">
+        <thead class="text-yellow-400">
+          <tr>
+            <th>Part</th>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${partsHTML}
+        </tbody>
+      </table>
+
+      <div class="text-right mt-4 text-yellow-400 font-semibold">
+        Total: ₹ ${total}
+      </div>
+
+    </div>
+
+  </div>
+  `;
+}
+
+  
 function renderHQ(status){
 
 const data = window.HQ_DATA.filter(o=> status==="All" || o.Status===status);
@@ -1029,7 +1135,7 @@ data.forEach((o,i)=>{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="toggleHQ(${i})" class="border-t cursor-pointer">
+<tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
 <td>${new Date(o.created_at).toLocaleDateString()}</td>
 <td class="text-center">${o.Branch}</td>
 <td class="text-center">${o.MachineNo}</td>
