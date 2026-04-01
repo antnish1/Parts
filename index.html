@@ -1123,7 +1123,27 @@ async function openOrderView(orderNo){
 
 let orderStatus = "PENDING";
 
-const statuses = data.map(x => (x.Status || "").toUpperCase());
+const statuses = data.map(x => {
+  let s = (x.Status || "").toString().trim().toUpperCase();
+
+  // 🔥 NORMALIZE ALL POSSIBLE VALUES
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+
+  if(s.includes("PEND")){
+    return "PENDING";
+  }
+
+  return s;
+});
 
 // ✅ ALL DISPATCHED
 if(statuses.every(s => s === "DISPATCHED")){
@@ -1177,7 +1197,7 @@ else{
   r.Status === "PENDING" ? "text-pink-400" :
   "text-gray-300"
 }">
-  ${r.Status}
+  ${(r.Status || "").toUpperCase()}
 </td>
     <td>${formatDate(r.ProcessedDate)}</td>
     <td>${formatDate(r.OrderRegDt)}</td>
