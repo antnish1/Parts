@@ -1005,12 +1005,30 @@ async function openOrderView(orderNo){
   const total = data.reduce((s,x)=>s+Number(x.Value||0),0);
 
   let partsHTML = data.map(r=>`
-    <tr class="border-b border-gray-700">
-      <td class="p-2">${r.PartNo}</td>
-      <td>${r.Description}</td>
-      <td>${r.Qty}</td>
-      <td>₹ ${r.Value}</td>
-    </tr>
+  <tr class="border-b border-gray-700 text-xs">
+  
+    <td class="p-2">${r.PartNo}</td>
+    <td>${r.Description}</td>
+    <td>${r.Qty}</td>
+    <td>₹ ${r.Value}</td>
+  
+    <td class="${r.Status === "Processed" ? "text-green-400" : "text-yellow-400"}">
+      ${r.Status}
+    </td>
+  
+    <td>${r.ProcessedDate || "-"}</td>
+    <td>${r.OrderRegDt || "-"}</td>
+    <td>${r.DeliveryNo || "-"}</td>
+    <td>${r.BillNo || "-"}</td>
+    <td>${r.BillingDt || "-"}</td>
+    <td>${r.TransportName || "-"}</td>
+    <td>${r.TransportMode || "-"}</td>
+    <td>${r.Docket || "-"}</td>
+    <td>${r.PackingDetail || "-"}</td>
+    <td>${r.EWayBillNo || "-"}</td>
+    <td>${r.GSTInvoiceNo || "-"}</td>
+  
+  </tr>
   `).join("");
 
   document.getElementById("main").innerHTML = `
@@ -1049,12 +1067,7 @@ async function openOrderView(orderNo){
       <p class="font-medium">${order.Branch}</p>
     </div>
 
-    <div>
-      <p class="text-gray-500 text-xs">Status</p>
-      <p class="font-medium ${order.Status === "Pending" ? "text-yellow-400" : "text-green-400"}">
-        ${order.Status}
-      </p>
-    </div>
+
 
     <div>
       <p class="text-gray-500 text-xs">Machine No</p>
@@ -1080,28 +1093,7 @@ async function openOrderView(orderNo){
 
 </div>
 
-    <!-- 🔥 FUTURE FIELDS PLACEHOLDER -->
-    <div class="bg-gray-900 p-4 rounded-xl border">
-      <h3 class="text-yellow-400 text-sm mb-2">Additional Details (Future)</h3>
 
-      <div class="grid grid-cols-4 gap-3 text-xs text-gray-400">
-
-        <div>Processed Date</div>
-        <div>Order Reg. Dt</div>
-        <div>Delivery No</div>
-        <div>Bill No</div>
-
-        <div>Billing Dt</div>
-        <div>Transport Name</div>
-        <div>Transport Mode</div>
-        <div>Docket</div>
-
-        <div>Packing Detail</div>
-        <div>E-Way Bill No</div>
-        <div>GST Invoice No</div>
-
-      </div>
-    </div>
 
     <!-- 🔥 PARTS TABLE -->
     <div class="bg-gray-900 p-4 rounded-xl border">
@@ -1109,10 +1101,22 @@ async function openOrderView(orderNo){
       <table class="w-full text-sm text-center">
         <thead class="text-gray-400 uppercase text-xs tracking-wider">
           <tr>
-            <th>Part</th>
-            <th>Description</th>
-            <th>Qty</th>
-            <th>Value</th>
+          <th>Part</th>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Value</th>
+          <th>Status</th>
+          <th>Processed Date</th>
+          <th>Order Reg Dt</th>
+          <th>Delivery No</th>
+          <th>Bill No</th>
+          <th>Billing Dt</th>
+          <th>Transport</th>
+          <th>Mode</th>
+          <th>Docket</th>
+          <th>Packing</th>
+          <th>E-Way Bill</th>
+          <th>GST Invoice</th>
           </tr>
         </thead>
 
