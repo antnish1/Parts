@@ -1285,6 +1285,76 @@ showPopup("Saved ✅");
 }
   
 
+async function processExcelData(rows){
+
+  showLoader();
+
+  let updated = 0;
+  let skipped = 0;
+
+  for(const r of rows){
+
+    const orderNo = r["Order No"]?.toString().trim();
+    const partNo = r["Material No"]?.toString().trim();
+    const status = r["Status"]?.toString().trim();
+
+    // ❗ SKIP INVALID ROWS
+    if(!orderNo || !partNo){
+      skipped++;
+      continue;
+    }
+
+    // 🔍 CHECK IF MATCH EXISTS FIRST (SAFE UPDATE)
+    const { data: existing } = await db
+      .from("requests")
+      .select("*")
+      .eq("OrderNo", orderNo)
+      .eq("PartNo", partNo)
+      .maybeSingle();
+
+    if(!existing){
+      skipped++;
+      continue;
+    }
+
+    // ✅ UPDATE ONLY MATCHED ROW
+    const { error } = await db
+      .from("requests")
+      .update({
+        Status: status || "Processed",
+
+        ProcessedDate: new Date().toISOString(),
+
+        OrderRegDt: r["Order Reg. Dt"] || "",
+        DeliveryNo: r["Delivery No"] || "",
+        BillNo: r["BillNo & Image"] || "",
+        BillingDt: r["Billing Dt"] || "",
+        TransportName: r["Transport Name"] || "",
+        TransportMode: r["Transport Mode"] || "",
+        Docket: r["Docket"] || "",
+        PackingDetail: r["Packing Detail"] || "",
+        EWayBillNo: r["E-Way Bill No"] || "",
+        GSTInvoiceNo: r["GST Invoice No."] || ""
+      })
+      .eq("OrderNo", orderNo)
+      .eq("PartNo", partNo);
+
+    if(!error){
+      updated++;
+    } else {
+      console.error(error);
+      skipped++;
+    }
+  }
+
+  hideLoader();
+
+  showPopup(`Upload Complete ✅\nUpdated: ${updated}\nSkipped: ${skipped}`);
+
+  loadAdmin(window.activeTab);
+}
+
+  
   
 </script>
 
