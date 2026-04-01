@@ -929,6 +929,10 @@ const filtered = orders.filter(o => o.Status === activeTab);
 let html = `
 <div class="space-y-4">
 
+<div class="flex justify-end mb-3">
+  <input type="file" id="uploadExcel" accept=".xlsx"
+    class="text-sm text-gray-300"/>
+</div>
 
 
 <!-- TABLE -->
@@ -1283,6 +1287,27 @@ document.getElementById("customerName").value = customer;
 closePopup();
 showPopup("Saved ✅");
 }
+
+
+
+
+document.addEventListener("change", async function(e){
+
+  if(e.target.id !== "uploadExcel") return;
+
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(sheet);
+
+  processExcelData(json);
+});
+
+  
   
 
 async function processExcelData(rows){
@@ -1357,6 +1382,6 @@ async function processExcelData(rows){
   
   
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </body>
 </html>
