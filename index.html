@@ -871,12 +871,16 @@ document.getElementById("row-"+i).classList.toggle("hidden");
 
 async function loadPendingCount(){
 
-  const { count, error } = await db
+  const { data, error } = await db
     .from("requests")
-    .select("*", { count: "exact", head: true })
+    .select("OrderNo, Status")
     .eq("Status", "Pending");
 
   if(error) return;
+
+  // ✅ GET UNIQUE ORDER COUNT
+  const uniqueOrders = [...new Set(data.map(d => d.OrderNo))];
+  const count = uniqueOrders.length;
 
   const el = document.getElementById("pendingCount");
 
@@ -889,7 +893,6 @@ async function loadPendingCount(){
     }
   }
 }
-
   
 // ---------- ADMIN ----------
 async function loadAdmin(activeTab = "Pending"){
