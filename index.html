@@ -746,23 +746,28 @@ rows.forEach(r=>{
 
   if(!part) return;
 
-  inserts.push({
-    Branch:user.Branch,
-    MachineNo:machineNo,
-    OrderType: orderType,
-    OrderFor: orderFor,
-    MachineType: machineType,
-    ApprovedBy: approvedBy,
-    CustomerName:customerName,
-    
-    PartNo:part,
-    Qty:qty,
-    Description:desc,
-    DNP:dnp,
-    Value:dnp*qty,
-    OrderNo:orderNo,
-    Status:"Pending"
-  });
+inserts.push({
+  Branch: user.Branch,
+
+  OrderType: orderType,
+  OrderFor: orderFor,
+
+  EmployeeName: user.Name || "",
+  ApprovedBy: approvedBy,
+
+  CallID: document.getElementById("callId").value || "",
+  MachineNo: machineNo,
+  CustomerName: customerName,
+
+  PartNo: part,
+  Qty: qty,
+  Description: desc,
+  DNP: dnp,
+  Value: dnp * qty,
+
+  OrderNo: orderNo,
+  Status: "Pending"
+});
 
 });
 
