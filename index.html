@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html>
 <head>
   <title>Parts Connect Portal</title>
@@ -1631,9 +1631,12 @@ async function processExcelData(rows){
   let skipped = 0;
 
   for(const r of rows){
-
+    console.log("🟡 RAW EXCEL ROW:", r);
     const orderNo = r["Order No"]?.toString().trim().toUpperCase();
     const partNo = r["Material No"]?.toString().trim().toUpperCase();
+    console.log("📦 Excel OrderNo:", orderNo);
+    console.log("🔩 Excel PartNo:", partNo);
+    
     const status = r["Status"]?.toString().trim();
 
     // ❗ SKIP INVALID ROWS
@@ -1649,10 +1652,15 @@ async function processExcelData(rows){
       .eq("OrderNo", orderNo)
       .eq("PartNo", partNo.replace(/\s/g,""))
       .maybeSingle();
-
-    if(!existing){
+      console.log("🧾 DB MATCH RESULT:", existing);
+   if(!existing){
+      console.log("❌ NO MATCH FOUND");
+      console.log("Excel:", orderNo, partNo);
       skipped++;
       continue;
+    } else {
+      console.log("✅ MATCH FOUND");
+      console.log("DB Row:", existing);
     }
 
     // ✅ UPDATE ONLY MATCHED ROW
@@ -1694,7 +1702,15 @@ async function processExcelData(rows){
   loadAdmin(window.activeTab);
 }
 
-  
+async function debugDB(){
+
+  const { data } = await db.from("requests").select("OrderNo, PartNo");
+
+  console.log("📊 DB DATA SAMPLE:");
+  data.slice(0,20).forEach(r=>{
+    console.log("DB →", r.OrderNo, "|", r.PartNo);
+  });
+}  
   
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
