@@ -231,9 +231,9 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
   <div class="flex items-center gap-3">
 
     ${!isAdmin ? `
-      <button onclick="loadCreate('create')"
-      data-tab="create">
-      class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}">
+        <button onclick="loadCreate('create')" 
+        class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
+        data-tab="create">
         New Order
       </button>
 
@@ -639,7 +639,7 @@ if(!partNo){
 const { data } = await db
 .from("part_master")
 .select("*")
-.eq("PartNo", partNo)
+.eq("PartNo", partNo.replace(/\s/g,""))
 .single();
 
 // ✅ FIX 2: show error only if user typed something wrong
@@ -1322,8 +1322,8 @@ async function processExcelData(rows){
 
   for(const r of rows){
 
-    const orderNo = r["Order No"]?.toString().trim();
-    const partNo = r["Material No"]?.toString().trim();
+    const orderNo = r["Order No"]?.toString().trim().toUpperCase();
+    const partNo = r["Material No"]?.toString().trim().toUpperCase();
     const status = r["Status"]?.toString().trim();
 
     // ❗ SKIP INVALID ROWS
@@ -1337,7 +1337,7 @@ async function processExcelData(rows){
       .from("requests")
       .select("*")
       .eq("OrderNo", orderNo)
-      .eq("PartNo", partNo)
+      .eq("PartNo", partNo.replace(/\s/g,""))
       .maybeSingle();
 
     if(!existing){
@@ -1365,7 +1365,7 @@ async function processExcelData(rows){
         GSTInvoiceNo: r["GST Invoice No."] || ""
       })
       .eq("OrderNo", orderNo)
-      .eq("PartNo", partNo);
+      .eq("PartNo", partNo.replace(/\s/g,""));
 
     if(!error){
       updated++;
