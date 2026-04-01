@@ -845,15 +845,25 @@ let html = `
 orders.forEach((o,i)=>{
 
 const statuses = o.items.map(x => {
-  let s = (x.Status || "").toUpperCase().trim();
+  let s = (x.Status || "").toString().trim().toUpperCase();
 
-  // 🔥 NORMALIZATION FIX
-  if(s === "NOT DISPATCHED") s = "NOT DESPATCHED";
-  if(s === "PROCESSED") s = "PROCESSED";
-  if(s === "PENDING") s = "PENDING";
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+
+  if(s.includes("PEND")){
+    return "PENDING";
+  }
 
   return s;
-});
+});;
 
 let orderStatus = "PENDING";
 
@@ -1009,12 +1019,22 @@ let html = `
 filtered.forEach((o,i)=>{
 
 const statuses = o.items.map(x => {
-  let s = (x.Status || "").toUpperCase().trim();
+  let s = (x.Status || "").toString().trim().toUpperCase();
 
-  // 🔥 NORMALIZATION FIX
-  if(s === "NOT DISPATCHED") s = "NOT DESPATCHED";
-  if(s === "PROCESSED") s = "PROCESSED";
-  if(s === "PENDING") s = "PENDING";
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+
+  if(s.includes("PEND")){
+    return "PENDING";
+  }
 
   return s;
 });
