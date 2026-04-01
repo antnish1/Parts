@@ -749,7 +749,12 @@ rows.forEach(r=>{
   inserts.push({
     Branch:user.Branch,
     MachineNo:machineNo,
+    OrderType: orderType,
+    OrderFor: orderFor,
+    MachineType: machineType,
+    ApprovedBy: approvedBy,
     CustomerName:customerName,
+    
     PartNo:part,
     Qty:qty,
     Description:desc,
@@ -945,7 +950,7 @@ filtered.forEach((o,i)=>{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
+<tr onclick="openOrderView('${o.OrderNo}')" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
 <td>${new Date(o.created_at).toLocaleDateString()}</td>
 <td class="text-center">${o.Branch}</td>
 <td class="text-center">${o.MachineNo}</td>
@@ -955,35 +960,7 @@ html += `
 <td>${o.Status}</td>
 </tr>
 
-<tr id="hq-${i}" class="hidden bg-black">
-<td colspan="7">
 
-${o.items.map(it=>`
-<div class="grid grid-cols-4 text-center border-b py-1">
-<span>${it.PartNo}</span>
-<span>${it.Description}</span>
-<span>${it.Qty}</span>
-<span>₹ ${it.Value}</span>
-</div>
-`).join("")}
-
-${o.Status==="Pending" ? `
-<div class="mt-3 flex gap-2 justify-center">
-
-<input id="po-${i}"
-placeholder="Enter PO Number"
-class="bg-black border px-3 py-2 rounded text-center"/>
-
-<button onclick="event.stopPropagation(); processOrder('${o.OrderNo}', ${i})"
-class="bg-green-500 px-4 py-2 rounded">
-Process
-</button>
-
-</div>
-` : ""}
-
-</td>
-</tr>
 `;
 });
 
@@ -1045,18 +1022,22 @@ async function openOrderView(orderNo){
     </div>
 
     <!-- 🔥 ORDER INFO -->
-    <div class="bg-gray-900 p-4 rounded-xl border grid grid-cols-4 gap-4 text-sm">
-
-      <div><b>Order Type:</b><br>${order.OrderType || "-"}</div>
-      <div><b>Order For:</b><br>${order.OrderFor || "-"}</div>
-      <div><b>Branch:</b><br>${order.Branch}</div>
-      <div><b>Status:</b><br>${order.Status}</div>
-
-      <div><b>Machine No:</b><br>${order.MachineNo || "-"}</div>
-      <div><b>Customer:</b><br>${order.CustomerName || "-"}</div>
-      <div><b>Machine Type:</b><br>${order.MachineType || "-"}</div>
-      <div><b>Approved By:</b><br>${order.ApprovedBy || "-"}</div>
-
+    <div class="bg-gray-900 p-4 rounded-xl border text-sm text-gray-300 space-y-2">
+    
+      <div>
+        <span class="text-gray-500">Order Type:</span> ${order.OrderType || "-"} ,
+        <span class="text-gray-500 ml-4">Order For:</span> ${order.OrderFor || "-"} ,
+        <span class="text-gray-500 ml-4">Branch:</span> ${order.Branch} ,
+        <span class="text-gray-500 ml-4">Status:</span> ${order.Status}
+      </div>
+    
+      <div>
+        <span class="text-gray-500">Machine No:</span> ${order.MachineNo || "-"} ,
+        <span class="text-gray-500 ml-4">Customer:</span> ${order.CustomerName || "-"} ,
+        <span class="text-gray-500 ml-4">Machine Type:</span> ${order.MachineType || "-"} ,
+        <span class="text-gray-500 ml-4">Approved By:</span> ${order.ApprovedBy || "-"}
+      </div>
+    
     </div>
 
     <!-- 🔥 FUTURE FIELDS PLACEHOLDER -->
@@ -1086,7 +1067,7 @@ async function openOrderView(orderNo){
     <div class="bg-gray-900 p-4 rounded-xl border">
 
       <table class="w-full text-sm text-center">
-        <thead class="text-yellow-400">
+        <thead class="text-gray-400 uppercase text-xs tracking-wider">
           <tr>
             <th>Part</th>
             <th>Description</th>
@@ -1144,28 +1125,7 @@ html += `
 <td>${o.Status}</td>
 </tr>
 
-<tr id="hq-${i}" class="hidden bg-black">
-<td colspan="6">
 
-${o.items.map(it=>`
-<div class="grid grid-cols-4 text-center border-b py-1">
-<span>${it.PartNo}</span>
-<span>${it.Description}</span>
-<span>${it.Qty}</span>
-<span>₹ ${it.Value}</span>
-</div>
-`).join("")}
-
-${o.Status==="Pending" ? `
-<div class="mt-2 flex gap-2 justify-center">
-<input id="po-${i}" placeholder="PO Number" class="bg-black border px-2 py-1"/>
-<button onclick="processOrder('${o.OrderNo}',${i})"
-class="bg-green-500 px-3 py-1">Process</button>
-</div>
-` : ""}
-
-</td>
-</tr>
 `;
 });
 
