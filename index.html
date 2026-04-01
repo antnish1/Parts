@@ -842,7 +842,7 @@ const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
 <tr onclick="openOrderView('${o.OrderNo}')" 
-class="border-t cursor-pointer hover:bg-gray-800/40 transition-all">
+class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
 
 <td>${new Date(o.created_at).toLocaleDateString()}</td>
 <td>${o.OrderType || "-"}</td>
