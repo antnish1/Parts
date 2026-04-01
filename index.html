@@ -281,15 +281,12 @@ function updateMenuHighlight(){
 
   document.querySelectorAll(".top-btn").forEach(btn=>{
     btn.classList.remove("active-top-btn");
-  });
 
-  const tabs = ["create","track","Pending","Processed"];
-
-  tabs.forEach((tab, index)=>{
-    if(window.activeTab === tab){
-      document.querySelectorAll(".top-btn")[index]?.classList.add("active-top-btn");
+    if(btn.dataset.tab === window.activeTab){
+      btn.classList.add("active-top-btn");
     }
   });
+
 }
 
   
@@ -856,6 +853,29 @@ function toggleRow(i){
 document.getElementById("row-"+i).classList.toggle("hidden");
 }
 
+
+async function loadPendingCount(){
+
+  const { count, error } = await db
+    .from("requests")
+    .select("*", { count: "exact", head: true })
+    .eq("Status", "Pending");
+
+  if(error) return;
+
+  const el = document.getElementById("pendingCount");
+
+  if(el){
+    if(count > 0){
+      el.innerText = count;
+      el.classList.remove("hidden");
+    } else {
+      el.classList.add("hidden");
+    }
+  }
+}
+
+  
 // ---------- ADMIN ----------
 async function loadAdmin(activeTab = "Pending"){
 window.activeTab = activeTab;
