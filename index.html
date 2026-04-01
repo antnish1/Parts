@@ -283,13 +283,13 @@ function updateMenuHighlight(){
     btn.classList.remove("active-top-btn");
   });
 
-  if(window.activeTab === "create"){
-    document.querySelectorAll(".top-btn")[0]?.classList.add("active-top-btn");
-  }
+  const tabs = ["create","track","Pending","Processed"];
 
-  if(window.activeTab === "track"){
-    document.querySelectorAll(".top-btn")[1]?.classList.add("active-top-btn");
-  }
+  tabs.forEach((tab, index)=>{
+    if(window.activeTab === tab){
+      document.querySelectorAll(".top-btn")[index]?.classList.add("active-top-btn");
+    }
+  });
 }
 
   
@@ -321,17 +321,27 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 
   <div class="flex items-center gap-3">
 
-    ${!isAdmin ? `
-      <button onclick="loadCreate('create')" 
-      class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}">
-        New Order
-      </button>
-
-      <button onclick="loadTrack('track')" 
-      class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
-        Track Orders
-      </button>
-    ` : ``}
+  ${!isAdmin ? `
+    <button onclick="loadCreate('create')" 
+    class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}">
+      New Order
+    </button>
+  
+    <button onclick="loadTrack('track')" 
+    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
+      Track Orders
+    </button>
+  ` : `
+    <button onclick="loadAdmin('Pending')" 
+    class="top-btn ${window.activeTab==='Pending' ? 'active-top-btn' : ''}">
+      Pending
+    </button>
+  
+    <button onclick="loadAdmin('Processed')" 
+    class="top-btn ${window.activeTab==='Processed' ? 'active-top-btn' : ''}">
+      Processed
+    </button>
+  `}
 
     <button onclick="logout()" 
     class="top-btn logout-btn">
@@ -848,7 +858,8 @@ document.getElementById("row-"+i).classList.toggle("hidden");
 
 // ---------- ADMIN ----------
 async function loadAdmin(activeTab = "Pending"){
-
+window.activeTab = activeTab;
+updateMenuHighlight();
 showLoader();
 
 const { data } = await db
@@ -876,20 +887,7 @@ const filtered = orders.filter(o => o.Status === activeTab);
 let html = `
 <div class="space-y-4">
 
-<!-- TABS -->
-<div class="flex gap-2">
 
-<button onclick="loadAdmin('Pending')"
-class="${activeTab==='Pending' ? 'bg-yellow-400 text-black' : 'bg-gray-700'} px-4 py-2 rounded">
-Pending
-</button>
-
-<button onclick="loadAdmin('Processed')"
-class="${activeTab==='Processed' ? 'bg-yellow-400 text-black' : 'bg-gray-700'} px-4 py-2 rounded">
-Processed
-</button>
-
-</div>
 
 <!-- TABLE -->
 <div class="bg-gray-950 p-4 rounded-xl border overflow-x-auto">
