@@ -319,23 +319,34 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
   <div class="flex items-center gap-3">
 
   ${!isAdmin ? `
-    <button onclick="loadCreate('create')" 
-    class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}">
+      <button onclick="loadCreate('create')" 
+      class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
+      data-tab="create">
       New Order
     </button>
   
     <button onclick="loadTrack('track')" 
-    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
+    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
+    data-tab="track">
       Track Orders
     </button>
   ` : `
     <button onclick="loadAdmin('Pending')" 
-    class="top-btn ${window.activeTab==='Pending' ? 'active-top-btn' : ''}">
-      Pending
+    class="top-btn ${window.activeTab==='Pending' ? 'active-top-btn' : ''}"
+    data-tab="Pending">
+    
+      <span class="flex items-center gap-2">
+        Pending
+        <span id="pendingCount" 
+          class="hidden bg-red-500 text-white text-xs px-2 py-[2px] rounded-full">
+        </span>
+      </span>
+    
     </button>
-  
+      
     <button onclick="loadAdmin('Processed')" 
-    class="top-btn ${window.activeTab==='Processed' ? 'active-top-btn' : ''}">
+    class="top-btn ${window.activeTab==='Processed' ? 'active-top-btn' : ''}"
+    data-tab="Processed">
       Processed
     </button>
   `}
@@ -361,6 +372,10 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 // ✅ Load correct screen
 if(isAdmin){
   loadAdmin(window.activeTab || "Pending");
+if(isAdmin){
+  setTimeout(loadPendingCount, 200);
+}
+  
 }else{
   if(window.activeTab === "track"){
     loadTrack("track");
@@ -1069,7 +1084,7 @@ await db
 .eq("OrderNo", orderNo);
 
 hideLoader();
-
+loadPendingCount();
 showPopup("Processed ✅");
 
 loadAdmin("Pending");
