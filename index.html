@@ -1229,12 +1229,16 @@ else{
     </tr>
     `).join("");
 
+const user = getUser();
+const isAdmin = user.Branch === "HQ";
+  
   document.getElementById("main").innerHTML = `
   <div class="space-y-6">
 
     <!-- 🔥 HEADER -->
     <div class="flex justify-between items-center">
 
+${isAdmin ? `
 <div class="flex gap-3 items-center mt-3">
 
   <input id="processOrderNo" 
@@ -1247,6 +1251,7 @@ else{
   </button>
 
 </div>
+` : ``}
     
       <h2 class="text-yellow-400 text-lg font-semibold">
         Order Details - ${orderNo} 
