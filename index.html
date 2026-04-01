@@ -844,9 +844,20 @@ let html = `
 
 orders.forEach((o,i)=>{
 
-const statuses = o.items.map(x => (x.Status || "").toUpperCase());
+const statuses = o.items.map(x => {
+  let s = (x.Status || "").toUpperCase().trim();
+
+  // 🔥 NORMALIZATION FIX
+  if(s === "NOT DISPATCHED") s = "NOT DESPATCHED";
+  if(s === "PROCESSED") s = "PROCESSED";
+  if(s === "PENDING") s = "PENDING";
+
+  return s;
+});
 
 let orderStatus = "PENDING";
+
+// ✅ PRIORITY BASED (TOP → DOWN)
 
 if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
@@ -854,11 +865,14 @@ if(statuses.every(s => s === "DISPATCHED")){
 else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
 else if(statuses.every(s => s === "PROCESSED")){
   orderStatus = "PROCESSED";
 }
-else if(statuses.every(s => s === "NOT DESPATCHED")){
-  orderStatus = "NOT DESPATCHED";
+else{
+  orderStatus = "PENDING";
 }
   
 
@@ -994,9 +1008,20 @@ let html = `
 
 filtered.forEach((o,i)=>{
 
-const statuses = o.items.map(x => (x.Status || "").toUpperCase());
+const statuses = o.items.map(x => {
+  let s = (x.Status || "").toUpperCase().trim();
+
+  // 🔥 NORMALIZATION FIX
+  if(s === "NOT DISPATCHED") s = "NOT DESPATCHED";
+  if(s === "PROCESSED") s = "PROCESSED";
+  if(s === "PENDING") s = "PENDING";
+
+  return s;
+});
 
 let orderStatus = "PENDING";
+
+// ✅ PRIORITY BASED (TOP → DOWN)
 
 if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
@@ -1004,13 +1029,15 @@ if(statuses.every(s => s === "DISPATCHED")){
 else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
-else if(statuses.every(s => s === "PROCESSED")){
-  orderStatus = "PROCESSED";
-}
 else if(statuses.every(s => s === "NOT DESPATCHED")){
   orderStatus = "NOT DESPATCHED";
 }
-  
+else if(statuses.every(s => s === "PROCESSED")){
+  orderStatus = "PROCESSED";
+}
+else{
+  orderStatus = "PENDING";
+}
 
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
@@ -1108,15 +1135,19 @@ else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
 
+
+  // ✅ ALL NOT DESPATCHED
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
+
+  
 // ✅ ALL PROCESSED
 else if(statuses.every(s => s === "PROCESSED")){
   orderStatus = "PROCESSED";
 }
 
-// ✅ ALL NOT DESPATCHED
-else if(statuses.every(s => s === "NOT DESPATCHED")){
-  orderStatus = "NOT DESPATCHED";
-}
+
 
 // ✅ DEFAULT
 else{
@@ -1215,8 +1246,8 @@ else{
       <p class="text-gray-500 text-xs">Status</p>
       <p class="font-medium ${
         orderStatus === "DISPATCHED" ? "text-green-400" :
-        orderStatus === "Partially Dispatched" ? "text-yellow-400" :
-        orderStatus === "Processed" ? "text-yellow-400" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "text-yellow-400" :
+        orderStatus === "PROCESSED" ? "text-yellow-400" :
         "text-pink-400"
       }">
         ${orderStatus}
