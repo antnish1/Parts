@@ -1042,22 +1042,34 @@ async function openOrderView(orderNo){
 
   const total = data.reduce((s,x)=>s+Number(x.Value||0),0);
 
-  let orderStatus = "Pending";
+let orderStatus = "PENDING";
 
-  const statuses = data.map(x => (x.Status || "").toUpperCase());
-  
-  if(statuses.every(s => s === "DISPATCHED")){
-    orderStatus = "Dispatched";
-  }
-  else if(statuses.every(s => s === "PROCESSED")){
-    orderStatus = "Processed";
-  }
-  else if(statuses.includes("DISPATCHED") && statuses.includes("NOT DESPATCHED")){
-    orderStatus = "Partially Dispatched";
-  }
-  else if(statuses.some(s => s !== "PENDING")){
-    orderStatus = "In Progress";
-  }
+const statuses = data.map(x => (x.Status || "").toUpperCase());
+
+// ✅ ALL DISPATCHED
+if(statuses.every(s => s === "DISPATCHED")){
+  orderStatus = "DISPATCHED";
+}
+
+// ✅ ANY DISPATCHED
+else if(statuses.includes("DISPATCHED")){
+  orderStatus = "PARTIALLY DISPATCHED";
+}
+
+// ✅ ALL PROCESSED
+else if(statuses.every(s => s === "PROCESSED")){
+  orderStatus = "PROCESSED";
+}
+
+// ✅ ALL NOT DESPATCHED
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
+
+// ✅ DEFAULT
+else{
+  orderStatus = "PENDING";
+}
 
   let partsHTML = data.map(r=>`
   <tr class="border-b border-gray-700 text-xs">
@@ -1075,17 +1087,15 @@ async function openOrderView(orderNo){
       </td>
     <td>₹ ${r.Value}</td>
   
-    <td class="${
-      r.Status === "Processed" ? "text-yellow-400" :
-      r.Status === "DISPATCHED" ? "text-green-400" :
-      r.Status === "NOT DESPATCHED" ? "text-blue-400" :
-      r.Status === "Pending" ? "text-pink-400" :
-      "text-gray-300"
-    }">
-      ${r.Status}
-    </td>
-      ${r.Status}
-    </td>
+<td class="${
+  r.Status === "PROCESSED" ? "text-yellow-400" :
+  r.Status === "DISPATCHED" ? "text-green-400" :
+  r.Status === "NOT DESPATCHED" ? "text-blue-400" :
+  r.Status === "PENDING" ? "text-pink-400" :
+  "text-gray-300"
+}">
+  ${r.Status}
+</td>
     <td>${formatDate(r.ProcessedDate)}</td>
     <td>${formatDate(r.OrderRegDt)}</td>
 
