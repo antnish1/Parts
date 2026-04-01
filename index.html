@@ -350,6 +350,14 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
     data-tab="Processed">
       Processed
     </button>
+
+    <button onclick="loadUpload()" 
+    class="top-btn ${window.activeTab==='upload' ? 'active-top-btn' : ''}"
+    data-tab="upload">
+      Upload
+    </button>
+
+    
   `}
 
     <button onclick="logout()" 
@@ -991,10 +999,7 @@ else{
 let html = `
 <div class="space-y-4">
 
-<div class="flex justify-end mb-3">
-  <input type="file" id="uploadExcel" accept=".xlsx"
-    class="text-sm text-gray-300"/>
-</div>
+
 
 
 <!-- TABLE -->
@@ -1095,6 +1100,46 @@ html += `
 
 document.getElementById("main").innerHTML = html;
 }
+
+
+
+function loadUpload(){
+
+  window.activeTab = "upload";
+  updateMenuHighlight();
+
+  document.getElementById("main").innerHTML = `
+  
+  <div class="space-y-6">
+
+    <!-- STATUS REPORT -->
+    <div class="bg-gray-900 p-5 rounded-xl border">
+      <h2 class="text-yellow-400 text-sm font-semibold text-center mb-4">
+        STATUS REPORT UPLOAD
+      </h2>
+
+      <div class="flex justify-center">
+        <input type="file" id="uploadExcel" accept=".xlsx"
+          class="text-sm text-gray-300"/>
+      </div>
+    </div>
+
+    <!-- INWARD REPORT -->
+    <div class="bg-gray-900 p-5 rounded-xl border">
+      <h2 class="text-yellow-400 text-sm font-semibold text-center mb-4">
+        UPLOAD INWARD REPORT
+      </h2>
+
+      <div class="flex justify-center">
+        <input type="file" id="uploadInward" accept=".xlsx"
+          class="text-sm text-gray-300"/>
+      </div>
+    </div>
+
+  </div>
+  `;
+}
+  
 function filterHQ(status){
 renderHQ(status);
 }
@@ -1554,20 +1599,27 @@ showPopup("Saved ✅");
 
 document.addEventListener("change", async function(e){
 
-  if(e.target.id !== "uploadExcel") return;
+  // ✅ STATUS REPORT
+  if(e.target.id === "uploadExcel"){
 
-  const file = e.target.files[0];
-  if(!file) return;
+    const file = e.target.files[0];
+    if(!file) return;
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
 
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json(sheet);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
 
-  processExcelData(json);
+    processExcelData(json);
+  }
+
+  // ✅ INWARD REPORT (FOR FUTURE)
+  if(e.target.id === "uploadInward"){
+    showPopup("Inward Upload Coming Soon 🚧");
+  }
+
 });
-
   
   
 
