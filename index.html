@@ -924,10 +924,19 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped);
 
 // FILTER
-const filtered = orders.filter(o => 
-  o.items.some(x => x.Status === activeTab)
-);
+let filtered;
 
+if(activeTab === "Pending"){
+  filtered = orders.filter(o => 
+    o.items.some(x => x.Status === "Pending")
+  );
+}
+else{
+  // ✅ ALL NON-PENDING (Processed + Dispatched + Partial)
+  filtered = orders.filter(o => 
+    o.items.some(x => x.Status !== "Pending")
+  );
+}
 // UI
 let html = `
 <div class="space-y-4">
@@ -1043,6 +1052,20 @@ async function openOrderView(orderNo){
 
     <!-- 🔥 HEADER -->
     <div class="flex justify-between items-center">
+
+<div class="flex gap-3 items-center mt-3">
+
+  <input id="processOrderNo" 
+    placeholder="Enter Order No"
+    class="bg-black border border-gray-600 px-3 py-2 rounded text-sm"/>
+
+  <button onclick="processOrder('${orderNo}')"
+    class="bg-green-500 px-4 py-2 rounded text-black font-semibold">
+    Process
+  </button>
+
+</div>
+    
       <h2 class="text-yellow-400 text-lg font-semibold">
         Order Details - ${orderNo}
       </h2>
@@ -1103,27 +1126,27 @@ async function openOrderView(orderNo){
 
 
     <!-- 🔥 PARTS TABLE -->
-    <div class="bg-gray-900 p-4 rounded-xl border">
+   <div class="bg-gray-900 p-4 rounded-xl border overflow-x-auto">
 
-      <table class="w-full text-sm text-center">
+      <table class="min-w-[1400px] text-sm text-center">
         <thead class="text-gray-400 uppercase text-xs tracking-wider">
           <tr>
-          <th>Part</th>
-          <th>Description</th>
-          <th>Qty</th>
-          <th>Value</th>
-          <th>Status</th>
-          <th>Processed Date</th>
-          <th>Order Reg Dt</th>
-          <th>Delivery No</th>
-          <th>Bill No</th>
-          <th>Billing Dt</th>
-          <th>Transport</th>
-          <th>Mode</th>
-          <th>Docket</th>
-          <th>Packing</th>
-          <th>E-Way Bill</th>
-          <th>GST Invoice</th>
+          <th class="px-4 py-3 whitespace-nowrap">Part</th>
+          <th class="px-4 py-3 whitespace-nowrap">Description</th>
+          <th class="px-4 py-3 whitespace-nowrap">Qty</th>
+          <th class="px-4 py-3 whitespace-nowrap">Value</th>
+          <th class="px-4 py-3 whitespace-nowrap">Status</th>
+          <th class="px-4 py-3 whitespace-nowrap">Processed Date</th>
+          <th class="px-4 py-3 whitespace-nowrap">Order Reg Dt</th>
+          <th class="px-4 py-3 whitespace-nowrap">Delivery No</th>
+          <th class="px-4 py-3 whitespace-nowrap">Bill No</th>
+          <th class="px-4 py-3 whitespace-nowrap">Billing Dt</th>
+          <th class="px-4 py-3 whitespace-nowrap">Transport Mode</th>
+          <th class="px-4 py-3 whitespace-nowrap">Docket</th>
+          <th class="px-4 py-3 whitespace-nowrap">Packing</th>
+          <th class="px-4 py-3 whitespace-nowrap">E-Way Bill</th>
+          <th class="px-4 py-3 whitespace-nowrap">GST Invoice</th>
+        
           </tr>
         </thead>
 
@@ -1190,26 +1213,31 @@ document.getElementById("hq-"+i).classList.toggle("hidden");
 }
 
 // ---------- PROCESS ----------
-async function processOrder(orderNo,i){
+async function processOrder(orderNo){
 
-const po = document.getElementById("po-"+i).value;
+  const inputOrderNo = document.getElementById("processOrderNo").value.trim();
 
-if(!po) return showPopup("Enter PO number");
+  if(!inputOrderNo){
+    return showPopup("Enter Order No ❗");
+  }
 
-showLoader();
+  showLoader();
 
-await db
-.from("requests")
-.update({ Status:"Processed", OrderNo:po })
-.eq("OrderNo", orderNo);
+  const { error } = await db
+    .from("requests")
+    .update({ Status: "Processed" })
+    .eq("OrderNo", orderNo);
 
-hideLoader();
-loadPendingCount();
-showPopup("Processed ✅");
+  hideLoader();
 
-loadAdmin("Pending");
+  if(error){
+    return showPopup("Error processing ❗");
+  }
+
+  showPopup("Order Processed ✅");
+
+  loadAdmin("Processed");
 }
-
 
 function showManualCustomerPopup(machineNo){
 
