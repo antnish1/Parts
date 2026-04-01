@@ -1042,6 +1042,23 @@ async function openOrderView(orderNo){
 
   const total = data.reduce((s,x)=>s+Number(x.Value||0),0);
 
+  let orderStatus = "Pending";
+
+  const statuses = data.map(x => (x.Status || "").toUpperCase());
+  
+  if(statuses.every(s => s === "DISPATCHED")){
+    orderStatus = "Dispatched";
+  }
+  else if(statuses.every(s => s === "PROCESSED")){
+    orderStatus = "Processed";
+  }
+  else if(statuses.includes("DISPATCHED") && statuses.includes("NOT DESPATCHED")){
+    orderStatus = "Partially Dispatched";
+  }
+  else if(statuses.some(s => s !== "PENDING")){
+    orderStatus = "In Progress";
+  }
+
   let partsHTML = data.map(r=>`
   <tr class="border-b border-gray-700 text-xs">
   
@@ -1049,10 +1066,24 @@ async function openOrderView(orderNo){
     <td>${r.Description}</td>
     <td>${r.Qty}</td>
     <td>${r.BilledQty || 0}</td>
-    <td>${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}</td>
+    <td class="${
+        (Number(r.Qty || 0) - Number(r.BilledQty || 0)) > 0 
+          ? 'text-yellow-400' 
+          : 'text-green-400'
+      }">
+        ${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}
+      </td>
     <td>₹ ${r.Value}</td>
   
-    <td class="${r.Status === "Processed" ? "text-green-400" : "text-yellow-400"}">
+    <td class="${
+      r.Status === "Processed" ? "text-yellow-400" :
+      r.Status === "DISPATCHED" ? "text-green-400" :
+      r.Status === "NOT DESPATCHED" ? "text-blue-400" :
+      r.Status === "Pending" ? "text-pink-400" :
+      "text-gray-300"
+    }">
+      ${r.Status}
+    </td>
       ${r.Status}
     </td>
     <td>${formatDate(r.ProcessedDate)}</td>
@@ -1085,7 +1116,10 @@ async function openOrderView(orderNo){
 </div>
     
       <h2 class="text-yellow-400 text-lg font-semibold">
-        Order Details - ${orderNo}
+        Order Details - ${orderNo} 
+        <span class="text-gray-400 text-sm ml-3">
+          (${formatDate(order.created_at)})
+        </span>
       </h2>
 
       <button onclick="loadBranch()" 
@@ -1115,7 +1149,17 @@ async function openOrderView(orderNo){
       <p class="font-medium">${order.Branch}</p>
     </div>
 
-
+    <div>
+      <p class="text-gray-500 text-xs">Status</p>
+      <p class="font-medium ${
+        orderStatus === "Dispatched" ? "text-green-400" :
+        orderStatus === "Partially Dispatched" ? "text-yellow-400" :
+        orderStatus === "Processed" ? "text-yellow-400" :
+        "text-pink-400"
+      }">
+        ${orderStatus}
+      </p>
+    </div>
 
     <div>
       <p class="text-gray-500 text-xs">Machine No</p>
