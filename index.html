@@ -1028,24 +1028,53 @@ async function openOrderView(orderNo){
       </button>
     </div>
 
-    <!-- 🔥 ORDER INFO -->
-    <div class="bg-gray-900 p-4 rounded-xl border text-sm text-gray-300 space-y-2">
-    
-      <div>
-        <span class="text-gray-500">Order Type:</span> ${order.OrderType || "-"} ,
-        <span class="text-gray-500 ml-4">Order For:</span> ${order.OrderFor || "-"} ,
-        <span class="text-gray-500 ml-4">Branch:</span> ${order.Branch} ,
-        <span class="text-gray-500 ml-4">Status:</span> ${order.Status}
-      </div>
-    
-      <div>
-        <span class="text-gray-500">Machine No:</span> ${order.MachineNo || "-"} ,
-        <span class="text-gray-500 ml-4">Customer:</span> ${order.CustomerName || "-"} ,
-        <span class="text-gray-500 ml-4">Machine Type:</span> ${order.WarrantyStatus || "-"} ,
-        <span class="text-gray-500 ml-4">Approved By:</span> ${order.ApprovedBy || "-"}
-      </div>
-    
+<div class="bg-gray-900 p-5 rounded-xl border text-sm text-gray-300">
+
+  <div class="grid grid-cols-4 gap-4">
+
+    <div>
+      <p class="text-gray-500 text-xs">Order Type</p>
+      <p class="font-medium">${order.OrderType || "-"}</p>
     </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Order For</p>
+      <p class="font-medium">${order.OrderFor || "-"}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Branch</p>
+      <p class="font-medium">${order.Branch}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Status</p>
+      <p class="font-medium">${order.Status}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Machine No</p>
+      <p class="font-medium">${order.MachineNo || "-"}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Customer</p>
+      <p class="font-medium">${order.CustomerName || "-"}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Machine Type</p>
+      <p class="font-medium">${order.WarrantyStatus || "-"}</p>
+    </div>
+
+    <div>
+      <p class="text-gray-500 text-xs">Approved By</p>
+      <p class="font-medium">${order.ApprovedBy || "-"}</p>
+    </div>
+
+  </div>
+
+</div>
 
     <!-- 🔥 FUTURE FIELDS PLACEHOLDER -->
     <div class="bg-gray-900 p-4 rounded-xl border">
