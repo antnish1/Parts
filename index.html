@@ -1001,6 +1001,28 @@ renderHQ(status);
 }
 
 
+
+function formatDate(val){
+
+  if(!val) return "-";
+
+  // ✅ Case 1: ISO date (ProcessedDate)
+  if(val.includes("T")){
+    const d = new Date(val);
+    return d.toLocaleDateString("en-GB"); // dd/mm/yyyy
+  }
+
+  // ✅ Case 2: Excel number (OrderRegDt, BillingDt)
+  if(!isNaN(val)){
+    const excelDate = new Date((val - 25569) * 86400 * 1000);
+    return excelDate.toLocaleDateString("en-GB");
+  }
+
+  return val;
+}
+
+
+  
 async function openOrderView(orderNo){
 
   showLoader();
@@ -1026,24 +1048,22 @@ async function openOrderView(orderNo){
     <td class="p-2">${r.PartNo}</td>
     <td>${r.Description}</td>
     <td>${r.Qty}</td>
+    <td>${r.BilledQty || 0}</td>
+    <td>${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}</td>
     <td>₹ ${r.Value}</td>
   
     <td class="${r.Status === "Processed" ? "text-green-400" : "text-yellow-400"}">
       ${r.Status}
     </td>
-  
-    <td>${r.ProcessedDate || "-"}</td>
-    <td>${r.OrderRegDt || "-"}</td>
+    <td>${formatDate(r.ProcessedDate)}</td>
+    <td>${formatDate(r.OrderRegDt)}</td>
 
     <td>${r.BillNo || "-"}</td>
-    <td>${r.BillingDt || "-"}</td>
+    <td>${formatDate(r.BillingDt)}</td>
     <td>${r.TransportName || "-"}</td>
-   
     <td>${r.Docket || "-"}</td>
-
-  
-  </tr>
-  `).join("");
+    </tr>
+    `).join("");
 
   document.getElementById("main").innerHTML = `
   <div class="space-y-6">
@@ -1132,11 +1152,13 @@ async function openOrderView(orderNo){
           <th class="px-4 py-3 whitespace-nowrap">Part</th>
           <th class="px-4 py-3 whitespace-nowrap">Description</th>
           <th class="px-4 py-3 whitespace-nowrap">Qty</th>
+           <th class="px-4 py-3 whitespace-nowrap">Billed Qty</th>
+          <th class="px-4 py-3 whitespace-nowrap">Unbilled Qty</th>
           <th class="px-4 py-3 whitespace-nowrap">Value</th>
           <th class="px-4 py-3 whitespace-nowrap">Status</th>
           <th class="px-4 py-3 whitespace-nowrap">Processed Date</th>
           <th class="px-4 py-3 whitespace-nowrap">Order Reg Dt</th>
-     
+
           <th class="px-4 py-3 whitespace-nowrap">Bill No</th>
           <th class="px-4 py-3 whitespace-nowrap">Billing Dt</th>
           <th class="px-4 py-3 whitespace-nowrap">Transport Name</th>
@@ -1403,12 +1425,14 @@ async function processExcelData(rows){
         DeliveryNo: r["Delivery No"] || "",
         BillNo: r["BillNo & Image"] || "",
         BillingDt: r["Billing Dt"] || "",
+        BilledQty: Number(r["Billed Qty"] || 0),
         TransportName: r["Transport Name"] || "",
         TransportMode: r["Transport Mode"] || "",
         Docket: r["Docket"] || "",
         PackingDetail: r["Packing Detail"] || "",
         EWayBillNo: r["E-Way Bill No"] || "",
         GSTInvoiceNo: r["GST Invoice No."] || ""
+        
       })
       .eq("OrderNo", orderNo)
       .eq("PartNo", partNo.replace(/\s/g,""));
