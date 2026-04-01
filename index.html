@@ -924,7 +924,9 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped);
 
 // FILTER
-const filtered = orders.filter(o => o.Status === activeTab);
+const filtered = orders.filter(o => 
+  o.items.some(x => x.Status === activeTab)
+);
 
 // UI
 let html = `
