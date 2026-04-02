@@ -1050,22 +1050,39 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped);
 
 let html = `
-<div class="bg-gray-900 p-4 rounded-xl border">
+<div class="space-y-5">
 
-<table class="w-full text-sm text-center border-separate border-spacing-y-2">
-<thead class="text-yellow-400 text-center">
-<tr>
-<th>Date</th>
-<th>OrderType</th>
-<th>OrderFor</th>
-<th>Branch</th>
-<th>Qty</th>
-<th>Value</th>
-<th>OrderNo</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
+  <!-- CARD WRAPPER (same as New Order) -->
+  <div class="relative pc-section">
+
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        TRACK ORDERS
+      </span>
+    </div>
+
+    <div class="overflow-x-auto mt-2">
+
+      <table class="w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
+
+        <thead class="text-xs uppercase tracking-wider border-b"
+              style="background: var(--pc-warm); color: var(--pc-text);">
+
+          <tr>
+            <th class="py-2">Date</th>
+            <th class="py-2">Order Type</th>
+            <th class="py-2">Order For</th>
+            <th class="py-2">Branch</th>
+            <th class="py-2">Qty</th>
+            <th class="py-2">Value</th>
+            <th class="py-2">Order No</th>
+            <th class="py-2">Status</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
 `;
 
 orders.forEach((o,i)=>{
