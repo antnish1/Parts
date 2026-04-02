@@ -1651,12 +1651,44 @@ document.getElementById("main").innerHTML = `
     </div>
 
     <!-- 🔥 NEW BACK BUTTON -->
-    <button onclick="loadTrack('track')" 
+    <button onclick="${isAdmin ? "loadAdmin('Pending')" : "loadTrack('track')"}" 
       class="menu-btn">
       ← Back to Orders
     </button>
 
   </div>
+
+
+<!-- ================= PROCESS BAR (HQ ONLY) ================= -->
+${isAdmin ? `
+<div class="relative pc-section">
+
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      PROCESS ORDER
+    </span>
+  </div>
+
+  <div class="flex items-center gap-3 mt-2">
+
+    <input 
+      id="processOrderNo"
+      placeholder="Enter New Order No"
+      class="pc-field max-w-xs"
+    />
+
+    <button 
+      onclick="processOrder('${orderNo}')"
+      class="menu-btn">
+      Process
+    </button>
+
+  </div>
+
+</div>
+` : ``}
+
+
 
 
   <!-- ================= ORDER INFO ================= -->
