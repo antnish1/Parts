@@ -132,12 +132,19 @@ body {
 }
 
 .top-btn {
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-radius: 10px;
   background: rgba(255,255,255,0.86);
   border: 1px solid #8AA9C2;
   color: #1F2937;
   font-weight: 700;
+
+  display: inline-flex;       /* ✅ FIX */
+  align-items: center;        /* ✅ FIX */
+  gap: 6px;                   /* ✅ FIX */
+  white-space: nowrap;        /* ✅ FIX */
+  flex-shrink: 0;             /* ✅ FIX */
+
   transition: all 0.22s ease;
 }
 
@@ -569,8 +576,8 @@ document.getElementById("app").innerHTML = `
       <button onclick="loadCreate('create')" 
       class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
       data-tab="create">
-      <span class="pc-btn-inline">
-      <i data-lucide="file-plus-2" class="pc-icon"></i>
+    <span class="flex items-center gap-2">
+      <i data-lucide="file-plus-2" class="w-4 h-4"></i>
       New Order
     </span>
     </button>
@@ -578,10 +585,10 @@ document.getElementById("app").innerHTML = `
     <button onclick="loadTrack('track')" 
     class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
     data-tab="track">
-      <span class="pc-btn-inline">
-      <i data-lucide="search-check" class="pc-icon"></i>
-      Track Orders
-    </span>
+<span class="flex items-center gap-2">
+  <i data-lucide="search-check" class="w-4 h-4"></i>
+  Track Orders
+</span>
     </button>
   ` : `
     <button onclick="loadAdmin('Pending')" 
@@ -615,8 +622,8 @@ document.getElementById("app").innerHTML = `
 
     <button onclick="logout()" 
     class="top-btn logout-btn">
-      <span class="pc-btn-inline">
-      <i data-lucide="log-out" class="pc-icon"></i>
+    <span class="flex items-center gap-2">
+      <i data-lucide="log-out" class="w-4 h-4"></i>
       Logout
     </span>
     </button>
