@@ -890,7 +890,10 @@ function calc(tr){
   const value = dnp * qty;
 
   // ✅ FIX: force 2 decimal places
-  tr.querySelector(".val").innerText = value.toFixed(2);
+ tr.querySelector(".val").innerText = value.toLocaleString("en-IN", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
 
   calcTotal();
 }
