@@ -538,10 +538,19 @@ document.getElementById("app").innerHTML = `
 <div class="w-full rounded-2xl px-6 py-4 shadow-lg flex justify-between items-center"
      style="background: linear-gradient(90deg, #AACDDC 0%, #81A6C6 100%); border: 1px solid var(--pc-border);">
 
-  <h1 class="text-3xl font-extrabold tracking-wide" style="color: #1F2937;">
-    PARTS CONNECT PORTAL :
-    <span class="ml-2" style="color: #0F172A;">${user.Branch}</span>
-  </h1>
+<div class="flex items-center gap-3">
+
+  <img 
+    src="/mnt/data/HDU4w-removebg-preview.png"
+    alt="Parts Connect Logo"
+    class="h-10 object-contain"
+  />
+
+  <span class="text-lg font-semibold" style="color:#0F172A;">
+    ${user.Branch}
+  </span>
+
+</div>
 
   <div class="flex items-center gap-3">
 
