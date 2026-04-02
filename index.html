@@ -123,7 +123,7 @@ body {
   opacity: 1;
 }
 
-    
+
 
 .active-tab {
   background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
@@ -132,33 +132,35 @@ body {
 }
 
 .top-btn {
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.86);
-  border: 1px solid #8AA9C2;
-  color: #1F2937;
-  font-weight: 700;
+  font-weight: 600;
 
-  display: inline-flex;       /* ✅ FIX */
-  align-items: center;        /* ✅ FIX */
-  gap: 6px;                   /* ✅ FIX */
-  white-space: nowrap;        /* ✅ FIX */
-  flex-shrink: 0;             /* ✅ FIX */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 
-  transition: all 0.22s ease;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.08);
+
+  transition: all 0.2s ease;
 }
 
 .top-btn:hover {
-  background: #EAF3F8;
-  color: #0F172A;
+  background: rgba(255,255,255,0.95);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
-
 
 .active-top-btn {
   background: #81A6C6;
   color: #0F172A;
   border-color: #6E95B8;
+    style="
+  background: linear-gradient(135deg, #5B7FA3, #3E5C76);
+  color: white;
+"
 }
     
 .logout-btn {
@@ -542,35 +544,31 @@ document.getElementById("app").innerHTML = `
   <div class="space-y-4">
 
 <!-- HEADER WITH LOGOUT -->
-<div class="w-full rounded-2xl px-6 py-3 shadow-lg flex justify-between items-center"
+<div class="w-full rounded-2xl px-6 py-3 flex justify-between items-center backdrop-blur-md"
      style="
-        background: linear-gradient(135deg, #2f3e4d 0%, #3f556b 100%);
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-        ">
+       background: rgba(255, 255, 255, 0.65);
+       border: 1px solid rgba(255,255,255,0.4);
+       box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+     ">
 
 <div class="relative flex items-center w-full">
 
   <!-- LEFT: LOGO -->
 <div class="flex items-center gap-4">
 
-  <!-- LOGO -->
-<img 
-  src="HDU4w-removebg-preview.png"
-  class="h-12 w-auto object-contain"
-/>
+  <img 
+    src="HDU4w-removebg-preview.png"
+    class="h-12 w-auto object-contain"
+  />
 
-  <!-- DIVIDER -->
-  <div class="h-6 w-px bg-gray-400 opacity-60"></div>
+  <div class="h-6 w-px bg-gray-400 opacity-50"></div>
 
-  <!-- BRANCH -->
-<span class="text-sm font-semibold tracking-widest uppercase px-2 py-1 rounded-md"
-      style="background: rgba(255,255,255,0.4); color:#0F172A;">
-  ${user.Branch}
-</span>
+  <span class="text-sm font-semibold tracking-widest uppercase"
+        style="color:#1F2937;">
+    ${user.Branch}
+  </span>
 
 </div>
-
 
 </div>
 
