@@ -1549,7 +1549,7 @@ else{
 }
 
   let partsHTML = data.map(r=>`
-  <tr class="border-b border-gray-700 text-xs">
+  <tr class="text-xs" style="border-bottom: 1px solid rgba(170,205,220,0.16);">
   
     <td class="p-2">${r.PartNo}</td>
     <td>${r.Description}</td>
@@ -1562,16 +1562,28 @@ else{
       }">
         ${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}
       </td>
-    <td>₹ ${r.Value}</td>
+    <td style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${Number(r.Value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
   
-<td class="${
-  r.Status === "PROCESSED" ? "text-yellow-400" :
-  r.Status === "DISPATCHED" ? "text-green-400" :
-  r.Status === "NOT DESPATCHED" ? "text-blue-400" :
-  r.Status === "PENDING" ? "text-pink-400" :
-  "text-gray-300"
-}">
-  ${(r.Status || "").toUpperCase()}
+<td>
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        r.Status === "DISPATCHED" ? "#d1fae5" :
+        r.Status === "PROCESSED" ? "#fef3c7" :
+        r.Status === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        r.Status === "DISPATCHED" ? "#065f46" :
+        r.Status === "PROCESSED" ? "#92400e" :
+        r.Status === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${(r.Status || "").toUpperCase()}
+  </span>
 </td>
     <td>${formatDate(r.ProcessedDate)}</td>
     <td>${formatDate(r.OrderRegDt)}</td>
