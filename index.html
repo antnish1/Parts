@@ -54,10 +54,7 @@
 
 
     
-    <p id="popupMsg"></p>
-    <div id="popupActions" class="mt-4 flex justify-center"></div>
-  </div>
-</div>
+
 
 <!-- ================= UPLOAD PROGRESS ================= -->
 <div id="uploadProgress" class="hidden fixed bottom-6 right-6 z-50 w-[320px]">
@@ -413,9 +410,9 @@ button[style*="rgba(255,255,255"]:hover {
   
 <script>
 const { createClient } = supabase;
-
-const db = createClient(
 let cancelUploadFlag = false;
+const db = createClient(
+
     
   "https://ubkwtjyvbdvepzbxoikq.supabase.co",
   "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
