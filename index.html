@@ -692,13 +692,13 @@ main.innerHTML = `
 <thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
       style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;"
 <tr>
-<th class="py-3 w-[14%]" style="color: #1F2937;">Part</th>
-<th class="py-3 w-[14%]" style="color: #1F2937;">Qty</th>
-<th class="py-3 w-[14%]" style="color: #1F2937;">Desc</th>
-<th class="py-3 w-[14%]" style="color: #1F2937;">DNP</th>
-<th class="py-3 w-[14%]" style="color: #1F2937;">Cat</th>
+<th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
+<th class="py-3 w-[28%]" style="color: #1F2937;">Desc</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">DNP</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">Cat</th>
 <th class="py-3 w-[14%]" style="color: #1F2937;">Value</th>
-<th class="py-3 w-[14%]" style="color: #1F2937;"></th>
+<th class="py-3 w-[10%]" style="color: #1F2937;"></th>
 
 </tr>
 </thead>
@@ -817,7 +817,7 @@ function addRow(){
 const tr = document.createElement("tr");
 
 tr.innerHTML = `
-<td class="p-2">
+<td class="p-1">
   <input class="part pc-field w-full"/>
 </td>
 
@@ -825,12 +825,12 @@ tr.innerHTML = `
   <input type="number" class="qty pc-field w-full"/>
 </td>
 
-<td class="desc py-3"></td>
-<td class="dnp py-3"></td>
-<td class="cat py-3"></td>
-<td class="val py-3 font-semibold" style="color:#1F2937;"></td>
+<td class="desc py-1"></td>
+<td class="dnp py-1"></td>
+<td class="cat py-1"></td>
+<td class="val py-1 font-semibold" style="color:#1F2937;"></td>
 
-<td class="py-3">
+<td class="py-1">
   <button class="text-red-400 hover:text-red-300 font-bold"
   onclick="this.closest('tr').remove(); calcTotal()">✕</button>
 </td>
@@ -884,17 +884,26 @@ document.getElementById("tbody").appendChild(tr);
 
 // ---------- CALC ----------
 function calc(tr){
-const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
-const qty = Number(tr.querySelector(".qty").value) || 0;
+  const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
+  const qty = Number(tr.querySelector(".qty").value) || 0;
 
-tr.querySelector(".val").innerText = dnp * qty;
-calcTotal();
+  const value = dnp * qty;
+
+  // ✅ FIX: force 2 decimal places
+  tr.querySelector(".val").innerText = value.toFixed(2);
+
+  calcTotal();
 }
 
 function calcTotal(){
-let t = 0;
-document.querySelectorAll(".val").forEach(v => t += Number(v.innerText)||0);
-document.getElementById("total").innerText = t;
+  let t = 0;
+
+  document.querySelectorAll(".val").forEach(v => {
+    t += Number(v.innerText) || 0;
+  });
+
+  // ✅ FIX: total also 2 decimal
+  document.getElementById("total").innerText = t.toFixed(2);
 }
 
 // ---------- SUBMIT ----------
