@@ -1312,22 +1312,36 @@ let html = `
 
 
 <!-- TABLE -->
-<div class="bg-gray-950 p-4 rounded-xl border overflow-x-auto">
+<div class="relative pc-section">
 
-<table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
-<thead class="text-yellow-400 text-center">
-<tr>
-<th>Date</th>
-<th>OrderType</th>
-<th>OrderFor</th>
-<th>Branch</th>
-<th>Qty</th>
-<th>Value</th>
-<th>OrderNo</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
+  <!-- FLOAT LABEL -->
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      ${activeTab.toUpperCase()} ORDERS
+    </span>
+  </div>
+
+  <div class="overflow-x-auto mt-2">
+
+    <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
+
+      <thead class="text-xs uppercase tracking-wider border-b"
+            style="background: var(--pc-warm); color: var(--pc-text);">
+
+        <tr>
+          <th class="py-2">Date</th>
+          <th class="py-2">Order Type</th>
+          <th class="py-2">Order For</th>
+          <th class="py-2">Branch</th>
+          <th class="py-2">Qty</th>
+          <th class="py-2">Value</th>
+          <th class="py-2">Order No</th>
+          <th class="py-2">Status</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
 `;
 
 filtered.forEach((o,i)=>{
@@ -1376,23 +1390,38 @@ else{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="openOrderView('${o.OrderNo}')" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
+<tr onclick="openOrderView('${o.OrderNo}')" 
+class="cursor-pointer transition hover:scale-[1.01]">
 <td>${new Date(o.created_at).toLocaleDateString()}</td>
 
 <td>${o.OrderType || "-"}</td>
 <td>${o.OrderFor || "-"}</td>
 <td>${o.Branch || "-"}</td>
 <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
-<td>₹ ${total}</td>
-<td class="text-yellow-400 font-semibold">${o.OrderNo}</td>
-<td class="${
-  orderStatus === "DISPATCHED" ? "text-green-400" :
-  orderStatus === "PARTIALLY DISPATCHED" ? "text-yellow-400" :
-  orderStatus === "PROCESSED" ? "text-yellow-400" :
-  orderStatus === "NOT DESPATCHED" ? "text-blue-400" :
-  "text-pink-400"
-}">
-  ${orderStatus}
+<td style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
+<td class="font-semibold" style="color: var(--pc-primary);">${o.OrderNo}</td>
+<td>
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        orderStatus === "DISPATCHED" ? "#d1fae5" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+        orderStatus === "PROCESSED" ? "#fef3c7" :
+        orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        orderStatus === "DISPATCHED" ? "#065f46" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+        orderStatus === "PROCESSED" ? "#92400e" :
+        orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${orderStatus}
+  </span>
 </td>
 </tr>
 
@@ -1422,28 +1451,36 @@ function loadUpload(){
   <div class="space-y-6">
 
     <!-- STATUS REPORT -->
-    <div class="bg-gray-900 p-5 rounded-xl border">
-      <h2 class="text-yellow-400 text-sm font-semibold text-center mb-4">
-        STATUS REPORT UPLOAD
-      </h2>
+<div class="relative pc-section">
 
-      <div class="flex justify-center">
-        <input type="file" id="uploadExcel" accept=".xlsx"
-          class="text-sm text-gray-300"/>
-      </div>
-    </div>
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      STATUS REPORT UPLOAD
+    </span>
+  </div>
 
-    <!-- INWARD REPORT -->
-    <div class="bg-gray-900 p-5 rounded-xl border">
-      <h2 class="text-yellow-400 text-sm font-semibold text-center mb-4">
-        UPLOAD INWARD REPORT
-      </h2>
+  <div class="flex justify-center mt-4">
+    <input type="file" id="uploadExcel" accept=".xlsx"
+      class="pc-field max-w-xs"/>
+  </div>
 
-      <div class="flex justify-center">
-        <input type="file" id="uploadInward" accept=".xlsx"
-          class="text-sm text-gray-300"/>
-      </div>
-    </div>
+</div>
+
+
+<div class="relative pc-section">
+
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      INWARD REPORT
+    </span>
+  </div>
+
+  <div class="flex justify-center mt-4">
+    <input type="file" id="uploadInward" accept=".xlsx"
+      class="pc-field max-w-xs"/>
+  </div>
+
+</div>
 
   </div>
   `;
