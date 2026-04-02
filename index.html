@@ -1655,7 +1655,7 @@ document.getElementById("main").innerHTML = `
 
 <div class="relative pc-section">
 
-  <div class="flex items-center gap-4 flex-wrap">
+  <div class="flex justify-between items-center flex-wrap gap-4">
 
     <!-- ORDER DETAILS -->
     <div>
@@ -1667,34 +1667,40 @@ document.getElementById("main").innerHTML = `
       </p>
     </div>
 
-    ${isAdmin ? `
-      <!-- INPUT -->
-      <input 
-        id="processOrderNo"
-        placeholder="Enter Order No"
-        class="pc-field max-w-[160px]"
-      />
+${isAdmin ? `
+  <div class="flex items-center gap-2">
 
-      <!-- PROCESS -->
-      <button onclick="processOrder('${orderNo}')"
-        class="menu-btn">
-        Process
-      </button>
+    <input 
+      id="processOrderNo"
+      placeholder="Enter Order No"
+      class="pc-field max-w-[160px]"
+    />
 
-      <!-- REJECT -->
-      <button onclick="confirmReject('${orderNo}')"
-        class="menu-btn"
-        style="background:#fde2e2; color:#7f1d1d;">
-        Reject
-      </button>
-    ` : ``}
+    <button onclick="processOrder('${orderNo}')"
+      class="menu-btn">
+      Process
+    </button>
 
-    <!-- BACK BUTTON -->
+    <button onclick="confirmReject('${orderNo}')"
+      class="menu-btn"
+      style="background:#fde2e2; color:#7f1d1d;">
+      Reject
+    </button>
+
     <button 
       onclick="${isAdmin ? "loadAdmin('Pending')" : "loadTrack('track')"}"
-      class="menu-btn ml-auto">
+      class="menu-btn">
       ← Back
     </button>
+
+  </div>
+` : `
+  <button 
+    onclick="loadTrack('track')"
+    class="menu-btn ml-auto">
+    ← Back
+  </button>
+`}
 
   </div>
 
