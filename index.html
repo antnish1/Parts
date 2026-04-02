@@ -123,7 +123,12 @@
 .logout-btn:hover {
   background: #dc2626;
 }
-  
+
+input:focus, select:focus, button:focus {
+  box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.35);
+  border-color: var(--pc-secondary) !important;
+}
+    
 </style>
 
 
@@ -175,19 +180,31 @@ window.onload = () => {
 async function loadLogin(){
 
 document.getElementById("app").innerHTML = `
-<div class="min-h-screen flex items-center justify-center">
-  <div class="bg-gray-900 p-6 rounded-xl w-80 space-y-4 border border-gray-700">
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm p-7 rounded-2xl space-y-5 shadow-2xl"
+       style="background: linear-gradient(180deg, rgba(170,205,220,0.10), rgba(129,166,198,0.10)); border: 1px solid var(--pc-border); backdrop-filter: blur(8px);">
 
-    <h1 class="text-yellow-400 text-xl text-center font-semibold">
+    <h1 class="text-2xl text-center font-bold tracking-wide"
+        style="color: var(--pc-light);">
       Parts Connect Portal
     </h1>
 
-    <select id="branch" class="w-full bg-black p-2 border border-gray-600 rounded"></select>
+    <p class="text-center text-sm" style="color: var(--pc-text-muted); margin-top: -8px;">
+      Secure branch access
+    </p>
+
+    <select id="branch"
+      class="w-full p-2.5 rounded-lg outline-none transition"
+      style="background: #16202a; border: 1px solid var(--pc-border); color: var(--pc-text);">
+    </select>
 
     <input id="password" type="password" placeholder="Password"
-      class="w-full bg-black p-2 border border-gray-600 rounded"/>
+      class="w-full p-2.5 rounded-lg outline-none transition"
+      style="background: #16202a; border: 1px solid var(--pc-border); color: var(--pc-text);" />
 
-    <button onclick="login()" class="w-full bg-yellow-400 text-black py-2 rounded font-semibold">
+    <button onclick="login()"
+      class="w-full py-2.5 rounded-lg font-semibold transition duration-200"
+      style="background: var(--pc-primary); color: #0f1720;">
       Login
     </button>
 
