@@ -1940,11 +1940,28 @@ ${isAdmin ? `
 
   </div>
 ` : `
+<div class="flex items-center gap-3 ml-auto">
+
+  <!-- DOWNLOAD -->
+  <button onclick="downloadOrderExcel('${orderNo}')"
+    class="pc-action-btn"
+    style="background: linear-gradient(135deg, #10b981, #059669);">
+    ⬇️ Download
+  </button>
+
+  <!-- BACK -->
   <button 
     onclick="loadTrack('track')"
-    class="menu-btn ml-auto">
+    class="pc-action-btn"
+    style="
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--pc-border);
+      color: var(--pc-text);
+    ">
     ← Back
   </button>
+
+</div>
 `}
 
   </div>
