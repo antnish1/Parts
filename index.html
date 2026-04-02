@@ -458,10 +458,6 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
   `}
 
 
-    renderIcons();
-
-
-
     <button onclick="logout()" 
     class="top-btn logout-btn">
       <span class="pc-btn-inline">
@@ -483,6 +479,9 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 </div>
 `;
 
+renderIcons();
+
+    
 // ✅ Load correct screen
 if(isAdmin){
   loadAdmin(window.activeTab || "Pending");
