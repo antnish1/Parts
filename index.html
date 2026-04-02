@@ -1055,7 +1055,8 @@ tr.innerHTML = `
 `;
 tr.querySelector(".part").addEventListener("blur", async function(){
 
-const partNo = this.value.trim();
+const partNo = this.value.trim().toUpperCase();
+this.value = partNo; // ✅ also update input visually
 
 // ✅ FIX 1: ignore empty input
 if(!partNo){
@@ -1071,7 +1072,7 @@ if(!partNo){
 const { data } = await db
 .from("part_master")
 .select("*")
-.eq("PartNo", partNo.replace(/\s/g,""))
+.eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
 .single();
 
 // ✅ FIX 2: show error only if user typed something wrong
@@ -2408,7 +2409,7 @@ async function processExcelData(rows){
       .from("requests")
       .select("*")
       .eq("OrderNo", orderNo)
-      .eq("PartNo", partNo.replace(/\s/g,""))
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
       .maybeSingle();
       console.log("🧾 DB MATCH RESULT:", existing);
    if(!existing){
@@ -2443,7 +2444,7 @@ async function processExcelData(rows){
         
       })
       .eq("OrderNo", orderNo)
-      .eq("PartNo", partNo.replace(/\s/g,""));
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase());
 
     if(!error){
       updated++;
@@ -2476,7 +2477,7 @@ async function processPartsUploadFlexible(rows){
   const merged = {};
 
   rows.forEach(r=>{
-    const part = r[0]?.toString().trim();
+    const part = r[0]?.toString().trim().toUpperCase();
     const qty = Number(r[1]);
 
     if(!part || !qty) return;
@@ -2507,7 +2508,7 @@ async function processPartsUploadFlexible(rows){
     const { data } = await db
       .from("part_master")
       .select("*")
-      .eq("PartNo", partNo.replace(/\s/g,""))
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
       .maybeSingle();
 
     if(!data){
