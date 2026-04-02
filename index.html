@@ -1144,6 +1144,11 @@ const statuses = o.items.map(x => {
     return "DISPATCHED";
   }
 
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
+
+    
   if(s.includes("PROCESS")){
     return "PROCESSED";
   }
@@ -1378,7 +1383,9 @@ const statuses = o.items.map(x => {
   if(s.includes("PROCESS")){
     return "PROCESSED";
   }
-
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
   if(s.includes("PEND")){
     return "PENDING";
   }
@@ -1582,7 +1589,9 @@ const statuses = data.map(x => {
     }
     return "DISPATCHED";
   }
-
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
   if(s.includes("PROCESS")){
     return "PROCESSED";
   }
