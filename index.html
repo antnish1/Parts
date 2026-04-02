@@ -173,6 +173,36 @@ input:focus, select:focus, button:focus {
   box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.35);
   border-color: var(--pc-secondary) !important;
 }
+
+.pc-field {
+  background: #16202a;
+  border: 1px solid var(--pc-border);
+  color: var(--pc-text);
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.pc-field::placeholder {
+  color: var(--pc-text-muted);
+}
+
+.pc-field:focus {
+  outline: none;
+  border-color: var(--pc-secondary);
+  box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.25);
+}
+
+.pc-section {
+  background: linear-gradient(180deg, rgba(170,205,220,0.06), rgba(129,166,198,0.06));
+  border: 1px solid var(--pc-border);
+  border-radius: 12px;
+  padding: 16px;
+  padding-top: 24px;
+}
+
+
     
 </style>
 
@@ -519,45 +549,46 @@ main.innerHTML = `
 
 
   <!-- ================= ORDER FORM ================= -->
-  <div class="relative bg-black/40 p-4 pt-6 rounded-lg border border-gray-700">
+  <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 bg-black px-3">
-      <span class="text-yellow-400 text-xs font-semibold tracking-wider">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         ORDER DETAILS
       </span>
     </div>
 
     <div class="grid grid-cols-4 gap-3">
 
-      <select id="orderType" class="bg-black p-2 border rounded">
+      <select id="orderType" class="pc-field">
         <option value="">Order Type</option>
         <option>VOR</option>
         <option>SOP</option>
         <option>ZSPL</option>
       </select>
 
-      <select id="orderFor" class="bg-black p-2 border rounded">
+      <select id="orderFor" class="pc-field">
         <option value="">Order For</option>
         <option>Customer</option>
         <option>Stock</option>
       </select>
 
-      <input id="employeeName"
-        class="bg-gray-800 p-2 border rounded text-gray-400"
-        readonly />
+        <input id="employeeName"
+          class="pc-field"
+          style="opacity: 0.85;"
+          readonly />
 
-      <input id="approvedBy" placeholder="Approved By"
-        class="bg-black p-2 border rounded"/>
+        <input id="approvedBy" placeholder="Approved By"
+          class="pc-field"/>
     </div>
   </div>
 
   <!-- ================= CUSTOMER FORM ================= -->
-  <div class="relative bg-black/40 p-4 pt-6 rounded-lg border border-gray-700">
+  <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 bg-black px-3">
-      <span class="text-yellow-400 text-xs font-semibold tracking-wider">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         CUSTOMER DETAILS
       </span>
     </div>
