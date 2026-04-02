@@ -840,33 +840,6 @@ main.innerHTML = `
 
     </div>
   </div>
-
-
-
-
-<!-- ================= BULK UPLOAD ================= -->
-<div class="relative pc-section">
-
-  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
-    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
-      BULK PART UPLOAD
-    </span>
-  </div>
-
-  <div class="flex items-center justify-between mt-2">
-
-    <input type="file" id="uploadPartsExcel" accept=".xlsx"
-      class="pc-field max-w-xs"/>
-
-    <span class="text-xs" style="color: var(--pc-text-muted);">
-      Format: Part no. | Qty
-    </span>
-
-  </div>
-
-</div>
-
-
 </div>
 
 <div class="relative p-5 pt-8 rounded-xl border mt-6"
@@ -907,14 +880,32 @@ main.innerHTML = `
        box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
      ">
 
-<button onclick="addRow()"
-class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
-style="background: var(--pc-secondary); color: #0f1720;">
+<div class="flex items-center gap-3">
+
+  <!-- ADD ITEM -->
+  <button onclick="addRow()"
+    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
+    style="background: var(--pc-secondary); color: #0f1720;">
     <span class="pc-btn-inline">
       <i data-lucide="plus-circle" class="pc-icon"></i>
       Add Item
     </span>
   </button>
+
+  <!-- BULK UPLOAD BUTTON -->
+  <button onclick="document.getElementById('uploadPartsExcel').click()"
+    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
+    style="background: var(--pc-primary); color: #0f1720;">
+    <span class="pc-btn-inline">
+      <i data-lucide="upload" class="pc-icon"></i>
+      Bulk Parts Upload
+    </span>
+  </button>
+
+  <!-- HIDDEN FILE INPUT -->
+  <input type="file" id="uploadPartsExcel" accept=".xlsx" hidden />
+
+</div>
 
   <div class="text-lg font-semibold tracking-wide" style="color: var(--pc-text);">
     Total: ₹ <span id="total" style="font-size: 20px;">0</span>
@@ -1100,10 +1091,13 @@ function calcTotal(){
   let t = 0;
 
   document.querySelectorAll(".val").forEach(v => {
-    t += Number(v.innerText) || 0;
+
+    // ✅ REMOVE COMMAS BEFORE CONVERTING
+    const clean = v.innerText.replace(/,/g, "");
+    t += Number(clean) || 0;
+
   });
 
-  // ✅ FIX: total also 2 decimal
   document.getElementById("total").innerText = t.toFixed(2);
 }
 
