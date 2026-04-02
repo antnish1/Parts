@@ -192,11 +192,7 @@ function hideLoader(){ document.getElementById("loader").classList.add("hidden")
 
 function showPopup(msg){
 
-function renderIcons() {
-  if (window.lucide && typeof window.lucide.createIcons === "function") {
-    window.lucide.createIcons();
-  }
-}
+
 
     
 document.getElementById("popupMsg").innerText = msg;
@@ -221,6 +217,12 @@ function getUser(){
   catch { return null; }
 }
 
+function renderIcons(){
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
+}
+    
 // ---------- INIT ----------
 window.onload = () => {
   const user = getUser();
@@ -264,6 +266,9 @@ document.getElementById("app").innerHTML = `
 </div>
 `;
 
+renderIcons();
+
+    
 const { data } = await db.from("users").select("Branch");
 const unique = [...new Set(data.map(d => d.Branch))];
 
@@ -409,13 +414,19 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
       <button onclick="loadCreate('create')" 
       class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
       data-tab="create">
+      <span class="pc-btn-inline">
+      <i data-lucide="file-plus-2" class="pc-icon"></i>
       New Order
+    </span>
     </button>
   
     <button onclick="loadTrack('track')" 
     class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
     data-tab="track">
+      <span class="pc-btn-inline">
+      <i data-lucide="search-check" class="pc-icon"></i>
       Track Orders
+    </span>
     </button>
   ` : `
     <button onclick="loadAdmin('Pending')" 
@@ -446,9 +457,17 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
     
   `}
 
+
+    renderIcons();
+
+
+
     <button onclick="logout()" 
     class="top-btn logout-btn">
+      <span class="pc-btn-inline">
+      <i data-lucide="log-out" class="pc-icon"></i>
       Logout
+    </span>
     </button>
 
   </div>
