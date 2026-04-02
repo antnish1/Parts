@@ -1133,30 +1133,57 @@ const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
 <tr onclick="openOrderView('${o.OrderNo}')" 
-class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
+class="cursor-pointer transition hover:scale-[1.01]">
 
-<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td class="py-2">${new Date(o.created_at).toLocaleDateString()}</td>
 <td>${o.OrderType || "-"}</td>
 <td>${o.OrderFor || "-"}</td>
 <td>${o.Branch || "-"}</td>
 <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
-<td>₹ ${total}</td>
-<td class="text-yellow-400 font-semibold">${o.OrderNo}</td>
-<td class="${
-  orderStatus === "DISPATCHED" ? "text-green-400" :
-  orderStatus === "PARTIALLY DISPATCHED" ? "text-yellow-400" :
-  orderStatus === "PROCESSED" ? "text-yellow-400" :
-  orderStatus === "NOT DESPATCHED" ? "text-blue-400" :
-  "text-pink-400"
-}">
-  ${orderStatus}
+
+<td style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
+
+<td class="font-semibold" style="color: var(--pc-primary);">
+  ${o.OrderNo}
+</td>
+
+<td>
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        orderStatus === "DISPATCHED" ? "#d1fae5" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+        orderStatus === "PROCESSED" ? "#fef3c7" :
+        orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        orderStatus === "DISPATCHED" ? "#065f46" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+        orderStatus === "PROCESSED" ? "#92400e" :
+        orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${orderStatus}
+  </span>
 </td>
 
 </tr>
 `;
 });
 
-html += `</tbody></table></div>`;
+html += `
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+`;
 
 document.getElementById("main").innerHTML = html;
 
