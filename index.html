@@ -271,6 +271,43 @@ tbody tr:hover {
   box-shadow: 0 6px 14px rgba(0,0,0,0.08);
 }
 
+
+/* ================= TRACK TABLE STRONG HOVER ================= */
+
+.track-table tbody tr {
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+/* 🔥 STRONG HOVER (CLEARLY VISIBLE) */
+.track-table tbody tr:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(129, 166, 198, 0.35),
+    rgba(170, 205, 220, 0.35)
+  ) !important;
+
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 12px 28px rgba(129, 166, 198, 0.35);
+  z-index: 5;
+}
+
+/* 🔥 CLICK EFFECT */
+.track-table tbody tr:active {
+  transform: scale(0.98);
+}
+
+/* 🔥 LEFT ACCENT BAR (VERY IMPORTANT FOR CLARITY) */
+.track-table tbody tr:hover td:first-child {
+  border-left: 5px solid var(--pc-secondary);
+}
+
+/* 🔥 OPTIONAL: TEXT EMPHASIS ON HOVER */
+.track-table tbody tr:hover td {
+  font-weight: 500;
+}
+
+
     
 </style>
 
@@ -1074,7 +1111,7 @@ let html = `
 
     <div class="overflow-x-auto mt-2">
 
-      <table class="w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
+      <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
 
         <thead class="text-xs uppercase tracking-wider border-b"
               style="background: var(--pc-warm); color: var(--pc-text);">
