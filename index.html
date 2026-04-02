@@ -88,7 +88,7 @@ body {
 /* 🔥 HOVER EFFECT */
 .menu-btn:hover {
   background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #0f1720 !important;   /* ✅ FORCE TEXT COLOR */
+  color: #ffffff !important;   /* ✅ FIX */
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(129, 166, 198, 0.28);
 }
@@ -126,10 +126,9 @@ body {
 
 .active-tab {
   background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #0f1720;
+  color: #ffffff;   /* ✅ FIX */
   box-shadow: 0 6px 18px rgba(129, 166, 198, 0.25);
 }
-
 .top-btn {
   padding: 8px 16px;
   border-radius: 10px;
@@ -147,6 +146,7 @@ body {
 }
 
 .top-btn:hover {
+    color: #111827; /* darker text for light bg */
   background: rgba(255,255,255,0.95);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -1763,22 +1763,51 @@ ${isAdmin ? `
       class="pc-field max-w-[160px]"
     />
 
-    <button onclick="processOrder('${orderNo}')"
-      class="menu-btn">
-      Process
-    </button>
+<div class="flex items-center gap-3">
 
-    <button onclick="confirmReject('${orderNo}')"
-      class="menu-btn"
-      style="background:#fde2e2; color:#7f1d1d;">
-      Reject
-    </button>
+  <!-- PROCESS -->
+  <button onclick="processOrder('${orderNo}')"
+    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
+    style="
+      background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+      color: white;
+    ">
+    ⚙️ Process
+  </button>
 
-    <button 
-      onclick="${isAdmin ? "loadAdmin('Pending')" : "loadTrack('track')"}"
-      class="menu-btn">
-      ← Back
-    </button>
+  <!-- REJECT -->
+  <button onclick="confirmReject('${orderNo}')"
+    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
+    style="
+      background: linear-gradient(135deg, #ef4444, #b91c1c);
+      color: white;
+    ">
+    ❌ Reject
+  </button>
+
+  <!-- DOWNLOAD (NEW FEATURE - see below) -->
+  <button onclick="downloadOrderExcel('${orderNo}')"
+    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
+    style="
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    ">
+    ⬇️ Download
+  </button>
+
+  <!-- BACK -->
+  <button 
+    onclick="${isAdmin ? "loadAdmin('Pending')" : "loadTrack('track')"}"
+    class="px-4 py-2 rounded-lg font-semibold transition"
+    style="
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--pc-border);
+      color: var(--pc-text);
+    ">
+    ← Back
+  </button>
+
+</div>
 
   </div>
 ` : `
@@ -2289,7 +2318,57 @@ function confirmReject(orderNo){
   document.getElementById("popup").classList.remove("hidden");
 }
 
+async function downloadOrderExcel(orderNo){
 
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(!data || !data.length){
+    return showPopup("No data found ❗");
+  }
+
+  // FORMAT DATA FOR EXCEL
+  const excelData = data.map(r => ({
+    "Order No": r.OrderNo,
+    "Branch": r.Branch,
+    "Order Type": r.OrderType,
+    "Order For": r.OrderFor,
+    "Machine No": r.MachineNo,
+    "Customer": r.CustomerName,
+    "Part No": r.PartNo,
+    "Description": r.Description,
+    "Qty": r.Qty,
+    "Billed Qty": r.BilledQty || 0,
+    "Pending Qty": (r.Qty || 0) - (r.BilledQty || 0),
+    "Value": r.Value,
+    "Status": r.Status,
+    "Processed Date": r.ProcessedDate || "",
+    "Bill No": r.BillNo || "",
+    "Transport": r.TransportName || "",
+    "Docket": r.Docket || ""
+  }));
+
+  // CREATE SHEET
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // AUTO COLUMN WIDTH
+  const colWidths = Object.keys(excelData[0]).map(key => ({
+    wch: Math.max(key.length, 15)
+  }));
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Order");
+
+  // DOWNLOAD
+  XLSX.writeFile(wb, `Order_${orderNo}.xlsx`);
+}
     
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
