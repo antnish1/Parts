@@ -40,7 +40,7 @@
 
 :root {
   --pc-primary: #81A6C6;
-  --pc-secondary: #AACDDC;
+--pc-secondary: #5F88A8;   /* darker accent for readability */
   --pc-light: #F3E3D0;
   --pc-warm: #D2C4B4;
 
@@ -49,7 +49,7 @@
   --pc-surface: #FFFFFF;   /* cards/surfaces */
   --pc-border: #D2C4B4;    /* borders */
   --pc-text: #1F2937;      /* main text */
-  --pc-text-muted: #5B6572;/* muted text */
+--pc-text-muted: #4B5563;  /* stronger muted text */
 }
 
 
@@ -134,24 +134,26 @@ body {
 .top-btn {
   padding: 8px 16px;
   border-radius: 10px;
-  background: rgba(170, 205, 220, 0.08);
-  border: 1px solid var(--pc-border);
-  color: var(--pc-text);
-  font-weight: 600;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid #8AA9C2;
+  color: #1F2937;
+  font-weight: 700;
   transition: all 0.22s ease;
 }
 
 .top-btn:hover {
-  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #0f1720;
+  background: #EAF3F8;
+  color: #0F172A;
   transform: translateY(-1px);
 }
 
 
 .active-top-btn {
-  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #0f1720;
+  background: #81A6C6;
+  color: #0F172A;
+  border-color: #6E95B8;
 }
+    
 .logout-btn {
   background: #ef4444;
   color: white;
@@ -175,9 +177,9 @@ input:focus, select:focus, button:focus {
 }
 
 .pc-field {
-  background: #16202a;
-  border: 1px solid var(--pc-border);
-  color: var(--pc-text);
+  background: #FFFFFF;
+  border: 1px solid #BFAF9D;
+  color: #1F2937;
   border-radius: 10px;
   padding: 10px 12px;
   width: 100%;
@@ -185,7 +187,7 @@ input:focus, select:focus, button:focus {
 }
 
 .pc-field::placeholder {
-  color: var(--pc-text-muted);
+  color: #6B7280;
 }
 
 .pc-field:focus {
@@ -202,6 +204,12 @@ input:focus, select:focus, button:focus {
   padding-top: 24px;
 }
 
+.pc-field option {
+  color: #1F2937;
+  background: #FFFFFF;
+}
+    
+    
 
 /* Smooth UI feel */
 * {
@@ -677,15 +685,15 @@ main.innerHTML = `
 
 <table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
 <thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
-       style="background: rgba(170,205,220,0.10); color: var(--pc-text-muted); border-color: var(--pc-border);">
+      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;"
 <tr>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">Part</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">Qty</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">Desc</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">DNP</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">Cat</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);">Value</th>
-<th class="py-3 w-[14%]" style="color: var(--pc-secondary);"></th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Part</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Qty</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Desc</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">DNP</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Cat</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Value</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;"></th>
 
 </tr>
 </thead>
