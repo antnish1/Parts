@@ -1201,6 +1201,7 @@ class="cursor-pointer transition hover:scale-[1.01]">
     style="
       background:${
         orderStatus === "DISPATCHED" ? "#d1fae5" :
+          orderStatus === "REJECTED" ? "#fde2e2" :
         orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
         orderStatus === "PROCESSED" ? "#fef3c7" :
         orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
@@ -1208,6 +1209,7 @@ class="cursor-pointer transition hover:scale-[1.01]">
       };
       color:${
         orderStatus === "DISPATCHED" ? "#065f46" :
+          orderStatus === "REJECTED" ? "#7f1d1d" :
         orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
         orderStatus === "PROCESSED" ? "#92400e" :
         orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
@@ -1407,6 +1409,7 @@ class="cursor-pointer transition hover:scale-[1.01]">
     style="
       background:${
         orderStatus === "DISPATCHED" ? "#d1fae5" :
+          orderStatus === "REJECTED" ? "#fde2e2" :
         orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
         orderStatus === "PROCESSED" ? "#fef3c7" :
         orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
@@ -1414,6 +1417,7 @@ class="cursor-pointer transition hover:scale-[1.01]">
       };
       color:${
         orderStatus === "DISPATCHED" ? "#065f46" :
+          orderStatus === "REJECTED" ? "#7f1d1d" :
         orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
         orderStatus === "PROCESSED" ? "#92400e" :
         orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
@@ -1552,7 +1556,11 @@ const statuses = data.map(x => {
   if(s.includes("PEND")){
     return "PENDING";
   }
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
 
+    
   return s;
 });
 
@@ -1671,17 +1679,25 @@ ${isAdmin ? `
 
   <div class="flex items-center gap-3 mt-2">
 
-    <input 
-      id="processOrderNo"
-      placeholder="Enter New Order No"
-      class="pc-field max-w-xs"
-    />
+    
+<input 
+  id="processOrderNo"
+  placeholder="Enter New Order No"
+  class="pc-field max-w-xs"
+/>
 
-    <button 
-      onclick="processOrder('${orderNo}')"
-      class="menu-btn">
-      Process
-    </button>
+<button 
+  onclick="processOrder('${orderNo}')"
+  class="menu-btn">
+  Process
+</button>
+
+<button 
+  onclick="confirmReject('${orderNo}')"
+  class="menu-btn"
+  style="background:#fde2e2; color:#7f1d1d;">
+  Reject
+</button>
 
   </div>
 
@@ -1724,6 +1740,7 @@ ${isAdmin ? `
           style="
             background:${
               orderStatus === "DISPATCHED" ? "#d1fae5" :
+                orderStatus === "REJECTED" ? "#fde2e2" :
               orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
               orderStatus === "PROCESSED" ? "#fef3c7" :
               orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
@@ -1731,6 +1748,7 @@ ${isAdmin ? `
             };
             color:${
               orderStatus === "DISPATCHED" ? "#065f46" :
+                orderStatus === "REJECTED" ? "#7f1d1d" :
               orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
               orderStatus === "PROCESSED" ? "#92400e" :
               orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
@@ -1929,7 +1947,34 @@ async function processOrder(orderNo){
   loadAdmin("Processed");
 }
 
-  
+
+async function rejectOrder(orderNo){
+
+  showLoader();
+
+  const { error } = await db
+    .from("requests")
+    .update({
+      Status: "Rejected"
+    })
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(error){
+    console.error(error);
+    return showPopup("Error rejecting order ❗");
+  }
+
+  closePopup();
+  showPopup("Order Rejected ❌");
+
+  // ✅ Move to Processed tab
+  loadAdmin("Processed");
+}
+
+
+    
 
 function showManualCustomerPopup(machineNo){
 
@@ -2128,7 +2173,35 @@ async function debugDB(){
     console.log("DB →", r.OrderNo, "|", r.PartNo);
   });
 }  
-  
+
+function confirmReject(orderNo){
+
+  document.getElementById("popupMsg").innerText =
+    "Do you want to reject this order?";
+
+  document.getElementById("popupActions").innerHTML = `
+    <div class="flex gap-3">
+
+      <button onclick="rejectOrder('${orderNo}')"
+        class="px-5 py-2 rounded"
+        style="background:#ef4444; color:white;">
+        Yes
+      </button>
+
+      <button onclick="closePopup()"
+        class="px-5 py-2 rounded"
+        style="background:#e5e7eb;">
+        No
+      </button>
+
+    </div>
+  `;
+
+  document.getElementById("popup").classList.remove("hidden");
+}
+
+
+    
 </script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </body>
