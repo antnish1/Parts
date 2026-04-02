@@ -535,23 +535,33 @@ document.getElementById("app").innerHTML = `
   <div class="space-y-4">
 
 <!-- HEADER WITH LOGOUT -->
-<div class="w-full rounded-2xl px-6 py-4 shadow-lg flex justify-between items-center"
+<div class="w-full rounded-2xl px-6 py-3 shadow-lg flex justify-between items-center"
      style="background: linear-gradient(90deg, #AACDDC 0%, #81A6C6 100%); border: 1px solid var(--pc-border);">
 
 <div class="relative flex items-center w-full">
 
   <!-- LEFT: LOGO -->
-  <div class="flex items-center">
-    <img 
-      src="HDU4w-removebg-preview.png"
-      alt="Parts Connect Logo"
-      class="h-12 object-contain scale-180 origin-left"
-    />
+<div class="flex items-center gap-3">
+
+  <img 
+    src="HDU4w-removebg-preview.png"
+    class="h-14 w-auto object-contain"
+  />
+
+  <div class="leading-tight">
+    <p class="text-sm font-bold tracking-wide" style="color:#0F172A;">
+      PARTS CONNECT
+    </p>
+    <p class="text-[10px] tracking-widest" style="color:#4B5563;">
+      PORTAL
+    </p>
   </div>
+
+</div>
 
   <!-- CENTER: BRANCH NAME -->
   <div class="absolute left-1/2 transform -translate-x-1/2">
-    <span class="text-lg font-semibold" style="color:#0F172A;">
+   <span class="text-xl font-bold tracking-wide" style="color:#0F172A;">
       ${user.Branch}
     </span>
   </div>
