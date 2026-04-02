@@ -2299,18 +2299,36 @@ document.addEventListener("change", async function(e){
 
 
 // ✅ PARTS BULK UPLOAD
+// ✅ PARTS BULK UPLOAD (WITH HEADER CHECK)
 if(e.target.id === "uploadPartsExcel"){
 
-  const file = e.target.files[0];
-  if(!file) return;
+  window.uploadFile = e.target.files[0];
 
-  const data = await file.arrayBuffer();
-  const workbook = XLSX.read(data);
+  if(!window.uploadFile) return;
 
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json(sheet);
+  // ASK USER
+  document.getElementById("popupMsg").innerText =
+    "Does your Excel file contain a header row?";
 
-  processPartsUpload(json);
+  document.getElementById("popupActions").innerHTML = `
+    <div class="flex gap-3">
+
+      <button onclick="handlePartsUpload(true)"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: var(--pc-secondary); color:white;">
+        Yes
+      </button>
+
+      <button onclick="handlePartsUpload(false)"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: #e5e7eb;">
+        No
+      </button>
+
+    </div>
+  `;
+
+  document.getElementById("popup").classList.remove("hidden");
 }
     
   // ✅ INWARD REPORT (FOR FUTURE)
@@ -2404,7 +2422,7 @@ async function processExcelData(rows){
 
 
 
-async function processPartsUpload(rows){
+async function processPartsUploadFlexible(rows){
 
   showLoader();
 
@@ -2413,16 +2431,16 @@ async function processPartsUpload(rows){
 
   for(const r of rows){
 
-    const partNo = r["Part no."]?.toString().trim();
-    const qty = Number(r["Qty"]);
+    // ✅ COLUMN BASED (NOT HEADER BASED)
+    const partNo = r[0]?.toString().trim();
+    const qty = Number(r[1]);
 
-    // ❌ invalid row
     if(!partNo || !qty){
       failed++;
       continue;
     }
 
-    // 🔍 check in DB
+    // 🔍 CHECK IN DB
     const { data } = await db
       .from("part_master")
       .select("*")
@@ -2434,7 +2452,7 @@ async function processPartsUpload(rows){
       continue;
     }
 
-    // ✅ ADD ROW (uses your existing function)
+    // ✅ ADD ROW
     addRow();
 
     const tr = document.querySelector("#tbody tr:last-child");
@@ -2457,6 +2475,31 @@ async function processPartsUpload(rows){
     `Upload Complete ✅\n\n✔ Uploaded: ${success}\n❌ Failed: ${failed}`,
     success > 0 ? "success" : "error"
   );
+}
+
+async function handlePartsUpload(hasHeader){
+
+  closePopup();
+
+  const file = window.uploadFile;
+  if(!file) return;
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+  // 👇 IMPORTANT CHANGE
+  let rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1   // returns array format
+  });
+
+  // ❗ REMOVE HEADER ROW IF USER SAID YES
+  if(hasHeader){
+    rows.shift();
+  }
+
+  processPartsUploadFlexible(rows);
 }
     
 
