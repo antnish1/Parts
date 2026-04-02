@@ -4,6 +4,13 @@
   <title>Parts Connect Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
 </head>
 
 <body class="min-h-screen" style="background-color: var(--pc-bg); color: var(--pc-text);">
@@ -45,7 +52,27 @@
   --pc-text-muted: #D2C4B4;
 }
 
-  
+
+
+body {
+  font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.pc-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  vertical-align: middle;
+}
+
+.pc-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+    
 .menu-btn {
   position: relative;
   padding: 10px 18px;
@@ -165,6 +192,13 @@ function hideLoader(){ document.getElementById("loader").classList.add("hidden")
 
 function showPopup(msg){
 
+function renderIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
+}
+
+    
 document.getElementById("popupMsg").innerText = msg;
 
 document.getElementById("popupActions").innerHTML = `
