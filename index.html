@@ -49,26 +49,26 @@
 .menu-btn {
   position: relative;
   padding: 10px 18px;
-  background: #1f2937;
-  border: 1px solid #374151;
+  background: rgba(170, 205, 220, 0.08);
+  border: 1px solid var(--pc-border);
   border-radius: 10px;
-  color: #e5e7eb;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: all 0.25s ease;
+  color: var(--pc-text);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.22s ease;
 }
 
 /* 🔥 HOVER EFFECT */
 .menu-btn:hover {
-  background: linear-gradient(135deg, #facc15, #fde047);
-  color: black;
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 6px 18px rgba(250, 204, 21, 0.25);
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #0f1720;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(129, 166, 198, 0.28);
 }
 
 /* 🔥 ACTIVE CLICK */
 .menu-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.98);
 }
 
 /* 🔥 SUBTLE GLOW */
@@ -82,47 +82,65 @@
   box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
 }
 
+.menu-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  box-shadow: 0 0 0 2px rgba(170, 205, 220, 0.28) inset;
+}
+
 .menu-btn:hover::after {
   opacity: 1;
 }
 
+    
 
 .active-tab {
-  background: linear-gradient(135deg, #facc15, #fde047);
-  color: black;
-  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #0f1720;
+  box-shadow: 0 6px 18px rgba(129, 166, 198, 0.25);
 }
 
 .top-btn {
   padding: 8px 16px;
-  border-radius: 8px;
-  background: #111827;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  font-weight: 500;
-  transition: all 0.25s ease;
+  border-radius: 10px;
+  background: rgba(170, 205, 220, 0.08);
+  border: 1px solid var(--pc-border);
+  color: var(--pc-text);
+  font-weight: 600;
+  transition: all 0.22s ease;
 }
 
 .top-btn:hover {
-  background: linear-gradient(135deg, #facc15, #fde047);
-  color: black;
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #0f1720;
   transform: translateY(-1px);
 }
 
-.active-top-btn {
-  background: linear-gradient(135deg, #facc15, #fde047);
-  color: black;
-}
 
+.active-top-btn {
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #0f1720;
+}
 .logout-btn {
   background: #ef4444;
   color: white;
   border: none;
 }
 
-.logout-btn:hover {
-  background: #dc2626;
+.logout-btn {
+  background: #b85c5c;
+  color: #fff;
+  border: 1px solid #9f4c4c;
 }
+
+.logout-btn:hover {
+  background: #a54b4b;
+}
+    
 
 input:focus, select:focus, button:focus {
   box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.35);
@@ -254,12 +272,12 @@ function renderHeader(){
   <div class="space-y-4">
 
   <!-- HEADER -->
-<div class="w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 
-border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items-center">
+<div class="w-full rounded-2xl px-6 py-4 shadow-xl flex justify-between items-center"
+     style="background: linear-gradient(90deg, rgba(170,205,220,0.10), rgba(129,166,198,0.10)); border: 1px solid var(--pc-border);">
 
-  <h1 class="text-2xl font-bold text-yellow-400 tracking-wide">
+  <h1 class="text-2xl font-bold tracking-wide" style="color: var(--pc-light);">
     PARTS CONNECT PORTAL :
-    <span class="text-white ml-2">${user.Branch}</span>
+    <span class="ml-2" style="color: var(--pc-secondary);">${user.Branch}</span>
   </h1>
 
   <div class="flex items-center gap-3">
@@ -287,7 +305,7 @@ border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items
 </div>
 
   <!-- MENU -->
-  <div class="w-full bg-gray-900 px-4 py-3 rounded-xl border border-gray-700">
+  <div class="w-full px-4 py-3 rounded-xl" style="background: rgba(170,205,220,0.06); border: 1px solid var(--pc-border);">
 
     <div class="flex gap-3">
 
