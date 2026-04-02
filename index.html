@@ -841,6 +841,32 @@ main.innerHTML = `
     </div>
   </div>
 
+
+
+
+<!-- ================= BULK UPLOAD ================= -->
+<div class="relative pc-section">
+
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      BULK PART UPLOAD
+    </span>
+  </div>
+
+  <div class="flex items-center justify-between mt-2">
+
+    <input type="file" id="uploadPartsExcel" accept=".xlsx"
+      class="pc-field max-w-xs"/>
+
+    <span class="text-xs" style="color: var(--pc-text-muted);">
+      Format: Part no. | Qty
+    </span>
+
+  </div>
+
+</div>
+
+
 </div>
 
 <div class="relative p-5 pt-8 rounded-xl border mt-6"
@@ -2267,10 +2293,26 @@ document.addEventListener("change", async function(e){
 
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const json = XLSX.utils.sheet_to_json(sheet);
-
+      
     processExcelData(json);
   }
 
+
+// ✅ PARTS BULK UPLOAD
+if(e.target.id === "uploadPartsExcel"){
+
+  const file = e.target.files[0];
+  if(!file) return;
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(sheet);
+
+  processPartsUpload(json);
+}
+    
   // ✅ INWARD REPORT (FOR FUTURE)
   if(e.target.id === "uploadInward"){
     showPopup("Inward Upload Coming Soon 🚧");
@@ -2358,6 +2400,65 @@ async function processExcelData(rows){
 
   loadAdmin(window.activeTab);
 }
+
+
+
+
+async function processPartsUpload(rows){
+
+  showLoader();
+
+  let success = 0;
+  let failed = 0;
+
+  for(const r of rows){
+
+    const partNo = r["Part no."]?.toString().trim();
+    const qty = Number(r["Qty"]);
+
+    // ❌ invalid row
+    if(!partNo || !qty){
+      failed++;
+      continue;
+    }
+
+    // 🔍 check in DB
+    const { data } = await db
+      .from("part_master")
+      .select("*")
+      .eq("PartNo", partNo.replace(/\s/g,""))
+      .maybeSingle();
+
+    if(!data){
+      failed++;
+      continue;
+    }
+
+    // ✅ ADD ROW (uses your existing function)
+    addRow();
+
+    const tr = document.querySelector("#tbody tr:last-child");
+
+    tr.querySelector(".part").value = partNo;
+    tr.querySelector(".qty").value = qty;
+
+    tr.querySelector(".desc").innerText = data.Description;
+    tr.querySelector(".dnp").innerText = data.DNP;
+    tr.querySelector(".cat").innerText = data.Cat1;
+
+    calc(tr);
+
+    success++;
+  }
+
+  hideLoader();
+
+  showPopup(
+    `Upload Complete ✅\n\n✔ Uploaded: ${success}\n❌ Failed: ${failed}`,
+    success > 0 ? "success" : "error"
+  );
+}
+    
 
 async function debugDB(){
 
