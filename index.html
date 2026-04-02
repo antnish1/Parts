@@ -1633,20 +1633,20 @@ document.getElementById("main").innerHTML = `
 
     <div class="grid grid-cols-4 gap-4 text-sm mt-2">
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Order Type</p>
-        <p class="font-semibold">${order.OrderType || "-"}</p>
-      </div>
+        <div class="flex justify-between">
+          <span style="color: var(--pc-text-muted);">Order Type :</span>
+          <span class="font-semibold">${order.OrderType || "-"}</span>
+        </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Order For</p>
-        <p class="font-semibold">${order.OrderFor || "-"}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Order For :</span>
+    <span class="font-semibold">${order.OrderFor || "-"}</span>
+  </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Branch</p>
-        <p class="font-semibold">${order.Branch}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Branch :</span>
+    <span class="font-semibold">${order.Branch}</span>
+  </div>
 
       <div>
         <p style="color: var(--pc-text-muted);">Status</p>
@@ -1673,25 +1673,25 @@ document.getElementById("main").innerHTML = `
 
       </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Machine No</p>
-        <p class="font-semibold">${order.MachineNo || "-"}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Machine No :</span>
+    <span class="font-semibold">${order.MachineNo || "-"}</span>
+  </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Customer</p>
-        <p class="font-semibold">${order.CustomerName || "-"}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Customer :</span>
+    <span class="font-semibold">${order.CustomerName || "-"}</span>
+  </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Machine Type</p>
-        <p class="font-semibold">${order.WarrantyStatus || "-"}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Machine Type :</span>
+    <span class="font-semibold">${order.WarrantyStatus || "-"}</span>
+  </div>
 
-      <div>
-        <p style="color: var(--pc-text-muted);">Approved By</p>
-        <p class="font-semibold">${order.ApprovedBy || "-"}</p>
-      </div>
+  <div class="flex justify-between">
+    <span style="color: var(--pc-text-muted);">Approved By :</span>
+    <span class="font-semibold">${order.ApprovedBy || "-"}</span>
+  </div>
 
     </div>
 
