@@ -26,8 +26,34 @@
 </div>
 
 <!-- POPUP -->
-<div id="popup" class="hidden fixed inset-0 flex items-center justify-center z-50" style="background: rgba(15,23,32,0.72);">
-  <div class="p-6 rounded-xl text-center w-[300px]" style="background: var(--pc-surface); border: 1px solid var(--pc-border); color: var(--pc-text);">
+<div id="popup" class="hidden fixed inset-0 flex items-center justify-center z-50"
+     style="background: rgba(15,23,32,0.65); backdrop-filter: blur(6px);">
+
+  <div class="w-[360px] p-6 rounded-2xl shadow-2xl text-center space-y-4"
+       style="
+         background: linear-gradient(180deg, #ffffff, #f8fafc);
+         border: 1px solid var(--pc-border);
+         box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+       ">
+
+    <!-- ICON -->
+    <div id="popupIcon" class="mx-auto w-12 h-12 flex items-center justify-center rounded-full"
+         style="background: rgba(129,166,198,0.15); color: var(--pc-secondary);">
+      ✔️
+    </div>
+
+    <!-- MESSAGE -->
+    <p id="popupMsg" class="text-sm font-medium leading-relaxed"
+       style="color: var(--pc-text);"></p>
+
+    <!-- ACTIONS -->
+    <div id="popupActions" class="mt-4 flex justify-center gap-3"></div>
+
+  </div>
+</div>
+
+
+    
     <p id="popupMsg"></p>
     <div id="popupActions" class="mt-4 flex justify-center"></div>
   </div>
@@ -316,6 +342,42 @@ tbody tr:hover {
 }
 
 
+/* ===== PREMIUM BUTTON HOVER SYSTEM ===== */
+
+button {
+  transition: all 0.25s ease;
+}
+
+/* PRIMARY BUTTONS */
+button[style*="linear-gradient"]:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+  filter: brightness(1.08);
+}
+
+/* CLICK FEEDBACK */
+button:active {
+  transform: scale(0.97);
+}
+
+/* BACK BUTTON (LIGHT STYLE) */
+button[style*="rgba(255,255,255"]:hover {
+  background: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+    
+.pc-action-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+.pc-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+}
     
 </style>
 
@@ -333,23 +395,47 @@ const db = createClient(
 function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
 function hideLoader(){ document.getElementById("loader").classList.add("hidden"); }
 
-function showPopup(msg){
+function showPopup(msg, type = "info"){
 
+  const iconEl = document.getElementById("popupIcon");
 
+  // 🎯 TYPE BASED STYLING
+  if(type === "success"){
+    iconEl.innerHTML = "✅";
+    iconEl.style.background = "rgba(16,185,129,0.15)";
+    iconEl.style.color = "#059669";
+  }
+  else if(type === "error"){
+    iconEl.innerHTML = "❌";
+    iconEl.style.background = "rgba(239,68,68,0.15)";
+    iconEl.style.color = "#b91c1c";
+  }
+  else if(type === "warning"){
+    iconEl.innerHTML = "⚠️";
+    iconEl.style.background = "rgba(245,158,11,0.15)";
+    iconEl.style.color = "#b45309";
+  }
+  else{
+    iconEl.innerHTML = "ℹ️";
+    iconEl.style.background = "rgba(129,166,198,0.15)";
+    iconEl.style.color = "var(--pc-secondary)";
+  }
 
-    
-document.getElementById("popupMsg").innerText = msg;
+  document.getElementById("popupMsg").innerText = msg;
 
-document.getElementById("popupActions").innerHTML = `
-<button onclick="closePopup()"
-class="bg-yellow-400 px-5 py-2 text-black rounded">
-OK
-</button>
-`;
+  document.getElementById("popupActions").innerHTML = `
+    <button onclick="closePopup()"
+      class="px-5 py-2 rounded-lg font-semibold transition"
+      style="
+        background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+        color: white;
+      ">
+      OK
+    </button>
+  `;
 
-document.getElementById("popup").classList.remove("hidden");
+  document.getElementById("popup").classList.remove("hidden");
 }
-
   
 function closePopup(){
   document.getElementById("popup").classList.add("hidden");
@@ -1766,39 +1852,30 @@ ${isAdmin ? `
 <div class="flex items-center gap-3">
 
   <!-- PROCESS -->
-  <button onclick="processOrder('${orderNo}')"
-    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
-    style="
-      background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-      color: white;
-    ">
-    ⚙️ Process
-  </button>
+<button onclick="processOrder('${orderNo}')"
+  class="pc-action-btn"
+  style="background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));">
+  ⚙️ Process
+</button>
 
   <!-- REJECT -->
-  <button onclick="confirmReject('${orderNo}')"
-    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
-    style="
-      background: linear-gradient(135deg, #ef4444, #b91c1c);
-      color: white;
-    ">
-    ❌ Reject
-  </button>
+<button onclick="confirmReject('${orderNo}')"
+  class="pc-action-btn"
+  style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
+  ❌ Reject
+</button>
 
   <!-- DOWNLOAD (NEW FEATURE - see below) -->
-  <button onclick="downloadOrderExcel('${orderNo}')"
-    class="px-4 py-2 rounded-lg font-semibold shadow-md transition"
-    style="
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: white;
-    ">
-    ⬇️ Download
-  </button>
+<button onclick="downloadOrderExcel('${orderNo}')"
+  class="pc-action-btn"
+  style="background: linear-gradient(135deg, #10b981, #059669);">
+  ⬇️ Download
+</button>
 
   <!-- BACK -->
   <button 
     onclick="${isAdmin ? "loadAdmin('Pending')" : "loadTrack('track')"}"
-    class="px-4 py-2 rounded-lg font-semibold transition"
+    class="pc-action-btn"
     style="
       background: rgba(255,255,255,0.7);
       border: 1px solid var(--pc-border);
