@@ -1159,6 +1159,13 @@ let orderStatus = "PENDING";
 
 // ✅ PRIORITY BASED (TOP → DOWN)
 
+// ✅ REJECTED (TOP PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+    
+    
+
 if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
@@ -1373,6 +1380,12 @@ let orderStatus = "PENDING";
 
 // ✅ PRIORITY BASED (TOP → DOWN)
 
+// ✅ REJECTED (TOP PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+
+    
 if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
@@ -1565,6 +1578,13 @@ if(s.includes("REJECT")){
 });
 
 // ✅ ALL DISPATCHED
+
+// ✅ REJECTED (TOP PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+
+    
 if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
