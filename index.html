@@ -2301,8 +2301,26 @@ if(e.target.id === "uploadPartsExcel"){
   if(!window.uploadFile) return;
 
   // ASK USER
-  document.getElementById("popupMsg").innerText =
-    "Does your Excel file contain a header row?";
+document.getElementById("popupMsg").innerHTML = `
+<div class="space-y-3 text-left">
+
+  <p class="font-semibold">Upload Excel File</p>
+
+  <p class="text-sm" style="color: var(--pc-text-muted);">
+    Please confirm if your file contains a header row.
+  </p>
+
+  <div class="text-xs p-3 rounded-lg"
+       style="background: rgba(129,166,198,0.12); border:1px solid var(--pc-border);">
+
+    <p class="font-semibold mb-1">Expected Format:</p>
+    <p>Column 1 → Part No.</p>
+    <p>Column 2 → Qty</p>
+
+  </div>
+
+</div>
+`;
 
   document.getElementById("popupActions").innerHTML = `
     <div class="flex gap-3">
