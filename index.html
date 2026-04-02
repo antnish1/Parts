@@ -45,11 +45,11 @@
   --pc-warm: #D2C4B4;
 
   /* semantic aliases (used later) */
-  --pc-bg: #0f1720;
-  --pc-surface: #1b2530;
-  --pc-border: #2b3a47;
-  --pc-text: #F3E3D0;
-  --pc-text-muted: #D2C4B4;
+  --pc-bg: #F3E3D0;        /* page background */
+  --pc-surface: #FFFFFF;   /* cards/surfaces */
+  --pc-border: #D2C4B4;    /* borders */
+  --pc-text: #1F2937;      /* main text */
+  --pc-text-muted: #5B6572;/* muted text */
 }
 
 
@@ -475,12 +475,12 @@ document.getElementById("app").innerHTML = `
   <div class="space-y-4">
 
 <!-- HEADER WITH LOGOUT -->
-<div class="w-full bg-gradient-to-r from-gray-900 via-black to-gray-900 
-border border-gray-700 rounded-xl px-6 py-4 shadow-lg flex justify-between items-center">
+<div class="w-full rounded-2xl px-6 py-4 shadow-lg flex justify-between items-center"
+     style="background: linear-gradient(90deg, #AACDDC 0%, #81A6C6 100%); border: 1px solid var(--pc-border);">
 
-  <h1 class="text-2xl font-bold text-yellow-400 tracking-wide">
+  <h1 class="text-3xl font-extrabold tracking-wide" style="color: #1F2937;">
     PARTS CONNECT PORTAL :
-    <span class="text-white ml-2">${user.Branch}</span>
+    <span class="ml-2" style="color: #0F172A;">${user.Branch}</span>
   </h1>
 
   <div class="flex items-center gap-3">
@@ -641,21 +641,22 @@ main.innerHTML = `
     <div class="grid grid-cols-4 gap-3">
 
       <input id="machineNo" placeholder="Machine No"
-        class="bg-black p-2 border rounded"/>
+          class="pc-field"/>
 
-      <input id="customerName"
-        class="bg-gray-800 p-2 border rounded text-gray-400"
-        placeholder="Customer Name"
-        readonly />
+            <input id="customerName"
+              class="pc-field"
+              style="opacity: 0.85;"
+              placeholder="Customer Name"
+              readonly />
 
-      <select id="machineType" class="bg-black p-2 border rounded">
+      <select id="machineType" class="pc-field">
         <option value="">Machine Type</option>
         <option>UW</option>
         <option>BW</option>
       </select>
 
-      <input id="callId" placeholder="Call ID"
-        class="bg-black p-2 border rounded"/>
+        <input id="callId" placeholder="Call ID"
+      class="pc-field"/>
 
     </div>
   </div>
