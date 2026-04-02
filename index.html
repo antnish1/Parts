@@ -88,11 +88,10 @@ body {
 /* 🔥 HOVER EFFECT */
 .menu-btn:hover {
   background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #0f1720;
+  color: #0f1720 !important;   /* ✅ FORCE TEXT COLOR */
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(129, 166, 198, 0.28);
 }
-
 /* 🔥 ACTIVE CLICK */
 .menu-btn:active {
   transform: scale(0.98);
@@ -250,7 +249,7 @@ tbody tr:hover {
 
 /* Generic soft button hover */
 button:hover {
-  filter: brightness(1.03);
+  filter: none;
 }
 
 /* Disabled fields look intentional */
@@ -546,10 +545,16 @@ document.getElementById("app").innerHTML = `
 <!-- HEADER WITH LOGOUT -->
 <div class="w-full rounded-2xl px-6 py-3 flex justify-between items-center backdrop-blur-md"
      style="
-       background: rgba(255, 255, 255, 0.65);
-       border: 1px solid rgba(255,255,255,0.4);
-       box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-     ">
+  background: linear-gradient(
+    to right,
+    rgba(255,255,255,0.75) 0%,
+    rgba(255,255,255,0.75) 20%,
+    #2f3e4d 25%,
+    #3f556b 100%
+  );
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+">
 
 <div class="relative flex items-center w-full">
 
@@ -799,7 +804,7 @@ style="background: var(--pc-secondary); color: #0f1720;">
     </span>
   </button>
 
-  <div class="text-lg font-semibold tracking-wide" style="color: var(--pc-light);">
+  <div class="text-lg font-semibold tracking-wide" style="color: var(--pc-text);">
     Total: ₹ <span id="total" style="font-size: 20px;">0</span>
   </div>
 
