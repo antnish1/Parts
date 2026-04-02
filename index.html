@@ -322,7 +322,7 @@ document.getElementById("app").innerHTML = `
        style="background: linear-gradient(180deg, rgba(170,205,220,0.10), rgba(129,166,198,0.10)); border: 1px solid var(--pc-border); backdrop-filter: blur(8px);">
 
     <h1 class="text-2xl text-center font-bold tracking-wide"
-        style="color: var(--pc-light);">
+        style="color: #1F2937;">
       Parts Connect Portal
     </h1>
 
@@ -332,12 +332,12 @@ document.getElementById("app").innerHTML = `
 
     <select id="branch"
       class="w-full p-2.5 rounded-lg outline-none transition"
-      style="background: #16202a; border: 1px solid var(--pc-border); color: var(--pc-text);">
+      style="background: #FFFFFF; border: 1px solid #BFAF9D; color: #1F2937;">
     </select>
 
     <input id="password" type="password" placeholder="Password"
       class="w-full p-2.5 rounded-lg outline-none transition"
-      style="background: #16202a; border: 1px solid var(--pc-border); color: var(--pc-text);" />
+      style="background: #FFFFFF; border: 1px solid #BFAF9D; color: #1F2937;" />
 
     <button onclick="login()"
       class="w-full py-2.5 rounded-lg font-semibold transition duration-200"
@@ -813,17 +813,17 @@ const tr = document.createElement("tr");
 
 tr.innerHTML = `
 <td class="p-2">
-  <input class="part bg-black w-full py-3 px-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"/>
+  <input class="part pc-field w-full"/>
 </td>
 
 <td class="p-2">
-  <input type="number" class="qty bg-black w-full py-3 px-2 rounded border border-gray-700 focus:border-yellow-400 outline-none"/>
+  <input type="number" class="qty pc-field w-full"/>
 </td>
 
 <td class="desc py-3"></td>
 <td class="dnp py-3"></td>
 <td class="cat py-3"></td>
-<td class="val py-3 font-semibold text-yellow-400"></td>
+<td class="val py-3 font-semibold" style="color:#1F2937;"></td>
 
 <td class="py-3">
   <button class="text-red-400 hover:text-red-300 font-bold"
