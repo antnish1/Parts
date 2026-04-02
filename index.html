@@ -543,7 +543,11 @@ document.getElementById("app").innerHTML = `
 
 <!-- HEADER WITH LOGOUT -->
 <div class="w-full rounded-2xl px-6 py-3 shadow-lg flex justify-between items-center"
-     style="background: linear-gradient(90deg, #AACDDC 0%, #81A6C6 100%); border: 1px solid var(--pc-border);">
+     style="
+        background: linear-gradient(135deg, #2f3e4d 0%, #3f556b 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        ">
 
 <div class="relative flex items-center w-full">
 
@@ -551,10 +555,14 @@ document.getElementById("app").innerHTML = `
 <div class="flex items-center gap-4">
 
   <!-- LOGO -->
-  <img 
-    src="HDU4w-removebg-preview.png"
-    class="h-12 w-auto object-contain"
-  />
+<img 
+  src="HDU4w-removebg-preview.png"
+  class="h-12 w-auto object-contain"
+  style="
+    filter: drop-shadow(0 0 6px rgba(255, 204, 0, 0.4))
+            drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+  "
+/>
 
   <!-- DIVIDER -->
   <div class="h-6 w-px bg-gray-400 opacity-60"></div>
@@ -781,7 +789,12 @@ main.innerHTML = `
 
 <hr class="my-4" style="border-color: var(--pc-border);">
 
-<div class="mt-6 flex items-center justify-between">
+<div class="mt-6 flex items-center justify-between p-4 rounded-xl"
+     style="
+       background: linear-gradient(135deg, rgba(170,205,220,0.15), rgba(129,166,198,0.15));
+       border: 1px solid var(--pc-border);
+       box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+     ">
 
 <button onclick="addRow()"
 class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
@@ -793,7 +806,7 @@ style="background: var(--pc-secondary); color: #0f1720;">
   </button>
 
   <div class="text-lg font-semibold tracking-wide" style="color: var(--pc-light);">
-    Total: ₹ <span id="total">0</span>
+    Total: ₹ <span id="total" style="font-size: 20px;">0</span>
   </div>
 
 <button onclick="submitOrder()"
