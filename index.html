@@ -541,21 +541,22 @@ document.getElementById("app").innerHTML = `
 <div class="relative flex items-center w-full">
 
   <!-- LEFT: LOGO -->
-<div class="flex items-center gap-3">
+<div class="flex items-center gap-4">
 
+  <!-- LOGO -->
   <img 
     src="HDU4w-removebg-preview.png"
-    class="h-14 w-auto object-contain"
+    class="h-12 w-auto object-contain"
   />
 
-  <div class="leading-tight">
-    <p class="text-sm font-bold tracking-wide" style="color:#0F172A;">
-      PARTS CONNECT
-    </p>
-    <p class="text-[10px] tracking-widest" style="color:#4B5563;">
-      PORTAL
-    </p>
-  </div>
+  <!-- DIVIDER -->
+  <div class="h-6 w-px bg-gray-400 opacity-60"></div>
+
+  <!-- BRANCH -->
+  <span class="text-sm font-semibold tracking-wider uppercase"
+        style="color:#0F172A;">
+    ${user.Branch}
+  </span>
 
 </div>
 
