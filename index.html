@@ -1586,137 +1586,157 @@ else{
 const user = getUser();
 const isAdmin = user.Branch === "HQ";
   
-  document.getElementById("main").innerHTML = `
-  <div class="space-y-6">
+document.getElementById("main").innerHTML = `
+<div class="space-y-6">
 
-    <!-- 🔥 HEADER -->
-    <div class="flex justify-between items-center">
+  <!-- ================= HEADER ================= -->
+  <div class="flex justify-between items-center">
 
-${isAdmin ? `
-<div class="flex gap-3 items-center mt-3">
-
-  <input id="processOrderNo" 
-    placeholder="Enter Order No"
-    class="bg-black border border-gray-600 px-3 py-2 rounded text-sm"/>
-
-  <button onclick="processOrder('${orderNo}')"
-    class="bg-green-500 px-4 py-2 rounded text-black font-semibold">
-    Process
-  </button>
-
-</div>
-` : ``}
-    
-      <h2 class="text-yellow-400 text-lg font-semibold">
-        Order Details - ${orderNo} 
-        <span class="text-gray-400 text-sm ml-3">
-          (${formatDate(order.created_at)})
-        </span>
+    <div>
+      <h2 class="text-lg font-bold" style="color: var(--pc-text);">
+        Order Details
       </h2>
-
-      <button onclick="loadBranch()" 
-      class="bg-gray-700 px-4 py-2 rounded">
-        Back
-      </button>
-    </div>
-
-
-
-      <div class="bg-gray-900 p-5 rounded-xl border text-sm text-gray-300 hover:shadow-lg hover:scale-[1.01] transition">
-    
-      <div class="grid grid-cols-4 gap-4">
-
-    <div>
-      <p class="text-gray-500 text-xs">Order Type</p>
-      <p class="font-medium">${order.OrderType || "-"}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Order For</p>
-      <p class="font-medium">${order.OrderFor || "-"}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Branch</p>
-      <p class="font-medium">${order.Branch}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Status</p>
-      <p class="font-medium ${
-        orderStatus === "DISPATCHED" ? "text-green-400" :
-        orderStatus === "PARTIALLY DISPATCHED" ? "text-yellow-400" :
-        orderStatus === "PROCESSED" ? "text-yellow-400" :
-        "text-pink-400"
-      }">
-        ${orderStatus}
+      <p class="text-sm" style="color: var(--pc-text-muted);">
+        ${orderNo} • ${formatDate(order.created_at)}
       </p>
     </div>
 
-    <div>
-      <p class="text-gray-500 text-xs">Machine No</p>
-      <p class="font-medium">${order.MachineNo || "-"}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Customer</p>
-      <p class="font-medium">${order.CustomerName || "-"}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Machine Type</p>
-      <p class="font-medium">${order.WarrantyStatus || "-"}</p>
-    </div>
-
-    <div>
-      <p class="text-gray-500 text-xs">Approved By</p>
-      <p class="font-medium">${order.ApprovedBy || "-"}</p>
-    </div>
+    <!-- 🔥 NEW BACK BUTTON -->
+    <button onclick="loadTrack('track')" 
+      class="menu-btn">
+      ← Back to Orders
+    </button>
 
   </div>
 
-</div>
 
+  <!-- ================= ORDER INFO ================= -->
+  <div class="relative pc-section">
 
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        ORDER SUMMARY
+      </span>
+    </div>
 
-    <!-- 🔥 PARTS TABLE -->
-   <div class="bg-gray-900 p-4 rounded-xl border overflow-x-auto">
+    <div class="grid grid-cols-4 gap-4 text-sm mt-2">
 
-      <table class="min-w-[1400px] text-sm text-center">
-        <thead class="text-gray-400 uppercase text-xs tracking-wider">
-          <tr>
-          <th class="px-4 py-3 whitespace-nowrap">Part</th>
-          <th class="px-4 py-3 whitespace-nowrap">Description</th>
-          <th class="px-4 py-3 whitespace-nowrap">Qty</th>
-           <th class="px-4 py-3 whitespace-nowrap">Billed Qty</th>
-          <th class="px-4 py-3 whitespace-nowrap">Unbilled Qty</th>
-          <th class="px-4 py-3 whitespace-nowrap">Value</th>
-          <th class="px-4 py-3 whitespace-nowrap">Status</th>
-          <th class="px-4 py-3 whitespace-nowrap">Processed Date</th>
-          <th class="px-4 py-3 whitespace-nowrap">Order Reg Dt</th>
+      <div>
+        <p style="color: var(--pc-text-muted);">Order Type</p>
+        <p class="font-semibold">${order.OrderType || "-"}</p>
+      </div>
 
-          <th class="px-4 py-3 whitespace-nowrap">Bill No</th>
-          <th class="px-4 py-3 whitespace-nowrap">Billing Dt</th>
-          <th class="px-4 py-3 whitespace-nowrap">Transport Name</th>
-          <th class="px-4 py-3 whitespace-nowrap">Docket</th>
+      <div>
+        <p style="color: var(--pc-text-muted);">Order For</p>
+        <p class="font-semibold">${order.OrderFor || "-"}</p>
+      </div>
 
-        
-          </tr>
-        </thead>
+      <div>
+        <p style="color: var(--pc-text-muted);">Branch</p>
+        <p class="font-semibold">${order.Branch}</p>
+      </div>
 
-        <tbody>
-          ${partsHTML}
-        </tbody>
-      </table>
+      <div>
+        <p style="color: var(--pc-text-muted);">Status</p>
 
-      <div class="text-right mt-4 text-yellow-400 font-semibold">
-        Total: ₹ ${total}
+        <span class="px-2 py-1 rounded text-xs font-semibold"
+          style="
+            background:${
+              orderStatus === "DISPATCHED" ? "#d1fae5" :
+              orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+              orderStatus === "PROCESSED" ? "#fef3c7" :
+              orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+              "#fde2e2"
+            };
+            color:${
+              orderStatus === "DISPATCHED" ? "#065f46" :
+              orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+              orderStatus === "PROCESSED" ? "#92400e" :
+              orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+              "#7f1d1d"
+            };
+          ">
+          ${orderStatus}
+        </span>
+
+      </div>
+
+      <div>
+        <p style="color: var(--pc-text-muted);">Machine No</p>
+        <p class="font-semibold">${order.MachineNo || "-"}</p>
+      </div>
+
+      <div>
+        <p style="color: var(--pc-text-muted);">Customer</p>
+        <p class="font-semibold">${order.CustomerName || "-"}</p>
+      </div>
+
+      <div>
+        <p style="color: var(--pc-text-muted);">Machine Type</p>
+        <p class="font-semibold">${order.WarrantyStatus || "-"}</p>
+      </div>
+
+      <div>
+        <p style="color: var(--pc-text-muted);">Approved By</p>
+        <p class="font-semibold">${order.ApprovedBy || "-"}</p>
       </div>
 
     </div>
 
   </div>
-  `;
+
+
+  <!-- ================= PARTS TABLE ================= -->
+  <div class="relative pc-section">
+
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        PART DETAILS
+      </span>
+    </div>
+
+    <div class="overflow-x-auto mt-2">
+
+      <table class="w-full text-sm text-center border rounded-lg overflow-hidden">
+
+        <thead class="text-xs uppercase tracking-wider border-b"
+              style="background: var(--pc-warm); color: var(--pc-text);">
+
+          <tr>
+            <th class="py-2">Part</th>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Billed</th>
+            <th>Pending</th>
+            <th>Value</th>
+            <th>Status</th>
+            <th>Processed</th>
+            <th>Reg Dt</th>
+            <th>Bill No</th>
+            <th>Billing Dt</th>
+            <th>Transport</th>
+            <th>Docket</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+          ${partsHTML}
+        </tbody>
+
+      </table>
+
+      <div class="text-right mt-4 font-bold"
+           style="color: var(--pc-secondary);">
+        Total: ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+`;
 }
 
   
