@@ -1160,24 +1160,34 @@ let orderStatus = "PENDING";
 // ✅ PRIORITY BASED (TOP → DOWN)
 
 // ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
 if(statuses.every(s => s === "REJECTED")){
   orderStatus = "REJECTED";
 }
-    
-    
 
-if(statuses.every(s => s === "DISPATCHED")){
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
+
+// 🟡 PARTIAL DISPATCH
 else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
+
+// 🔵 NOT DISPATCHED
 else if(statuses.every(s => s === "NOT DESPATCHED")){
   orderStatus = "NOT DESPATCHED";
 }
+
+// 🟠 PROCESSED
 else if(statuses.every(s => s === "PROCESSED")){
   orderStatus = "PROCESSED";
 }
+
+// ⚪ DEFAULT
 else{
   orderStatus = "PENDING";
 }
@@ -1381,23 +1391,34 @@ let orderStatus = "PENDING";
 // ✅ PRIORITY BASED (TOP → DOWN)
 
 // ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
 if(statuses.every(s => s === "REJECTED")){
   orderStatus = "REJECTED";
 }
 
-    
-if(statuses.every(s => s === "DISPATCHED")){
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
+
+// 🟡 PARTIAL DISPATCH
 else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
+
+// 🔵 NOT DISPATCHED
 else if(statuses.every(s => s === "NOT DESPATCHED")){
   orderStatus = "NOT DESPATCHED";
 }
+
+// 🟠 PROCESSED
 else if(statuses.every(s => s === "PROCESSED")){
   orderStatus = "PROCESSED";
 }
+
+// ⚪ DEFAULT
 else{
   orderStatus = "PENDING";
 }
@@ -1580,39 +1601,37 @@ if(s.includes("REJECT")){
 // ✅ ALL DISPATCHED
 
 // ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
 if(statuses.every(s => s === "REJECTED")){
   orderStatus = "REJECTED";
 }
 
-    
-if(statuses.every(s => s === "DISPATCHED")){
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
   orderStatus = "DISPATCHED";
 }
 
-// ✅ ANY DISPATCHED
+// 🟡 PARTIAL DISPATCH
 else if(statuses.includes("DISPATCHED")){
   orderStatus = "PARTIALLY DISPATCHED";
 }
 
-
-  // ✅ ALL NOT DESPATCHED
+// 🔵 NOT DISPATCHED
 else if(statuses.every(s => s === "NOT DESPATCHED")){
   orderStatus = "NOT DESPATCHED";
 }
 
-  
-// ✅ ALL PROCESSED
+// 🟠 PROCESSED
 else if(statuses.every(s => s === "PROCESSED")){
   orderStatus = "PROCESSED";
 }
 
-
-
-// ✅ DEFAULT
+// ⚪ DEFAULT
 else{
   orderStatus = "PENDING";
 }
-
   let partsHTML = data.map(r=>`
   <tr class="text-xs" style="border-bottom: 1px solid rgba(170,205,220,0.16);">
   
