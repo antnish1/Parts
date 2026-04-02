@@ -1555,13 +1555,13 @@ else{
     <td>${r.Description}</td>
     <td>${r.Qty}</td>
     <td>${r.BilledQty || 0}</td>
-    <td class="${
-        (Number(r.Qty || 0) - Number(r.BilledQty || 0)) > 0 
-                ? 'font-semibold' 
-                : 'font-semibold'
-      }">
-        ${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}
-      </td>
+        <td style="color:${
+          (Number(r.Qty || 0) - Number(r.BilledQty || 0)) > 0 
+            ? '#92400e'   /* pending → amber */
+            : '#065f46'   /* completed → green */
+        }; font-weight:600;">
+          ${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}
+        </td>
     <td style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${Number(r.Value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
