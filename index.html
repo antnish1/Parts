@@ -1388,7 +1388,7 @@ html += `
 <tr onclick="openOrderView('${o.OrderNo}')" 
 class="cursor-pointer transition hover:scale-[1.01]">
 
-<td class="py-2">${new Date(o.created_at).toLocaleDateString()}</td>
+<td class="py-2">${formatDateTime(o.created_at)}</td>
 <td>${o.OrderType || "-"}</td>
 <td>${o.OrderFor || "-"}</td>
 <td>${o.Branch || "-"}</td>
@@ -1620,7 +1620,7 @@ const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 html += `
 <tr onclick="openOrderView('${o.OrderNo}')" 
 class="cursor-pointer transition hover:scale-[1.01]">
-<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${formatDateTime(o.created_at)}</td>
 
 <td>${o.OrderType || "-"}</td>
 <td>${o.OrderFor || "-"}</td>
@@ -1741,7 +1741,20 @@ function formatDate(val){
   return val;
 }
 
+function formatDateTime(val){
+  if(!val) return "-";
 
+  const d = new Date(val);
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hours}:${mins}`;
+}
   
 async function openOrderView(orderNo){
 
@@ -1896,7 +1909,7 @@ document.getElementById("main").innerHTML = `
         Order Details
       </p>
       <p class="text-xs" style="color: var(--pc-text-muted);">
-        ${orderNo} • ${formatDate(order.created_at)}
+        ${orderNo} • ${formatDateTime(order.created_at)}
       </p>
     </div>
 
@@ -2143,7 +2156,7 @@ const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
 <tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
-<td>${new Date(o.created_at).toLocaleDateString()}</td>
+<td>${formatDateTime(o.created_at)}</td>
 <td class="text-center">${o.Branch}</td>
 <td class="text-center">${o.MachineNo}</td>
 <td>${o.items.length}</td>
