@@ -1047,7 +1047,7 @@ tr.innerHTML = `
 </td>
 
 <td class="p-2">
-  <input type="number" class="qty pc-field w-full"/>
+  <input type="number" min="0" class="qty pc-field w-full"/>
 </td>
 
 <td class="qty30 py-1 text-center text-xs"
@@ -1162,7 +1162,17 @@ calc(tr);
 
 
 
-tr.querySelector(".qty").addEventListener("input", () => calc(tr));
+tr.querySelector(".qty").addEventListener("input", function () {
+
+  let val = Number(this.value);
+
+  // ❗ Prevent negative values
+  if (val < 0) {
+    this.value = 0;
+  }
+
+  calc(tr);
+});
 
 document.getElementById("tbody").appendChild(tr);
 
@@ -1200,9 +1210,11 @@ function handlePartReject(btn){
 function calc(tr){
   const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
   const qty = Number(tr.querySelector(".qty").value) || 0;
-
+    const qtyInput = tr.querySelector(".qty");
   const value = dnp * qty;
-
+    if (qty < 0) {
+      qtyInput.value = 0;
+    }
   // ✅ FIX: force 2 decimal places
  tr.querySelector(".val").innerText = value.toLocaleString("en-IN", {
   minimumFractionDigits: 2,
@@ -1283,10 +1295,22 @@ rows.forEach(r=>{
   const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
   // ❗ VALIDATION
-  if(part && !qty){
-    showPopup("Qty is required for all parts ❗");
-    throw new Error("Qty missing");
-  }
+    if (part) {
+    
+      const qtyNum = Number(qty);
+    
+      // ❗ Qty missing
+      if (!qty) {
+        showPopup("Qty is required for all parts ❗");
+        throw new Error("Qty missing");
+      }
+    
+      // ❗ Qty less than 1
+      if (qtyNum < 1) {
+        showPopup("Qty cannot be less than 1 ❗", "error");
+        throw new Error("Invalid qty");
+      }
+    }
 
   if(!part) return;
 
