@@ -1067,7 +1067,7 @@ tr.innerHTML = `
 <td class="val py-1 font-semibold" style="color:#1F2937;"></td>
 
 <td class="py-1">
-  <button class="text-red-400 hover:text-red-300 font-bold"
+  <button class="delete-row-btn text-red-400 hover:text-red-300 font-bold"
   onclick="this.closest('tr').remove(); calcTotal()">✕</button>
 </td>
 `;
@@ -1229,16 +1229,15 @@ function triggerRowDelete(){
   const tr = activeInput.closest("tr");
 
   if(tr){
-    const deleteBtn = tr.querySelector("button");
+    const deleteBtn = tr.querySelector(".delete-row-btn");
 
     if(deleteBtn){
-      deleteBtn.click(); // ✅ triggers your existing logic
+      deleteBtn.click(); // ✅ safe + exact button
     }
   }
 
   closePopup();
 }
-    
 // ---------- CALC ----------
 function calc(tr){
 
