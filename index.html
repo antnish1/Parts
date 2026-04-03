@@ -1077,6 +1077,39 @@ tr.querySelector(".part").addEventListener("blur", async function(){
 const partNo = this.value.trim().toUpperCase();
 this.value = partNo; // ✅ also update input visually
 
+// ❗ DUPLICATE CHECK
+const allParts = document.querySelectorAll(".part");
+
+let duplicateCount = 0;
+
+allParts.forEach(input => {
+  if(input.value.trim().toUpperCase() === partNo){
+    duplicateCount++;
+  }
+});
+
+// If more than 1 → duplicate exists
+if(duplicateCount > 1){
+
+  showPopup("This Part Number is already added ❗ Duplicate not allowed", "error");
+
+  // ❌ CLEAR CURRENT INPUT
+  this.value = "";
+
+  // ❌ RESET ROW DATA
+  tr.querySelector(".desc").innerText = "";
+  tr.querySelector(".dnp").innerText = "";
+  tr.querySelector(".cat").innerText = "";
+  tr.querySelector(".val").innerText = "";
+  tr.querySelector(".qty30").innerText = "0";
+
+  calcTotal();
+
+  return; // 🚨 STOP further execution
+}
+
+
+    
 // ✅ FIX 1: ignore empty input
 if(!partNo){
   tr.querySelector(".desc").innerText = "";
