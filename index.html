@@ -424,11 +424,11 @@ function hideLoader(){ document.getElementById("loader").classList.add("hidden")
 function cancelUpload(){
   cancelUploadFlag = true;
 }
-function showPopup(msg, type = "info"){
+function showPopup(msg, type = "info", actionsHTML = null){
 
   const iconEl = document.getElementById("popupIcon");
 
-  // 🎯 TYPE BASED STYLING
+  // ICON STYLE
   if(type === "success"){
     iconEl.innerHTML = "✅";
     iconEl.style.background = "rgba(16,185,129,0.15)";
@@ -452,16 +452,18 @@ function showPopup(msg, type = "info"){
 
   document.getElementById("popupMsg").innerText = msg;
 
-  document.getElementById("popupActions").innerHTML = `
-    <button onclick="closePopup()"
-      class="px-5 py-2 rounded-lg font-semibold transition"
-      style="
-        background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-        color: white;
-      ">
-      OK
-    </button>
-  `;
+  // ✅ CUSTOM BUTTONS SUPPORT
+  if(actionsHTML){
+    document.getElementById("popupActions").innerHTML = actionsHTML;
+  } else {
+    document.getElementById("popupActions").innerHTML = `
+      <button onclick="closePopup()"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary)); color: white;">
+        OK
+      </button>
+    `;
+  }
 
   document.getElementById("popup").classList.remove("hidden");
 }
@@ -1131,27 +1133,29 @@ tr.querySelector(".qty30").innerText = total30;
 
 if(total30 > 0){
 
-  showPopup(
-    `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
-    "warning",
-    `
-    <div class="flex gap-3 justify-center">
+showPopup(
+  `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
+  "warning",
+  `
+  <div class="flex gap-3 justify-center">
 
-      <button onclick="closePopup()"
-        class="px-5 py-2 rounded-lg font-semibold"
-        style="background: #10b981; color:white;">
-        Yes
-      </button>
+    <!-- YES → JUST CLOSE -->
+    <button onclick="closePopup()"
+      class="px-5 py-2 rounded-lg font-semibold"
+      style="background: #10b981; color:white;">
+      Yes
+    </button>
 
-      <button onclick="handlePartReject(this)"
-        class="px-5 py-2 rounded-lg font-semibold"
-        style="background: #ef4444; color:white;">
-        No
-      </button>
+    <!-- NO → DELETE ROW -->
+    <button onclick="deleteRowFromPopup(this)"
+      class="px-5 py-2 rounded-lg font-semibold"
+      style="background: #ef4444; color:white;">
+      No
+    </button>
 
-    </div>
-    `
-  );
+  </div>
+  `
+);
 
 }
     
@@ -1182,7 +1186,19 @@ document.getElementById("tbody").appendChild(tr);
   }, 50);
 }
 
+function deleteRowFromPopup(btn){
 
+  // get currently focused row
+  const activeInput = document.activeElement;
+  const tr = activeInput.closest("tr");
+
+  if(tr){
+    tr.remove();
+    calcTotal();
+  }
+
+  closePopup();
+}
 
 function handlePartReject(btn){
 
