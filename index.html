@@ -1254,11 +1254,17 @@ const user = getUser();
 
 showLoader();
 
-const { data } = await db
-.from("requests")
-.select("*")
-.eq("Branch", user.Branch)
-.order("created_at", { ascending:false });
+let query = db
+  .from("requests")
+  .select("*")
+  .order("created_at", { ascending:false });
+
+// ✅ ONLY FILTER FOR NORMAL USERS
+if(user.Role !== "headoffice"){
+  query = query.eq("Branch", user.Branch);
+}
+
+const { data } = await query;
 
 hideLoader();
 
