@@ -1050,11 +1050,11 @@ tr.innerHTML = `
   <input type="number" class="qty pc-field w-full"/>
 </td>
 
-<td class="qty30 py-1 text-center font-extrabold"
+<td class="qty30 py-1 text-center text-xs"
     style="
-      background: linear-gradient(135deg, #e0ecff, #c7d9ff);
-      color: #1e3a8a;
-      border-radius: 6px;
+      background: rgba(0,0,0,0.04);
+      color: #6b7280;
+      border-radius: 4px;
     ">
   0
 </td>
@@ -1130,10 +1130,29 @@ tr.querySelector(".qty30").innerText = total30;
 
 
 if(total30 > 0){
+
   showPopup(
     `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
-    "warning"
+    "warning",
+    `
+    <div class="flex gap-3 justify-center">
+
+      <button onclick="closePopup()"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: #10b981; color:white;">
+        Yes
+      </button>
+
+      <button onclick="handlePartReject(this)"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: #ef4444; color:white;">
+        No
+      </button>
+
+    </div>
+    `
   );
+
 }
     
     
@@ -1153,6 +1172,30 @@ document.getElementById("tbody").appendChild(tr);
   }, 50);
 }
 
+
+
+function handlePartReject(btn){
+
+  const popup = document.getElementById("popup");
+
+  // find active row (last focused input)
+  const activeInput = document.activeElement;
+
+  const tr = activeInput.closest("tr");
+
+  if(tr){
+    tr.querySelector(".part").value = "";
+    tr.querySelector(".desc").innerText = "";
+    tr.querySelector(".dnp").innerText = "";
+    tr.querySelector(".cat").innerText = "";
+    tr.querySelector(".val").innerText = "";
+    tr.querySelector(".qty30").innerText = "0";
+  }
+
+  closePopup();
+}
+
+    
 // ---------- CALC ----------
 function calc(tr){
   const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
