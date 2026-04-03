@@ -412,7 +412,7 @@ button[style*="rgba(255,255,255"]:hover {
 const { createClient } = supabase;
 let cancelUploadFlag = false;
 const db = createClient(
-
+let currentRow = null;
     
   "https://ubkwtjyvbdvepzbxoikq.supabase.co",
   "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
@@ -1133,6 +1133,10 @@ tr.querySelector(".qty30").innerText = total30;
 
 if(total30 > 0){
 
+  currentRow = tr; // ⭐ STORE ROW HERE
+
+  showPopup(
+
 showPopup(
   `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
   "warning",
@@ -1225,15 +1229,10 @@ function handlePartReject(btn){
 
 function triggerRowDelete(){
 
-  const activeInput = document.activeElement;
-  const tr = activeInput.closest("tr");
-
-  if(tr){
-    const deleteBtn = tr.querySelector(".delete-row-btn");
-
-    if(deleteBtn){
-      deleteBtn.click(); // ✅ safe + exact button
-    }
+  if(currentRow){
+    currentRow.remove();   // ✅ DIRECT DELETE
+    calcTotal();
+    currentRow = null;     // cleanup
   }
 
   closePopup();
