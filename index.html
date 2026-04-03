@@ -1147,7 +1147,7 @@ showPopup(
     </button>
 
     <!-- NO → DELETE ROW -->
-    <button onclick="deleteRowFromPopup(this)"
+    <button onclick="triggerRowDelete()"
       class="px-5 py-2 rounded-lg font-semibold"
       style="background: #ef4444; color:white;">
       No
@@ -1221,6 +1221,23 @@ function handlePartReject(btn){
   closePopup();
 }
 
+
+
+function triggerRowDelete(){
+
+  const activeInput = document.activeElement;
+  const tr = activeInput.closest("tr");
+
+  if(tr){
+    const deleteBtn = tr.querySelector("button");
+
+    if(deleteBtn){
+      deleteBtn.click(); // ✅ triggers your existing logic
+    }
+  }
+
+  closePopup();
+}
     
 // ---------- CALC ----------
 function calc(tr){
