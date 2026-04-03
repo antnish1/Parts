@@ -17,7 +17,12 @@
 
 <body class="min-h-screen"
 style="
-background: radial-gradient(circle at top left, #e6f0f7, #f3e3d0);
+background: linear-gradient(
+  135deg,
+  #edf4f9 0%,
+  #dbe7f1 40%,
+  #c9dbea 100%
+);
 color: var(--pc-text);
 ">
 
@@ -272,9 +277,10 @@ input:focus, select:focus, button:focus {
 }
 
 .pc-section {
-  background: linear-gradient(180deg, rgba(170,205,220,0.06), rgba(129,166,198,0.06));
-  border: 1px solid var(--pc-border);
-  border-radius: 12px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(200,220,235,0.6);
+  border-radius: 14px;
   padding: 16px;
   padding-top: 24px;
 }
@@ -828,7 +834,12 @@ main.innerHTML = `
   <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         ORDER DETAILS
       </span>
@@ -863,7 +874,12 @@ main.innerHTML = `
   <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         CUSTOMER DETAILS
       </span>
@@ -907,7 +923,10 @@ main.innerHTML = `
 
 <table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
 <thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
-      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;"
+      style="
+background: linear-gradient(135deg, #c9dbea, #b7cfe2);
+color: #1F2937;
+"
 <tr>
 <th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
@@ -939,9 +958,13 @@ main.innerHTML = `
 <div class="flex items-center gap-3">
 
   <!-- ADD ITEM -->
-  <button onclick="addRow()"
-    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
-    style="background: var(--pc-secondary); color: #0f1720;">
+<button onclick="addRow()"
+  class="pc-action-btn"
+  style="
+    background: linear-gradient(135deg, #6b94b4, #8fb3cc);
+    color: white;
+    box-shadow: 0 8px 20px rgba(95,136,168,0.35);
+  ">
     <span class="pc-btn-inline">
       <i data-lucide="plus-circle" class="pc-icon"></i>
       Add Item
@@ -1501,7 +1524,12 @@ main.innerHTML = `
   <div class="relative pc-section">
 
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         TRACK ORDERS
       </span>
@@ -1738,7 +1766,12 @@ let html = `
 <div class="relative pc-section">
 
   <!-- FLOAT LABEL -->
-  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+  <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       ${activeTab.toUpperCase()} ORDERS
     </span>
@@ -1896,7 +1929,12 @@ document.getElementById("main").innerHTML = `
     <!-- STATUS REPORT -->
 <div class="relative pc-section">
 
-  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+  <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       STATUS REPORT UPLOAD
     </span>
@@ -1912,7 +1950,12 @@ document.getElementById("main").innerHTML = `
 
 <div class="relative pc-section">
 
-  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+ <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       INWARD REPORT
     </span>
@@ -2214,7 +2257,12 @@ ${isAdmin ? `
   <!-- ================= ORDER INFO ================= -->
   <div class="relative pc-section">
 
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         ORDER SUMMARY
       </span>
@@ -2292,7 +2340,12 @@ ${isAdmin ? `
   <!-- ================= PARTS TABLE ================= -->
   <div class="relative pc-section">
 
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <div class="absolute -top-3 left-4 px-3"
+     style="
+       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
+       border-radius: 6px;
+       padding: 2px 10px;
+     ">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         PART DETAILS
       </span>
