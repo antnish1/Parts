@@ -15,7 +15,11 @@
     
 </head>
 
-<body class="min-h-screen" style="background-color: var(--pc-bg); color: var(--pc-text);">
+<body class="min-h-screen"
+style="
+background: radial-gradient(circle at top left, #e6f0f7, #f3e3d0);
+color: var(--pc-text);
+">
 
 <div id="app"></div>
 
@@ -125,6 +129,16 @@ body {
   gap: 8px;
 }
 
+
+
+.fade-in {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
     
 .menu-btn {
   position: relative;
@@ -660,7 +674,8 @@ if(!window.activeTab){
 }
 
 document.getElementById("app").innerHTML = `
-<div class="max-w-7xl mx-auto px-6 py-5 space-y-5">
+<div class="max-w-7xl mx-auto px-6 py-5 space-y-5 backdrop-blur-md rounded-2xl"
+     style="background: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.3);">
 
   <div class="space-y-4">
 
@@ -674,8 +689,8 @@ document.getElementById("app").innerHTML = `
     #2f3e4d 40%,
     #3f556b 100%
   );
-  border: 1px solid rgba(255,255,255,0.3);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 ">
 
 <div class="relative flex items-center w-full">
@@ -806,7 +821,7 @@ updateMenuHighlight();
 const main = document.getElementById("main");
 
 main.innerHTML = `
-<div class="space-y-5">
+<div class="space-y-5 fade-in">
 
 
   <!-- ================= ORDER FORM ================= -->
@@ -936,7 +951,11 @@ main.innerHTML = `
   <!-- BULK UPLOAD BUTTON -->
   <button onclick="document.getElementById('uploadPartsExcel').click()"
     class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
-    style="background: var(--pc-primary); color: #0f1720;">
+    style="
+background: linear-gradient(135deg, #3b82f6, #6366f1);
+color: white;
+box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+">
     <span class="pc-btn-inline">
       <i data-lucide="upload" class="pc-icon"></i>
       Bulk Parts Upload
@@ -954,7 +973,11 @@ main.innerHTML = `
 
 <button onclick="submitOrder()"
 class="transition px-6 py-2 rounded-lg font-semibold shadow-md"
-style="background: var(--pc-primary); color: #0f1720;">
+style="
+background: linear-gradient(135deg, #3b82f6, #6366f1);
+color: white;
+box-shadow: 0 8px 20px rgba(99,102,241,0.4);
+">
     <span class="pc-btn-inline">
       <i data-lucide="send" class="pc-icon"></i>
       Submit Order
@@ -1471,8 +1494,8 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped)
   .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-let html = `
-<div class="space-y-5">
+main.innerHTML = `
+<div class="space-y-5 fade-in">
 
   <!-- CARD WRAPPER (same as New Order) -->
   <div class="relative pc-section">
@@ -1706,7 +1729,7 @@ else{
 }
 // UI
 let html = `
-<div class="space-y-4">
+<div class="space-y-5 fade-in">
 
 
 
@@ -1867,9 +1890,8 @@ function loadUpload(){
   window.activeTab = "upload";
   updateMenuHighlight();
 
-  document.getElementById("main").innerHTML = `
-  
-  <div class="space-y-6">
+document.getElementById("main").innerHTML = `
+<div class="space-y-6 fade-in">
 
     <!-- STATUS REPORT -->
 <div class="relative pc-section">
@@ -2087,7 +2109,7 @@ const user = getUser();
 const isAdmin = user.Branch === "HQ";
   
 document.getElementById("main").innerHTML = `
-<div class="space-y-6">
+<div class="space-y-6 fade-in">
 
   <!-- ================= HEADER ================= -->
 
