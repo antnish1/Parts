@@ -1750,10 +1750,16 @@ function formatDateTime(val){
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const year = String(d.getFullYear()).slice(-2);
 
-  const hours = String(d.getHours()).padStart(2, '0');
+  // 🔥 12-HOUR FORMAT LOGIC
+  let hours = d.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+
+  hours = hours % 12 || 12; // convert 0 → 12
+  hours = String(hours).padStart(2, '0');
+
   const mins = String(d.getMinutes()).padStart(2, '0');
 
-  return `${day}-${month}-${year} ${hours}:${mins}`;
+  return `${day}-${month}-${year} ${hours}:${mins} ${ampm}`;
 }
   
 async function openOrderView(orderNo){
