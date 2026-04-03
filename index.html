@@ -411,8 +411,9 @@ button[style*="rgba(255,255,255"]:hover {
 <script>
 const { createClient } = supabase;
 let cancelUploadFlag = false;
-const db = createClient(
 let currentRow = null;
+    const db = createClient(
+
     
   "https://ubkwtjyvbdvepzbxoikq.supabase.co",
   "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
