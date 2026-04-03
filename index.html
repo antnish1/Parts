@@ -15,16 +15,7 @@
     
 </head>
 
-<body class="min-h-screen"
-style="
-background: linear-gradient(
-  135deg,
-  #edf4f9 0%,
-  #dbe7f1 40%,
-  #c9dbea 100%
-);
-color: var(--pc-text);
-">
+<body class="min-h-screen" style="background-color: var(--pc-bg); color: var(--pc-text);">
 
 <div id="app"></div>
 
@@ -134,16 +125,6 @@ body {
   gap: 8px;
 }
 
-
-
-.fade-in {
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
     
 .menu-btn {
   position: relative;
@@ -277,10 +258,9 @@ input:focus, select:focus, button:focus {
 }
 
 .pc-section {
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(200,220,235,0.6);
-  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(170,205,220,0.06), rgba(129,166,198,0.06));
+  border: 1px solid var(--pc-border);
+  border-radius: 12px;
   padding: 16px;
   padding-top: 24px;
 }
@@ -680,8 +660,7 @@ if(!window.activeTab){
 }
 
 document.getElementById("app").innerHTML = `
-<div class="max-w-7xl mx-auto px-6 py-5 space-y-5 backdrop-blur-md rounded-2xl"
-     style="background: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.3);">
+<div class="max-w-7xl mx-auto px-6 py-5 space-y-5">
 
   <div class="space-y-4">
 
@@ -695,8 +674,8 @@ document.getElementById("app").innerHTML = `
     #2f3e4d 40%,
     #3f556b 100%
   );
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
 ">
 
 <div class="relative flex items-center w-full">
@@ -827,19 +806,14 @@ updateMenuHighlight();
 const main = document.getElementById("main");
 
 main.innerHTML = `
-<div class="space-y-5 fade-in">
+<div class="space-y-5">
 
 
   <!-- ================= ORDER FORM ================= -->
   <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         ORDER DETAILS
       </span>
@@ -874,12 +848,7 @@ main.innerHTML = `
   <div class="relative pc-section">
   
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         CUSTOMER DETAILS
       </span>
@@ -923,10 +892,7 @@ main.innerHTML = `
 
 <table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
 <thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
-      style="
-background: linear-gradient(135deg, #c9dbea, #b7cfe2);
-color: #1F2937;
-"
+      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;"
 <tr>
 <th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
@@ -958,13 +924,9 @@ color: #1F2937;
 <div class="flex items-center gap-3">
 
   <!-- ADD ITEM -->
-<button onclick="addRow()"
-  class="pc-action-btn"
-  style="
-    background: linear-gradient(135deg, #6b94b4, #8fb3cc);
-    color: white;
-    box-shadow: 0 8px 20px rgba(95,136,168,0.35);
-  ">
+  <button onclick="addRow()"
+    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
+    style="background: var(--pc-secondary); color: #0f1720;">
     <span class="pc-btn-inline">
       <i data-lucide="plus-circle" class="pc-icon"></i>
       Add Item
@@ -974,11 +936,7 @@ color: #1F2937;
   <!-- BULK UPLOAD BUTTON -->
   <button onclick="document.getElementById('uploadPartsExcel').click()"
     class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
-    style="
-background: linear-gradient(135deg, #3b82f6, #6366f1);
-color: white;
-box-shadow: 0 8px 20px rgba(99,102,241,0.4);
-">
+    style="background: var(--pc-primary); color: #0f1720;">
     <span class="pc-btn-inline">
       <i data-lucide="upload" class="pc-icon"></i>
       Bulk Parts Upload
@@ -996,11 +954,7 @@ box-shadow: 0 8px 20px rgba(99,102,241,0.4);
 
 <button onclick="submitOrder()"
 class="transition px-6 py-2 rounded-lg font-semibold shadow-md"
-style="
-background: linear-gradient(135deg, #3b82f6, #6366f1);
-color: white;
-box-shadow: 0 8px 20px rgba(99,102,241,0.4);
-">
+style="background: var(--pc-primary); color: #0f1720;">
     <span class="pc-btn-inline">
       <i data-lucide="send" class="pc-icon"></i>
       Submit Order
@@ -1517,19 +1471,14 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped)
   .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-main.innerHTML = `
-<div class="space-y-5 fade-in">
+let html = `
+<div class="space-y-5">
 
   <!-- CARD WRAPPER (same as New Order) -->
   <div class="relative pc-section">
 
     <!-- FLOAT LABEL -->
-    <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         TRACK ORDERS
       </span>
@@ -1757,7 +1706,7 @@ else{
 }
 // UI
 let html = `
-<div class="space-y-5 fade-in">
+<div class="space-y-4">
 
 
 
@@ -1766,12 +1715,7 @@ let html = `
 <div class="relative pc-section">
 
   <!-- FLOAT LABEL -->
-  <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       ${activeTab.toUpperCase()} ORDERS
     </span>
@@ -1923,18 +1867,14 @@ function loadUpload(){
   window.activeTab = "upload";
   updateMenuHighlight();
 
-document.getElementById("main").innerHTML = `
-<div class="space-y-6 fade-in">
+  document.getElementById("main").innerHTML = `
+  
+  <div class="space-y-6">
 
     <!-- STATUS REPORT -->
 <div class="relative pc-section">
 
-  <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       STATUS REPORT UPLOAD
     </span>
@@ -1950,12 +1890,7 @@ document.getElementById("main").innerHTML = `
 
 <div class="relative pc-section">
 
- <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
     <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
       INWARD REPORT
     </span>
@@ -2152,7 +2087,7 @@ const user = getUser();
 const isAdmin = user.Branch === "HQ";
   
 document.getElementById("main").innerHTML = `
-<div class="space-y-6 fade-in">
+<div class="space-y-6">
 
   <!-- ================= HEADER ================= -->
 
@@ -2257,12 +2192,7 @@ ${isAdmin ? `
   <!-- ================= ORDER INFO ================= -->
   <div class="relative pc-section">
 
-    <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         ORDER SUMMARY
       </span>
@@ -2340,12 +2270,7 @@ ${isAdmin ? `
   <!-- ================= PARTS TABLE ================= -->
   <div class="relative pc-section">
 
-    <div class="absolute -top-3 left-4 px-3"
-     style="
-       background: linear-gradient(135deg, #edf4f9, #dbe7f1);
-       border-radius: 6px;
-       padding: 2px 10px;
-     ">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
       <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
         PART DETAILS
       </span>
