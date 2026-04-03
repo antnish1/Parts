@@ -891,7 +891,12 @@ main.innerHTML = `
 <tr>
 <th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
-<th class="py-3 w-[28%]" style="color: #1F2937;">Desc</th>
+
+<th class="py-3 w-[12%]" style="color: #1F2937;">
+  30D Qty
+</th>
+
+<th class="py-3 w-[26%]" style="color: #1F2937;">Desc</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">DNP</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">Cat</th>
 <th class="py-3 w-[14%]" style="color: #1F2937;">Value</th>
@@ -1045,6 +1050,15 @@ tr.innerHTML = `
   <input type="number" class="qty pc-field w-full"/>
 </td>
 
+<td class="qty30 py-1 text-center font-extrabold"
+    style="
+      background: linear-gradient(135deg, #e0ecff, #c7d9ff);
+      color: #1e3a8a;
+      border-radius: 6px;
+    ">
+  0
+</td>
+
 <td class="desc py-1"></td>
 <td class="dnp py-1"></td>
 <td class="cat py-1"></td>
@@ -1087,6 +1101,42 @@ if(!data){
 tr.querySelector(".desc").innerText = data.Description;
 tr.querySelector(".dnp").innerText = data.DNP;
 tr.querySelector(".cat").innerText = data.Cat1;
+
+
+// ===== 30 DAY QTY LOGIC =====
+const user = getUser();
+
+const last30 = new Date();
+last30.setDate(last30.getDate() - 30);
+
+const { data: history } = await db
+  .from("requests")
+  .select("Qty")
+  .eq("Branch", user.Branch)
+  .eq("PartNo", partNo)
+  .gte("created_at", last30.toISOString());
+
+let total30 = 0;
+
+if(history){
+  history.forEach(r => {
+    total30 += Number(r.Qty || 0);
+  });
+}
+
+// SET VALUE
+tr.querySelector(".qty30").innerText = total30;
+
+
+
+if(total30 > 0){
+  showPopup(
+    `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
+    "warning"
+  );
+}
+    
+    
 
 calc(tr);
 });
