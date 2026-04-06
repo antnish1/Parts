@@ -785,15 +785,20 @@ document.getElementById("app").innerHTML = `
 
   <div class="flex items-center gap-3 w-full justify-end">
 
-  <!-- 🔍 UNIVERSAL SEARCH (NEW LOCATION) -->
-  
-    <input 
-      id="universalSearch"
-      placeholder="Search Order / Part / Customer..."
-      class="pc-field max-w-[280px]"
-      oninput="handleUniversalSearch(this.value)"
-    />
-  ` : ``}
+<div class="relative">
+
+  <i data-lucide="search" 
+     class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">
+  </i>
+
+  <input 
+    id="universalSearch"
+    placeholder="Search Orders, Parts, Customers..."
+    class="pc-field search-bar"
+    oninput="handleUniversalSearch(this.value)"
+  />
+
+</div>
 
   ${!isAdmin ? `
       <button onclick="loadCreate('create')" 
