@@ -3231,8 +3231,23 @@ function changePage(direction){
 }
     
 
-    
+function changePage(step){
 
+  const newPage = CURRENT_PAGE + step;
+
+  // ❌ prevent going below 1
+  if(newPage < 1) return;
+
+  CURRENT_PAGE = newPage;
+
+  // 🔁 reload correct screen
+  if(window.activeTab === "track"){
+    loadTrack("track");
+  } else if(window.activeTab === "Pending" || window.activeTab === "Processed"){
+    loadAdmin(window.activeTab);
+  }
+
+}
     
 
     
