@@ -1574,14 +1574,14 @@ let html = `
               style="background: var(--pc-warm); color: var(--pc-text);">
 
           <tr>
-            <th class="px-4 py-3 text-left">Date</th>
-            <th class="px-4 py-3 text-left">Order Type</th>
-            <th class="px-4 py-3 text-left">Order For</th>
-            <th class="px-4 py-3 text-left">Branch</th>
-            <th class="px-4 py-3 text-left">Qty</th>
-            <th class="px-4 py-3 text-left">Value</th>
-            <th class="px-4 py-3 text-left">Order No</th>
-            <th class="px-4 py-3 text-left">Status</th>
+                <th class="px-4 py-3 text-center">Date</th>
+                <th class="px-4 py-3 text-center">Order Type</th>
+                <th class="px-4 py-3 text-left">Order For</th>
+                <th class="px-4 py-3 text-left">Branch</th>
+                <th class="px-4 py-3 text-right">Qty</th>
+                <th class="px-4 py-3 text-right">Value</th>
+                <th class="px-4 py-3 text-center">Order No</th>
+                <th class="px-4 py-3 text-center">Status</th>
           </tr>
 
         </thead>
@@ -1666,8 +1666,8 @@ o.OrderType === 'VOR'
     : ''
 }">
 
-<td class="px-4 py-3 text-left">${formatDateTime(o.created_at)}</td>
-<td>
+<td class="px-4 py-3 text-center">${formatDateTime(o.created_at)}</td>
+<td class="px-4 py-3 text-center">
   <span class="px-2 py-1 rounded-full text-xs font-semibold"
     style="
       background:${
@@ -1686,25 +1686,27 @@ o.OrderType === 'VOR'
     ${o.OrderType || "-"}
   </span>
 </td>
-<td>
+<td class="px-4 py-3 text-left">
   ${
     o.OrderFor === "Customer"
       ? (o.CustomerName || "Customer")
       : "Stock"
   }
 </td>
-<td>${o.Branch || "-"}</td>
-<td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+<td class="px-4 py-3 text-left">${o.Branch || "-"}</td>
+<td class="px-4 py-3 text-right">
+  ${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}
+</td>
 
 <td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
 
-<td class="font-semibold" style="color: var(--pc-primary);">
+<td class="px-4 py-3 text-center font-semibold" style="color: var(--pc-primary);">
   ${o.OrderNo}
 </td>
 
-<td>
+<td class="px-4 py-3 text-center">
   <span class="px-2 py-1 rounded text-xs font-semibold"
     style="
       background:${
@@ -1901,14 +1903,14 @@ let html = `
             style="background: var(--pc-warm); color: var(--pc-text);">
 
         <tr>
-          <th class="px-4 py-3 text-left">Date</th>
-          <th class="px-4 py-3 text-left">Order Type</th>
-          <th class="px-4 py-3 text-left">Order For</th>
-          <th class="px-4 py-3 text-left">Branch</th>
-          <th class="px-4 py-3 text-left">Qty</th>
-          <th class="px-4 py-3 text-left">Value</th>
-          <th class="px-4 py-3 text-left">Order No</th>
-          <th class="px-4 py-3 text-left">Status</th>
+                <th class="px-4 py-3 text-center">Date</th>
+                <th class="px-4 py-3 text-center">Order Type</th>
+                <th class="px-4 py-3 text-left">Order For</th>
+                <th class="px-4 py-3 text-left">Branch</th>
+                <th class="px-4 py-3 text-right">Qty</th>
+                <th class="px-4 py-3 text-right">Value</th>
+                <th class="px-4 py-3 text-center">Order No</th>
+                <th class="px-4 py-3 text-center">Status</th>
         </tr>
 
       </thead>
@@ -1988,9 +1990,9 @@ style="${
     ? 'background: rgba(255, 235, 150, 0.35); border-left: 4px solid #f59e0b;'
     : ''
 }">
-<td>${formatDateTime(o.created_at)}</td>
+<td class="px-4 py-3 text-center">${formatDateTime(o.created_at)}</td>
 
-<td>
+<td class="px-4 py-3 text-center">
   <span class="px-2 py-1 rounded-full text-xs font-semibold"
     style="
       background:${
@@ -2009,20 +2011,22 @@ style="${
     ${o.OrderType || "-"}
   </span>
 </td>
-<td>
+<td class="px-4 py-3 text-left">
   ${
     o.OrderFor === "Customer"
       ? (o.CustomerName || "Customer")
       : "Stock"
   }
 </td>
-<td>${o.Branch || "-"}</td>
-<td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+<td class="px-4 py-3 text-left">${o.Branch || "-"}</td>
+<td class="px-4 py-3 text-right">
+  ${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}
+</td>
 <td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
-<td class="font-semibold" style="color: var(--pc-primary);">${o.OrderNo}</td>
-<td>
+<td class="px-4 py-3 text-center font-semibold" style="color: var(--pc-primary);">${o.OrderNo}</td>
+<td class="px-4 py-3 text-center">
   <span class="px-2 py-1 rounded text-xs font-semibold"
     style="
       background:${
