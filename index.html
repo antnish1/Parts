@@ -1518,6 +1518,10 @@ const orders = Object.values(grouped)
 
 const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
 const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
+const totalPages = Math.ceil(orders.length / PAGE_SIZE);
+
+
+
     
 let html = `
 <div class="space-y-5">
@@ -1730,21 +1734,24 @@ html += `
 <div class="flex justify-between items-center mt-4">
 
   <button onclick="changePage(-1)"
-    class="px-3 py-1 rounded bg-gray-200">
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-surface); border:1px solid var(--pc-border);"
+    ${CURRENT_PAGE === 1 ? "disabled opacity-50 cursor-not-allowed" : ""}>
     ⬅ Prev
   </button>
 
   <span class="text-sm font-semibold">
-    Page ${CURRENT_PAGE}
+    Page ${CURRENT_PAGE} / ${totalPages}
   </span>
 
   <button onclick="changePage(1)"
-    class="px-3 py-1 rounded bg-gray-200">
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-secondary); color:white;"
+    ${CURRENT_PAGE >= totalPages ? "disabled opacity-50 cursor-not-allowed" : ""}>
     Next ➡
   </button>
 
 </div>
-
 
     
   </div>
@@ -1755,10 +1762,55 @@ html += `
 
 document.getElementById("main").innerHTML = html;
 
-
-
 }
 
+async function loadTrackWithoutReset(){
+
+  window.activeTab = "track";
+
+  const user = getUser();
+
+  showLoader();
+
+  let query = db
+    .from("requests")
+    .select("*")
+    .order("created_at", { ascending:false });
+
+  if(user.Role !== "headoffice"){
+    query = query.eq("Branch", user.Branch);
+  }
+
+  const { data } = await query;
+  GLOBAL_DATA = data;
+  hideLoader();
+
+  const grouped = {};
+
+  data.forEach(r=>{
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = { ...r, items:[] };
+    }
+    grouped[r.OrderNo].items.push(r);
+  });
+
+  const orders = Object.values(grouped)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+  const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
+  const totalPages = Math.ceil(orders.length / PAGE_SIZE);
+
+  // 👉 reuse SAME UI render (copy from loadTrack)
+  // (IMPORTANT: copy your html rendering part here EXACTLY)
+
+  // FINAL RENDER
+  document.getElementById("main").innerHTML = html;
+}
+
+
+
+    
 function toggleRow(i){
 document.getElementById("row-"+i).classList.toggle("hidden");
 }
@@ -1834,7 +1886,7 @@ else{
 
 const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
 const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
-
+const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
     
 // UI
 let html = `
@@ -2040,16 +2092,20 @@ html += `
 <div class="flex justify-between items-center mt-4">
 
   <button onclick="changePage(-1)"
-    class="px-3 py-1 rounded bg-gray-200">
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-surface); border:1px solid var(--pc-border);"
+    ${CURRENT_PAGE === 1 ? "disabled opacity-50 cursor-not-allowed" : ""}>
     ⬅ Prev
   </button>
 
   <span class="text-sm font-semibold">
-    Page ${CURRENT_PAGE}
+    Page ${CURRENT_PAGE} / ${totalPages}
   </span>
 
   <button onclick="changePage(1)"
-    class="px-3 py-1 rounded bg-gray-200">
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-secondary); color:white;"
+    ${CURRENT_PAGE >= totalPages ? "disabled opacity-50 cursor-not-allowed" : ""}>
     Next ➡
   </button>
 
@@ -2065,6 +2121,55 @@ document.getElementById("main").innerHTML = html;
 }
 
 
+async function loadAdminWithoutReset(activeTab){
+
+  window.activeTab = activeTab;
+
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  GLOBAL_DATA = data;
+  hideLoader();
+
+  const grouped = {};
+
+  data.forEach(r=>{
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = { ...r, items:[] };
+    }
+    grouped[r.OrderNo].items.push(r);
+  });
+
+  const orders = Object.values(grouped)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  let filtered;
+
+  if(activeTab === "Pending"){
+    filtered = orders.filter(o => 
+      o.items.some(x => x.Status === "Pending")
+    );
+  } else {
+    filtered = orders.filter(o => 
+      o.items.some(x => x.Status !== "Pending")
+    );
+  }
+
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+  const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+
+  // 👉 copy SAME HTML rendering from loadAdmin
+
+  document.getElementById("main").innerHTML = html;
+}
+
+
+    
 
 function loadUpload(){
 
@@ -3235,16 +3340,16 @@ function changePage(step){
 
   const newPage = CURRENT_PAGE + step;
 
-  // ❌ prevent going below 1
   if(newPage < 1) return;
 
   CURRENT_PAGE = newPage;
 
-  // 🔁 reload correct screen
+  // ❗ IMPORTANT: DO NOT RESET PAGE AGAIN
   if(window.activeTab === "track"){
-    loadTrack("track");
-  } else if(window.activeTab === "Pending" || window.activeTab === "Processed"){
-    loadAdmin(window.activeTab);
+    loadTrackWithoutReset();
+  }
+  else{
+    loadAdminWithoutReset(window.activeTab);
   }
 
 }
