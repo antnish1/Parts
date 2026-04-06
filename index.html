@@ -825,6 +825,7 @@ main.innerHTML = `
         <option value="">Order Type</option>
         <option>VOR</option>
         <option>SOP</option>
+        <option>ZMAC</option> <!-- ✅ NEW -->
         <option>ZSPL</option>
       </select>
 
@@ -1337,8 +1338,9 @@ if(orderType === "VOR"){
   }
 }
 
-// SOP / ZSPL RULES
-if(orderType === "SOP" || orderType === "ZSPL"){
+
+// SOP / ZSPL / ZMAC RULES
+if(orderType === "SOP" || orderType === "ZSPL" || orderType === "ZMAC"){
 
   if(!orderFor){
     return showPopup("Order For required ❗");
