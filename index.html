@@ -411,6 +411,7 @@ button[style*="rgba(255,255,255"]:hover {
 
   
 <script>
+ let GLOBAL_DATA = []; // stores current table data
 const { createClient } = supabase;
 let cancelUploadFlag = false;
 let currentRow = null;
@@ -439,7 +440,7 @@ db.channel('requests-changes')
   .subscribe();
 
 
-    
+ let GLOBAL_DATA = []; // stores current table data    
 
 // ---------- UTIL ----------
 function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
@@ -1492,7 +1493,7 @@ if(user.Role !== "headoffice"){
 }
 
 const { data } = await query;
-
+GLOBAL_DATA = data;
 hideLoader();
 
 const grouped = {};
@@ -1509,6 +1510,27 @@ const orders = Object.values(grouped)
 
 let html = `
 <div class="space-y-5">
+
+
+<!-- 🔍 UNIVERSAL SEARCH -->
+<div class="pc-section flex items-center gap-3">
+
+  <input 
+    id="universalSearch"
+    placeholder="Search Order No / Part No / Customer / Machine / Branch..."
+    class="pc-field flex-1"
+    oninput="handleUniversalSearch(this.value)"
+  />
+
+  <button onclick="clearUniversalSearch()"
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-secondary); color:white;">
+    Clear
+  </button>
+
+</div>
+
+
 
   <!-- CARD WRAPPER (same as New Order) -->
   <div class="relative pc-section">
@@ -1708,10 +1730,11 @@ updateMenuHighlight();
 showLoader();
 
 const { data } = await db
+    
 .from("requests")
 .select("*")
 .order("created_at",{ascending:false});
-
+GLOBAL_DATA = data;
 hideLoader();
 
 // GROUP BY ORDER
@@ -1744,6 +1767,25 @@ else{
 let html = `
 <div class="space-y-4">
 
+
+
+<!-- 🔍 UNIVERSAL SEARCH -->
+<div class="pc-section flex items-center gap-3">
+
+  <input 
+    id="universalSearch"
+    placeholder="Search Order No / Part No / Customer / Machine / Branch..."
+    class="pc-field flex-1"
+    oninput="handleUniversalSearch(this.value)"
+  />
+
+  <button onclick="clearUniversalSearch()"
+    class="px-4 py-2 rounded-lg font-semibold"
+    style="background: var(--pc-secondary); color:white;">
+    Clear
+  </button>
+
+</div>
 
 
 
