@@ -406,6 +406,16 @@ tr[style*="f59e0b"]:hover {
   box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
 }
 
+
+.track-table tbody tr:nth-child(even) {
+  background: rgba(0,0,0,0.02);
+}
+    
+
+.track-table td {
+  vertical-align: middle;
+}
+
     
 </style>
 
@@ -1558,20 +1568,20 @@ let html = `
 
     <div class="overflow-x-auto mt-2">
 
-      <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
+      <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
 
         <thead class="text-xs uppercase tracking-wider border-b"
               style="background: var(--pc-warm); color: var(--pc-text);">
 
           <tr>
-            <th class="py-2">Date</th>
-            <th class="py-2">Order Type</th>
-            <th class="py-2">Order For</th>
-            <th class="py-2">Branch</th>
-            <th class="py-2">Qty</th>
-            <th class="py-2">Value</th>
-            <th class="py-2">Order No</th>
-            <th class="py-2">Status</th>
+            <th class="px-4 py-3 text-left">Date</th>
+            <th class="px-4 py-3 text-left">Order Type</th>
+            <th class="px-4 py-3 text-left">Order For</th>
+            <th class="px-4 py-3 text-left">Branch</th>
+            <th class="px-4 py-3 text-left">Qty</th>
+            <th class="px-4 py-3 text-left">Value</th>
+            <th class="px-4 py-3 text-left">Order No</th>
+            <th class="px-4 py-3 text-left">Status</th>
           </tr>
 
         </thead>
@@ -1651,12 +1661,12 @@ html += `
 <tr onclick="openOrderView('${o.OrderNo}')"
 class="cursor-pointer transition hover:scale-[1.01]"
 style="${
-  o.OrderType === 'VOR'
-    ? 'background: rgba(255, 235, 150, 0.35); border-left: 4px solid #f59e0b;'
+o.OrderType === 'VOR'
+  ? 'background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b;'
     : ''
 }">
 
-<td class="py-2">${formatDateTime(o.created_at)}</td>
+<td class="px-4 py-3 text-left">${formatDateTime(o.created_at)}</td>
 <td>
   <span class="px-2 py-1 rounded-full text-xs font-semibold"
     style="
@@ -1684,9 +1694,9 @@ style="${
   }
 </td>
 <td>${o.Branch || "-"}</td>
-<td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+<td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
 
-<td style="color: var(--pc-secondary); font-weight:600;">
+<td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
 
@@ -1885,20 +1895,20 @@ let html = `
 
   <div class="overflow-x-auto mt-2">
 
-    <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
+    <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
 
       <thead class="text-xs uppercase tracking-wider border-b"
             style="background: var(--pc-warm); color: var(--pc-text);">
 
         <tr>
-          <th class="py-2">Date</th>
-          <th class="py-2">Order Type</th>
-          <th class="py-2">Order For</th>
-          <th class="py-2">Branch</th>
-          <th class="py-2">Qty</th>
-          <th class="py-2">Value</th>
-          <th class="py-2">Order No</th>
-          <th class="py-2">Status</th>
+          <th class="px-4 py-3 text-left">Date</th>
+          <th class="px-4 py-3 text-left">Order Type</th>
+          <th class="px-4 py-3 text-left">Order For</th>
+          <th class="px-4 py-3 text-left">Branch</th>
+          <th class="px-4 py-3 text-left">Qty</th>
+          <th class="px-4 py-3 text-left">Value</th>
+          <th class="px-4 py-3 text-left">Order No</th>
+          <th class="px-4 py-3 text-left">Status</th>
         </tr>
 
       </thead>
@@ -2007,8 +2017,8 @@ style="${
   }
 </td>
 <td>${o.Branch || "-"}</td>
-<td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
-<td style="color: var(--pc-secondary); font-weight:600;">
+<td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+<td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
 <td class="font-semibold" style="color: var(--pc-primary);">${o.OrderNo}</td>
@@ -2269,7 +2279,7 @@ else{
         }; font-weight:600;">
           ${(Number(r.Qty || 0) - Number(r.BilledQty || 0))}
         </td>
-    <td style="color: var(--pc-secondary); font-weight:600;">
+    <td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
   ₹ ${Number(r.Value || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
 </td>
   
@@ -3173,7 +3183,7 @@ function renderSearchResults(data){
   </span>
 </td>
       <td>${o.Branch || "-"}</td>
-      <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+      <td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
       <td>₹ ${total.toFixed(2)}</td>
       <td class="font-semibold">${o.OrderNo}</td>
 
