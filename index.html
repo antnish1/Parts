@@ -1476,6 +1476,7 @@ async function loadTrack(tab, skipReset = false){
 
 if(!skipReset){
   CURRENT_PAGE = 1;
+}
 window.activeTab = "track";
 
 // ✅ Re-render header so highlight updates
@@ -1760,50 +1761,7 @@ document.getElementById("main").innerHTML = html;
 
 }
 
-async function loadTrackWithoutReset(){
 
-  window.activeTab = "track";
-
-  const user = getUser();
-
-  showLoader();
-
-  let query = db
-    .from("requests")
-    .select("*")
-    .order("created_at", { ascending:false });
-
-  if(user.Role !== "headoffice"){
-    query = query.eq("Branch", user.Branch);
-  }
-
-  const { data } = await query;
-  GLOBAL_DATA = data;
-  hideLoader();
-
-  const grouped = {};
-
-  data.forEach(r=>{
-    if(!grouped[r.OrderNo]){
-      grouped[r.OrderNo] = { ...r, items:[] };
-    }
-    grouped[r.OrderNo].items.push(r);
-  });
-
-  const orders = Object.values(grouped)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
-  const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
-  const totalPages = Math.ceil(orders.length / PAGE_SIZE);
-
-    
-    
-    
-    
-    // ✅ REUSE ORIGINAL FUNCTION
-loadTrack("track", true);
-}
 
 
     
@@ -1842,6 +1800,8 @@ async function loadAdmin(activeTab = "Pending", skipReset = false){
 
 if(!skipReset){
   CURRENT_PAGE = 1;
+}
+    
 window.activeTab = activeTab;
 updateMenuHighlight();
 showLoader();
@@ -2120,50 +2080,6 @@ document.getElementById("main").innerHTML = html;
 
 
 
-async function loadAdminWithoutReset(activeTab){
-
-  window.activeTab = activeTab;
-
-  showLoader();
-
-  const { data } = await db
-    .from("requests")
-    .select("*")
-    .order("created_at",{ascending:false});
-
-  GLOBAL_DATA = data;
-  hideLoader();
-
-  const grouped = {};
-
-  data.forEach(r=>{
-    if(!grouped[r.OrderNo]){
-      grouped[r.OrderNo] = { ...r, items:[] };
-    }
-    grouped[r.OrderNo].items.push(r);
-  });
-
-  const orders = Object.values(grouped)
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-  let filtered;
-
-  if(activeTab === "Pending"){
-    filtered = orders.filter(o => 
-      o.items.some(x => x.Status === "Pending")
-    );
-  } else {
-    filtered = orders.filter(o => 
-      o.items.some(x => x.Status !== "Pending")
-    );
-  }
-
-  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
-  const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-
-  loadAdmin(activeTab, true);
-}
 
     
 
