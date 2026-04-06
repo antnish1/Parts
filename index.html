@@ -747,7 +747,17 @@ document.getElementById("app").innerHTML = `
 
 </div>
 
-  <div class="flex items-center gap-3">
+  <div class="flex items-center gap-3 w-full justify-end">
+
+  <!-- 🔍 UNIVERSAL SEARCH (NEW LOCATION) -->
+  ${window.activeTab === "track" || window.activeTab === "Pending" || window.activeTab === "Processed" ? `
+    <input 
+      id="universalSearch"
+      placeholder="Search Order / Part / Customer..."
+      class="pc-field max-w-[280px]"
+      oninput="handleUniversalSearch(this.value)"
+    />
+  ` : ``}
 
   ${!isAdmin ? `
       <button onclick="loadCreate('create')" 
@@ -1417,22 +1427,29 @@ rows.forEach(r=>{
   const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
   // ❗ VALIDATION
-    if (part) {
-    
-      const qtyNum = Number(qty);
-    
-      // ❗ Qty missing
-      if (!qty) {
-        showPopup("Qty is required for all parts ❗");
-        throw new Error("Qty missing");
-      }
-    
-      // ❗ Qty less than 1
-      if (qtyNum < 1) {
-        showPopup("Qty cannot be less than 1 ❗", "error");
-        throw new Error("Invalid qty");
-      }
-    }
+        if (part) {
+        
+          const qtyNum = Number(qty);
+        
+          // ❗ Qty validation
+          if (!qty) {
+            showPopup("Qty is required for all parts ❗");
+            return;
+          }
+        
+          if (qtyNum < 1) {
+            showPopup("Qty cannot be less than 1 ❗", "error");
+            return;
+          }
+        
+          // ❗❗ NEW: PART VALIDATION
+          const desc = r.querySelector(".desc").innerText;
+        
+          if (!desc || desc.trim() === "") {
+            showPopup(`Invalid Part Number: ${part} ❗`, "error");
+            return;
+          }
+        }
 
   if(!part) return;
 
@@ -1533,23 +1550,7 @@ const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
 let html = `
 <div class="space-y-5">
 
-  <!-- 🔍 UNIVERSAL SEARCH (DO NOT TOUCH AFTER THIS) -->
-  <div class="pc-section flex items-center gap-3">
 
-    <input 
-      id="universalSearch"
-      placeholder="Search Order No / Part No / Customer / Machine / Branch..."
-      class="pc-field flex-1"
-      oninput="handleUniversalSearch(this.value)"
-    />
-
-    <button onclick="clearUniversalSearch()"
-      class="px-4 py-2 rounded-lg font-semibold"
-      style="background: var(--pc-secondary); color:white;">
-      Clear
-    </button>
-
-  </div>
 
   <!-- ✅ ADD THIS NEW DIV -->
   <div id="resultsContainer">
@@ -1862,23 +1863,7 @@ const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 let html = `
 <div class="space-y-4">
 
-  <!-- 🔍 UNIVERSAL SEARCH -->
-  <div class="pc-section flex items-center gap-3">
 
-    <input 
-      id="universalSearch"
-      placeholder="Search Order No / Part No / Customer / Machine / Branch..."
-      class="pc-field flex-1"
-      oninput="handleUniversalSearch(this.value)"
-    />
-
-    <button onclick="clearUniversalSearch()"
-      class="px-4 py-2 rounded-lg font-semibold"
-      style="background: var(--pc-secondary); color:white;">
-      Clear
-    </button>
-
-  </div>
 
   <!-- ✅ ADD THIS -->
   <div id="resultsContainer">
