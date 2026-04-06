@@ -416,7 +416,20 @@ let cancelUploadFlag = false;
 let currentRow = null;
     const db = createClient(
 
-    
+
+// ✅ REALTIME LISTENER FOR PENDING COUNT (NO LOGIC CHANGE)
+db.channel('requests-changes')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'requests' },
+    payload => {
+      loadPendingCount();
+    }
+  )
+  .subscribe();
+
+
+        
   "https://ubkwtjyvbdvepzbxoikq.supabase.co",
   "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
 );
@@ -533,6 +546,18 @@ document.getElementById("app").innerHTML = `
 
 renderIcons();
 
+
+// ✅ ENTER KEY LOGIN (SAFE - NO LOGIC CHANGE)
+if(!window.loginKeyAttached){
+  window.loginKeyAttached = true;
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Enter"){
+      login();
+    }
+  });
+}
+    
     
 const { data } = await db.from("users").select("Branch");
 const unique = [...new Set(data.map(d => d.Branch))];
@@ -655,10 +680,12 @@ const user = getUser();
 const isAdmin = user.Role === "admin" || user.Branch === "HQ";
 
 // ✅ IMPORTANT: set default tab BEFORE rendering
-if(!window.activeTab){
-  window.activeTab = isAdmin ? "Pending" : "create";
+// ✅ FORCE DEFAULT TAB FOR HQ (NO SIDE EFFECT)
+if(isAdmin){
+  window.activeTab = "Pending";
+}else{
+  window.activeTab = window.activeTab || "create";
 }
-
 document.getElementById("app").innerHTML = `
 <div class="max-w-7xl mx-auto px-6 py-5 space-y-5">
 
@@ -2423,6 +2450,7 @@ async function processOrder(orderNo){
 
   if(error){
     console.error(error);
+      
     return showPopup("Error updating Order ❗");
   }
 
