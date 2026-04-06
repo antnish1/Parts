@@ -206,13 +206,9 @@ body {
 }
 
 .active-top-btn {
-  background: #81A6C6;
-  color: #0F172A;
-  border-color: #6E95B8;
-    style="
   background: linear-gradient(135deg, #5B7FA3, #3E5C76);
   color: white;
-"
+  border-color: #6E95B8;
 }
     
 .logout-btn {
@@ -566,11 +562,11 @@ renderIcons();
 if(!window.loginKeyAttached){
   window.loginKeyAttached = true;
 
-  document.addEventListener("keydown", function(e){
-    if(e.key === "Enter"){
-      login();
-    }
-  });
+document.addEventListener("keydown", function(e){
+  if(e.key === "Enter" && document.getElementById("password")){
+    login();
+  }
+});
 }
     
     
@@ -818,10 +814,8 @@ renderIcons();
 // ✅ Load correct screen
 if(isAdmin){
   loadAdmin(window.activeTab || "Pending");
-if(isAdmin){
   setTimeout(loadPendingCount, 200);
 }
-  
 }else{
   if(window.activeTab === "track"){
     loadTrack("track");
@@ -888,7 +882,7 @@ main.innerHTML = `
   </div>
 
   <!-- ================= CUSTOMER FORM ================= -->
-  <div class="relative pc-section">
+  <div class="relative pc-section customer-section">
   
     <!-- FLOAT LABEL -->
     <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
@@ -935,7 +929,7 @@ main.innerHTML = `
 
 <table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
 <thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
-      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;"
+      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;">
 <tr>
 <th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
 <th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
@@ -2456,9 +2450,7 @@ if(s.includes("REJECT")){
   if(s.includes("PEND")){
     return "PENDING";
   }
-if(s.includes("REJECT")){
-  return "REJECTED";
-}
+
 
     
   return s;
