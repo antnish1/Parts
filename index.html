@@ -1511,24 +1511,26 @@ const orders = Object.values(grouped)
 let html = `
 <div class="space-y-5">
 
+  <!-- 🔍 UNIVERSAL SEARCH (DO NOT TOUCH AFTER THIS) -->
+  <div class="pc-section flex items-center gap-3">
 
-<!-- 🔍 UNIVERSAL SEARCH -->
-<div class="pc-section flex items-center gap-3">
+    <input 
+      id="universalSearch"
+      placeholder="Search Order No / Part No / Customer / Machine / Branch..."
+      class="pc-field flex-1"
+      oninput="handleUniversalSearch(this.value)"
+    />
 
-  <input 
-    id="universalSearch"
-    placeholder="Search Order No / Part No / Customer / Machine / Branch..."
-    class="pc-field flex-1"
-    oninput="handleUniversalSearch(this.value)"
-  />
+    <button onclick="clearUniversalSearch()"
+      class="px-4 py-2 rounded-lg font-semibold"
+      style="background: var(--pc-secondary); color:white;">
+      Clear
+    </button>
 
-  <button onclick="clearUniversalSearch()"
-    class="px-4 py-2 rounded-lg font-semibold"
-    style="background: var(--pc-secondary); color:white;">
-    Clear
-  </button>
+  </div>
 
-</div>
+  <!-- ✅ ADD THIS NEW DIV -->
+  <div id="resultsContainer">
 
 
 
@@ -1686,10 +1688,14 @@ html += `
     </div>
   </div>
 
+  </div> <!-- resultsContainer -->
 </div>
 `;
 
 document.getElementById("main").innerHTML = html;
+
+// ✅ ADD THIS LINE AFTER IT
+document.getElementById("resultsContainer").innerHTML = document.querySelector("#main .pc-section:last-child").outerHTML;
 
 }
 
@@ -1767,25 +1773,26 @@ else{
 let html = `
 <div class="space-y-4">
 
+  <!-- 🔍 UNIVERSAL SEARCH -->
+  <div class="pc-section flex items-center gap-3">
 
+    <input 
+      id="universalSearch"
+      placeholder="Search Order No / Part No / Customer / Machine / Branch..."
+      class="pc-field flex-1"
+      oninput="handleUniversalSearch(this.value)"
+    />
 
-<!-- 🔍 UNIVERSAL SEARCH -->
-<div class="pc-section flex items-center gap-3">
+    <button onclick="clearUniversalSearch()"
+      class="px-4 py-2 rounded-lg font-semibold"
+      style="background: var(--pc-secondary); color:white;">
+      Clear
+    </button>
 
-  <input 
-    id="universalSearch"
-    placeholder="Search Order No / Part No / Customer / Machine / Branch..."
-    class="pc-field flex-1"
-    oninput="handleUniversalSearch(this.value)"
-  />
+  </div>
 
-  <button onclick="clearUniversalSearch()"
-    class="px-4 py-2 rounded-lg font-semibold"
-    style="background: var(--pc-secondary); color:white;">
-    Clear
-  </button>
-
-</div>
+  <!-- ✅ ADD THIS -->
+  <div id="resultsContainer">
 
 
 
@@ -1932,10 +1939,14 @@ html += `
 </tbody>
 </table>
 </div>
+  </div> <!-- resultsContainer -->
 </div>
 `;
 
 document.getElementById("main").innerHTML = html;
+
+// ✅ ADD THIS LINE AFTER IT
+document.getElementById("resultsContainer").innerHTML = document.querySelector("#main .pc-section:last-child").outerHTML;
 }
 
 
@@ -3029,7 +3040,7 @@ function renderSearchResults(data){
   </div>
   `;
 
-  document.getElementById("main").innerHTML = html;
+document.getElementById("resultsContainer").innerHTML = html;
 }
 
 
