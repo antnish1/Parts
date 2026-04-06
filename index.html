@@ -417,6 +417,8 @@ tr[style*="f59e0b"]:hover {
   
 <script>
  let GLOBAL_DATA = []; // stores current table data
+    let CURRENT_PAGE = 1;
+const PAGE_SIZE = 10;
 const { createClient } = supabase;
 let cancelUploadFlag = false;
 let currentRow = null;
@@ -1477,7 +1479,7 @@ loadCreate();
 
 // ---------- TRACK ----------
 async function loadTrack(tab){
-
+CURRENT_PAGE = 1;
 window.activeTab = "track";
 
 // ✅ Re-render header so highlight updates
@@ -1513,6 +1515,10 @@ grouped[r.OrderNo].items.push(r);
 const orders = Object.values(grouped)
   .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
+
+const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
+    
 let html = `
 <div class="space-y-5">
 
@@ -1572,7 +1578,7 @@ let html = `
         <tbody>
 `;
 
-orders.forEach((o,i)=>{
+paginatedOrders.forEach((o,i)=>{
 
 const statuses = o.items.map(x => {
   let s = (x.Status || "").toString().trim().toUpperCase();
@@ -1720,6 +1726,27 @@ html += `
       </table>
 
     </div>
+
+<div class="flex justify-between items-center mt-4">
+
+  <button onclick="changePage(-1)"
+    class="px-3 py-1 rounded bg-gray-200">
+    ⬅ Prev
+  </button>
+
+  <span class="text-sm font-semibold">
+    Page ${CURRENT_PAGE}
+  </span>
+
+  <button onclick="changePage(1)"
+    class="px-3 py-1 rounded bg-gray-200">
+    Next ➡
+  </button>
+
+</div>
+
+
+    
   </div>
 
   </div> <!-- resultsContainer -->
@@ -1764,6 +1791,7 @@ async function loadPendingCount(){
   
 // ---------- ADMIN ----------
 async function loadAdmin(activeTab = "Pending"){
+    CURRENT_PAGE = 1;
 window.activeTab = activeTab;
 updateMenuHighlight();
 showLoader();
@@ -1862,7 +1890,7 @@ let html = `
       <tbody>
 `;
 
-filtered.forEach((o,i)=>{
+paginatedOrders.forEach((o,i)=>{
 
 const statuses = o.items.map(x => {
   let s = (x.Status || "").toString().trim().toUpperCase();
@@ -2001,6 +2029,26 @@ html += `
 </tbody>
 </table>
 </div>
+
+
+<div class="flex justify-between items-center mt-4">
+
+  <button onclick="changePage(-1)"
+    class="px-3 py-1 rounded bg-gray-200">
+    ⬅ Prev
+  </button>
+
+  <span class="text-sm font-semibold">
+    Page ${CURRENT_PAGE}
+  </span>
+
+  <button onclick="changePage(1)"
+    class="px-3 py-1 rounded bg-gray-200">
+    Next ➡
+  </button>
+
+</div>
+
   </div> <!-- resultsContainer -->
 </div>
 `;
@@ -3143,7 +3191,38 @@ function refreshCurrentView(){
 }
 
     
+function changePage(direction){
 
+  const user = getUser();
+
+  let totalItems;
+
+  if(user.Role === "admin" || user.Branch === "HQ"){
+
+    if(window.activeTab === "Pending"){
+      totalItems = GLOBAL_DATA.filter(x => x.Status === "Pending").length;
+    } else {
+      totalItems = GLOBAL_DATA.filter(x => x.Status !== "Pending").length;
+    }
+
+  } else {
+    totalItems = GLOBAL_DATA.length;
+  }
+
+  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+
+  CURRENT_PAGE += direction;
+
+  if(CURRENT_PAGE < 1) CURRENT_PAGE = 1;
+  if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
+
+  // reload correct screen
+  if(user.Role === "admin" || user.Branch === "HQ"){
+    loadAdmin(window.activeTab);
+  } else {
+    loadTrack("track");
+  }
+}
     
 
     
