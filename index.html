@@ -2938,6 +2938,130 @@ function confirmReject(orderNo){
   document.getElementById("popup").classList.remove("hidden");
 }
 
+
+
+function handleUniversalSearch(value){
+
+  const search = value.toLowerCase();
+
+  if(!search){
+    refreshCurrentView();
+    return;
+  }
+
+  const filtered = GLOBAL_DATA.filter(r => {
+
+    return (
+      (r.OrderNo || "").toLowerCase().includes(search) ||
+      (r.PartNo || "").toLowerCase().includes(search) ||
+      (r.CustomerName || "").toLowerCase().includes(search) ||
+      (r.MachineNo || "").toLowerCase().includes(search) ||
+      (r.Branch || "").toLowerCase().includes(search)
+    );
+
+  });
+
+  renderSearchResults(filtered);
+}
+
+
+
+function renderSearchResults(data){
+
+  const grouped = {};
+
+  data.forEach(r=>{
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = { ...r, items:[] };
+    }
+    grouped[r.OrderNo].items.push(r);
+  });
+
+  const orders = Object.values(grouped);
+
+  let html = `
+  <div class="pc-section">
+
+    <div class="text-sm font-semibold mb-3">
+      🔍 Search Results (${orders.length})
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="track-table w-full text-sm text-center border rounded-lg">
+
+        <thead class="text-xs uppercase">
+          <tr>
+            <th>Date</th>
+            <th>Order Type</th>
+            <th>Branch</th>
+            <th>Qty</th>
+            <th>Value</th>
+            <th>Order No</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  `;
+
+  orders.forEach(o=>{
+
+    const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
+
+    html += `
+    <tr onclick="openOrderView('${o.OrderNo}')"
+    class="cursor-pointer hover:bg-gray-100">
+
+      <td>${formatDateTime(o.created_at)}</td>
+      <td>${o.OrderType || "-"}</td>
+      <td>${o.Branch || "-"}</td>
+      <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
+      <td>₹ ${total.toFixed(2)}</td>
+      <td class="font-semibold">${o.OrderNo}</td>
+
+    </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+
+  document.getElementById("main").innerHTML = html;
+}
+
+
+function clearUniversalSearch(){
+  document.getElementById("universalSearch").value = "";
+  refreshCurrentView();
+}
+
+
+
+
+function refreshCurrentView(){
+
+  const user = getUser();
+
+  if(user.Role === "admin" || user.Branch === "HQ"){
+    loadAdmin(window.activeTab);
+  }else{
+    loadTrack("track");
+  }
+}
+
+    
+
+    
+
+    
+
+    
+
+    
+
 async function downloadOrderExcel(orderNo){
 
   showLoader();
