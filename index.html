@@ -417,6 +417,16 @@ let currentRow = null;
     const db = createClient(
 
 
+
+
+
+        
+  "https://ubkwtjyvbdvepzbxoikq.supabase.co",
+  "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
+);
+
+
+
 // ✅ REALTIME LISTENER FOR PENDING COUNT (NO LOGIC CHANGE)
 db.channel('requests-changes')
   .on(
@@ -429,10 +439,7 @@ db.channel('requests-changes')
   .subscribe();
 
 
-        
-  "https://ubkwtjyvbdvepzbxoikq.supabase.co",
-  "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
-);
+    
 
 // ---------- UTIL ----------
 function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
