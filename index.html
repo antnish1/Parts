@@ -1830,6 +1830,12 @@ else{
     o.items.some(x => x.Status !== "Pending")
   );
 }
+
+
+const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
+
+    
 // UI
 let html = `
 <div class="space-y-4">
