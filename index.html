@@ -1636,12 +1636,41 @@ else{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="openOrderView('${o.OrderNo}')" 
-class="cursor-pointer transition hover:scale-[1.01]">
+<tr onclick="openOrderView('${o.OrderNo}')"
+class="cursor-pointer transition hover:scale-[1.01]"
+style="${
+  o.OrderType === 'VOR'
+    ? 'background: rgba(255, 235, 150, 0.35); border-left: 4px solid #f59e0b;'
+    : ''
+}">
 
 <td class="py-2">${formatDateTime(o.created_at)}</td>
-<td>${o.OrderType || "-"}</td>
-<td>${o.OrderFor || "-"}</td>
+<td>
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
+<td>
+  ${
+    o.OrderFor === "Customer"
+      ? (o.CustomerName || "Customer")
+      : "Stock"
+  }
+</td>
 <td>${o.Branch || "-"}</td>
 <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
 
@@ -1894,12 +1923,41 @@ else{
 const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
 
 html += `
-<tr onclick="openOrderView('${o.OrderNo}')" 
-class="cursor-pointer transition hover:scale-[1.01]">
+<tr onclick="openOrderView('${o.OrderNo}')"
+class="cursor-pointer transition hover:scale-[1.01]"
+style="${
+  o.OrderType === 'VOR'
+    ? 'background: rgba(255, 235, 150, 0.35); border-left: 4px solid #f59e0b;'
+    : ''
+}">
 <td>${formatDateTime(o.created_at)}</td>
 
-<td>${o.OrderType || "-"}</td>
-<td>${o.OrderFor || "-"}</td>
+<td>
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
+<td>
+  ${
+    o.OrderFor === "Customer"
+      ? (o.CustomerName || "Customer")
+      : "Stock"
+  }
+</td>
 <td>${o.Branch || "-"}</td>
 <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
 <td style="color: var(--pc-secondary); font-weight:600;">
@@ -3023,7 +3081,25 @@ function renderSearchResults(data){
     class="cursor-pointer hover:bg-gray-100">
 
       <td>${formatDateTime(o.created_at)}</td>
-      <td>${o.OrderType || "-"}</td>
+      <td>
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
       <td>${o.Branch || "-"}</td>
       <td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
       <td>₹ ${total.toFixed(2)}</td>
