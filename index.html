@@ -1481,8 +1481,9 @@ rows.forEach(r=>{
 
 });
 
-
-
+if(hasError){
+  return;
+}
 if(!inserts.length){
   return showPopup("At least one Part Number is required ❗");
 }
