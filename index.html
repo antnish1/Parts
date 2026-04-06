@@ -1472,8 +1472,10 @@ loadCreate();
 
 
 // ---------- TRACK ----------
-async function loadTrack(tab){
-CURRENT_PAGE = 1;
+async function loadTrack(tab, skipReset = false){
+
+if(!skipReset){
+  CURRENT_PAGE = 1;
 window.activeTab = "track";
 
 // ✅ Re-render header so highlight updates
@@ -1795,59 +1797,12 @@ async function loadTrackWithoutReset(){
   const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
   const totalPages = Math.ceil(orders.length / PAGE_SIZE);
 
- 
-    
- function renderTrackUI(paginatedOrders, totalPages){
-
-let html = `
-<div class="pc-section">
-<table class="w-full text-sm text-center">
-
-<thead>
-<tr>
-<th>Date</th>
-<th>Order No</th>
-<th>Status</th>
-</tr>
-</thead>
-
-<tbody>
-`;
-
-paginatedOrders.forEach(o=>{
-html += `
-<tr onclick="openOrderView('${o.OrderNo}')">
-<td>${formatDateTime(o.created_at)}</td>
-<td>${o.OrderNo}</td>
-<td>${o.items[0].Status}</td>
-</tr>
-`;
-});
-
-html += `
-</tbody>
-</table>
-
-<div class="flex justify-between mt-4">
-
-<button onclick="changePage(-1)">Prev</button>
-<span>Page ${CURRENT_PAGE} / ${totalPages}</span>
-<button onclick="changePage(1)">Next</button>
-
-</div>
-</div>
-`;
-
-document.getElementById("main").innerHTML = html;
-}   
-    
-    
     
     
     
     
     // ✅ REUSE ORIGINAL FUNCTION
-  renderTrackUI(paginatedOrders, totalPages);
+loadTrack("track", true);
 }
 
 
@@ -1883,8 +1838,10 @@ async function loadPendingCount(){
 }
   
 // ---------- ADMIN ----------
-async function loadAdmin(activeTab = "Pending"){
-    CURRENT_PAGE = 1;
+async function loadAdmin(activeTab = "Pending", skipReset = false){
+
+if(!skipReset){
+  CURRENT_PAGE = 1;
 window.activeTab = activeTab;
 updateMenuHighlight();
 showLoader();
@@ -2162,114 +2119,6 @@ document.getElementById("main").innerHTML = html;
 }
 
 
-function renderAdminUI(paginatedOrders, totalPages, activeTab){
-
-let html = `
-<div class="space-y-4">
-
-  <div class="pc-section flex items-center gap-3">
-
-    <input 
-      id="universalSearch"
-      placeholder="Search Order No / Part No / Customer / Machine / Branch..."
-      class="pc-field flex-1"
-      oninput="handleUniversalSearch(this.value)"
-    />
-
-    <button onclick="clearUniversalSearch()"
-      class="px-4 py-2 rounded-lg font-semibold"
-      style="background: var(--pc-secondary); color:white;">
-      Clear
-    </button>
-
-  </div>
-
-  <div id="resultsContainer">
-
-  <div class="relative pc-section">
-
-    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
-      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
-        ${activeTab.toUpperCase()} ORDERS
-      </span>
-    </div>
-
-    <div class="overflow-x-auto mt-2">
-
-      <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden table-fixed">
-
-        <thead class="text-xs uppercase tracking-wider border-b"
-              style="background: var(--pc-warm); color: var(--pc-text);">
-
-          <tr>
-            <th class="py-2">Date</th>
-            <th class="py-2">Order Type</th>
-            <th class="py-2">Order For</th>
-            <th class="py-2">Branch</th>
-            <th class="py-2">Qty</th>
-            <th class="py-2">Value</th>
-            <th class="py-2">Order No</th>
-            <th class="py-2">Status</th>
-          </tr>
-
-        </thead>
-
-        <tbody>
-`;
-
-paginatedOrders.forEach((o)=>{
-
-const total = o.items.reduce((s,x)=>s+Number(x.Value||0),0);
-
-html += `
-<tr onclick="openOrderView('${o.OrderNo}')"
-class="cursor-pointer">
-
-<td>${formatDateTime(o.created_at)}</td>
-<td>${o.OrderType || "-"}</td>
-<td>${o.OrderFor || "-"}</td>
-<td>${o.Branch || "-"}</td>
-<td>${o.items.reduce((s,x)=>s+Number(x.Qty||0),0)}</td>
-
-<td>₹ ${total.toLocaleString("en-IN")}</td>
-<td>${o.OrderNo}</td>
-<td>${o.items[0].Status || "-"}</td>
-
-</tr>
-`;
-});
-
-html += `
-</tbody>
-</table>
-
-<div class="flex justify-between items-center mt-4">
-
-  <button onclick="changePage(-1)"
-    ${CURRENT_PAGE === 1 ? "disabled" : ""}>
-    ⬅ Prev
-  </button>
-
-  <span>Page ${CURRENT_PAGE} / ${totalPages}</span>
-
-  <button onclick="changePage(1)"
-    ${CURRENT_PAGE >= totalPages ? "disabled" : ""}>
-    Next ➡
-  </button>
-
-</div>
-
-</div>
-</div>
-</div>
-</div>
-`;
-
-document.getElementById("main").innerHTML = html;
-}
-
-
-    
 
 async function loadAdminWithoutReset(activeTab){
 
@@ -2313,7 +2162,7 @@ async function loadAdminWithoutReset(activeTab){
   const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
-  renderAdminUI(paginatedOrders, totalPages, activeTab);
+  loadAdmin(activeTab, true);
 }
 
     
@@ -3489,34 +3338,17 @@ function changePage(step){
 
   CURRENT_PAGE = newPage;
 
-  // ❗ IMPORTANT: DO NOT RESET PAGE AGAIN
-  if(window.activeTab === "track"){
-    loadTrackWithoutReset();
-  }
-  else{
-    loadAdminWithoutReset(window.activeTab);
+  const user = getUser();
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+
+  if(isAdmin){
+    loadAdmin(window.activeTab, true);
+  }else{
+    loadTrack("track", true);
   }
 
 }
     
-
-
-function changePage(step){
-
-  const newPage = CURRENT_PAGE + step;
-
-  if(newPage < 1) return;
-
-  CURRENT_PAGE = newPage;
-
-  if(window.activeTab === "track"){
-    loadTrackWithoutReset();
-  }
-  else{
-    loadAdminWithoutReset(window.activeTab);
-  }
-
-}
 
 
 
