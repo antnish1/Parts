@@ -1801,13 +1801,9 @@ async function loadTrackWithoutReset(){
   const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
   const totalPages = Math.ceil(orders.length / PAGE_SIZE);
 
-  // 👉 reuse SAME UI render (copy from loadTrack)
-  // (IMPORTANT: copy your html rendering part here EXACTLY)
-
-  // FINAL RENDER
-  document.getElementById("main").innerHTML = html;
+  // ✅ REUSE ORIGINAL FUNCTION
+  renderTrackUI(paginatedOrders, totalPages);
 }
-
 
 
     
@@ -2163,11 +2159,8 @@ async function loadAdminWithoutReset(activeTab){
   const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
-  // 👉 copy SAME HTML rendering from loadAdmin
-
-  document.getElementById("main").innerHTML = html;
+  renderAdminUI(paginatedOrders, totalPages, activeTab);
 }
-
 
     
 
@@ -3355,6 +3348,27 @@ function changePage(step){
 }
     
 
+
+function changePage(step){
+
+  const newPage = CURRENT_PAGE + step;
+
+  if(newPage < 1) return;
+
+  CURRENT_PAGE = newPage;
+
+  if(window.activeTab === "track"){
+    loadTrackWithoutReset();
+  }
+  else{
+    loadAdminWithoutReset(window.activeTab);
+  }
+
+}
+
+
+
+    
     
 
 async function downloadOrderExcel(orderNo){
