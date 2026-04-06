@@ -1515,7 +1515,7 @@ const orders = Object.values(grouped)
 
 const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
 const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
-const totalPages = Math.ceil(orders.length / PAGE_SIZE);
+const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
 
 
 
@@ -3252,7 +3252,7 @@ function changePage(direction){
   if(CURRENT_PAGE < 1) CURRENT_PAGE = 1;
   if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
 
-  // ✅ CRITICAL FIX
+  // 🔥 THIS IS THE REAL FIX
   if(user.Role === "admin" || user.Branch === "HQ"){
     loadAdmin(window.activeTab, true);
   } else {
