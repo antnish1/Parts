@@ -3204,11 +3204,11 @@ function refreshCurrentView(){
 
   const user = getUser();
 
-  if(user.Role === "admin" || user.Branch === "HQ"){
-    loadAdmin(window.activeTab);
-  }else{
-    loadTrack("track");
-  }
+if(user.Role === "admin" || user.Branch === "HQ"){
+  loadAdmin(window.activeTab, true);   // ✅ PASS TRUE
+} else {
+  loadTrack("track", true);            // ✅ PASS TRUE
+}
 }
 
     
@@ -3216,32 +3216,47 @@ function changePage(direction){
 
   const user = getUser();
 
-  let totalItems;
+  let grouped = {};
+
+  GLOBAL_DATA.forEach(r => {
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = [];
+    }
+    grouped[r.OrderNo].push(r);
+  });
+
+  let orders = Object.values(grouped);
 
   if(user.Role === "admin" || user.Branch === "HQ"){
 
     if(window.activeTab === "Pending"){
-      totalItems = GLOBAL_DATA.filter(x => x.Status === "Pending").length;
+      orders = orders.filter(o => 
+        o.some(x => x.Status === "Pending")
+      );
     } else {
-      totalItems = GLOBAL_DATA.filter(x => x.Status !== "Pending").length;
+      orders = orders.filter(o => 
+        o.some(x => x.Status !== "Pending")
+      );
     }
 
   } else {
-    totalItems = GLOBAL_DATA.length;
+    orders = orders.filter(o => 
+      o.every(x => x.Branch === user.Branch)
+    );
   }
 
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
 
   CURRENT_PAGE += direction;
 
   if(CURRENT_PAGE < 1) CURRENT_PAGE = 1;
   if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
 
-  // reload correct screen
+  // ✅ CRITICAL FIX
   if(user.Role === "admin" || user.Branch === "HQ"){
-    loadAdmin(window.activeTab);
+    loadAdmin(window.activeTab, true);
   } else {
-    loadTrack("track");
+    loadTrack("track", true);
   }
 }
     
