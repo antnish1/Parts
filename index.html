@@ -1414,6 +1414,7 @@ if(orderFor === "Customer" && (!machineNo || !customerName)){
 }
 
 const rows = document.querySelectorAll("#tbody tr");
+    let hasError = false;
 
 const orderNo = "T" + Math.floor(1000000 + Math.random()*9000000);
 
@@ -1421,60 +1422,62 @@ const inserts = [];
 
 rows.forEach(r=>{
 
+  if(hasError) return;
+
   const part = r.querySelector(".part").value.trim();
   const qty = r.querySelector(".qty").value.trim();
   const desc = r.querySelector(".desc").innerText;
   const dnp = Number(r.querySelector(".dnp").innerText)||0;
 
-  // ❗ VALIDATION
-        if (part) {
-        
-          const qtyNum = Number(qty);
-        
-          // ❗ Qty validation
-          if (!qty) {
-            showPopup("Qty is required for all parts ❗");
-            return;
-          }
-        
-          if (qtyNum < 1) {
-            showPopup("Qty cannot be less than 1 ❗", "error");
-            return;
-          }
-        
-          // ❗❗ NEW: PART VALIDATION
-          const desc = r.querySelector(".desc").innerText;
-        
-          if (!desc || desc.trim() === "") {
-            showPopup(`Invalid Part Number: ${part} ❗`, "error");
-            return;
-          }
-        }
+  if (part) {
+
+    const qtyNum = Number(qty);
+
+    // ❗ Qty validation
+    if (!qty) {
+      showPopup("Qty is required for all parts ❗");
+      hasError = true;
+      return;
+    }
+
+    if (qtyNum < 1) {
+      showPopup("Qty cannot be less than 1 ❗", "error");
+      hasError = true;
+      return;
+    }
+
+    // ❗ PART VALIDATION (IMPORTANT)
+    if (!desc || desc.trim() === "") {
+      showPopup(`Invalid Part Number: ${part} ❗`, "error");
+      hasError = true;
+      return;
+    }
+  }
 
   if(!part) return;
 
-inserts.push({
-  Branch: user.Branch,
+  inserts.push({
+    Branch: user.Branch,
 
-  OrderType: orderType,
-  OrderFor: orderFor,
+    OrderType: orderType,
+    OrderFor: orderFor,
 
-  EmployeeName: user.Name || "",
-  ApprovedBy: approvedBy,
-  WarrantyStatus: machineType,
-  CallID: document.getElementById("callId").value || "",
-  MachineNo: machineNo,
-  CustomerName: customerName,
+    EmployeeName: user.Name || "",
+    ApprovedBy: approvedBy,
+    WarrantyStatus: machineType,
+    CallID: document.getElementById("callId").value || "",
+    MachineNo: machineNo,
+    CustomerName: customerName,
 
-  PartNo: part,
-  Qty: qty,
-  Description: desc,
-  DNP: dnp,
-  Value: dnp * qty,
+    PartNo: part,
+    Qty: qty,
+    Description: desc,
+    DNP: dnp,
+    Value: dnp * qty,
 
-  OrderNo: orderNo,
-  Status: "Pending"
-});
+    OrderNo: orderNo,
+    Status: "Pending"
+  });
 
 });
 
