@@ -1,0 +1,4701 @@
+    <!DOCTYPE html>
+<html>
+<head>
+
+  <title>Parts Connect Portal</title>
+        <link rel="icon" type="image/png" href="F.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+</head>
+
+<body class="min-h-screen w-full" style="background-color: var(--pc-bg); color: var(--pc-text);">
+
+<div id="app" class="w-full"></div>
+
+<!-- LOADER -->
+<div id="loader" class="hidden fixed inset-0 flex items-center justify-center z-50" style="background: rgba(15,23,32,0.72);">
+  <div class="px-6 py-5 rounded-xl flex flex-col items-center gap-4" style="background: var(--pc-surface); border: 1px solid var(--pc-border);">
+    <div class="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin" style="border-color: var(--pc-primary); border-top-color: transparent;"></div>
+    <p class="font-semibold" style="color: var(--pc-primary);">Processing...</p>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div id="popup" class="hidden fixed inset-0 flex items-center justify-center z-50"
+     style="background: rgba(15,23,32,0.65); backdrop-filter: blur(6px);">
+
+  <div class="w-[360px] p-6 rounded-2xl shadow-2xl text-center space-y-4"
+       style="
+         background: linear-gradient(180deg, #ffffff, #f8fafc);
+         border: 1px solid var(--pc-border);
+         box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+       ">
+
+    <!-- ICON -->
+    <div id="popupIcon" class="mx-auto w-12 h-12 flex items-center justify-center rounded-full"
+         style="background: rgba(129,166,198,0.15); color: var(--pc-secondary);">
+      ✔️
+    </div>
+
+    <!-- MESSAGE -->
+    <p id="popupMsg" class="text-sm font-medium leading-relaxed"
+       style="color: var(--pc-text);"></p>
+
+    <!-- ACTIONS -->
+    <div id="popupActions" class="mt-4 flex justify-center gap-3"></div>
+
+  </div>
+</div>
+
+
+    
+
+
+<!-- ================= UPLOAD PROGRESS ================= -->
+<div id="uploadProgress" class="hidden fixed bottom-6 right-6 z-50 w-[320px]">
+
+  <div class="p-4 rounded-xl shadow-2xl"
+       style="background: var(--pc-surface); border:1px solid var(--pc-border);">
+
+    <div class="flex justify-between text-xs mb-2">
+      <span id="progressText">Uploading...</span>
+      <button onclick="cancelUpload()" class="text-red-500 font-bold">✕</button>
+    </div>
+
+    <!-- BAR -->
+    <div class="w-full h-2 rounded bg-gray-200 overflow-hidden">
+      <div id="progressBar"
+           class="h-full"
+           style="width:0%; background: linear-gradient(90deg, var(--pc-secondary), var(--pc-primary));">
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="text-xs mt-2 space-y-1" style="color: var(--pc-text-muted);">
+      <div>Total: <span id="pTotal">0</span></div>
+      <div>Uploaded: <span id="pSuccess">0</span></div>
+      <div>Invalid: <span id="pFailed">0</span></div>
+      <div>Remaining: <span id="pRemaining">0</span></div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+
+
+:root {
+  --pc-primary: #81A6C6;
+--pc-secondary: #5F88A8;   /* darker accent for readability */
+  --pc-light: #F3E3D0;
+  --pc-warm: #D2C4B4;
+
+  /* semantic aliases (used later) */
+  --pc-bg: #F3E3D0;        /* page background */
+  --pc-surface: #FFFFFF;   /* cards/surfaces */
+  --pc-border: #D2C4B4;    /* borders */
+  --pc-text: #1F2937;      /* main text */
+--pc-text-muted: #4B5563;  /* stronger muted text */
+}
+
+
+
+body {
+  font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.pc-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  vertical-align: middle;
+}
+
+.pc-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+    
+.menu-btn {
+  position: relative;
+  padding: 10px 18px;
+  background: rgba(170, 205, 220, 0.08);
+  border: 1px solid var(--pc-border);
+  border-radius: 10px;
+  color: var(--pc-text);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.22s ease;
+}
+
+/* 🔥 HOVER EFFECT */
+.menu-btn:hover {
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #ffffff !important;   /* ✅ FIX */
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(129, 166, 198, 0.28);
+}
+/* 🔥 ACTIVE CLICK */
+.menu-btn:active {
+  transform: scale(0.98);
+}
+
+/* 🔥 SUBTLE GLOW */
+.menu-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+}
+
+.menu-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.25s;
+  box-shadow: 0 0 0 2px rgba(170, 205, 220, 0.28) inset;
+}
+
+.menu-btn:hover::after {
+  opacity: 1;
+}
+
+
+
+.active-tab {
+  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
+  color: #ffffff;   /* ✅ FIX */
+  box-shadow: 0 6px 18px rgba(129, 166, 198, 0.25);
+}
+.top-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.08);
+
+  transition: all 0.2s ease;
+}
+
+.top-btn:hover {
+    color: #111827; /* darker text for light bg */
+  background: rgba(255,255,255,0.95);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.active-top-btn {
+  background: linear-gradient(135deg, #5B7FA3, #3E5C76);
+  color: white;
+  border-color: #6E95B8;
+}
+
+.order-action-btn{
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.order-action-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.26);
+  filter: brightness(1.03);
+}
+
+.order-action-btn:active{
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
+}
+    
+.logout-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.logout-btn {
+  background: #b85c5c;
+  color: #fff;
+  border: 1px solid #9f4c4c;
+}
+
+.logout-btn:hover {
+  background: #a54b4b;
+}
+    
+
+input:focus, select:focus, button:focus {
+  box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.35);
+  border-color: var(--pc-secondary) !important;
+}
+
+.pc-field {
+  background: #FFFFFF;
+  border: 1px solid #BFAF9D;
+  color: #1F2937;
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.pc-field::placeholder {
+  color: #6B7280;
+}
+
+.pc-field:focus {
+  outline: none;
+  border-color: var(--pc-secondary);
+  box-shadow: 0 0 0 3px rgba(170, 205, 220, 0.25);
+}
+
+.pc-section {
+  background: linear-gradient(180deg, rgba(170,205,220,0.06), rgba(129,166,198,0.06));
+  border: 1px solid var(--pc-border);
+  border-radius: 12px;
+  padding: 16px;
+  padding-top: 24px;
+}
+
+.pc-field option {
+  color: #1F2937;
+  background: #FFFFFF;
+}
+    
+    
+
+/* Smooth UI feel */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Card hover lift */
+.pc-section:hover {
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+}
+
+/* Table polish */
+table {
+  border-color: var(--pc-border) !important;
+}
+
+thead th {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(170, 205, 220, 0.16);
+}
+
+tbody tr:hover {
+  background: rgba(170, 205, 220, 0.06);
+}
+
+/* Generic soft button hover */
+button:hover {
+  filter: none;
+}
+
+/* Disabled fields look intentional */
+input[readonly], select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Better numeric emphasis */
+#total {
+  color: var(--pc-secondary);
+  font-weight: 800;
+}
+
+select option {
+  background: #FFFFFF;
+  color: #1F2937;
+}
+    
+
+tbody tr {
+  transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+
+/* ================= TRACK TABLE STRONG HOVER ================= */
+
+.track-table tbody tr {
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+/* 🔥 STRONG HOVER (CLEARLY VISIBLE) */
+.track-table tbody tr:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(129, 166, 198, 0.35),
+    rgba(170, 205, 220, 0.35)
+  ) !important;
+
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: 0 12px 28px rgba(129, 166, 198, 0.35);
+  z-index: 5;
+}
+
+/* 🔥 CLICK EFFECT */
+.track-table tbody tr:active {
+  transform: scale(0.98);
+}
+
+/* 🔥 LEFT ACCENT BAR (VERY IMPORTANT FOR CLARITY) */
+.track-table tbody tr:hover td:first-child {
+  border-left: 5px solid var(--pc-secondary);
+}
+
+/* 🔥 OPTIONAL: TEXT EMPHASIS ON HOVER */
+.track-table tbody tr:hover td {
+  font-weight: 500;
+}
+
+
+/* ===== PREMIUM BUTTON HOVER SYSTEM ===== */
+
+button {
+  transition: all 0.25s ease;
+}
+
+/* PRIMARY BUTTONS */
+button[style*="linear-gradient"]:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+  filter: brightness(1.08);
+}
+
+/* CLICK FEEDBACK */
+button:active {
+  transform: scale(0.97);
+}
+
+/* BACK BUTTON (LIGHT STYLE) */
+button[style*="rgba(255,255,255"]:hover {
+  background: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+}
+    
+.pc-action-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  color: white;
+  transition: all 0.25s ease;
+}
+
+.pc-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.25);
+}
+
+tr[style*="f59e0b"]:hover {
+  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+}
+
+
+.track-table tbody tr:nth-child(even) {
+  background: rgba(0,0,0,0.02);
+}
+    
+
+.track-table td {
+  vertical-align: middle;
+}
+
+.search-bar {
+  width: clamp(180px, 28vw, 320px);
+  height: 40px;
+
+  padding: 0 12px 0 36px;    /* space for icon */
+
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+
+  font-size: 13px;
+  font-weight: 500;
+
+  box-shadow: 
+    inset 0 1px 2px rgba(0,0,0,0.05),
+    0 4px 14px rgba(0,0,0,0.08);
+
+  transition: all 0.25s ease;
+}
+
+/* 🔥 FOCUS EFFECT */
+.search-bar:focus {
+  border-color: var(--pc-secondary);
+  box-shadow: 
+    0 0 0 3px rgba(129,166,198,0.25),
+    0 8px 20px rgba(0,0,0,0.12);
+}
+
+/* 🔥 PLACEHOLDER */
+.search-bar::placeholder {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+/* filter arrow indicator on all table headers */
+table thead th::after {
+  content: " ▼";
+  font-size: 10px;
+  color: #64748b;
+  margin-left: 4px;
+}
+table thead th {
+  cursor: pointer;
+  user-select: none;
+}
+table thead th.sort-asc::after {
+  content: " ▲";
+}
+table thead th.sort-desc::after {
+  content: " ▼";
+}
+    
+    
+</style>
+
+
+  
+<script>
+ let GLOBAL_DATA = []; // stores current table data
+let TABLE_SORT_STATE = null;
+    let CURRENT_PAGE = 1;
+const PAGE_SIZE = 10;
+const { createClient } = supabase;
+let cancelUploadFlag = false;
+let currentRow = null;
+    const db = createClient(
+
+
+
+
+
+        
+  "https://ubkwtjyvbdvepzbxoikq.supabase.co",
+  "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3"
+);
+
+
+
+// ✅ REALTIME LISTENER FOR PENDING COUNT (NO LOGIC CHANGE)
+db.channel('requests-changes')
+  .on(
+    'postgres_changes',
+    { event: '*', schema: 'public', table: 'requests' },
+    payload => {
+      loadPendingCount();
+    }
+  )
+  .subscribe();
+
+
+
+
+// ---------- UTIL ----------
+function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
+function hideLoader(){ document.getElementById("loader").classList.add("hidden"); }
+function cancelUpload(){
+  cancelUploadFlag = true;
+}
+function showPopup(msg, type = "info", actionsHTML = null){
+
+  const iconEl = document.getElementById("popupIcon");
+
+  // ICON STYLE
+  if(type === "success"){
+    iconEl.innerHTML = "✅";
+    iconEl.style.background = "rgba(16,185,129,0.15)";
+    iconEl.style.color = "#059669";
+  }
+  else if(type === "error"){
+    iconEl.innerHTML = "❌";
+    iconEl.style.background = "rgba(239,68,68,0.15)";
+    iconEl.style.color = "#b91c1c";
+  }
+  else if(type === "warning"){
+    iconEl.innerHTML = "⚠️";
+    iconEl.style.background = "rgba(245,158,11,0.15)";
+    iconEl.style.color = "#b45309";
+  }
+  else{
+    iconEl.innerHTML = "ℹ️";
+    iconEl.style.background = "rgba(129,166,198,0.15)";
+    iconEl.style.color = "var(--pc-secondary)";
+  }
+
+  document.getElementById("popupMsg").innerText = msg;
+
+  // ✅ CUSTOM BUTTONS SUPPORT
+  if(actionsHTML){
+    document.getElementById("popupActions").innerHTML = actionsHTML;
+  } else {
+    document.getElementById("popupActions").innerHTML = `
+      <button onclick="closePopup()"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary)); color: white;">
+        OK
+      </button>
+    `;
+  }
+
+  document.getElementById("popup").classList.remove("hidden");
+}
+  
+function closePopup(){
+  document.getElementById("popup").classList.add("hidden");
+}
+
+function getUser(){
+  try { return JSON.parse(localStorage.getItem("user")); }
+  catch { return null; }
+}
+
+function renderIcons(){
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
+}
+    
+// ---------- INIT ----------
+window.onload = () => {
+  const user = getUser();
+  if(user) loadBranch();
+  else loadLogin();
+};
+
+// ---------- LOGIN ----------
+async function loadLogin(){
+
+document.getElementById("app").innerHTML = `
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-sm p-7 rounded-2xl space-y-5 shadow-2xl"
+       style="background: linear-gradient(180deg, rgba(170,205,220,0.10), rgba(129,166,198,0.10)); border: 1px solid var(--pc-border); backdrop-filter: blur(8px);">
+
+<div class="flex justify-center">
+  <img 
+    src="HDU4w-removebg-preview.png"
+    class="h-16 w-auto object-contain"
+  />
+</div>
+
+    <p class="text-center text-sm" style="color: var(--pc-text-muted); margin-top: -8px;">
+      Secure branch access
+    </p>
+
+    <select id="branch"
+      class="w-full p-2.5 rounded-lg outline-none transition"
+      style="background: #FFFFFF; border: 1px solid #BFAF9D; color: #1F2937;">
+    </select>
+
+    <input id="password" type="password" placeholder="Password"
+      class="w-full p-2.5 rounded-lg outline-none transition"
+      style="background: #FFFFFF; border: 1px solid #BFAF9D; color: #1F2937;" />
+
+    <button onclick="login()"
+      class="w-full py-2.5 rounded-lg font-semibold transition duration-200"
+      style="background: var(--pc-primary); color: #0f1720;">
+      Login
+    </button>
+
+  </div>
+</div>
+`;
+
+renderIcons();
+
+
+// ✅ ENTER KEY LOGIN (SAFE - NO LOGIC CHANGE)
+if(!window.loginKeyAttached){
+  window.loginKeyAttached = true;
+
+document.addEventListener("keydown", function(e){
+  if(e.key === "Enter" && document.getElementById("password")){
+    login();
+  }
+});
+}
+    
+    
+const { data } = await db.from("users").select("Branch");
+const unique = [...new Set(data.map(d => d.Branch))];
+
+const el = document.getElementById("branch");
+el.innerHTML = `<option value="">Select Branch</option>`;
+unique.forEach(b => el.innerHTML += `<option>${b}</option>`);
+}
+
+async function login(){
+
+const branch = document.getElementById("branch").value;
+const password = document.getElementById("password").value;
+
+if(!branch || !password) return showPopup("Fill all fields");
+
+showLoader();
+
+const { data } = await db
+.from("users")
+.select("*")
+.eq("Branch", branch)
+.eq("Password", password)
+.single();
+
+hideLoader();
+
+if(!data) return showPopup("Invalid credentials");
+
+localStorage.setItem("user", JSON.stringify(data));
+loadBranch();
+}
+
+
+function renderHeader(){
+
+  const user = getUser();
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+
+  return `
+  <div class="space-y-4">
+
+  <!-- HEADER -->
+<div class="w-full rounded-2xl px-6 py-4 shadow-xl flex justify-between items-center"
+     style="background: linear-gradient(90deg, rgba(170,205,220,0.10), rgba(129,166,198,0.10)); border: 1px solid var(--pc-border);">
+
+  <h1 class="text-2xl font-bold tracking-wide" style="color: var(--pc-light);">
+    PARTS CONNECT PORTAL :
+    <span class="ml-2" style="color: var(--pc-secondary);">${user.Branch}</span>
+  </h1>
+
+  <div class="flex items-center gap-3">
+
+    ${!isAdmin ? `
+        <button onclick="loadCreate('create')" 
+        class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
+        data-tab="create">
+        New Order
+      </button>
+
+      <button onclick="loadTrack('track')" 
+      class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
+        Track Orders
+      </button>
+    ` : ``}
+
+    <button onclick="logout()" 
+    class="top-btn logout-btn">
+      Logout
+    </button>
+
+  </div>
+
+</div>
+
+  <!-- MENU -->
+  <div class="w-full px-4 py-3 rounded-xl" style="background: rgba(170,205,220,0.06); border: 1px solid var(--pc-border);">
+
+    <div class="flex gap-3">
+
+      ${!isAdmin ? `
+        <button onclick="loadCreate('create')" 
+        class="menu-btn ${window.activeTab==='create' ? 'active-tab' : ''}">
+          New Order
+        </button>
+
+        <button onclick="loadTrack('track')" 
+        class="menu-btn ${window.activeTab==='track' ? 'active-tab' : ''}">
+          Track Orders
+        </button>
+      ` : ``}
+
+    </div>
+
+  </div>
+
+  </div>
+  `;
+}
+
+
+function updateMenuHighlight(){
+
+  document.querySelectorAll(".top-btn").forEach(btn=>{
+    btn.classList.remove("active-top-btn");
+
+    if(btn.dataset.tab === window.activeTab){
+      btn.classList.add("active-top-btn");
+    }
+  });
+
+}
+
+  
+  
+// ---------- BRANCH ----------
+function loadBranch(){
+
+const user = getUser();
+const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+    const isSuper = user.Role === "super";
+
+// ✅ IMPORTANT: set default tab BEFORE rendering
+// ✅ FORCE DEFAULT TAB FOR HQ (NO SIDE EFFECT)
+if(isAdmin){
+  window.activeTab = "Approved";
+}else if(isSuper){
+  window.activeTab = "PendingApproval";
+}else{
+  window.activeTab = window.activeTab || "create";
+}
+document.getElementById("app").innerHTML = `
+<div class="w-full px-4 md:px-6 lg:px-10 py-5 space-y-5">
+
+  <div class="space-y-4">
+
+<!-- HEADER WITH LOGOUT -->
+<div class="w-full rounded-2xl px-6 py-3 flex justify-between items-center backdrop-blur-md"
+     style="
+  background: linear-gradient(
+    to right,
+    rgba(255,255,255,0.75) 0%,
+    rgba(255,255,255,0.75) 22%,
+    #2f3e4d 40%,
+    #3f556b 100%
+  );
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+">
+
+<div class="relative flex items-center w-full">
+
+  <!-- LEFT: LOGO -->
+<div class="flex items-center gap-4">
+
+  <img 
+    src="HDU4w-removebg-preview.png"
+    class="h-12 w-auto object-contain"
+  />
+
+  <div class="h-6 w-px bg-gray-400 opacity-50"></div>
+
+  <span class="text-sm font-semibold tracking-widest uppercase"
+      style="color: var(--pc-text);">
+  ${user.Branch}
+</span>
+
+</div>
+
+</div>
+
+  <div class="flex items-center gap-3 w-full justify-end">
+
+<div class="relative">
+
+  <i data-lucide="search" 
+     class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400">
+  </i>
+
+  <input 
+    id="universalSearch"
+    placeholder="Search Orders, Parts, Customers..."
+    class="pc-field search-bar"
+    oninput="handleUniversalSearch(this.value)"
+  />
+
+</div>
+
+  ${!isAdmin && !isSuper ? `
+      <button onclick="loadCreate('create')" 
+      class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
+      data-tab="create">
+    <span class="flex items-center gap-2">
+      <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+      New Order
+    </span>
+    </button>
+  
+    <button onclick="loadTrack('track')" 
+    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
+    data-tab="track">
+<span class="flex items-center gap-2">
+  <i data-lucide="search-check" class="w-4 h-4"></i>
+  Track Orders
+</span>
+    </button>
+` : isSuper ? `
+
+    <button onclick="loadSuper('PendingApproval')" 
+    class="top-btn ${window.activeTab==='PendingApproval' ? 'active-top-btn' : ''}"
+    data-tab="PendingApproval">
+      Pending Approvals
+    </button>
+
+    <button onclick="loadSuper('Approved')" 
+    class="top-btn ${window.activeTab==='Approved' ? 'active-top-btn' : ''}"
+    data-tab="Approved">
+      Approved
+    </button>
+
+    <button onclick="loadSuper('Rejected')" 
+    class="top-btn ${window.activeTab==='Rejected' ? 'active-top-btn' : ''}"
+    data-tab="Rejected">
+      Rejected
+    </button>
+
+    <button onclick="loadSuper('All')" 
+    class="top-btn ${window.activeTab==='All' ? 'active-top-btn' : ''}"
+    data-tab="All">
+      All Orders
+    </button>
+
+` : `
+    <button onclick="loadAdmin('Approved')" 
+    class="top-btn ${window.activeTab==='Approved' ? 'active-top-btn' : ''}"
+    data-tab="Approved">
+    
+      <span class="flex items-center gap-2">
+        Approved
+        <span id="pendingCount" 
+          class="hidden bg-red-500 text-white text-xs px-2 py-[2px] rounded-full">
+        </span>
+      </span>
+    
+    </button>
+      
+    <button onclick="loadAdmin('Processed')" 
+    class="top-btn ${window.activeTab==='Processed' ? 'active-top-btn' : ''}"
+    data-tab="Processed">
+      Processed
+    </button>
+
+    <button onclick="loadUpload()" 
+    class="top-btn ${window.activeTab==='upload' ? 'active-top-btn' : ''}"
+    data-tab="upload">
+      Upload
+    </button>
+
+    
+  `}
+
+
+    <button onclick="logout()" 
+    class="top-btn logout-btn">
+    <span class="flex items-center gap-2">
+      <i data-lucide="log-out" class="w-4 h-4"></i>
+      Logout
+    </span>
+    </button>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  <div id="main" class="w-full"></div>
+
+</div>
+`;
+
+renderIcons();
+
+    
+// ✅ Load correct screen
+if(isAdmin){
+  loadAdmin(window.activeTab || "Approved");
+
+  // ✅ ADD THIS LINE (VERY IMPORTANT)
+  setTimeout(loadPendingCount, 200);
+}
+else if(isSuper){
+  loadSuper(window.activeTab || "PendingApproval");
+}
+else{
+  setTimeout(loadPendingCount, 200);
+
+  if(window.activeTab === "track"){
+    loadTrack("track");
+  }else{
+    loadCreate("create");
+  }
+}
+}
+
+
+function logout(){
+localStorage.clear();
+loadLogin();
+}
+
+// ---------- CREATE ----------
+function loadCreate(tab){
+
+window.activeTab = "create";
+
+// ✅ Re-render header so highlight updates
+updateMenuHighlight();
+
+const main = document.getElementById("main");
+
+main.innerHTML = `
+<div class="space-y-5">
+
+
+  <!-- ================= ORDER FORM ================= -->
+  <div class="relative pc-section">
+  
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        ORDER DETAILS
+      </span>
+    </div>
+
+    <div class="grid grid-cols-4 gap-3">
+
+      <select id="orderType" class="pc-field">
+        <option value="">Order Type</option>
+        <option>VOR</option>
+        <option>SOP</option>
+        <option>ZMAC</option> <!-- ✅ NEW -->
+        <option>ZSPL</option>
+      </select>
+
+      <select id="orderFor" class="pc-field">
+        <option value="">Order For</option>
+        <option>Customer</option>
+        <option>Stock</option>
+      </select>
+
+        <input id="employeeName"
+          class="pc-field"
+          style="opacity: 0.85;"
+          readonly />
+
+        <select id="approvedBy" class="pc-field">
+          <option value="">Select Approver</option>
+        </select>
+    </div>
+  </div>
+
+  <!-- ================= CUSTOMER FORM ================= -->
+  <div class="relative pc-section customer-section">
+  
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        CUSTOMER DETAILS
+      </span>
+    </div>
+
+    <div class="grid grid-cols-4 gap-3">
+
+      <input id="machineNo" placeholder="Machine No"
+          class="pc-field"/>
+
+            <input id="customerName"
+              class="pc-field"
+              style="opacity: 0.85;"
+              placeholder="Customer Name"
+              readonly />
+
+      <select id="machineType" class="pc-field">
+        <option value="">Machine Type</option>
+        <option>UW</option>
+        <option>BW</option>
+      </select>
+
+        <input id="callId" placeholder="Call ID"
+      class="pc-field"/>
+
+    </div>
+  </div>
+</div>
+
+<div class="relative p-5 pt-8 rounded-xl border mt-6"
+     style="background: linear-gradient(180deg, rgba(170,205,220,0.08), rgba(129,166,198,0.08)); border-color: var(--pc-border);">
+
+  <!-- 🔥 FLOATING TITLE -->
+  <div class="absolute -top-3 left-1/2 -translate-x-1/2 px-4" style="background: var(--pc-bg);">
+    <h2 class="text-xs tracking-widest font-semibold" style="color: var(--pc-secondary);">
+      PARTS DETAIL
+    </h2>
+  </div>
+
+
+
+<table class="w-full text-sm text-center border border-gray-700 rounded-lg overflow-hidden table-fixed">
+<thead class="backdrop-blur-sm text-xs uppercase tracking-wider border-b"
+      style="background: #D2C4B4; color: #1F2937; border-color: #BFAF9D;">
+<tr>
+<th class="py-3 w-[18%]" style="color: #1F2937;">Part</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">Qty</th>
+
+<th class="py-3 w-[12%]" style="color: #1F2937;">
+  30D Qty
+</th>
+
+<th class="py-3 w-[26%]" style="color: #1F2937;">Desc</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">DNP</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;">Cat</th>
+<th class="py-3 w-[14%]" style="color: #1F2937;">Value</th>
+<th class="py-3 w-[10%]" style="color: #1F2937;"></th>
+
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<hr class="my-4" style="border-color: var(--pc-border);">
+
+<div class="mt-6 flex items-center justify-between p-4 rounded-xl"
+     style="
+       background: linear-gradient(135deg, rgba(170,205,220,0.15), rgba(129,166,198,0.15));
+       border: 1px solid var(--pc-border);
+       box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+     ">
+
+<div class="flex items-center gap-3">
+
+  <!-- ADD ITEM -->
+  <button onclick="addRow()"
+    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
+    style="background: var(--pc-secondary); color: #0f1720;">
+    <span class="pc-btn-inline">
+      <i data-lucide="plus-circle" class="pc-icon"></i>
+      Add Item
+    </span>
+  </button>
+
+  <!-- BULK UPLOAD BUTTON -->
+  <button onclick="document.getElementById('uploadPartsExcel').click()"
+    class="transition px-5 py-2 rounded-lg font-semibold shadow-md"
+    style="background: var(--pc-primary); color: #0f1720;">
+    <span class="pc-btn-inline">
+      <i data-lucide="upload" class="pc-icon"></i>
+      Bulk Parts Upload
+    </span>
+  </button>
+
+  <!-- HIDDEN FILE INPUT -->
+  <input type="file" id="uploadPartsExcel" accept=".xlsx" hidden />
+
+</div>
+
+  <div class="text-lg font-semibold tracking-wide" style="color: var(--pc-text);">
+    Total: ₹ <span id="total" style="font-size: 20px;">0</span>
+  </div>
+
+<button onclick="submitOrder()"
+class="transition px-6 py-2 rounded-lg font-semibold shadow-md"
+style="background: var(--pc-primary); color: #0f1720;">
+    <span class="pc-btn-inline">
+      <i data-lucide="send" class="pc-icon"></i>
+      Submit Order
+    </span>
+  </button>
+
+</div>
+
+</div>
+</div>
+`;
+renderIcons();
+    
+addRow();
+// AUTO FILL EMPLOYEE NAME
+const user = getUser();
+document.getElementById("employeeName").value = user.Name || "";
+
+// 🔥 LOAD SUPER USERS INTO APPROVED BY DROPDOWN
+(async function loadSuperUsers(){
+
+  const { data, error } = await db
+    .from("users")
+    .select("Name")
+    .eq("Role", "super");
+
+  if(error){
+    console.error("Error loading super users", error);
+    return;
+  }
+
+  const dropdown = document.getElementById("approvedBy");
+
+  dropdown.innerHTML = `<option value="">Select Approver</option>`;
+
+  data.forEach(u => {
+    dropdown.innerHTML += `<option value="${u.Name}">${u.Name}</option>`;
+  });
+
+})();
+    
+
+  const orderTypeEl = document.getElementById("orderType");
+  const orderForEl = document.getElementById("orderFor");
+  const approvedByEl = document.getElementById("approvedBy");
+  const machineNoEl = document.getElementById("machineNo");
+  const machineTypeEl = document.getElementById("machineType");
+  
+  // ORDER TYPE CHANGE
+  orderTypeEl.addEventListener("change", () => {
+  
+    const type = orderTypeEl.value;
+  
+    // RESET
+    orderForEl.disabled = false;
+    orderForEl.classList.remove("bg-gray-800","text-gray-400");
+  
+    if(type === "VOR"){
+  
+      orderForEl.value = "Customer";
+      orderForEl.disabled = true;
+      orderForEl.classList.add("bg-gray-800","text-gray-400");
+  
+      // MOVE CURSOR
+      approvedByEl.focus();
+    }
+  });
+
+  orderForEl.addEventListener("change", () => {
+  
+    const orderFor = orderForEl.value;
+    const customerSection = machineNoEl.closest(".customer-section");
+  
+    if(orderFor === "Stock"){
+  
+      // DISABLE CUSTOMER FORM
+      customerSection.classList.add("opacity-40","pointer-events-none");
+  
+    } else {
+  
+      customerSection.classList.remove("opacity-40","pointer-events-none");
+    }
+  
+  });
+    
+// MACHINE FETCH
+document.getElementById("machineNo").addEventListener("blur", async function(){
+
+const machineNo = this.value.trim();
+
+if(!machineNo) return;
+
+const { data } = await db
+.from("machine_master")
+.select("*")
+.eq("MachineNo", machineNo);
+
+if(data && data.length > 0){
+  document.getElementById("customerName").value = data[0].CustomerName;
+}
+else{
+  document.getElementById("customerName").value = "";
+  showManualCustomerPopup(machineNo);
+}
+
+});
+
+}
+  
+// ---------- ROW ----------
+function addRow(){
+
+const tr = document.createElement("tr");
+
+tr.innerHTML = `
+<td class="p-1">
+  <input class="part pc-field w-full"/>
+</td>
+
+<td class="p-2">
+  <input type="number" min="0" class="qty pc-field w-full"/>
+</td>
+
+<td class="qty30 py-1 text-center text-xs"
+    style="
+      background: rgba(0,0,0,0.04);
+      color: #6b7280;
+      border-radius: 4px;
+    ">
+  0
+</td>
+
+<td class="desc py-1"></td>
+<td class="dnp py-1"></td>
+<td class="cat py-1"></td>
+<td class="val py-1 font-semibold" style="color:#1F2937;"></td>
+
+<td class="py-1">
+  <button class="delete-row-btn text-red-400 hover:text-red-300 font-bold"
+  onclick="this.closest('tr').remove(); calcTotal()">✕</button>
+</td>
+`;
+tr.querySelector(".part").addEventListener("blur", async function(){
+
+const partNo = this.value.trim().toUpperCase();
+this.value = partNo; // ✅ also update input visually
+
+// ❗ DUPLICATE CHECK
+const allParts = document.querySelectorAll(".part");
+
+let duplicateCount = 0;
+
+allParts.forEach(input => {
+  if(input.value.trim().toUpperCase() === partNo){
+    duplicateCount++;
+  }
+});
+
+// If more than 1 → duplicate exists
+if(duplicateCount > 1){
+
+  showPopup("This Part Number is already added ❗ Duplicate not allowed", "error");
+
+  // ❌ CLEAR CURRENT INPUT
+  this.value = "";
+
+  // ❌ RESET ROW DATA
+  tr.querySelector(".desc").innerText = "";
+  tr.querySelector(".dnp").innerText = "";
+  tr.querySelector(".cat").innerText = "";
+  tr.querySelector(".val").innerText = "";
+  tr.querySelector(".qty30").innerText = "0";
+
+  calcTotal();
+
+  return; // 🚨 STOP further execution
+}
+
+
+    
+// ✅ FIX 1: ignore empty input
+if(!partNo){
+  tr.querySelector(".desc").innerText = "";
+  tr.querySelector(".dnp").innerText = "";
+  tr.querySelector(".cat").innerText = "";
+  tr.querySelector(".val").innerText = "";
+  calcTotal();
+  return;
+}
+
+// FETCH
+const { data } = await db
+.from("part_master")
+.select("*")
+.eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
+.single();
+
+// ✅ FIX 2: show error only if user typed something wrong
+if(!data){
+  showPopup("Invalid Part Number ❗");
+  return;
+}
+
+// SUCCESS
+tr.querySelector(".desc").innerText = data.Description;
+tr.querySelector(".dnp").innerText = data.DNP;
+tr.querySelector(".cat").innerText = data.Cat1;
+
+
+// ===== 30 DAY QTY LOGIC =====
+const user = getUser();
+
+const last30 = new Date();
+last30.setDate(last30.getDate() - 30);
+
+const { data: history } = await db
+  .from("requests")
+  .select("Qty")
+  .eq("Branch", user.Branch)
+  .eq("PartNo", partNo)
+  .gte("created_at", last30.toISOString());
+
+let total30 = 0;
+
+if(history){
+  history.forEach(r => {
+    total30 += getEffectiveQty(r);
+  });
+}
+
+// SET VALUE
+tr.querySelector(".qty30").innerText = total30;
+
+
+
+if(total30 > 0){
+
+  currentRow = tr; // ⭐ STORE ROW HERE
+
+ 
+
+showPopup(
+  `You have already ordered ${total30} units of Part No. ${partNo} within the past 30 days. Do you wish to proceed with placing another order?`,
+  "warning",
+  `
+  <div class="flex gap-3 justify-center">
+
+    <!-- YES → JUST CLOSE -->
+    <button onclick="closePopup()"
+      class="px-5 py-2 rounded-lg font-semibold"
+      style="background: #10b981; color:white;">
+      Yes
+    </button>
+
+    <!-- NO → DELETE ROW -->
+    <button onclick="triggerRowDelete()"
+      class="px-5 py-2 rounded-lg font-semibold"
+      style="background: #ef4444; color:white;">
+      No
+    </button>
+
+  </div>
+  `
+);
+
+}
+    
+    
+
+calc(tr);
+});
+
+
+
+tr.querySelector(".qty").addEventListener("input", function () {
+
+  let val = Number(this.value);
+
+  // ❗ Prevent negative values
+  if (val < 0) {
+    this.value = 0;
+  }
+
+  calc(tr);
+});
+
+document.getElementById("tbody").appendChild(tr);
+
+  // AUTO FOCUS PART INPUT
+  setTimeout(() => {
+    tr.querySelector(".part")?.focus();
+  }, 50);
+}
+
+function deleteRowFromPopup(btn){
+
+  // get currently focused row
+  const activeInput = document.activeElement;
+  const tr = activeInput.closest("tr");
+
+  if(tr){
+    tr.remove();
+    calcTotal();
+  }
+
+  closePopup();
+}
+
+function handlePartReject(btn){
+
+  const popup = document.getElementById("popup");
+
+  // find active row (last focused input)
+  const activeInput = document.activeElement;
+
+  const tr = activeInput.closest("tr");
+
+  if(tr){
+    tr.querySelector(".part").value = "";
+    tr.querySelector(".desc").innerText = "";
+    tr.querySelector(".dnp").innerText = "";
+    tr.querySelector(".cat").innerText = "";
+    tr.querySelector(".val").innerText = "";
+    tr.querySelector(".qty30").innerText = "0";
+  }
+
+  closePopup();
+}
+
+
+
+function triggerRowDelete(){
+
+  if(currentRow){
+    currentRow.remove();   // ✅ DIRECT DELETE
+    calcTotal();
+    currentRow = null;     // cleanup
+  }
+
+  closePopup();
+}
+// ---------- CALC ----------
+function calc(tr){
+
+  const qtyInput = tr.querySelector(".qty");
+
+  let qty = Number(qtyInput.value) || 0;
+
+  // ✅ FIX: prevent negative BEFORE calculation
+  if (qty < 0) {
+    qty = 0;
+    qtyInput.value = 0;
+  }
+
+  const dnp = Number(tr.querySelector(".dnp").innerText) || 0;
+
+  const value = dnp * qty;
+
+  tr.querySelector(".val").innerText = value.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  calcTotal();
+}
+
+function calcTotal(){
+  let t = 0;
+
+  document.querySelectorAll(".val").forEach(v => {
+
+    // ✅ REMOVE COMMAS BEFORE CONVERTING
+    const clean = v.innerText.replace(/,/g, "");
+    t += Number(clean) || 0;
+
+  });
+
+  document.getElementById("total").innerText = t.toFixed(2);
+}
+
+// ---------- SUBMIT ----------
+async function submitOrder(){
+
+const user = getUser();
+const machineNo = document.getElementById("machineNo").value;
+const customerName = document.getElementById("customerName").value;
+
+
+const orderType = document.getElementById("orderType").value;
+const orderFor = document.getElementById("orderFor").value;
+const approvedBy = document.getElementById("approvedBy").value;
+const machineType = document.getElementById("machineType").value;
+
+// BASIC REQUIRED
+if(!orderType || !orderFor){
+  return showPopup("Order Details are mandatory ❗");
+}
+
+// VOR RULE
+if(orderType === "VOR"){
+  if(!approvedBy || !machineNo || !customerName || !machineType){
+    return showPopup("All fields mandatory for VOR ❗");
+  }
+}
+
+// 🔥 APPROVER MUST BE SELECTED FOR ALL ORDERS
+if(!approvedBy){
+  return showPopup("Please select Approver ❗");
+}
+// SOP / ZSPL / ZMAC RULES
+if(orderType === "SOP" || orderType === "ZSPL" || orderType === "ZMAC"){
+
+  if(!orderFor){
+    return showPopup("Order For required ❗");
+  }
+
+  if(orderFor === "Customer"){
+    if(!machineNo || !machineType){
+      return showPopup("Machine No & Type required ❗");
+    }
+  }
+}
+  
+if(orderFor === "Customer" && (!machineNo || !customerName)){
+  return showPopup("Fill machine & customer ❗");
+}
+
+const rows = document.querySelectorAll("#tbody tr");
+    let hasError = false;
+
+const orderNo = "T" + Math.floor(1000000 + Math.random()*9000000);
+
+const inserts = [];
+
+rows.forEach(r=>{
+
+  if(hasError) return;
+
+  const part = r.querySelector(".part").value.trim();
+  const qty = r.querySelector(".qty").value.trim();
+  const desc = r.querySelector(".desc").innerText;
+  const dnp = Number(r.querySelector(".dnp").innerText)||0;
+
+  if (part) {
+
+    const qtyNum = Number(qty);
+
+    // ❗ Qty validation
+    if (!qty) {
+      showPopup("Qty is required for all parts ❗");
+      hasError = true;
+      return;
+    }
+
+    if (qtyNum < 1) {
+      showPopup("Qty cannot be less than 1 ❗", "error");
+      hasError = true;
+      return;
+    }
+
+    // ❗ PART VALIDATION (IMPORTANT)
+    if (!desc || desc.trim() === "") {
+      showPopup(`Invalid Part Number: ${part} ❗`, "error");
+      hasError = true;
+      return;
+    }
+  }
+
+  if(!part) return;
+
+  inserts.push({
+    Branch: user.Branch,
+
+    OrderType: orderType,
+    OrderFor: orderFor,
+
+    EmployeeName: user.Name || "",
+    ApprovedBy: approvedBy,
+    WarrantyStatus: machineType,
+    CallID: document.getElementById("callId").value || "",
+    MachineNo: machineNo,
+    CustomerName: customerName,
+
+    PartNo: part,
+    Qty: qty,
+    Description: desc,
+    DNP: dnp,
+    Value: dnp * qty,
+
+    OrderNo: orderNo,
+    Status: "PENDING APPROVAL",
+    ApprovalStatus: "PendingApproval"
+  });
+
+});
+
+if(hasError){
+  return;
+}
+if(!inserts.length){
+  return showPopup("At least one Part Number is required ❗");
+}
+
+showLoader();
+
+const { error } = await db.from("requests").insert(inserts);
+
+hideLoader();
+
+if(error) return showPopup("Submit failed");
+
+showPopup("Submitted ✅ Order No: "+orderNo);
+
+loadCreate();
+}
+
+
+// ---------- TRACK ----------
+async function loadTrack(tab, skipReset = false){
+
+if(!skipReset){
+  CURRENT_PAGE = 1;
+}
+window.activeTab = "track";
+
+// ✅ Re-render header so highlight updates
+updateMenuHighlight();
+
+const user = getUser();
+
+showLoader();
+
+let query = db
+  .from("requests")
+  .select("*")
+  .order("created_at", { ascending:false });
+
+// ✅ ONLY FILTER FOR NORMAL USERS
+if(user.Role !== "headoffice"){
+  query = query.eq("Branch", user.Branch);
+}
+
+const { data } = await query;
+GLOBAL_DATA = data;
+hideLoader();
+
+const grouped = {};
+
+data.forEach(r=>{
+if(!grouped[r.OrderNo]){
+grouped[r.OrderNo] = { ...r, items:[] };
+}
+grouped[r.OrderNo].items.push(r);
+});
+
+const orders = applyOrderSort(
+  Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+);
+
+
+const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+const paginatedOrders = orders.slice(start, start + PAGE_SIZE);
+const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+
+
+
+    
+let html = `
+<div class="space-y-5">
+
+
+
+  <!-- ✅ ADD THIS NEW DIV -->
+  <div id="resultsContainer">
+
+
+
+  <!-- CARD WRAPPER (same as New Order) -->
+  <div class="relative pc-section">
+
+    <!-- FLOAT LABEL -->
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        TRACK ORDERS
+      </span>
+    </div>
+
+    <div class="overflow-x-auto mt-2">
+
+      <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
+
+        <thead class="text-xs uppercase tracking-wider border-b"
+              style="background: var(--pc-warm); color: var(--pc-text);">
+
+          <tr>
+                <th class="px-4 py-3 text-center">Date</th>
+                <th class="px-4 py-3 text-center">Order Type</th>
+                <th class="px-4 py-3 text-left">Order For</th>
+                <th class="px-4 py-3 text-left">Branch</th>
+                <th class="px-4 py-3 text-right">Qty</th>
+                <th class="px-4 py-3 text-right">Value</th>
+                <th class="px-4 py-3 text-center">Order No</th>
+                <th class="px-4 py-3 text-center">Status</th>
+          </tr>
+
+        </thead>
+
+        <tbody>
+`;
+
+paginatedOrders.forEach((o,i)=>{
+
+const statuses = o.items.map(x => {
+  let s = (x.Status || "").toString().trim().toUpperCase();
+
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
+
+    
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+
+  if(s.includes("PENDING APPROVAL") || s.includes("APPROVAL PENDING")){
+    return "PENDING APPROVAL";
+  }
+
+  if(s.includes("PEND")){
+    return "APPROVED";
+  }
+
+  return s;
+});;
+
+let orderStatus = "APPROVED";
+
+// ✅ PRIORITY BASED (TOP → DOWN)
+
+// ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
+  orderStatus = "DISPATCHED";
+}
+
+// 🟡 PARTIAL DISPATCH
+else if(statuses.includes("DISPATCHED")){
+  orderStatus = "PARTIALLY DISPATCHED";
+}
+
+// 🔵 NOT DISPATCHED
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
+
+// 🟠 PROCESSED
+else if(statuses.every(s => s === "PROCESSED")){
+  orderStatus = "PROCESSED";
+}
+else if(statuses.every(s => s === "PENDING APPROVAL")){
+  orderStatus = "PENDING APPROVAL";
+}
+
+// ⚪ DEFAULT
+else{
+  orderStatus = "APPROVED";
+}
+  
+
+const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+html += `
+<tr onclick="openOrderView('${o.OrderNo}')"
+class="cursor-pointer transition hover:scale-[1.01]"
+style="${
+o.OrderType === 'VOR'
+  ? 'background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b;'
+    : ''
+}">
+
+<td class="px-4 py-3 text-center">${formatDateTime(o.created_at)}</td>
+<td class="px-4 py-3 text-center">
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
+<td class="px-4 py-3 text-left">
+  ${
+    o.OrderFor === "Customer"
+      ? (o.CustomerName || "Customer")
+      : "Stock"
+  }
+</td>
+<td class="px-4 py-3 text-left">${o.Branch || "-"}</td>
+<td class="px-4 py-3 text-right">
+  ${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}
+</td>
+
+<td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
+
+<td class="px-4 py-3 text-center font-semibold" style="color: var(--pc-primary);">
+  ${o.OrderNo}
+  ${getOrderCommentCount(o) > 0
+    ? `<span class="ml-1 px-2 py-[2px] rounded-full text-[10px]" style="background:#e0e7ff;color:#3730a3;">💬 ${getOrderCommentCount(o)}</span>`
+    : ""}
+</td>
+
+<td class="px-4 py-3 text-center">
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        orderStatus === "DISPATCHED" ? "#d1fae5" :
+          orderStatus === "REJECTED" ? "#fde2e2" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+        orderStatus === "PROCESSED" ? "#fef3c7" :
+        orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        orderStatus === "DISPATCHED" ? "#065f46" :
+          orderStatus === "REJECTED" ? "#7f1d1d" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+        orderStatus === "PROCESSED" ? "#92400e" :
+        orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${orderStatus}
+  </span>
+</td>
+
+</tr>
+`;
+});
+
+html += `
+        </tbody>
+      </table>
+
+    </div>
+
+<div class="flex justify-between items-center mt-2 px-2 py-0.5 rounded-md text-[11px]" style="background:linear-gradient(90deg, #2f3e4d, #3f556b); border:1px solid #5b748d; color:#f8fafc;">
+
+  <button onclick="changePage(-1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-surface); border:1px solid var(--pc-border); color:#0f172a;"
+    ${CURRENT_PAGE === 1 ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    ⬅ Prev
+  </button>
+
+  <span class="font-semibold tracking-wide leading-none">
+    Page ${CURRENT_PAGE} / ${totalPages}
+  </span>
+
+  <button onclick="changePage(1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-secondary); color:white;"
+    ${CURRENT_PAGE >= totalPages ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    Next ➡
+  </button>
+
+</div>
+
+    
+  </div>
+
+  </div> <!-- resultsContainer -->
+</div>
+`;
+
+document.getElementById("main").innerHTML = html;
+
+}
+
+
+
+
+    
+function toggleRow(i){
+document.getElementById("row-"+i).classList.toggle("hidden");
+}
+
+
+async function loadPendingCount(){
+
+  const { data, error } = await db
+    .from("requests")
+    .select("OrderNo, Status, ApprovalStatus");
+
+  if(error) return;
+
+  // ✅ GET UNIQUE ORDER COUNT
+  const uniqueOrders = [...new Set(
+    data
+      .filter(d => {
+        const status = (d.Status || "").toString().trim().toUpperCase();
+        const approval = (d.ApprovalStatus || "").toString().trim().toUpperCase();
+        return (status === "APPROVED" || status === "PENDING")
+          && !isPendingApprovalStatus(d.ApprovalStatus)
+          && approval !== "REJECTED"
+          && (approval === "APPROVED" || approval === "");
+      })
+      .map(d => d.OrderNo)
+  )];
+  const count = uniqueOrders.length;
+
+  const el = document.getElementById("pendingCount");
+
+  if(el){
+    if(count > 0){
+      el.innerText = count;
+      el.classList.remove("hidden");
+    } else {
+      el.classList.add("hidden");
+    }
+  }
+}
+  
+// ---------- ADMIN ----------
+async function loadAdmin(activeTab = "Approved", skipReset = false){
+
+if(!skipReset){
+  CURRENT_PAGE = 1;
+}
+    
+window.activeTab = activeTab;
+updateMenuHighlight();
+showLoader();
+
+const { data } = await db
+    
+.from("requests")
+.select("*")
+.order("created_at",{ascending:false});
+GLOBAL_DATA = data;
+hideLoader();
+
+// GROUP BY ORDER
+const grouped = {};
+data.forEach(r=>{
+if(!grouped[r.OrderNo]){
+grouped[r.OrderNo] = { ...r, items:[] };
+}
+grouped[r.OrderNo].items.push(r);
+});
+
+const orders = applyOrderSort(
+  Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+);
+
+// FILTER
+let filtered;
+
+if(activeTab === "Approved"){
+  filtered = orders.filter(o => 
+    o.items.some(x => {
+      const status = (x.Status || "").toString().trim().toUpperCase();
+      const approval = (x.ApprovalStatus || "").toString().trim().toUpperCase();
+      const pendingApproval = isPendingApprovalStatus(x.ApprovalStatus);
+      return (status === "APPROVED" || status === "PENDING")
+        && !pendingApproval
+        && approval !== "REJECTED"
+        && (approval === "APPROVED" || approval === "");
+    })
+  );
+}
+else{
+  // ✅ ALL NON-APPROVED/NON-PENDING-APPROVAL (exclude super-rejected)
+  filtered = orders.filter(o => 
+    o.items.some(x => {
+      const status = (x.Status || "").toString().trim().toUpperCase();
+      const approval = (x.ApprovalStatus || "").toString().trim().toUpperCase();
+      const pendingApproval = isPendingApprovalStatus(x.ApprovalStatus);
+      return status !== "APPROVED"
+        && status !== "PENDING"
+        && status !== "PENDING APPROVAL"
+        && !pendingApproval
+        && approval !== "REJECTED";
+    })
+  );
+}
+
+
+const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
+const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    
+// UI
+let html = `
+<div class="space-y-4">
+
+
+
+  <!-- ✅ ADD THIS -->
+  <div id="resultsContainer">
+
+
+
+<!-- TABLE -->
+<div class="relative pc-section">
+
+  <!-- FLOAT LABEL -->
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      ${activeTab.toUpperCase()} ORDERS
+    </span>
+  </div>
+
+  <div class="overflow-x-auto mt-2">
+
+    <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
+
+      <thead class="text-xs uppercase tracking-wider border-b"
+            style="background: var(--pc-warm); color: var(--pc-text);">
+
+        <tr>
+                <th class="px-4 py-3 text-center">Date</th>
+                <th class="px-4 py-3 text-center">Order Type</th>
+                <th class="px-4 py-3 text-left">Order For</th>
+                <th class="px-4 py-3 text-left">Branch</th>
+                <th class="px-4 py-3 text-right">Qty</th>
+                <th class="px-4 py-3 text-right">Value</th>
+                <th class="px-4 py-3 text-center">Order No</th>
+                <th class="px-4 py-3 text-center">Status</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
+`;
+
+paginatedOrders.forEach((o,i)=>{
+
+const statuses = o.items.map(x => {
+  let s = (x.Status || "").toString().trim().toUpperCase();
+
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
+  if(s.includes("PENDING APPROVAL") || s.includes("APPROVAL PENDING")){
+    return "PENDING APPROVAL";
+  }
+  if(s.includes("PEND")){
+    return "APPROVED";
+  }
+
+  return s;
+});
+
+let orderStatus = "APPROVED";
+
+// ✅ PRIORITY BASED (TOP → DOWN)
+
+// ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
+  orderStatus = "DISPATCHED";
+}
+
+// 🟡 PARTIAL DISPATCH
+else if(statuses.includes("DISPATCHED")){
+  orderStatus = "PARTIALLY DISPATCHED";
+}
+
+// 🔵 NOT DISPATCHED
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
+
+// 🟠 PROCESSED
+else if(statuses.every(s => s === "PROCESSED")){
+  orderStatus = "PROCESSED";
+}
+else if(statuses.every(s => s === "PENDING APPROVAL")){
+  orderStatus = "PENDING APPROVAL";
+}
+
+// ⚪ DEFAULT
+else{
+  orderStatus = "APPROVED";
+}
+
+const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+html += `
+<tr onclick="openOrderView('${o.OrderNo}')"
+class="cursor-pointer transition hover:scale-[1.01]"
+style="${
+  o.OrderType === 'VOR'
+    ? 'background: rgba(255, 235, 150, 0.35); border-left: 4px solid #f59e0b;'
+    : ''
+}">
+<td class="px-4 py-3 text-center">${formatDateTime(o.created_at)}</td>
+
+<td class="px-4 py-3 text-center">
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
+<td class="px-4 py-3 text-left">
+  ${
+    o.OrderFor === "Customer"
+      ? (o.CustomerName || "Customer")
+      : "Stock"
+  }
+</td>
+<td class="px-4 py-3 text-left">${o.Branch || "-"}</td>
+<td class="px-4 py-3 text-right">
+  ${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}
+</td>
+<td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
+<td class="px-4 py-3 text-center font-semibold" style="color: var(--pc-primary);">
+  ${o.OrderNo}
+  ${getOrderCommentCount(o) > 0
+    ? `<span class="ml-1 px-2 py-[2px] rounded-full text-[10px]" style="background:#e0e7ff;color:#3730a3;">💬 ${getOrderCommentCount(o)}</span>`
+    : ""}
+</td>
+<td class="px-4 py-3 text-center">
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        orderStatus === "DISPATCHED" ? "#d1fae5" :
+          orderStatus === "REJECTED" ? "#fde2e2" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+        orderStatus === "PROCESSED" ? "#fef3c7" :
+        orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        orderStatus === "DISPATCHED" ? "#065f46" :
+          orderStatus === "REJECTED" ? "#7f1d1d" :
+        orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+        orderStatus === "PROCESSED" ? "#92400e" :
+        orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${orderStatus}
+  </span>
+</td>
+</tr>
+
+
+`;
+});
+
+html += `
+</tbody>
+</table>
+</div>
+
+
+<div class="flex justify-between items-center mt-2 px-2 py-0.5 rounded-md text-[11px]" style="background:linear-gradient(90deg, #2f3e4d, #3f556b); border:1px solid #5b748d; color:#f8fafc;">
+
+  <button onclick="changePage(-1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-surface); border:1px solid var(--pc-border); color:#0f172a;"
+    ${CURRENT_PAGE === 1 ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    ⬅ Prev
+  </button>
+
+  <span class="font-semibold tracking-wide leading-none">
+    Page ${CURRENT_PAGE} / ${totalPages}
+  </span>
+
+  <button onclick="changePage(1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-secondary); color:white;"
+    ${CURRENT_PAGE >= totalPages ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    Next ➡
+  </button>
+
+</div>
+
+  </div> <!-- resultsContainer -->
+</div>
+`;
+
+document.getElementById("main").innerHTML = html;
+
+
+}
+
+
+
+
+    
+
+function loadUpload(){
+
+  window.activeTab = "upload";
+  updateMenuHighlight();
+
+  document.getElementById("main").innerHTML = `
+  
+  <div class="space-y-6">
+
+    <!-- STATUS REPORT -->
+<div class="relative pc-section">
+
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      STATUS REPORT UPLOAD
+    </span>
+  </div>
+
+  <div class="flex justify-center mt-4">
+    <input type="file" id="uploadExcel" accept=".xlsx"
+      class="pc-field max-w-xs"/>
+  </div>
+
+</div>
+
+
+<div class="relative pc-section">
+
+  <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+    <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+      INWARD REPORT
+    </span>
+  </div>
+
+  <div class="flex justify-center mt-4">
+    <input type="file" id="uploadInward" accept=".xlsx"
+      class="pc-field max-w-xs"/>
+  </div>
+
+</div>
+
+  </div>
+  `;
+}
+  
+function filterHQ(status){
+renderHQ(status);
+}
+
+
+
+function formatDate(val){
+
+  if(!val) return "-";
+
+  // ✅ Case 1: ISO date (ProcessedDate)
+  if(val.includes("T")){
+    const d = new Date(val);
+    return d.toLocaleDateString("en-GB"); // dd/mm/yyyy
+  }
+
+  // ✅ Case 2: Excel number (OrderRegDt, BillingDt)
+  if(!isNaN(val)){
+    const excelDate = new Date((val - 25569) * 86400 * 1000);
+    return excelDate.toLocaleDateString("en-GB");
+  }
+
+  return val;
+}
+
+function formatDateTime(val){
+  if(!val) return "-";
+
+  const d = new Date(val);
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = String(d.getFullYear()).slice(-2);
+
+  // 🔥 12-HOUR FORMAT LOGIC
+  let hours = d.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+
+  hours = hours % 12 || 12; // convert 0 → 12
+  hours = String(hours).padStart(2, '0');
+
+  const mins = String(d.getMinutes()).padStart(2, '0');
+
+  return `${day}-${month}-${year} ${hours}:${mins} ${ampm}`;
+}
+
+function getEffectiveQty(row){
+  const edited = row?.editedqty ?? row?.EditedQty;
+  if(edited === null || edited === undefined || edited === ""){
+    return Number(row?.Qty || 0);
+  }
+  return Number(edited || 0);
+}
+
+function getEffectiveValue(row){
+  const edited = row?.editedvalue ?? row?.EditedValue;
+  if(edited === null || edited === undefined || edited === ""){
+    return Number(row?.Value || 0);
+  }
+  return Number(edited || 0);
+}
+
+function getOrderStatusLabel(order){
+  const statuses = (order?.items || []).map(x => (x.Status || "").toString().trim().toUpperCase());
+  if(statuses.every(s => s === "REJECTED")) return "REJECTED";
+  if(statuses.every(s => s === "DISPATCHED")) return "DISPATCHED";
+  if(statuses.includes("DISPATCHED")) return "PARTIALLY DISPATCHED";
+  if(statuses.every(s => s === "NOT DESPATCHED")) return "NOT DESPATCHED";
+  if(statuses.every(s => s === "PROCESSED")) return "PROCESSED";
+  if(statuses.every(s => s === "PENDING APPROVAL" || s === "APPROVAL PENDING")) return "PENDING APPROVAL";
+  if(statuses.some(s => s === "APPROVED" || s === "PENDING")) return "APPROVED";
+  return statuses[0] || "";
+}
+
+function applyOrderSort(orders){
+  if(!TABLE_SORT_STATE?.key || !TABLE_SORT_STATE?.dir) return orders;
+  const key = TABLE_SORT_STATE.key;
+  const dir = TABLE_SORT_STATE.dir === "asc" ? 1 : -1;
+  const sorted = [...orders];
+
+  sorted.sort((a, b) => {
+    const qtyA = (a.items || []).reduce((s,x)=>s+getEffectiveQty(x),0);
+    const qtyB = (b.items || []).reduce((s,x)=>s+getEffectiveQty(x),0);
+    const valA = (a.items || []).reduce((s,x)=>s+getEffectiveValue(x),0);
+    const valB = (b.items || []).reduce((s,x)=>s+getEffectiveValue(x),0);
+
+    const map = {
+      "DATE": [new Date(a.created_at).getTime() || 0, new Date(b.created_at).getTime() || 0],
+      "ORDER TYPE": [(a.OrderType || "").toLowerCase(), (b.OrderType || "").toLowerCase()],
+      "ORDER FOR": [((a.OrderFor === "Customer" ? a.CustomerName : "Stock") || "").toLowerCase(), ((b.OrderFor === "Customer" ? b.CustomerName : "Stock") || "").toLowerCase()],
+      "CUSTOMER": [((a.CustomerName || "Stock") || "").toLowerCase(), ((b.CustomerName || "Stock") || "").toLowerCase()],
+      "BRANCH": [(a.Branch || "").toLowerCase(), (b.Branch || "").toLowerCase()],
+      "QTY": [qtyA, qtyB],
+      "VALUE": [valA, valB],
+      "ORDER NO": [(a.OrderNo || "").toLowerCase(), (b.OrderNo || "").toLowerCase()],
+      "STATUS": [getOrderStatusLabel(a).toLowerCase(), getOrderStatusLabel(b).toLowerCase()]
+    };
+
+    const pair = map[key] || [new Date(a.created_at).getTime() || 0, new Date(b.created_at).getTime() || 0];
+    if(typeof pair[0] === "number" && typeof pair[1] === "number"){
+      return (pair[0] - pair[1]) * dir;
+    }
+    return pair[0].localeCompare(pair[1]) * dir;
+  });
+
+  return sorted;
+}
+
+function isPendingApprovalStatus(val){
+  const s = (val || "").toString().trim().toUpperCase();
+  return s === "PENDINGAPPROVAL" || s === "PENDING APPROVAL" || s === "APPROVAL PENDING";
+}
+
+function parseOrderComments(raw){
+  if(!raw) return [];
+  try{
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return Array.isArray(parsed) ? parsed : [];
+  }catch{
+    return [];
+  }
+}
+
+function getOrderComments(orderObj){
+  const uniqueComments = (items) => {
+    const seen = new Set();
+    return items.filter(c => {
+      const key = [
+        c?.by || "",
+        c?.text || "",
+        c?.at || "",
+        c?.attachmentName || "",
+        c?.attachmentUrl || ""
+      ].join("|");
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  };
+
+  if(Array.isArray(orderObj?.items)){
+    for(const row of orderObj.items){
+      const parsed = parseOrderComments(row?.OrderComments);
+      if(parsed.length) return uniqueComments(parsed);
+    }
+  }
+  return uniqueComments(parseOrderComments(orderObj?.OrderComments));
+}
+
+function getOrderCommentCount(orderObj){
+  return getOrderComments(orderObj).length;
+}
+
+function getCommentUserBg(by){
+  const palettes = ["#fef3c7", "#dbeafe", "#dcfce7", "#fce7f3", "#ede9fe", "#e0f2fe", "#f1f5f9"];
+  const name = (by || "").toString();
+  let hash = 0;
+  for(let i = 0; i < name.length; i++){
+    hash = (hash + name.charCodeAt(i)) % palettes.length;
+  }
+  return palettes[hash];
+}
+
+const commentAttachmentHrefCache = {};
+function getCommentAttachmentHref(url){
+  if(!url) return "";
+  if(!url.startsWith("data:")) return url;
+  if(commentAttachmentHrefCache[url]) return commentAttachmentHrefCache[url];
+  try{
+    const [meta, base64] = url.split(",");
+    const mime = (meta.match(/data:(.*?);base64/) || [])[1] || "application/octet-stream";
+    const binary = atob(base64 || "");
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for(let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mime }));
+    commentAttachmentHrefCache[url] = blobUrl;
+    return blobUrl;
+  }catch{
+    return url;
+  }
+}
+  
+async function openOrderView(orderNo){
+
+const user = getUser();
+const isSuper = user.Role === "super";
+
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  hideLoader();
+
+  if(!data || !data.length){
+    return showPopup("Order not found ❗");
+  }
+
+  const order = data[0];
+
+  const total = data.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+let orderStatus = "APPROVED";
+
+const statuses = data.map(x => {
+  let s = (x.Status || "").toString().trim().toUpperCase();
+
+  // 🔥 NORMALIZE ALL POSSIBLE VALUES
+  if(s.includes("DESPATCHED") || s.includes("DISPATCHED")){
+    if(s.includes("NOT")){
+      return "NOT DESPATCHED";
+    }
+    return "DISPATCHED";
+  }
+if(s.includes("REJECT")){
+  return "REJECTED";
+}
+  if(s.includes("PROCESS")){
+    return "PROCESSED";
+  }
+  if(s.includes("PENDING APPROVAL") || s.includes("APPROVAL PENDING")){
+    return "PENDING APPROVAL";
+  }
+
+  if(s.includes("PEND")){
+    return "APPROVED";
+  }
+
+
+    
+  return s;
+});
+
+// ✅ ALL DISPATCHED
+
+// ✅ REJECTED (TOP PRIORITY)
+// ✅ PRIORITY BASED (CORRECT FIX)
+
+// 🔴 REJECTED (HIGHEST PRIORITY)
+if(statuses.every(s => s === "REJECTED")){
+  orderStatus = "REJECTED";
+}
+
+// 🟢 DISPATCHED
+else if(statuses.every(s => s === "DISPATCHED")){
+  orderStatus = "DISPATCHED";
+}
+
+// 🟡 PARTIAL DISPATCH
+else if(statuses.includes("DISPATCHED")){
+  orderStatus = "PARTIALLY DISPATCHED";
+}
+
+// 🔵 NOT DISPATCHED
+else if(statuses.every(s => s === "NOT DESPATCHED")){
+  orderStatus = "NOT DESPATCHED";
+}
+
+// 🟠 PROCESSED
+else if(statuses.every(s => s === "PROCESSED")){
+  orderStatus = "PROCESSED";
+}
+else if(statuses.every(s => s === "PENDING APPROVAL")){
+  orderStatus = "PENDING APPROVAL";
+}
+
+// ⚪ DEFAULT
+else{
+  orderStatus = "APPROVED";
+}
+  const superEditState = getSuperEditState(orderNo);
+  let partsHTML = data.map((r, idx)=>{
+  const rowKey = `${r.PartNo || "PART"}__${idx}`;
+  const rowEdit = superEditState[rowKey] || {};
+  const reviewQty = getEffectiveQty(r);
+  const billedQty = Number(r.BilledQty || 0);
+  const isRemoved = !!rowEdit.removed;
+  const pendingQty = Math.max(0, reviewQty - billedQty);
+
+  if(isSuper && isRemoved){
+    return "";
+  }
+
+  return `
+  <tr class="text-xs" style="border-bottom: 1px solid rgba(170,205,220,0.16);">
+  
+    <td class="p-2">${r.PartNo}</td>
+    <td class="text-left px-2">${r.Description || "-"}</td>
+    <td>${reviewQty}</td>
+    <td>${r.BilledQty || 0}</td>
+        <td style="color:${
+          pendingQty > 0 
+            ? '#92400e'   /* pending → amber */
+            : '#065f46'   /* completed → green */
+        }; font-weight:600;">
+          ${pendingQty}
+        </td>
+    <td class="px-4 py-3 text-right" style="color: var(--pc-secondary); font-weight:600;">
+  ₹ ${getEffectiveValue(r).toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+</td>
+  
+<td>
+  <span class="px-2 py-1 rounded text-xs font-semibold"
+    style="
+      background:${
+        r.Status === "DISPATCHED" ? "#d1fae5" :
+        r.Status === "PROCESSED" ? "#fef3c7" :
+        r.Status === "NOT DESPATCHED" ? "#dbeafe" :
+        "#fde2e2"
+      };
+      color:${
+        r.Status === "DISPATCHED" ? "#065f46" :
+        r.Status === "PROCESSED" ? "#92400e" :
+        r.Status === "NOT DESPATCHED" ? "#1e3a8a" :
+        "#7f1d1d"
+      };
+    ">
+    ${(r.Status || "").toUpperCase()}
+  </span>
+</td>
+    <td>${formatDate(r.ProcessedDate)}</td>
+    <td>${formatDate(r.OrderRegDt)}</td>
+
+    <td>${r.BillNo || "-"}</td>
+    <td>${formatDate(r.BillingDt)}</td>
+    <td>${r.TransportName || "-"}</td>
+    <td>${r.Docket || "-"}</td>
+    ${isSuper ? `
+      <td>
+        <input type="number" min="0"
+          value="${reviewQty}"
+          onchange="saveEditedQty('${orderNo}','${r.id || ""}','${r.PartNo || ""}','${r.created_at || ""}', this.value, '${r.Qty || 0}', '${r.Value || 0}')"
+          class="pc-field w-[20px] text-center text-xs px-1" />
+      </td>
+      <td>
+        <button onclick="removeSuperRow('${orderNo}','${rowKey}')"
+          class="px-2 py-1 rounded-md text-xs font-semibold transition-all duration-150 hover:-translate-y-[1px] active:translate-y-0"
+          style="background:#fee2e2;color:#7f1d1d;border:1px solid #fecaca; box-shadow:0 4px 10px rgba(127,29,29,0.16);">
+          Remove
+        </button>
+      </td>
+    ` : ""}
+    </tr>
+    `;
+  }).join("");
+
+
+const isAdmin = user.Branch === "HQ";
+const orderComments = getOrderComments({ items: data, OrderComments: order.OrderComments });
+const commentPalette = ["#fef3c7", "#dbeafe", "#dcfce7", "#fce7f3", "#ede9fe", "#e0f2fe", "#f1f5f9", "#fee2e2"];
+const commentByColor = {};
+let commentColorIndex = 0;
+const commentsHTML = orderComments.length
+  ? orderComments.map(c => `
+      <div class="px-3 py-2 rounded-lg text-xs" style="background:${commentByColor[c.by || ""] || (commentByColor[c.by || ""] = commentPalette[(commentColorIndex++) % commentPalette.length])}; border:1px solid var(--pc-border);">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-semibold">${c.by || "-"}</span>
+          <span style="color: var(--pc-text-muted);">=&gt;</span>
+          <span>"${c.text || ""}"</span>
+          <span class="ml-auto text-[11px]" style="color: var(--pc-text-muted);">${formatDateTime(c.at || "")}</span>
+          ${c.attachmentName
+            ? `<a href="${getCommentAttachmentHref(c.attachmentUrl)}" target="_blank" class="text-[11px] font-medium" style="color:#2563eb;">📎 ${c.attachmentName}</a>`
+            : ""}
+        </div>
+      </div>
+    `).join("")
+  : `<div class="text-xs" style="color: var(--pc-text-muted);">No comments yet.</div>`;
+let superApproverOptions = `<option value="">Change Approver</option>`;
+
+if(isSuper){
+  const { data: superUsers } = await db
+    .from("users")
+    .select("Name")
+    .eq("Role", "super");
+
+  if(superUsers && superUsers.length){
+    superApproverOptions += superUsers
+      .map(u => `<option value="${u.Name}" ${u.Name === order.ApprovedBy ? "selected" : ""}>${u.Name}</option>`)
+      .join("");
+  }
+}
+
+
+
+let actionButtons = "";
+
+if(isSuper){
+  actionButtons = `
+    <div class="flex gap-2 items-center flex-wrap justify-end">
+      <div class="flex gap-2 items-center mr-3">
+        <button onclick="sendToApprover('${orderNo}')"
+          class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+          style="background:#2563eb;color:white;">
+          Send
+        </button>
+        <select id="changeApprover" class="pc-field w-[190px] text-sm">
+          ${superApproverOptions}
+        </select>
+      </div>
+
+      <button onclick="approveOrder('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#16a34a;color:white;">
+        Approve
+      </button>
+
+      <button onclick="updateApproval('${orderNo}','Rejected')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#dc2626;color:white;">
+        Reject
+      </button>
+
+      <button onclick="downloadOrder('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#475569;color:white;">
+        Download
+      </button>
+
+      <button onclick="printOrderDetails('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#0f766e;color:white;">
+        Print
+      </button>
+
+      <button id="commentActionBtn" onclick="handleCommentAction('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#4b5563;color:white;">
+        Comment
+      </button>
+
+      <button onclick="goBack()"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#e2e8f0;color:#0f172a;">
+        Back
+      </button>
+
+    </div>
+  `;
+}
+else{
+  actionButtons = `
+    <div class="flex gap-2 items-center flex-wrap">
+
+      ${isAdmin ? `
+        <div class="flex gap-2 items-center">
+          <input
+            id="processOrderNo"
+            value="${orderNo}"
+            class="pc-field w-[120px] h-[38px] text-sm"
+          />
+
+          <button onclick="processOrder('${orderNo}')"
+            class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+            style="background:#2563eb;color:white;">
+            Process
+          </button>
+        </div>
+      ` : ""}
+
+      <button onclick="downloadOrder('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#4b5563;color:white;">
+        Download
+      </button>
+
+      <button onclick="printOrderDetails('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#0f766e;color:white;">
+        Print
+      </button>
+
+      <button id="commentActionBtn" onclick="handleCommentAction('${orderNo}')"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#4b5563;color:white;">
+        Comment
+      </button>
+
+      <button onclick="goBack()"
+        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
+        style="background:#f3f4f6;color:#111827;">
+        Back
+      </button>
+
+    </div>
+  `;
+}
+
+
+
+
+
+
+
+    
+document.getElementById("main").innerHTML = `
+<div class="space-y-6">
+
+  <!-- ================= HEADER ================= -->
+
+
+
+<!-- ================= PROCESS BAR (HQ ONLY) ================= -->
+
+
+<div class="relative pc-section">
+
+  <div class="flex justify-between items-center flex-wrap gap-4">
+
+    <!-- ORDER DETAILS -->
+    <div class="px-3 py-2 rounded-lg"
+      style="background:linear-gradient(135deg, rgba(129,166,198,0.20), rgba(95,136,168,0.14)); border:1px solid var(--pc-border); box-shadow: 0 8px 18px rgba(15,23,42,0.12);">
+      <p class="text-sm font-semibold" style="color: var(--pc-text);">
+        Order Details
+      </p>
+      <p class="flex items-center gap-2 leading-tight">
+        <span class="text-base font-extrabold" style="color: #1e3a8a;">${orderNo}</span>
+        <span class="text-[10px] font-normal opacity-75" style="color: var(--pc-text-muted);">
+          • ${formatDateTime(order.created_at)}
+        </span>
+      </p>
+    </div>
+
+${actionButtons}
+  </div>
+
+</div>
+
+
+
+
+  <!-- ================= ORDER INFO ================= -->
+  <div class="relative pc-section">
+
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        ORDER SUMMARY
+      </span>
+    </div>
+
+    <div class="grid grid-cols-5 gap-2 text-xs mt-2">
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Order Type :</span>
+        <span class="font-semibold whitespace-nowrap">${order.OrderType || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Order For :</span>
+        <span class="font-semibold whitespace-nowrap">${order.OrderFor || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Branch :</span>
+        <span class="font-semibold whitespace-nowrap">${order.Branch || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Employee Name :</span>
+        <span class="font-semibold whitespace-nowrap">${order.EmployeeName || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Call ID :</span>
+        <span class="font-semibold whitespace-nowrap">${order.CallID || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Status :</span>
+        <span class="px-2 py-1 rounded text-xs font-semibold"
+                style="
+                  background:${
+                    orderStatus === "DISPATCHED" ? "#d1fae5" :
+                      orderStatus === "REJECTED" ? "#fde2e2" :
+                    orderStatus === "PARTIALLY DISPATCHED" ? "#fef3c7" :
+                    orderStatus === "PROCESSED" ? "#fef3c7" :
+                    orderStatus === "NOT DESPATCHED" ? "#dbeafe" :
+                    "#fde2e2"
+                  };
+                  color:${
+                    orderStatus === "DISPATCHED" ? "#065f46" :
+                      orderStatus === "REJECTED" ? "#7f1d1d" :
+                    orderStatus === "PARTIALLY DISPATCHED" ? "#92400e" :
+                    orderStatus === "PROCESSED" ? "#92400e" :
+                    orderStatus === "NOT DESPATCHED" ? "#1e3a8a" :
+                    "#7f1d1d"
+                  };
+                ">
+                ${orderStatus}
+              </span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Machine No :</span>
+        <span class="font-semibold whitespace-nowrap">${order.MachineNo || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Customer :</span>
+        <span class="font-semibold whitespace-nowrap">${order.CustomerName || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5" style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Machine Type :</span>
+        <span class="font-semibold whitespace-nowrap">${order.WarrantyStatus || "-"}</span>
+      </div>
+
+      <div class="rounded-lg px-2 py-1.5 flex items-center justify-between gap-1.5"
+        style="background:rgba(255,255,255,0.7); border:1px solid var(--pc-border);">
+        <span class="text-[11px] uppercase tracking-wide whitespace-nowrap" style="color: var(--pc-text-muted);">Approved By :</span>
+        <span class="font-semibold whitespace-nowrap">${order.ApprovedBy || "-"}</span>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="relative pc-section">
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        COMMENTS (${orderComments.length})
+      </span>
+    </div>
+
+    <div class="space-y-2 mt-2">
+      <div id="commentComposer" class="hidden">
+        <div class="relative">
+          <input id="orderCommentInput" class="pc-field pr-24" type="text" placeholder="Write a comment..." />
+          <button type="button" onclick="document.getElementById('commentAttachment').click()"
+            class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-sm"
+            style="background:#f1f5f9; border:1px solid var(--pc-border);">
+            📎
+          </button>
+          <input id="commentAttachment" type="file" class="hidden" onchange="updateCommentFileName(this)" />
+        </div>
+        <div id="commentFileName" class="text-[11px] mt-1" style="color: var(--pc-text-muted);">No file selected</div>
+        <div class="mt-2">
+          <button id="postCommentBtn" onclick="addOrderComment('${orderNo}')"
+            class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm hidden"
+            style="background:#2563eb;color:white;">
+            Post Comment
+          </button>
+        </div>
+      </div>
+      <div class="space-y-2">${commentsHTML}</div>
+    </div>
+  </div>
+
+
+  <!-- ================= PARTS TABLE ================= -->
+  <div class="relative pc-section">
+
+    <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+        PART DETAILS
+      </span>
+    </div>
+
+    <div class="overflow-x-auto mt-2">
+
+      <table class="w-full text-sm text-center border rounded-lg overflow-hidden">
+
+        <thead class="text-xs uppercase tracking-wider border-b"
+              style="background: var(--pc-warm); color: var(--pc-text);">
+
+          <tr>
+            <th class="py-2">Part</th>
+            <th class="text-left px-2">Description</th>
+            <th>Qty</th>
+            <th>Billed</th>
+            <th>Pending</th>
+            <th>Value</th>
+            <th>Status</th>
+            <th>Processed</th>
+            <th>Reg Dt</th>
+            <th>Bill No</th>
+            <th>Billing Dt</th>
+            <th>Transport</th>
+            <th>Docket</th>
+            ${isSuper ? "<th>Edit Qty</th><th>Remove Row</th>" : ""}
+          </tr>
+
+        </thead>
+
+        <tbody>
+          ${partsHTML}
+        </tbody>
+
+      </table>
+
+      ${isSuper ? `<div class="mt-2 text-[11px]" style="color: var(--pc-text-muted);">Super edits are review-only. Original order Qty in DB remains unchanged.</div>` : ""}
+
+      <div class="text-right mt-4 font-bold"
+           style="color: var(--pc-secondary);">
+        Total: ₹ ${total.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+`;
+
+// ✅ ADD THIS RIGHT HERE
+setTimeout(() => {
+  document.getElementById("processOrderNo")?.focus();
+}, 100);
+
+    
+}
+
+  
+function renderHQ(status){
+
+const data = window.HQ_DATA.filter(o=> status==="All" || o.Status===status);
+
+let html = `
+<table class="w-full text-sm bg-gray-800 text-center">
+<thead class="text-yellow-400 text-center">
+<tr>
+<th>Date</th>
+<th>Branch</th>
+<th>Machine</th>
+<th>Parts</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+`;
+
+data.forEach((o,i)=>{
+
+const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+html += `
+<tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
+<td>${formatDateTime(o.created_at)}</td>
+<td class="text-center">${o.Branch}</td>
+<td class="text-center">${o.MachineNo}</td>
+<td>${o.items.length}</td>
+<td>₹ ${total}</td>
+<td class="${
+  orderStatus === "DISPATCHED" ? "text-green-400" :
+  orderStatus === "PARTIALLY DISPATCHED" ? "text-yellow-400" :
+  orderStatus === "PROCESSED" ? "text-yellow-400" :
+  orderStatus === "NOT DESPATCHED" ? "text-blue-400" :
+  "text-pink-400"
+}">
+  ${orderStatus}
+</td>
+</tr>
+
+
+`;
+});
+
+html += "</tbody></table>";
+
+document.getElementById("hqTable").innerHTML = html;
+}
+
+function toggleHQ(i){
+document.getElementById("hq-"+i).classList.toggle("hidden");
+}
+
+// ---------- PROCESS ----------
+async function processOrder(orderNo){
+
+  const inputOrderNo = document.getElementById("processOrderNo").value.trim();
+
+  if(!inputOrderNo){
+    return showPopup("Enter Order No ❗");
+  }
+
+  // ✅ SAME ORDER CHECK
+  if(inputOrderNo === orderNo){
+    return showPopup("Already same Order No ❗");
+  }
+
+  // ✅ 🔥 ADD THIS BLOCK HERE
+  const { data: existing } = await db
+    .from("requests")
+    .select("OrderNo")
+    .eq("OrderNo", inputOrderNo);
+
+  if(existing && existing.length > 0){
+    return showPopup("Order No already exists ❗");
+  }
+
+  // ⬇️ THIS WAS ALREADY THERE
+  showLoader();
+
+  const { error } = await db
+    .from("requests")
+    .update({ 
+      OrderNo: inputOrderNo,
+      Status: "Processed"
+    })
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(error){
+    console.error(error);
+      
+    return showPopup("Error updating Order ❗");
+  }
+
+  showPopup("Order Updated & Processed ✅");
+
+  loadAdmin("Processed");
+}
+
+
+async function rejectOrder(orderNo){
+
+  showLoader();
+
+  const { error } = await db
+    .from("requests")
+    .update({
+      Status: "Rejected"
+    })
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(error){
+    console.error(error);
+    return showPopup("Error rejecting order ❗");
+  }
+
+  closePopup();
+  showPopup("Order Rejected ❌");
+
+  // ✅ Move to Processed tab
+  loadAdmin("Processed");
+}
+
+
+    
+
+function showManualCustomerPopup(machineNo){
+
+const popup = document.getElementById("popup");
+const msg = document.getElementById("popupMsg");
+
+msg.innerHTML = `
+<div class="space-y-4 text-center">
+
+<p class="font-semibold" style="color:#b45309;">
+Machine not found ❗
+</p>
+
+<p class="text-sm" style="color: var(--pc-text-muted);">
+Enter Customer Name
+</p>
+
+<input id="manualCustomer"
+  class="pc-field w-full text-center"
+  placeholder="Customer Name"/>
+
+</div>
+`;
+
+// ✅ BUTTONS BELOW (clean separation)
+document.getElementById("popupActions").innerHTML = `
+<div class="flex gap-3 justify-center w-full">
+
+<button onclick="saveNewMachine('${machineNo}')"
+  class="order-action-btn px-5 py-2 rounded min-w-[100px]"
+  style="background:#16a34a;color:white;">
+  Save
+</button>
+
+<button onclick="closePopup()"
+  class="order-action-btn px-5 py-2 rounded min-w-[100px]"
+  style="background:#e2e8f0;color:#0f172a;">
+  Cancel
+</button>
+
+</div>
+`;
+
+document.getElementById("popup").classList.remove("hidden");
+
+// autofocus
+setTimeout(()=>{
+  document.getElementById("manualCustomer")?.focus();
+},100);
+}
+
+
+
+async function saveNewMachine(machineNo){
+
+const customer = document.getElementById("manualCustomer").value.trim();
+
+if(!customer){
+  showPopup("Enter customer name");
+  return;
+}
+
+// save to DB
+const { error } = await db
+.from("machine_master")
+.insert([{
+  MachineNo: machineNo,
+  CustomerName: customer
+}]);
+
+if(error){
+  console.error(error);
+  showPopup("Error saving machine");
+  return;
+}
+
+// update UI
+document.getElementById("customerName").value = customer;
+
+closePopup();
+showPopup("Saved ✅");
+}
+
+
+
+
+document.addEventListener("change", async function(e){
+
+  // ✅ STATUS REPORT
+  if(e.target.id === "uploadExcel"){
+
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const json = XLSX.utils.sheet_to_json(sheet);
+      
+    processExcelData(json);
+  }
+
+
+// ✅ PARTS BULK UPLOAD
+// ✅ PARTS BULK UPLOAD (WITH HEADER CHECK)
+if(e.target.id === "uploadPartsExcel"){
+
+  window.uploadFile = e.target.files[0];
+
+  if(!window.uploadFile) return;
+
+  // ASK USER
+document.getElementById("popupMsg").innerHTML = `
+<div class="space-y-3 text-left">
+
+  <p class="font-semibold">Upload Excel File</p>
+
+  <p class="text-sm" style="color: var(--pc-text-muted);">
+    Please confirm if your file contains a header row.
+  </p>
+
+  <div class="text-xs p-3 rounded-lg"
+       style="background: rgba(129,166,198,0.12); border:1px solid var(--pc-border);">
+
+    <p class="font-semibold mb-1">Expected Format:</p>
+    <p>Column 1 → Part No.</p>
+    <p>Column 2 → Qty</p>
+
+  </div>
+
+</div>
+`;
+
+  document.getElementById("popupActions").innerHTML = `
+    <div class="flex gap-3">
+
+      <button onclick="handlePartsUpload(true)"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: var(--pc-secondary); color:white;">
+        Yes
+      </button>
+
+      <button onclick="handlePartsUpload(false)"
+        class="px-5 py-2 rounded-lg font-semibold"
+        style="background: #e5e7eb;">
+        No
+      </button>
+
+    </div>
+  `;
+
+  document.getElementById("popup").classList.remove("hidden");
+}
+    
+  // ✅ INWARD REPORT (FOR FUTURE)
+  if(e.target.id === "uploadInward"){
+    showPopup("Inward Upload Coming Soon 🚧");
+  }
+
+});
+  
+  
+
+async function processExcelData(rows){
+
+  showLoader();
+
+  let updated = 0;
+  let skipped = 0;
+
+  for(const r of rows){
+    console.log("🟡 RAW EXCEL ROW:", r);
+    const orderNo = r["Order No"]?.toString().trim().toUpperCase();
+    const partNo = r["Material No"]?.toString().trim().toUpperCase();
+    console.log("📦 Excel OrderNo:", orderNo);
+    console.log("🔩 Excel PartNo:", partNo);
+    
+    const status = r["Status"]?.toString().trim();
+
+    // ❗ SKIP INVALID ROWS
+    if(!orderNo || !partNo){
+      skipped++;
+      continue;
+    }
+
+    // 🔍 CHECK IF MATCH EXISTS FIRST (SAFE UPDATE)
+    const { data: existing } = await db
+      .from("requests")
+      .select("*")
+      .eq("OrderNo", orderNo)
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
+      .maybeSingle();
+      console.log("🧾 DB MATCH RESULT:", existing);
+   if(!existing){
+      console.log("❌ NO MATCH FOUND");
+      console.log("Excel:", orderNo, partNo);
+      skipped++;
+      continue;
+    } else {
+      console.log("✅ MATCH FOUND");
+      console.log("DB Row:", existing);
+    }
+
+    // ✅ UPDATE ONLY MATCHED ROW
+    const { error } = await db
+      .from("requests")
+      .update({
+        Status: status || "Processed",
+
+        ProcessedDate: new Date().toISOString(),
+
+        OrderRegDt: r["Order Reg. Dt"] || "",
+        DeliveryNo: r["Delivery No"] || "",
+        BillNo: r["BillNo & Image"] || "",
+        BillingDt: r["Billing Dt"] || "",
+        BilledQty: Number(r["Billed Qty"] || 0),
+        TransportName: r["Transport Name"] || "",
+        TransportMode: r["Transport Mode"] || "",
+        Docket: r["Docket"] || "",
+        PackingDetail: r["Packing Detail"] || "",
+        EWayBillNo: r["E-Way Bill No"] || "",
+        GSTInvoiceNo: r["GST Invoice No."] || ""
+        
+      })
+      .eq("OrderNo", orderNo)
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase());
+
+    if(!error){
+      updated++;
+    } else {
+      console.error(error);
+      skipped++;
+    }
+  }
+
+  hideLoader();
+
+  showPopup(`Upload Complete ✅\nUpdated: ${updated}\nSkipped: ${skipped}`);
+
+  loadAdmin(window.activeTab);
+}
+
+
+
+
+async function processPartsUploadFlexible(rows){
+
+  cancelUploadFlag = false;
+
+  showLoader();
+
+  let success = 0;
+  let failed = 0;
+
+  // ✅ MERGE DUPLICATES
+  const merged = {};
+
+  rows.forEach(r=>{
+    const part = r[0]?.toString().trim().toUpperCase();
+    const qty = Number(r[1]);
+
+    if(!part || !qty) return;
+
+    if(!merged[part]){
+      merged[part] = 0;
+    }
+
+    merged[part] += qty;
+  });
+
+  const finalRows = Object.entries(merged);
+
+  // ✅ SHOW PROGRESS UI
+  document.getElementById("uploadProgress").classList.remove("hidden");
+
+  document.getElementById("pTotal").innerText = finalRows.length;
+
+  let processed = 0;
+
+  for(const [partNo, qty] of finalRows){
+
+    if(cancelUploadFlag){
+      showPopup("Upload Cancelled ❗", "warning");
+      break;
+    }
+
+    const { data } = await db
+      .from("part_master")
+      .select("*")
+      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
+      .maybeSingle();
+
+    if(!data){
+      failed++;
+    } else {
+
+      addRow();
+
+      const tr = document.querySelector("#tbody tr:last-child");
+
+      tr.querySelector(".part").value = partNo;
+      tr.querySelector(".qty").value = qty;
+
+      tr.querySelector(".desc").innerText = data.Description;
+      tr.querySelector(".dnp").innerText = data.DNP;
+      tr.querySelector(".cat").innerText = data.Cat1;
+
+      calc(tr);
+
+      success++;
+    }
+
+    processed++;
+
+    // ✅ UPDATE PROGRESS
+    const percent = Math.floor((processed / finalRows.length) * 100);
+
+    document.getElementById("progressBar").style.width = percent + "%";
+    document.getElementById("pSuccess").innerText = success;
+    document.getElementById("pFailed").innerText = failed;
+    document.getElementById("pRemaining").innerText =
+      finalRows.length - processed;
+
+    document.getElementById("progressText").innerText =
+      `Processing ${processed}/${finalRows.length}`;
+
+    await new Promise(r => setTimeout(r, 20));
+  }
+
+  hideLoader();
+
+  setTimeout(()=>{
+    document.getElementById("uploadProgress").classList.add("hidden");
+  }, 800);
+
+  showPopup(
+    `Upload Complete ✅\n\n✔ Uploaded: ${success}\n❌ Failed: ${failed}`,
+    success > 0 ? "success" : "error"
+  );
+}
+
+async function handlePartsUpload(hasHeader){
+
+  closePopup();
+
+  const file = window.uploadFile;
+  if(!file) return;
+
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data);
+
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+
+  // 👇 IMPORTANT CHANGE
+  let rows = XLSX.utils.sheet_to_json(sheet, {
+    header: 1   // returns array format
+  });
+
+  // ❗ REMOVE HEADER ROW IF USER SAID YES
+  if(hasHeader){
+    rows.shift();
+  }
+
+  processPartsUploadFlexible(rows);
+}
+    
+
+async function debugDB(){
+
+  const { data } = await db.from("requests").select("OrderNo, PartNo");
+
+  console.log("📊 DB DATA SAMPLE:");
+  data.slice(0,20).forEach(r=>{
+    console.log("DB →", r.OrderNo, "|", r.PartNo);
+  });
+}  
+
+function confirmReject(orderNo){
+
+  document.getElementById("popupMsg").innerText =
+    "Do you want to reject this order?";
+
+  document.getElementById("popupActions").innerHTML = `
+    <div class="flex gap-3">
+
+      <button onclick="rejectOrder('${orderNo}')"
+        class="px-5 py-2 rounded"
+        style="background:#ef4444; color:white;">
+        Yes
+      </button>
+
+      <button onclick="closePopup()"
+        class="px-5 py-2 rounded"
+        style="background:#e5e7eb;">
+        No
+      </button>
+
+    </div>
+  `;
+
+  document.getElementById("popup").classList.remove("hidden");
+}
+
+
+
+function handleUniversalSearch(value){
+
+  const search = value.toLowerCase();
+
+  if(!search){
+    refreshCurrentView();
+    return;
+  }
+
+  const filtered = GLOBAL_DATA.filter(r => {
+
+    return (
+      (r.OrderNo || "").toLowerCase().includes(search) ||
+      (r.PartNo || "").toLowerCase().includes(search) ||
+      (r.CustomerName || "").toLowerCase().includes(search) ||
+      (r.MachineNo || "").toLowerCase().includes(search) ||
+      (r.Branch || "").toLowerCase().includes(search) ||
+      (r.OrderType || "").toLowerCase().includes(search) ||
+      (r.Status || "").toLowerCase().includes(search)
+    );
+
+  });
+
+  renderSearchResults(filtered);
+}
+
+
+
+function renderSearchResults(data){
+
+  const grouped = {};
+
+  data.forEach(r=>{
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = { ...r, items:[] };
+    }
+    grouped[r.OrderNo].items.push(r);
+  });
+
+  const orders = Object.values(grouped);
+
+  let html = `
+  <div class="pc-section">
+
+    <div class="text-sm font-semibold mb-3">
+      🔍 Search Results (${orders.length})
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="track-table w-full text-sm text-center border rounded-lg">
+
+        <thead class="text-xs uppercase">
+          <tr>
+            <th>Date</th>
+            <th>Order Type</th>
+            <th>Branch</th>
+            <th>Qty</th>
+            <th>Value</th>
+            <th>Order No</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody>
+  `;
+
+  orders.forEach(o=>{
+    const statuses = o.items.map(x => (x.Status || "").toString().trim().toUpperCase());
+    const isRejected = statuses.every(s => s === "REJECTED") || statuses.includes("REJECTED");
+    const isPendingApproval = statuses.every(s => s === "PENDING APPROVAL" || s === "APPROVAL PENDING");
+    const isApproved = statuses.every(s => s === "APPROVED" || s === "PENDING");
+    const tableStatus = isRejected
+      ? "Rejected"
+      : isPendingApproval
+        ? "Pending Approval"
+        : isApproved
+          ? "Approved"
+          : (o.items[0].Status || "Pending");
+
+    const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+    html += `
+    <tr onclick="openOrderView('${o.OrderNo}')"
+    class="cursor-pointer hover:bg-gray-100">
+
+      <td>${formatDateTime(o.created_at)}</td>
+      <td>
+  <span class="px-2 py-1 rounded-full text-xs font-semibold"
+    style="
+      background:${
+        o.OrderType === 'VOR' ? '#fef3c7' :
+        o.OrderType === 'SOP' ? '#dbeafe' :
+        o.OrderType === 'ZMAC' ? '#e0e7ff' :
+        '#ede9fe'
+      };
+      color:${
+        o.OrderType === 'VOR' ? '#92400e' :
+        o.OrderType === 'SOP' ? '#1e3a8a' :
+        o.OrderType === 'ZMAC' ? '#3730a3' :
+        '#5b21b6'
+      };
+    ">
+    ${o.OrderType || "-"}
+  </span>
+</td>
+      <td>${o.Branch || "-"}</td>
+      <td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}</td>
+      <td>₹ ${total.toFixed(2)}</td>
+      <td class="font-semibold">
+        ${o.OrderNo}
+        ${getOrderCommentCount(o) > 0
+          ? `<span class="ml-1 px-2 py-[2px] rounded-full text-[10px]" style="background:#e0e7ff;color:#3730a3;">💬 ${getOrderCommentCount(o)}</span>`
+          : ""}
+      </td>
+      <td>
+        <span class="px-2 py-1 rounded text-xs font-semibold"
+          style="
+            background:${
+              tableStatus === "Approved" ? "#d1fae5" :
+              tableStatus === "Rejected" ? "#fde2e2" :
+              "#fef3c7"
+            };
+            color:${
+              tableStatus === "Approved" ? "#065f46" :
+              tableStatus === "Rejected" ? "#7f1d1d" :
+              "#92400e"
+            };
+          ">
+          ${tableStatus}
+        </span>
+      </td>
+
+    </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  </div>
+  `;
+
+ const targetContainer =
+   document.getElementById("resultsContainer") ||
+   document.getElementById("main");
+
+ if(targetContainer){
+   targetContainer.innerHTML = html;
+ }
+}
+
+
+function clearUniversalSearch(){
+  document.getElementById("universalSearch").value = "";
+  refreshCurrentView();
+}
+
+CURRENT_PAGE = 1;
+
+async function loadSuper(activeTab = "PendingApproval", skipReset = false){
+
+  if(!skipReset){
+    CURRENT_PAGE = 1;
+  }
+
+  window.activeTab = activeTab;
+  updateMenuHighlight();
+  showLoader();
+
+  const user = getUser();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("ApprovedBy", user.Name)   // 🔥 KEY FILTER
+    .order("created_at",{ascending:false});
+
+  // ✅ FORCE STATUS ALIGNMENT FOR NOT-YET-APPROVED ORDERS
+  const pendingApprovalOrderNos = [...new Set(
+    (data || [])
+      .filter(r => isPendingApprovalStatus(r.ApprovalStatus))
+      .map(r => r.OrderNo)
+  )];
+
+  for (const orderNo of pendingApprovalOrderNos){
+    await db
+      .from("requests")
+      .update({ Status: "PENDING APPROVAL", ApprovalStatus: "PendingApproval" })
+      .eq("OrderNo", orderNo);
+  }
+
+  if(pendingApprovalOrderNos.length){
+    const { data: refreshed } = await db
+      .from("requests")
+      .select("*")
+      .eq("ApprovedBy", user.Name)
+      .order("created_at",{ascending:false});
+    GLOBAL_DATA = refreshed || [];
+  } else {
+    GLOBAL_DATA = data || [];
+  }
+  hideLoader();
+
+  // GROUP
+const grouped = {};
+(GLOBAL_DATA || []).forEach(r=>{
+
+  // ✅ ADD THIS LINE (MANDATORY FIX)
+  if(!r.ApprovalStatus || isPendingApprovalStatus(r.ApprovalStatus)){
+    r.ApprovalStatus = "PendingApproval";
+    r.Status = "PENDING APPROVAL";
+  }
+
+  if(!grouped[r.OrderNo]){
+    grouped[r.OrderNo] = { ...r, items:[] };
+  }
+  grouped[r.OrderNo].items.push(r);
+});
+
+  const orders = applyOrderSort(
+    Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  );
+
+  // FILTER TABS
+  let filtered;
+
+if(activeTab === "PendingApproval"){
+  filtered = orders.filter(o => 
+    o.items.some(x => {
+      const status = (x.Status || "").toString().trim().toUpperCase();
+      return status === "PENDING APPROVAL" || status === "APPROVAL PENDING" || isPendingApprovalStatus(x.ApprovalStatus);
+    })
+  );
+}
+else if(activeTab === "Approved"){
+  filtered = orders.filter(o => 
+    o.items.some(x => {
+      const status = (x.Status || "").toString().trim().toUpperCase();
+      return status === "APPROVED" || status === "PENDING";
+    })
+  );
+}
+else if(activeTab === "Rejected"){
+  filtered = orders.filter(o => 
+    o.items.some(x => {
+      const status = (x.Status || "").toString().trim().toUpperCase();
+      const approval = (x.ApprovalStatus || "").toString().trim().toUpperCase();
+      return status === "REJECTED" || approval === "REJECTED";
+    })
+  );
+}
+else if(activeTab === "All"){
+  filtered = orders.filter(o => 
+    o.items.some(x => 
+      x.ApprovedBy === getUser().Name
+    )
+  );
+}
+  else{
+    filtered = orders;
+  }
+
+  // PAGINATION
+const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+const paginatedOrders = filtered.slice(start, start + PAGE_SIZE);
+const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+
+    
+  // UI (reuse same table)
+  let html = `
+  <div class="space-y-4">
+    <div class="relative pc-section">
+      <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
+        <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+          ${activeTab.toUpperCase()} ORDERS
+        </span>
+      </div>
+
+      <div class="overflow-x-auto mt-2">
+        <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
+          <thead class="text-xs uppercase tracking-wider border-b"
+            style="background: var(--pc-warm); color: var(--pc-text);">
+            <tr>
+
+            
+            
+              <th>Date</th>
+              <th>Order Type</th>
+              <th>Customer</th>
+              <th>Branch</th>
+              <th>Qty</th>
+              <th>Value</th>
+              <th>Order No</th>
+              <th class="px-4 py-3 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  paginatedOrders.forEach(o=>{
+
+    const statuses = o.items.map(x => (x.Status || "").toString().trim().toUpperCase());
+    const isRejected = statuses.every(s => s === "REJECTED") || statuses.includes("REJECTED");
+    const isPendingApproval = statuses.every(s => s === "PENDING APPROVAL" || s === "APPROVAL PENDING");
+    const isApproved = statuses.every(s => s === "APPROVED" || s === "PENDING");
+    const tableStatus = isRejected
+      ? "Rejected"
+      : isPendingApproval
+        ? "Pending Approval"
+        : isApproved
+          ? "Approved"
+          : (o.items[0].Status || "Pending Approval");
+      
+    const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
+
+    html += `
+            <tr onclick="openOrderView('${o.OrderNo}')"
+            class="cursor-pointer transition hover:scale-[1.01]"
+            style="${
+              o.OrderType === 'VOR'
+                ? 'background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b;'
+                : ''
+            }">
+      <td>${formatDateTime(o.created_at)}</td>
+      <td>
+        <span class="px-2 py-1 rounded-full text-xs font-semibold"
+          style="
+            background:${
+              o.OrderType === 'VOR' ? '#fef3c7' :
+              o.OrderType === 'SOP' ? '#dbeafe' :
+              o.OrderType === 'ZMAC' ? '#e0e7ff' :
+              '#ede9fe'
+            };
+            color:${
+              o.OrderType === 'VOR' ? '#92400e' :
+              o.OrderType === 'SOP' ? '#1e3a8a' :
+              o.OrderType === 'ZMAC' ? '#3730a3' :
+              '#5b21b6'
+            };
+          ">
+          ${o.OrderType || "-"}
+        </span>
+      </td>
+      <td>${o.CustomerName || "Stock"}</td>
+      <td>${o.Branch}</td>
+      <td>${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}</td>
+      <td>₹ ${total.toLocaleString("en-IN")}</td>
+      <td>
+        ${o.OrderNo}
+        ${getOrderCommentCount(o) > 0
+          ? `<span class="ml-1 px-2 py-[2px] rounded-full text-[10px]" style="background:#e0e7ff;color:#3730a3;">💬 ${getOrderCommentCount(o)}</span>`
+          : ""}
+      </td>
+      <td class="px-4 py-3 text-center">
+      <span class="px-2 py-1 rounded text-xs font-semibold"
+        style="
+          background:${
+            tableStatus === "Approved" ? "#d1fae5" :
+            tableStatus === "Rejected" ? "#fde2e2" :
+            "#fef3c7"
+          };
+          color:${
+            tableStatus === "Approved" ? "#065f46" :
+            tableStatus === "Rejected" ? "#7f1d1d" :
+            "#92400e"
+          };
+        ">
+        ${tableStatus}
+      </span>
+    </td>
+    </tr>`;
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+
+
+
+
+<div class="flex justify-between items-center mt-2 px-2 py-0.5 rounded-md text-[11px]" style="background:linear-gradient(90deg, #2f3e4d, #3f556b); border:1px solid #5b748d; color:#f8fafc;">
+
+  <button onclick="changePage(-1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-surface); border:1px solid var(--pc-border); color:#0f172a;"
+    ${CURRENT_PAGE === 1 ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    ⬅ Prev
+  </button>
+
+  <span class="font-semibold tracking-wide leading-none">
+    Page ${CURRENT_PAGE} / ${totalPages}
+  </span>
+
+  <button onclick="changePage(1)"
+    class="px-2.5 py-0.5 rounded font-semibold text-[11px]"
+    style="background: var(--pc-secondary); color:white;"
+    ${CURRENT_PAGE >= totalPages ? "disabled opacity-50 cursor-not-allowed" : ""}>
+    Next ➡
+  </button>
+
+</div>
+
+
+
+      
+    </div>
+  </div>`;
+
+  document.getElementById("main").innerHTML = html;
+}
+
+
+async function openSuperOrder(orderNo){
+
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  const order = data[0];
+
+  let html = `
+  <div class="space-y-4">
+
+    <button onclick="loadSuper(window.activeTab)"
+      class="px-4 py-2 rounded bg-gray-200">
+      ← Back
+    </button>
+
+    <div class="pc-section">
+      <h3 class="font-bold mb-2">Order No: ${orderNo}</h3>
+
+      <div class="flex gap-3 mt-4">
+
+        <button onclick="updateApproval('${orderNo}','Approved')"
+          class="px-4 py-2 rounded bg-green-500 text-white">
+          Approve
+        </button>
+
+        <button onclick="updateApproval('${orderNo}','Rejected')"
+          class="px-4 py-2 rounded bg-red-500 text-white">
+          Reject
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+  `;
+
+  document.getElementById("main").innerHTML = html;
+}
+
+
+
+async function updateApproval(orderNo, status){
+
+  showLoader();
+  const user = getUser();
+
+  const approvalUpdateData = { ApprovalStatus: status };
+  if(status === "Approved"){
+    approvalUpdateData.Status = "Approved";
+    approvalUpdateData.ApprovedBySuper = user.Name || "";
+    approvalUpdateData.ApprovedAt = new Date().toISOString();
+  } else if(status === "Rejected"){
+    approvalUpdateData.Status = "Rejected";
+  }
+
+  const { error } = await db
+    .from("requests")
+    .update(approvalUpdateData)
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(error){
+    return showPopup("Update failed ❌");
+  }
+
+  showPopup("Updated successfully ✅");
+
+  loadSuper(window.activeTab);
+}
+
+async function sendToApprover(orderNo){
+  const approver = document.getElementById("changeApprover")?.value;
+  if(!approver){
+    return showPopup("Please select approver ❗");
+  }
+
+  showLoader();
+  const { error } = await db
+    .from("requests")
+    .update({ ApprovedBy: approver })
+    .eq("OrderNo", orderNo);
+  hideLoader();
+
+  if(error){
+    return showPopup("Failed to update approver ❌");
+  }
+
+  showPopup("Approver updated ✅");
+  openOrderView(orderNo);
+}
+
+function handleCommentAction(orderNo){
+  const composer = document.getElementById("commentComposer");
+  const postBtn = document.getElementById("postCommentBtn");
+
+  if(!composer) return;
+
+  if(composer.classList.contains("hidden")){
+    composer.classList.remove("hidden");
+    postBtn?.classList.remove("hidden");
+    document.getElementById("orderCommentInput")?.focus();
+    return;
+  }
+  composer.classList.add("hidden");
+  postBtn?.classList.add("hidden");
+}
+
+function updateCommentFileName(input){
+  const fileName = input?.files?.[0]?.name || "No file selected";
+  const label = document.getElementById("commentFileName");
+  if(label) label.textContent = fileName;
+}
+
+function getSuperEditState(orderNo){
+  if(!window.superReviewEdits) window.superReviewEdits = {};
+  if(!window.superReviewEdits[orderNo]) window.superReviewEdits[orderNo] = {};
+  return window.superReviewEdits[orderNo];
+}
+
+async function saveEditedQty(orderNo, rowId, partNo, createdAt, value, originalQty, originalValue){
+  const parsed = value === "" ? null : Math.max(0, Number(value || 0));
+  const baseQty = Number(originalQty || 0);
+  const baseValue = Number(originalValue || 0);
+  const unitValue = baseQty > 0 ? (baseValue / baseQty) : 0;
+  const recalculatedValue = parsed === null ? null : Number((unitValue * parsed).toFixed(2));
+
+  showLoader();
+  let query = db
+    .from("requests")
+    .update({ editedqty: parsed, editedvalue: recalculatedValue });
+
+  if(rowId){
+    query = query.eq("id", rowId);
+  }else{
+    query = query.eq("OrderNo", orderNo).eq("PartNo", partNo);
+    if(createdAt) query = query.eq("created_at", createdAt);
+  }
+
+  const { error } = await query;
+  hideLoader();
+
+  if(error){
+    return showPopup("Failed to save edited qty ❌");
+  }
+
+  openOrderView(orderNo);
+}
+
+function removeSuperRow(orderNo, rowKey){
+  const state = getSuperEditState(orderNo);
+  state[rowKey] = { ...(state[rowKey] || {}), removed: true };
+  openOrderView(orderNo);
+}
+
+async function addOrderComment(orderNo){
+  const input = document.getElementById("orderCommentInput");
+  const fileInput = document.getElementById("commentAttachment");
+  const text = (input?.value || "").trim();
+  if(!text){
+    return showPopup("Please enter comment ❗");
+  }
+
+  let attachmentUrl = "";
+  let attachmentName = "";
+  const file = fileInput?.files?.[0];
+  if(file){
+    attachmentName = file.name;
+    attachmentUrl = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const user = getUser();
+  const allRowsForComments = await db
+    .from("requests")
+    .select("OrderComments")
+    .eq("OrderNo", orderNo);
+
+  let targetRow = null;
+  const firstById = await db
+    .from("requests")
+    .select("id, OrderComments")
+    .eq("OrderNo", orderNo)
+    .order("id", { ascending: true })
+    .limit(1);
+
+  if(!firstById.error && firstById.data?.length){
+    targetRow = {
+      id: firstById.data[0].id,
+      OrderComments: firstById.data[0].OrderComments
+    };
+  }else{
+    const firstFallback = await db
+      .from("requests")
+      .select("OrderComments, created_at, PartNo")
+      .eq("OrderNo", orderNo)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if(firstFallback.data?.length){
+      targetRow = {
+        created_at: firstFallback.data[0].created_at,
+        PartNo: firstFallback.data[0].PartNo,
+        OrderComments: firstFallback.data[0].OrderComments
+      };
+    }
+  }
+
+  if(!targetRow){
+    return showPopup("Failed to add comment ❌ (Order row not found)");
+  }
+
+    const existing = getOrderComments({ items: allRowsForComments.data || [], OrderComments: targetRow.OrderComments });
+  existing.push({
+    by: user.Name || user.Role || "User",
+    text,
+    at: new Date().toISOString(),
+    attachmentName,
+    attachmentUrl
+  });
+
+  showLoader();
+  let updateQuery = db
+    .from("requests")
+    .update({ OrderComments: JSON.stringify(existing) });
+
+  if(targetRow.id !== undefined){
+    updateQuery = updateQuery.eq("id", targetRow.id);
+  }else{
+    updateQuery = updateQuery
+      .eq("OrderNo", orderNo)
+      .eq("created_at", targetRow.created_at)
+      .eq("PartNo", targetRow.PartNo);
+  }
+
+  const { error } = await updateQuery;
+  hideLoader();
+
+  if(error){
+    return showPopup("Failed to add comment ❌ (Please ensure OrderComments column exists in requests table)");
+  }
+  const composer = document.getElementById("commentComposer");
+  const postBtn = document.getElementById("postCommentBtn");
+  composer?.classList.add("hidden");
+  postBtn?.classList.add("hidden");
+  showPopup("Comment added ✅");
+  openOrderView(orderNo);
+}
+
+async function approveOrder(orderNo){
+  await updateApproval(orderNo, "Approved");
+}
+
+function goBack(){
+  const user = getUser();
+  if(user.Role === "super"){
+    loadSuper(window.activeTab || "PendingApproval", true);
+  } else if(user.Role === "admin" || user.Branch === "HQ"){
+    loadAdmin(window.activeTab || "Approved", true);
+  } else {
+    loadTrack("track", true);
+  }
+}
+
+function downloadOrder(orderNo){
+  downloadOrderExcel(orderNo);
+}
+
+function escapeHtml(value){
+  return (value ?? "")
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getPrintableStatusLabel(status){
+  const s = (status || "").toString().trim().toUpperCase();
+  if(s.includes("REJECT")) return "Rejected";
+  if(s.includes("PENDING APPROVAL") || s === "PENDINGAPPROVAL" || s === "APPROVAL PENDING") return "Pending Approval";
+  if(s === "APPROVED" || s === "PENDING") return "Approved";
+  if(s.includes("DISPATCH")) return s.includes("NOT") ? "Not Dispatched" : "Dispatched";
+  if(s === "PROCESSED") return "Processed";
+  return s || "Pending";
+}
+
+async function printOrderDetails(orderNo){
+  showLoader();
+  const { data, error } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+  hideLoader();
+
+  if(error || !data || !data.length){
+    return showPopup("Unable to generate print preview ❗");
+  }
+
+  const order = data[0];
+  const comments = getOrderComments({ items: data, OrderComments: order.OrderComments });
+  const totalQty = data.reduce((sum, r) => sum + getEffectiveQty(r), 0);
+  const totalPending = data.reduce((sum, r) => {
+    const pending = Math.max(0, getEffectiveQty(r) - Number(r.BilledQty || 0));
+    return sum + pending;
+  }, 0);
+  const totalValue = data.reduce((sum, r) => sum + getEffectiveValue(r), 0);
+  const overallStatus = getPrintableStatusLabel(order.Status || order.ApprovalStatus);
+
+  const summaryRows = [
+    ["Order Type", order.OrderType || "-"],
+    ["Order For", order.OrderFor || "-"],
+    ["Branch", order.Branch || "-"],
+    ["Employee Name", order.EmployeeName || "-"],
+    ["Call ID", order.CallID || "-"],
+    ["Status", overallStatus],
+    ["Machine No", order.MachineNo || "-"],
+    ["Customer", order.CustomerName || "-"],
+    ["Machine Type", order.WarrantyStatus || "-"],
+    ["Approved By", order.ApprovedBy || "-"]
+  ];
+
+  const partsRowsHtml = data.map(r => {
+    const qty = getEffectiveQty(r);
+    const billed = Number(r.BilledQty || 0);
+    const pending = Math.max(0, qty - billed);
+    return `
+      <tr>
+        <td>${escapeHtml(r.PartNo || "-")}</td>
+        <td class="left">${escapeHtml(r.Description || "-")}</td>
+        <td>${qty}</td>
+        <td>${billed}</td>
+        <td>${pending}</td>
+        <td class="right">₹ ${Number(getEffectiveValue(r) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+        <td>${escapeHtml(getPrintableStatusLabel(r.Status))}</td>
+        <td>${escapeHtml(formatDate(r.ProcessedDate))}</td>
+        <td>${escapeHtml(formatDate(r.OrderRegDt))}</td>
+        <td>${escapeHtml(r.BillNo || "-")}</td>
+        <td>${escapeHtml(formatDate(r.BillingDt))}</td>
+        <td>${escapeHtml(r.TransportName || "-")}</td>
+        <td>${escapeHtml(r.Docket || "-")}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const commentsHtml = comments.length
+    ? comments.map(c => `
+        <div class="comment-item">
+          <div><strong>${escapeHtml(c.by || "-")}</strong> — ${escapeHtml(c.text || "")}</div>
+          <div class="meta">${escapeHtml(formatDateTime(c.at || ""))}${c.attachmentName ? ` • Attachment: ${escapeHtml(c.attachmentName)}` : ""}</div>
+        </div>
+      `).join("")
+    : `<div class="comment-item">No comments available</div>`;
+
+  const summaryHtml = summaryRows.map(([label, val]) => `
+    <div class="summary-item"><span class="label">${escapeHtml(label)}:</span><span class="value">${escapeHtml(val)}</span></div>
+  `).join("");
+  const logoUrl = new URL("HDU4w-removebg-preview.png", window.location.href).href;
+
+  const printWindow = window.open("", "_blank", "width=900,height=1100");
+  if(!printWindow){
+    return showPopup("Popup blocked. Please allow popups to print/download PDF ❗");
+  }
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Parts Order Details - ${escapeHtml(orderNo)}</title>
+        <style>
+          @page { size: A4 portrait; margin: 14mm; }
+          body { font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 12px; line-height: 1.35; }
+          .doc { width: 100%; }
+          .head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+          .brand { display:flex; gap:12px; align-items:center; }
+          .brand img { width: 54px; height: auto; object-fit: contain; }
+          .brand h1 { font-size: 18px; margin:0; font-weight: 700; }
+          .brand p { margin:2px 0 0 0; color:#4b5563; font-size:11px; }
+          .title { text-align:right; }
+          .title h2 { margin:0; font-size:18px; letter-spacing:.4px; }
+          .title p { margin:4px 0 0 0; color:#4b5563; }
+          .divider { border-top:1px solid #9ca3af; margin:10px 0 12px; }
+          .meta-grid { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:6px 18px; margin-bottom:10px; }
+          .meta-grid div { display:flex; gap:6px; white-space:nowrap; }
+          .meta-grid .k { color:#374151; font-weight:600; min-width:110px; }
+          .section-title { margin:10px 0 6px; font-size:13px; font-weight:700; border-bottom:1px solid #d1d5db; padding-bottom:4px; }
+          .summary { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:6px 14px; margin-bottom:8px; }
+          .summary-item { display:flex; justify-content:space-between; gap:8px; border:1px solid #e5e7eb; padding:4px 6px; }
+          .summary-item .label { color:#374151; font-weight:600; white-space:nowrap; }
+          .summary-item .value { font-weight:600; text-align:right; width:100%; }
+          table { width:100%; border-collapse:collapse; font-size:10px; }
+          th, td { border:1px solid #d1d5db; padding:4px 5px; text-align:center; vertical-align:middle; }
+          th { font-weight:700; background:#f9fafb; }
+          td.left, th.left { text-align:left; }
+          td.right { text-align:right; }
+          .totals { margin-top:8px; border:1px solid #d1d5db; }
+          .totals div { display:flex; justify-content:space-between; padding:4px 8px; border-bottom:1px solid #e5e7eb; }
+          .totals div:last-child { border-bottom:none; font-weight:700; }
+          .comment-item { border:1px solid #e5e7eb; padding:6px 8px; margin-bottom:5px; }
+          .meta { color:#6b7280; font-size:10px; margin-top:2px; }
+          @media print { .no-print { display:none !important; } }
+        </style>
+      </head>
+      <body>
+        <div class="doc">
+          <div class="head">
+            <div class="brand">
+              <img src="${logoUrl}" alt="Company Logo" />
+              <div>
+                <h1>Parts Connect Portal</h1>
+                <p>Internal Parts Order & Approval Document</p>
+              </div>
+            </div>
+            <div class="title">
+              <h2>Parts Order Details</h2>
+              <p>Order ID: <strong>${escapeHtml(orderNo)}</strong></p>
+            </div>
+          </div>
+          <div class="divider"></div>
+
+          <div class="meta-grid">
+            <div><span class="k">Order Date & Time</span><span>${escapeHtml(formatDateTime(order.created_at))}</span></div>
+            <div><span class="k">Branch</span><span>${escapeHtml(order.Branch || "-")}</span></div>
+            <div><span class="k">Current Status</span><span>${escapeHtml(overallStatus)}</span></div>
+            <div><span class="k">Line Items</span><span>${data.length}</span></div>
+          </div>
+
+          <div class="section-title">Order Summary</div>
+          <div class="summary">${summaryHtml}</div>
+
+          <div class="section-title">Parts Details</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Part</th>
+                <th class="left">Description</th>
+                <th>Qty</th>
+                <th>Billed</th>
+                <th>Pending</th>
+                <th>Value</th>
+                <th>Status</th>
+                <th>Processed</th>
+                <th>Reg Dt</th>
+                <th>Bill No</th>
+                <th>Billing Dt</th>
+                <th>Transport</th>
+                <th>Docket</th>
+              </tr>
+            </thead>
+            <tbody>${partsRowsHtml}</tbody>
+          </table>
+
+          <div class="totals">
+            <div><span>Total Qty</span><span>${totalQty}</span></div>
+            <div><span>Total Pending Qty</span><span>${totalPending}</span></div>
+            <div><span>Total Value</span><span>₹ ${Number(totalValue || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+            <div><span>Number of line items</span><span>${data.length}</span></div>
+          </div>
+
+          <div class="section-title">Comments</div>
+          ${commentsHtml}
+
+          <div class="no-print" style="margin-top:14px; text-align:right;">
+            <button onclick="window.print()" style="padding:8px 12px; border:1px solid #9ca3af; border-radius:6px; background:#f8fafc; cursor:pointer;">Print / Save as PDF</button>
+          </div>
+        </div>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+}
+
+    
+    
+
+    
+
+function refreshCurrentView(){
+
+  const user = getUser();
+
+if(user.Role === "admin" || user.Branch === "HQ"){
+  loadAdmin(window.activeTab, true);   // ✅ PASS TRUE
+} else if(user.Role === "super"){
+  loadSuper(window.activeTab || "PendingApproval", true);
+} else {
+  loadTrack("track", true);            // ✅ PASS TRUE
+}
+}
+
+    
+function changePage(direction){
+
+  const user = getUser();
+
+  let grouped = {};
+
+  GLOBAL_DATA.forEach(r => {
+    if(!grouped[r.OrderNo]){
+      grouped[r.OrderNo] = [];
+    }
+    grouped[r.OrderNo].push(r);
+  });
+
+  let orders = Object.values(grouped);
+
+  if(user.Role === "admin" || user.Branch === "HQ"){
+
+    if(window.activeTab === "Approved"){
+      orders = orders.filter(o => 
+        o.some(x => {
+          const status = (x.Status || "").toString().trim().toUpperCase();
+          const approval = (x.ApprovalStatus || "").toString().trim().toUpperCase();
+          const pendingApproval = isPendingApprovalStatus(x.ApprovalStatus);
+          return (status === "APPROVED" || status === "PENDING")
+            && !pendingApproval
+            && approval !== "REJECTED"
+            && (approval === "APPROVED" || approval === "");
+        })
+      );
+    } else {
+      orders = orders.filter(o => 
+        o.some(x => {
+          const status = (x.Status || "").toString().trim().toUpperCase();
+          const approval = (x.ApprovalStatus || "").toString().trim().toUpperCase();
+          const pendingApproval = isPendingApprovalStatus(x.ApprovalStatus);
+          return status !== "APPROVED"
+            && status !== "PENDING"
+            && status !== "PENDING APPROVAL"
+            && !pendingApproval
+            && approval !== "REJECTED";
+        })
+      );
+    }
+
+  } else {
+    orders = orders.filter(o => 
+      o.every(x => x.Branch === user.Branch)
+    );
+  }
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+
+  CURRENT_PAGE += direction;
+
+  if(CURRENT_PAGE < 1) CURRENT_PAGE = 1;
+  if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
+
+  // 🔥 THIS IS THE REAL FIX
+  if(user.Role === "admin" || user.Branch === "HQ"){
+    loadAdmin(window.activeTab, true);
+  } else {
+    loadTrack("track", true);
+  }
+}
+    
+
+function changePage(step){
+
+  const newPage = CURRENT_PAGE + step;
+  if(newPage < 1) return;
+
+  CURRENT_PAGE = newPage;
+
+  const user = getUser();
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
+  const isSuper = user.Role === "super";
+
+  if(isAdmin){
+    loadAdmin(window.activeTab, true);
+  }
+  else if(isSuper){
+    loadSuper(window.activeTab, true); // ✅ ADD THIS
+  }
+  else{
+    loadTrack("track", true);
+  }
+}
+    
+
+
+
+    
+    
+
+async function downloadOrderExcel(orderNo){
+
+  showLoader();
+
+  const { data } = await db
+    .from("requests")
+    .select("*")
+    .eq("OrderNo", orderNo);
+
+  hideLoader();
+
+  if(!data || !data.length){
+    return showPopup("No data found ❗");
+  }
+
+  // FORMAT DATA FOR EXCEL
+  const excelData = data.map(r => ({
+    "Order No": r.OrderNo,
+    "Branch": r.Branch,
+    "Order Type": r.OrderType,
+    "Order For": r.OrderFor,
+    "Machine No": r.MachineNo,
+    "Customer": r.CustomerName,
+    "Part No": r.PartNo,
+    "Description": r.Description,
+    "Qty": getEffectiveQty(r),
+    "Billed Qty": r.BilledQty || 0,
+    "Pending Qty": getEffectiveQty(r) - (r.BilledQty || 0),
+    "Value": getEffectiveValue(r),
+    "Status": r.Status,
+    "Processed Date": r.ProcessedDate || "",
+    "Bill No": r.BillNo || "",
+    "Transport": r.TransportName || "",
+    "Docket": r.Docket || ""
+  }));
+
+  // CREATE SHEET
+  const ws = XLSX.utils.json_to_sheet(excelData);
+
+  // AUTO COLUMN WIDTH
+  const colWidths = Object.keys(excelData[0]).map(key => ({
+    wch: Math.max(key.length, 15)
+  }));
+  ws['!cols'] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Order");
+
+  // DOWNLOAD
+  XLSX.writeFile(wb, `Order_${orderNo}.xlsx`);
+}
+
+function getSortableCellValue(text){
+  const raw = (text || "").trim();
+  const numeric = Number(raw.replace(/[^0-9.-]/g, ""));
+  if(raw && !Number.isNaN(numeric) && /[0-9]/.test(raw)){
+    return { type: "number", value: numeric };
+  }
+  return { type: "string", value: raw.toLowerCase() };
+}
+
+document.addEventListener("click", function(evt){
+  const th = evt.target.closest("th");
+  if(!th || !th.closest("thead")) return;
+
+  const table = th.closest("table");
+  const tbody = table?.querySelector("tbody");
+  if(!tbody) return;
+
+  const headerRow = th.parentElement;
+  const headers = Array.from(headerRow.children);
+  const colIndex = headers.indexOf(th);
+  if(colIndex < 0) return;
+
+  const current = th.classList.contains("sort-asc") ? "asc"
+    : th.classList.contains("sort-desc") ? "desc"
+    : "";
+  const next = current === "asc" ? "desc" : "asc";
+  const headerKey = (th.innerText || "").replace(/[▲▼]/g, "").trim().toUpperCase();
+
+  headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
+  th.classList.add(next === "asc" ? "sort-asc" : "sort-desc");
+
+  if(table.classList.contains("track-table")){
+    TABLE_SORT_STATE = { key: headerKey, dir: next };
+    CURRENT_PAGE = 1;
+    refreshCurrentView();
+    return;
+  }
+
+  const rows = Array.from(tbody.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const aText = a.children[colIndex]?.innerText || "";
+    const bText = b.children[colIndex]?.innerText || "";
+    const av = getSortableCellValue(aText);
+    const bv = getSortableCellValue(bText);
+
+    let result = 0;
+    if(av.type === "number" && bv.type === "number"){
+      result = av.value - bv.value;
+    }else{
+      result = av.value.localeCompare(bv.value);
+    }
+    return next === "asc" ? result : -result;
+  });
+
+  rows.forEach(r => tbody.appendChild(r));
+});
+    
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</body>
+</html>
