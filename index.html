@@ -1,6 +1,9 @@
     <!DOCTYPE html>
 <html>
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 
   <title>Parts Connect Portal</title>
         <link rel="icon" type="image/png" href="F.ico">
@@ -11,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     
 </head>
 
@@ -135,64 +138,36 @@ body {
     
 .menu-btn {
   position: relative;
-  padding: 10px 18px;
-  background: rgba(255,255,255,0.8);
-  border: 1px solid var(--pc-border);
-  border-radius: 12px;
-  color: var(--pc-text);
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--pc-text-muted);
   font-weight: 600;
-  letter-spacing: 0.2px;
-  transition: all 0.22s ease;
-  box-shadow: 0 2px 6px rgba(15,23,42,0.06);
+  letter-spacing: 0.1px;
+  transition: color 0.18s ease, background-color 0.18s ease;
+  box-shadow: none;
 }
 
-/* 🔥 HOVER EFFECT */
 .menu-btn:hover {
-  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #ffffff !important;   /* ✅ FIX */
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(79,70,229,0.32);
+  color: var(--pc-primary);
+  background: rgba(37,99,235,0.08);
 }
-/* 🔥 ACTIVE CLICK */
+
 .menu-btn:active {
-  transform: scale(0.98);
-}
-
-/* 🔥 SUBTLE GLOW */
-.menu-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
-}
-
-.menu-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 10px;
-  opacity: 0;
-  transition: opacity 0.25s;
-  box-shadow: 0 0 0 2px rgba(170, 205, 220, 0.28) inset;
-}
-
-.menu-btn:hover::after {
-  opacity: 1;
+  transform: none;
 }
 
 
 
 .active-tab {
-  background: linear-gradient(135deg, var(--pc-secondary), var(--pc-primary));
-  color: #ffffff;   /* ✅ FIX */
-  box-shadow: 0 8px 20px rgba(79,70,229,0.28);
+  background: rgba(37,99,235,0.12);
+  color: #1d4ed8;
+  box-shadow: none;
 }
 .top-btn {
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
   font-weight: 600;
 
   display: inline-flex;
@@ -200,57 +175,84 @@ body {
   gap: 6px;
   white-space: nowrap;
 
-  background: rgba(255,255,255,0.88);
-  border: 1px solid var(--pc-border);
-
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+  background: transparent;
+  border: none;
+  transition: color 0.18s ease, background-color 0.18s ease;
+  box-shadow: none;
 }
 
 .top-btn:hover {
-    color: #0f172a;
-  background: rgba(255,255,255,0.95);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 16px rgba(15,23,42,0.12);
+  color: var(--pc-primary);
+  background: rgba(37,99,235,0.08);
+  transform: none;
+  box-shadow: none;
 }
 
 .active-top-btn {
-  background: linear-gradient(135deg, var(--pc-primary), var(--pc-secondary));
-  color: white;
-  border-color: #7c86ff;
+  background: rgba(37,99,235,0.12);
+  color: #1d4ed8;
+  border: none;
 }
 
 .order-action-btn{
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.14);
-  transition: transform 0.18s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  border: 1px solid rgba(255,255,255,0.18);
+  padding: 4px 9px !important;
+  border-radius: 7px !important;
+  border: 1px solid rgba(148,163,184,0.38) !important;
+  background: transparent !important;
+  box-shadow: 0 1px 0 rgba(15,23,42,0.06), inset 0 1px 0 rgba(255,255,255,0.5) !important;
+  transition: color 0.18s ease, background-color 0.18s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+  color: var(--pc-text) !important;
+  position: relative;
+  letter-spacing: 0.01em;
 }
 
 .order-action-btn:hover{
   transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.26);
-  filter: brightness(1.03);
+  box-shadow: 0 3px 10px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.62) !important;
+  background: rgba(15,23,42,0.035) !important;
+  color: var(--pc-primary) !important;
+  border-color: rgba(59,130,246,0.45) !important;
 }
 
 .order-action-btn:active{
   transform: translateY(0);
-  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.18);
-}
-    
-.logout-btn {
-  background: #ef4444;
-  color: white;
-  border: none;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.12) !important;
 }
 
+.order-action-btn::after{
+  content:"";
+  position:absolute;
+  left:8px;
+  right:8px;
+  bottom:2px;
+  height:1px;
+  background: linear-gradient(90deg, transparent, rgba(37,99,235,0.8), transparent);
+  transform: scaleX(0.2);
+  transform-origin: center;
+  opacity:0;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.order-action-btn:hover::after{
+  transform: scaleX(1);
+  opacity:1;
+}
+
+.oa-primary{ color:#1d4ed8 !important; }
+.oa-success{ color:#166534 !important; }
+.oa-danger{ color:#b91c1c !important; }
+.oa-muted{ color:#334155 !important; }
+.oa-neutral{ color:#0f172a !important; }
+.oa-teal{ color:#0f766e !important; }
+    
 .logout-btn {
-  background: #b85c5c;
-  color: #fff;
-  border: 1px solid #9f4c4c;
+  background: transparent !important;
+  color: #b91c1c !important;
+  border: none !important;
 }
 
 .logout-btn:hover {
-  background: #a54b4b;
+  background: rgba(185,28,28,0.08) !important;
 }
     
 
@@ -296,11 +298,6 @@ input:focus, select:focus, button:focus {
     
     
 
-/* Smooth UI feel */
-* {
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
 .track-table thead th {
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -331,7 +328,7 @@ input:focus, select:focus, button:focus {
 
 /* Card hover lift */
 .pc-section:hover {
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 20px rgba(15,23,42,0.10);
 }
 
 /* Table polish */
@@ -482,39 +479,29 @@ tr[style*="f59e0b"]:hover {
 }
 
 .search-bar {
-  width: clamp(180px, 28vw, 320px);
-  height: 40px;
-
-  padding: 0 12px 0 36px;    /* space for icon */
-
+  width: clamp(280px, 34vw, 460px);
+  height: 42px;
+  padding: 0 14px 0 40px;
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.1);
-
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(8px);
-
+  border: 1px solid #94a3b8;
+  background: #ffffff;
   font-size: 13px;
-  font-weight: 500;
-
-  box-shadow: 
-    inset 0 1px 2px rgba(0,0,0,0.05),
-    0 4px 14px rgba(0,0,0,0.08);
-
-  transition: all 0.25s ease;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.72);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
 }
 
-/* 🔥 FOCUS EFFECT */
 .search-bar:focus {
-  border-color: var(--pc-secondary);
-  box-shadow: 
-    0 0 0 3px rgba(129,166,198,0.25),
-    0 8px 20px rgba(0,0,0,0.12);
+  border-color: #3b82f6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.16), 0 8px 22px rgba(37,99,235,0.14);
+  transform: translateY(-1px);
 }
 
 /* 🔥 PLACEHOLDER */
 .search-bar::placeholder {
-  color: #6b7280;
-  font-weight: 400;
+  color: #64748b;
+  font-weight: 500;
 }
 
 /* filter arrow indicator on all table headers */
@@ -902,15 +889,9 @@ document.getElementById("app").innerHTML = `
 <!-- HEADER WITH LOGOUT -->
 <div class="w-full rounded-2xl px-6 py-3 flex justify-between items-center backdrop-blur-md"
      style="
-  background: linear-gradient(
-    to right,
-    rgba(255,255,255,0.75) 0%,
-    rgba(255,255,255,0.75) 22%,
-    #2f3e4d 40%,
-    #3f556b 100%
-  );
-  border: 1px solid rgba(255,255,255,0.3);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  background: rgba(255,255,255,0.78);
+  border: 1px solid var(--pc-border);
+  box-shadow: 0 8px 18px rgba(15,23,42,0.10);
 ">
 
 <div class="relative flex items-center w-full">
@@ -2668,7 +2649,12 @@ const orderStatus = getOrderStatusLabel(data);
 const isAdmin = user.Branch === "HQ";
 const orderComments = getOrderComments({ items: data, OrderComments: order.OrderComments })
   .sort((a, b) => new Date(a?.at || 0).getTime() - new Date(b?.at || 0).getTime());
-const visibleOrderComments = orderComments.filter(c => c?.action !== "SUPER_EDITED_QTY");
+const hasManagerApprovedLog = orderComments.some(c => c?.action === "MANAGER_APPROVED");
+const visibleOrderComments = orderComments.filter(c => {
+  if(c?.action === "SUPER_EDITED_QTY") return false;
+  if(hasManagerApprovedLog && c?.action === "SUPER_FORWARDED_MANAGER") return false;
+  return true;
+});
 const userCommentsCount = getOrderCommentCount({ items: data, OrderComments: order.OrderComments });
 const commentPalette = ["#fef3c7", "#dbeafe", "#dcfce7", "#fce7f3", "#ede9fe", "#e0f2fe", "#f1f5f9", "#fee2e2"];
 const commentByColor = {};
@@ -2736,51 +2722,39 @@ if(isSuper){
   actionButtons = `
     <div class="flex gap-2 items-center flex-wrap justify-end">
       ${canSuperActions ? `
-        <div class="flex gap-2 items-center mr-3">
-          <button onclick="sendToApprover('${orderNo}')"
-            class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-            style="background:#2563eb;color:white;">
-            Send
-          </button>
-          <select id="changeApprover" class="pc-field w-[190px] text-sm">
-            ${superApproverOptions}
-          </select>
-        </div>
+        <button onclick="openChangeApproverPopup('${orderNo}', '${order.ApprovedBy || ""}')"
+          class="order-action-btn oa-primary px-3 py-2 rounded-lg font-semibold text-sm">
+          Change Approver
+        </button>
 
         <button onclick="approveOrder('${orderNo}')"
-          class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-          style="background:#16a34a;color:white;">
+          class="order-action-btn oa-success px-3 py-2 rounded-lg font-semibold text-sm">
           Approve
         </button>
 
         <button onclick="updateApproval('${orderNo}','Rejected')"
-          class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-          style="background:#dc2626;color:white;">
+          class="order-action-btn oa-danger px-3 py-2 rounded-lg font-semibold text-sm">
           Reject
         </button>
       ` : ""}
 
       <button onclick="downloadOrder('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#475569;color:white;">
+        class="order-action-btn oa-muted px-3 py-2 rounded-lg font-semibold text-sm">
         Download
       </button>
 
       <button onclick="printOrderDetails('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#0f766e;color:white;">
+        class="order-action-btn oa-teal px-3 py-2 rounded-lg font-semibold text-sm">
         Print
       </button>
 
       <button id="commentActionBtn" onclick="handleCommentAction('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#4b5563;color:white;">
+        class="order-action-btn oa-muted px-3 py-2 rounded-lg font-semibold text-sm">
         Comment
       </button>
 
       <button onclick="goBack()"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#e2e8f0;color:#0f172a;">
+        class="order-action-btn oa-neutral px-3 py-2 rounded-lg font-semibold text-sm">
         Back
       </button>
 
@@ -2800,34 +2774,29 @@ else{
           />
 
           <button onclick="processOrder('${orderNo}')"
-            class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-            style="background:#2563eb;color:white;">
+            class="order-action-btn oa-primary px-3 py-2 rounded-lg font-semibold text-sm">
             Process
           </button>
         </div>
       ` : ""}
 
       <button onclick="downloadOrder('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#4b5563;color:white;">
+        class="order-action-btn oa-muted px-3 py-2 rounded-lg font-semibold text-sm">
         Download
       </button>
 
       <button onclick="printOrderDetails('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#0f766e;color:white;">
+        class="order-action-btn oa-teal px-3 py-2 rounded-lg font-semibold text-sm">
         Print
       </button>
 
       <button id="commentActionBtn" onclick="handleCommentAction('${orderNo}')"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#4b5563;color:white;">
+        class="order-action-btn oa-muted px-3 py-2 rounded-lg font-semibold text-sm">
         Comment
       </button>
 
       <button onclick="goBack()"
-        class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-        style="background:#f3f4f6;color:#111827;">
+        class="order-action-btn oa-neutral px-3 py-2 rounded-lg font-semibold text-sm">
         Back
       </button>
 
@@ -2852,23 +2821,10 @@ document.getElementById("main").innerHTML = `
 <!-- ================= PROCESS BAR (HQ ONLY) ================= -->
 
 
-<div class="relative pc-section">
+<div class="px-1.5 py-1 rounded-md"
+  style="background:linear-gradient(90deg, rgba(148,163,184,0.14), rgba(148,163,184,0.05)); border:1px solid rgba(148,163,184,0.22);">
 
-  <div class="flex justify-between items-center flex-wrap gap-4">
-
-    <!-- ORDER DETAILS -->
-    <div class="px-3 py-2 rounded-lg"
-      style="background:linear-gradient(135deg, rgba(129,166,198,0.20), rgba(95,136,168,0.14)); border:1px solid var(--pc-border); box-shadow: 0 8px 18px rgba(15,23,42,0.12);">
-      <p class="text-sm font-semibold" style="color: var(--pc-text);">
-        Order Details
-      </p>
-      <p class="flex items-center gap-2 leading-tight">
-        <span class="text-base font-extrabold" style="color: #1e3a8a;">${orderNo}</span>
-        <span class="text-[10px] font-normal opacity-75" style="color: var(--pc-text-muted);">
-          • ${formatDateTime(order.created_at)}
-        </span>
-      </p>
-    </div>
+  <div class="flex justify-start items-center flex-wrap gap-2">
 
 ${actionButtons}
   </div>
@@ -2882,9 +2838,13 @@ ${actionButtons}
   <div class="relative pc-section">
 
     <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
-      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
-        ORDER SUMMARY
-      </span>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
+          ORDER SUMMARY
+        </span>
+        <span class="text-[18px] font-black tracking-wide" style="color:#1d4ed8; letter-spacing:0.05em; text-shadow:0 1px 0 rgba(255,255,255,0.55);">${orderNo}</span>
+        <span class="text-[11px] font-medium" style="color: var(--pc-text-muted);">${formatDateTime(order.created_at)}</span>
+      </div>
     </div>
 
     <div class="grid grid-cols-5 gap-2 text-xs mt-2">
@@ -2987,43 +2947,45 @@ ${actionButtons}
   <div class="relative pc-section">
 
     <div class="absolute -top-3 left-4 px-3" style="background: var(--pc-bg);">
-      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">
-        PART DETAILS
-      </span>
+      <span class="text-xs font-semibold tracking-wider" style="color: var(--pc-secondary);">PART DETAILS</span>
     </div>
-
     ${canSuperEditQty ? `
-      <div class="flex justify-end mt-1 mb-2">
+      <div class="absolute -top-3 right-4 px-3" style="background: var(--pc-bg);">
         <button onclick="acceptEditedQty('${orderNo}')"
-          class="order-action-btn px-3 py-2 rounded-lg font-semibold text-sm"
-          style="background:${window.superAcceptedEdits?.[orderNo] ? '#16a34a' : '#0f766e'}; color:white;">
-          ${window.superAcceptedEdits?.[orderNo] ? "Edited Qty Accepted" : "Accept Edited Qty"}
+          class="px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wider"
+          style="
+            background:${window.superAcceptedEdits?.[orderNo] ? '#16a34a' : '#1e3a8a'};
+            color:#ffffff;
+            border:1px solid ${window.superAcceptedEdits?.[orderNo] ? '#86efac' : '#93c5fd'};
+            box-shadow:0 4px 10px ${window.superAcceptedEdits?.[orderNo] ? 'rgba(22,163,74,0.24)' : 'rgba(30,58,138,0.25)'};
+          ">
+          ${window.superAcceptedEdits?.[orderNo] ? "EDITED QTY ACCEPTED" : "ACCEPT EDITED QTY"}
         </button>
       </div>
     ` : ""}
 
     <div class="overflow-x-auto mt-2">
 
-      <table class="w-full text-sm text-center border rounded-lg overflow-hidden">
+      <table class="w-full text-sm border rounded-lg overflow-hidden">
 
-        <thead class="text-xs uppercase tracking-wider border-b"
-              style="background: var(--pc-warm); color: var(--pc-text);">
+        <thead class="text-[11px] uppercase tracking-[0.08em] border-b"
+              style="background:linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%); color:#0f172a; border-bottom:1px solid #cbd5e1;">
 
           <tr>
-            <th class="py-2">Part</th>
+            <th class="py-2 text-left">Part</th>
             <th class="text-left px-2">Description</th>
-            <th>Qty</th>
-            <th>Billed</th>
-            <th>Pending</th>
-            <th>Value</th>
-            <th>Status</th>
-            <th>Processed</th>
-            <th>Reg Dt</th>
-            <th>Bill No</th>
-            <th>Billing Dt</th>
-            <th>Transport</th>
-            <th>Docket</th>
-            <th class="px-1 text-center">
+            <th class="text-left">Qty</th>
+            <th class="text-left">Billed</th>
+            <th class="text-left">Pending</th>
+            <th class="text-left">Value</th>
+            <th class="text-left">Status</th>
+            <th class="text-left">Processed</th>
+            <th class="text-left">Reg Dt</th>
+            <th class="text-left">Bill No</th>
+            <th class="text-left">Billing Dt</th>
+            <th class="text-left">Transport</th>
+            <th class="text-left">Docket</th>
+            <th class="px-1 text-left">
               PrevQty
               <div class="mt-1">
                 <select onchange="changePrevQtyDays('${orderNo}', this.value)"
@@ -3036,7 +2998,7 @@ ${actionButtons}
                 </select>
               </div>
             </th>
-            ${canSuperEditQty ? "<th class='w-16'>Edit Qty</th><th class='w-10 text-center'>Remove</th>" : ""}
+            ${canSuperEditQty ? "<th class='w-16 text-left'>Edit Qty</th><th class='w-10 text-left'>Remove</th>" : ""}
           </tr>
 
         </thead>
@@ -3047,7 +3009,7 @@ ${actionButtons}
 
       </table>
 
-      ${isSuper ? `<div class="mt-2 text-[11px]" style="color: var(--pc-text-muted);">Super edits are review-only. Original order Qty in DB remains unchanged.</div>` : ""}
+      ${isSuper ? `` : ""}
 
       <div class="text-right mt-4 font-bold"
            style="color: #0f172a;">
@@ -3082,7 +3044,7 @@ let html = `
 <thead class="text-yellow-400 text-center">
 <tr>
 <th>Date</th>
-<th>Branch</th>
+<th class="text-left">Branch</th>
 <th>Machine</th>
 <th>Parts</th>
 <th>Total</th>
@@ -3099,7 +3061,7 @@ const total = o.items.reduce((s,x)=>s+getEffectiveValue(x),0);
 html += `
 <tr onclick="toggleHQ(${i})" class="bg-gray-900 hover:bg-gray-800 transition rounded-lg shadow cursor-pointer">
 <td>${formatDateTime(o.created_at)}</td>
-<td class="text-center">${o.Branch}</td>
+<td class="text-left">${o.Branch}</td>
 <td class="text-center">${o.MachineNo}</td>
 <td>${o.items.length}</td>
 <td>₹ ${total}</td>
@@ -3658,13 +3620,13 @@ function renderSearchResults(data){
     </div>
 
     <div class="overflow-x-auto">
-      <table class="track-table w-full text-sm text-center border rounded-lg">
+	      <table class="track-table w-full text-sm text-left border rounded-lg">
 
         <thead class="text-xs uppercase">
           <tr>
             <th>Date</th>
             <th>Order Type</th>
-            <th>Branch</th>
+            <th class="text-left">Branch</th>
             <th>Qty</th>
             <th>Value</th>
             <th>Order No</th>
@@ -3708,8 +3670,8 @@ function renderSearchResults(data){
     ${o.OrderType || "-"}
   </span>
 </td>
-      <td>${o.Branch || "-"}</td>
-      <td class="px-4 py-3 text-center">${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}</td>
+      <td class="text-left">${o.Branch || "-"}</td>
+	      <td class="px-4 py-3">${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}</td>
       <td>₹ ${total.toFixed(2)}</td>
       <td class="font-semibold">
         ${o.OrderNo}
@@ -3771,7 +3733,7 @@ async function loadSuper(activeTab = "PendingApproval", skipReset = false){
     .order("created_at",{ascending:false});
 
   if(isManager){
-    query = query.eq("ApprovedBy", user.Name);
+    // Manager can view all orders in All Orders tab.
   } else {
     query = query.or(`ApprovedBy.eq.${user.Name},ApprovedBySuper.eq.${user.Name}`);
   }
@@ -3832,11 +3794,13 @@ else if(activeTab === "Rejected"){
   filtered = orders.filter(o => getOrderStatusLabel(o) === "REJECTED");
 }
 else if(activeTab === "All"){
-  filtered = orders.filter(o => 
-    o.items.some(x => 
-      x.ApprovedBy === getUser().Name || x.ApprovedBySuper === getUser().Name
-    )
-  );
+  filtered = isManager
+    ? orders
+    : orders.filter(o =>
+        o.items.some(x =>
+          x.ApprovedBy === getUser().Name || x.ApprovedBySuper === getUser().Name
+        )
+      );
 }
   else{
     filtered = orders;
@@ -3859,7 +3823,7 @@ const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
       </div>
 
       <div class="overflow-x-auto mt-2">
-        <table class="track-table w-full text-sm text-center border rounded-lg overflow-hidden">
+	        <table class="track-table w-full text-sm text-left border rounded-lg overflow-hidden">
           <thead class="text-xs uppercase tracking-wider border-b"
             style="background: var(--pc-warm); color: var(--pc-text);">
             <tr>
@@ -3868,12 +3832,12 @@ const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
             
               <th>Date</th>
               <th>Order Type</th>
-              <th>Customer</th>
-              <th>Branch</th>
+              <th class="text-left">Customer</th>
+              <th class="text-left">Branch</th>
               <th>Qty</th>
               <th>Value</th>
               <th>Order No</th>
-              <th class="px-4 py-3 text-center">Status</th>
+	              <th class="px-4 py-3 text-left">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -3912,8 +3876,8 @@ const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
           ${o.OrderType || "-"}
         </span>
       </td>
-      <td>${o.CustomerName || "Stock"}</td>
-      <td>${o.Branch}</td>
+      <td class="text-left">${o.CustomerName || "Stock"}</td>
+	      <td class="text-left">${o.Branch}</td>
       <td>${o.items.reduce((s,x)=>s+getEffectiveQty(x),0)}</td>
       <td>₹ ${total.toLocaleString("en-IN")}</td>
       <td>
@@ -3922,7 +3886,7 @@ const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
           ? `<span class="ml-1 px-2 py-[2px] rounded-full text-[10px]" style="background:#e0e7ff;color:#3730a3;">💬 ${getOrderCommentCount(o)}</span>`
           : ""}
       </td>
-      <td class="px-4 py-3 text-center">
+	      <td class="px-4 py-3 text-left">
       <span class="px-2 py-1 rounded text-xs font-semibold"
         style="${getStatusChipStyle(tableStatusRaw)}">
         ${tableStatus}
@@ -4087,8 +4051,50 @@ async function updateApproval(orderNo, status){
   loadSuper(window.activeTab);
 }
 
-async function sendToApprover(orderNo){
-  const approver = document.getElementById("changeApprover")?.value;
+async function openChangeApproverPopup(orderNo, currentApprover = ""){
+  const { data: superUsers } = await db
+    .from("users")
+    .select("Name")
+    .in("Role", ["super", "manager"]);
+
+  const options = [`<option value="">Select Approver</option>`]
+    .concat((superUsers || []).map(u =>
+      `<option value="${u.Name}" ${u.Name === currentApprover ? "selected" : ""}>${u.Name}</option>`
+    ))
+    .join("");
+
+  showPopup(
+    "Change Approver",
+    "info",
+    `
+      <div class="flex gap-2 justify-end">
+        <button onclick="sendToApprover('${orderNo}', document.getElementById('popupApproverSelect')?.value)"
+          class="px-4 py-2 rounded-lg font-semibold text-sm"
+          style="background:#1d4ed8;color:#fff;">
+          Send
+        </button>
+        <button onclick="closePopup()"
+          class="px-4 py-2 rounded-lg font-semibold text-sm"
+          style="background:#e2e8f0;color:#0f172a;">
+          Cancel
+        </button>
+      </div>
+    `
+  );
+
+  const popupMsg = document.getElementById("popupMsg");
+  if(popupMsg){
+    popupMsg.innerHTML = `
+      <div class="space-y-2 text-left">
+        <label class="text-xs font-semibold tracking-wide" style="color:var(--pc-text-muted);">APPROVER</label>
+        <select id="popupApproverSelect" class="pc-field text-sm">${options}</select>
+      </div>
+    `;
+  }
+}
+
+async function sendToApprover(orderNo, selectedApprover = ""){
+  const approver = selectedApprover || document.getElementById("changeApprover")?.value;
   if(!approver){
     return showPopup("Please select approver ❗");
   }
@@ -4105,6 +4111,7 @@ async function sendToApprover(orderNo){
   }
 
   await appendOrderActionLog(orderNo, "APPROVER_CHANGED", `Approver changed to ${approver} by ${getUser()?.Name || "Unknown User"}.`, { approver });
+  closePopup();
   showPopup("Approver updated ✅");
   openOrderView(orderNo);
 }
