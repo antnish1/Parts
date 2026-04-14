@@ -1430,120 +1430,19 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-function normalizeUserKey(key){
-  return (key || "").toString().trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function getUserField(user, aliases = []){
-  if(!user || typeof user !== "object") return "";
-
-  const aliasSet = new Set(aliases.map(normalizeUserKey));
-  const keys = Object.keys(user);
-
-  for(const key of keys){
-    if(aliasSet.has(normalizeUserKey(key))){
-      return user[key];
-    }
-  }
-  return "";
-}
-
-function normalizeUserPayload(user){
-  if(!user || typeof user !== "object") return null;
-
-  const normalized = {
-    ...user,
-    id: getUserField(user, ["id", "userid"]),
-    Name: getUserField(user, ["name", "username", "employee"]),
-    Branch: getUserField(user, ["branch", "branck", "branchname"]),
-    Role: getUserField(user, ["role", "userrole"]),
-    Password: getUserField(user, ["password", "pass"])
-  };
-
-  normalized.role = normalized.Role;
-  normalized.branch = normalized.Branch;
-  return normalized;
-}
-
 function getUser(){
-  try {
-    const rawUser = JSON.parse(localStorage.getItem("user"));
-    return normalizeUserPayload(rawUser);
-  }
-  catch {
-    return null;
-  }
-}
-
-function getUserRole(user){
-  const rawRole = getUserField(user, ["role", "userrole"]);
-  return rawRole.toString().trim().toLowerCase();
-}
-
-function getUserBranch(user){
-  const rawBranch = getUserField(user, ["branch", "branck", "branchname"]);
-  return rawBranch.toString().trim();
-}
-
-function getUserName(user){
-  return getUserField(user, ["name", "username", "employee"]).toString().trim();
-}
-
-function getUserId(user){
-  return getUserField(user, ["id", "userid"]);
-}
-
-function isAdminRole(user){
-  const role = getUserRole(user);
-  const branch = getUserBranch(user);
-  return role === "admin" || branch.toUpperCase() === "HQ";
+  try { return JSON.parse(localStorage.getItem("user")); }
+  catch { return null; }
 }
 
 function isSuperLikeRole(user){
-  const role = getUserRole(user);
+  const role = (user?.Role || "").toString().trim().toLowerCase();
   return role === "super" || role === "manager";
 }
 
 function isManagerRole(user){
-  return getUserRole(user) === "manager";
-}
-
-function isViewerRole(user){
-  return getUserRole(user) === "viewer";
-}
-
-async function syncUserRoleFromDb(user){
-  if(!user) return null;
-
-  let query = db
-    .from("users")
-    .select("Role")
-    .eq("Branch", getUserBranch(user));
-
-  const userId = getUserId(user);
-  const userName = getUserName(user);
-
-  if(userId !== undefined && userId !== null && `${userId}` !== ""){
-    query = query.eq("id", userId);
-  }else if(userName){
-    query = query.eq("Name", userName);
-  }else{
-    return normalizeUserPayload(user);
-  }
-
-  const { data, error } = await query.maybeSingle();
-  if(error){
-    console.warn("Unable to refresh role from users table:", error.message || error);
-    return user;
-  }
-
-  const latestRole = getUserField(data, ["role", "userrole"]);
-  if(latestRole){
-    const nextUser = normalizeUserPayload({ ...user, Role: latestRole, role: latestRole });
-    localStorage.setItem("user", JSON.stringify(nextUser));
-    return nextUser;
-  }
-  return normalizeUserPayload(user);
+  const role = (user?.Role || "").toString().trim().toLowerCase();
+  return role === "manager";
 }
 
 const PART_MASTER_CACHE = new Map();
@@ -1666,8 +1565,8 @@ document.addEventListener("keydown", function(e){
 }
     
     
-const { data } = await db.from("users").select("*");
-const unique = [...new Set((data || []).map(d => getUserBranch(d)).filter(Boolean))];
+const { data } = await db.from("users").select("Branch");
+const unique = [...new Set(data.map(d => d.Branch))];
 
 const el = document.getElementById("branch");
 el.innerHTML = `<option value="">Select Branch</option>`;
@@ -1683,19 +1582,18 @@ if(!branch || !password) return showPopup("Fill all fields");
 
 showLoader();
 
-const { data: allUsers } = await db
+const { data } = await db
 .from("users")
-.select("*");
-
-const data = (allUsers || []).map(normalizeUserPayload).find(u =>
-  getUserBranch(u) === branch && (u?.Password || "").toString() === password
-);
+.select("*")
+.eq("Branch", branch)
+.eq("Password", password)
+.single();
 
 hideLoader();
 
 if(!data) return showPopup("Invalid credentials");
 
-localStorage.setItem("user", JSON.stringify(normalizeUserPayload(data)));
+localStorage.setItem("user", JSON.stringify(data));
 loadBranch();
 }
 
@@ -1703,8 +1601,7 @@ loadBranch();
 function renderHeader(){
 
   const user = getUser();
-  const isAdmin = isAdminRole(user);
-  const isViewer = isViewerRole(user);
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
 
   return `
   <div class="space-y-0">
@@ -1715,23 +1612,18 @@ function renderHeader(){
 
   <h1 class="text-2xl font-bold tracking-wide" style="color: var(--pc-light);">
     PARTS CONNECT PORTAL :
-    <span class="ml-2" style="color: var(--pc-secondary);">${getUserBranch(user)}</span>
+    <span class="ml-2" style="color: var(--pc-secondary);">${user.Branch}</span>
   </h1>
 
   <div class="flex items-center gap-3">
 
-    ${!isAdmin && !isViewer ? `
+    ${!isAdmin ? `
         <button onclick="loadCreate('create')" 
         class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
         data-tab="create">
         New Order
       </button>
 
-      <button onclick="loadTrack('track')" 
-      class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
-        Track Orders
-      </button>
-    ` : isViewer ? `
       <button onclick="loadTrack('track')" 
       class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}">
         Track Orders
@@ -1752,17 +1644,12 @@ function renderHeader(){
 
     <div class="flex gap-3">
 
-      ${!isAdmin && !isViewer ? `
+      ${!isAdmin ? `
         <button onclick="loadCreate('create')" 
         class="menu-btn ${window.activeTab==='create' ? 'active-tab' : ''}">
           New Order
         </button>
 
-        <button onclick="loadTrack('track')" 
-        class="menu-btn ${window.activeTab==='track' ? 'active-tab' : ''}">
-          Track Orders
-        </button>
-      ` : isViewer ? `
         <button onclick="loadTrack('track')" 
         class="menu-btn ${window.activeTab==='track' ? 'active-tab' : ''}">
           Track Orders
@@ -1793,17 +1680,12 @@ function updateMenuHighlight(){
   
   
 // ---------- BRANCH ----------
-async function loadBranch(){
+function loadBranch(){
 
-const user = await syncUserRoleFromDb(getUser());
-if(!user){
-  loadLogin();
-  return;
-}
-const isAdmin = isAdminRole(user);
+const user = getUser();
+const isAdmin = user.Role === "admin" || user.Branch === "HQ";
 const isSuper = isSuperLikeRole(user);
 const isManager = isManagerRole(user);
-const isViewer = isViewerRole(user);
 
 // ✅ IMPORTANT: set default tab BEFORE rendering
 // ✅ FORCE DEFAULT TAB FOR HQ (NO SIDE EFFECT)
@@ -1811,8 +1693,6 @@ if(isAdmin){
   window.activeTab = "Approved";
 }else if(isSuper){
   window.activeTab = isManager ? "Dashboard" : "PendingApproval";
-}else if(isViewer){
-  window.activeTab = "track";
 }else{
   window.activeTab = window.activeTab || "create";
 }
@@ -1822,13 +1702,12 @@ document.getElementById("app").innerHTML = `
   <div class="space-y-0">
 
 <!-- HEADER WITH LOGOUT -->
-<div class="w-full rounded-2xl px-6 py-3 backdrop-blur-md"
+<div class="w-full rounded-2xl px-6 py-3 flex justify-between items-center backdrop-blur-md"
      style="
   background: rgba(15,23,42,0.88);
   border: 1px solid var(--pc-border);
   box-shadow: 0 8px 18px rgba(2,6,23,0.45);
 ">
-<div class="flex justify-between items-center">
 
 <div class="relative flex items-center w-full">
 
@@ -1846,7 +1725,7 @@ document.getElementById("app").innerHTML = `
 
   <span class="text-sm font-semibold tracking-widest uppercase"
       style="color: var(--pc-text);">
-  ${getUserBranch(user)}
+  ${user.Branch}
 </span>
 
 </div>
@@ -1870,7 +1749,7 @@ document.getElementById("app").innerHTML = `
 
 </div>
 
-  ${!isAdmin && !isSuper && !isViewer ? `
+  ${!isAdmin && !isSuper ? `
       <button onclick="loadCreate('create')" 
       class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
       data-tab="create">
@@ -1880,15 +1759,6 @@ document.getElementById("app").innerHTML = `
     </span>
     </button>
   
-    <button onclick="loadTrack('track')" 
-    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
-    data-tab="track">
-<span class="flex items-center gap-2">
-  <i data-lucide="search-check" class="w-4 h-4"></i>
-  Track Orders
-</span>
-    </button>
-` : isViewer ? `
     <button onclick="loadTrack('track')" 
     class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
     data-tab="track">
@@ -1954,17 +1824,6 @@ document.getElementById("app").innerHTML = `
   `}
 
 
-    ${isAdmin ? `
-      <button onclick="loadDocketScanner()"
-      class="top-btn ${window.activeTab==='scanner' ? 'active-top-btn' : ''}"
-      data-tab="scanner">
-      <span class="flex items-center gap-2">
-        <i data-lucide="scan-line" class="w-4 h-4"></i>
-        Docket Scan
-      </span>
-      </button>
-    ` : ``}
-
     <button onclick="logout()" 
     class="top-btn logout-btn">
     <span class="flex items-center gap-2">
@@ -2003,10 +1862,7 @@ renderIcons();
 
     
 // ✅ Load correct screen
-if(window.activeTab === "scanner"){
-  loadDocketScanner();
-}
-else if(isAdmin){
+if(isAdmin){
   loadAdmin(window.activeTab || "Approved");
 
   // ✅ ADD THIS LINE (VERY IMPORTANT)
@@ -2018,10 +1874,7 @@ else if(isSuper){
 else{
   setTimeout(loadPendingCount, 200);
 
-  if(isViewer){
-    loadTrack("track");
-  }
-  else if(window.activeTab === "track"){
+  if(window.activeTab === "track"){
     loadTrack("track");
   }else{
     loadCreate("create");
@@ -2029,279 +1882,14 @@ else{
 }
 }
 
-let docketScannerStream = null;
-let docketScannerRaf = null;
-let docketScannerBusy = false;
-let docketScannerDetector = null;
-window.docketScanMatches = [];
-
-function normalizeDocketNo(val){
-  return (val || "").toString().trim().replace(/\s+/g, "").toUpperCase();
-}
-
-function loadDocketScanner(){
-  const user = getUser();
-  if(!isAdminRole(user)){
-    showPopup("Docket Scan is available only for admin login.");
-    loadTrack("track", true);
-    return;
-  }
-
-  window.activeTab = "scanner";
-  updateMenuHighlight();
-
-  const main = document.getElementById("main");
-  if(!main) return;
-
-  main.innerHTML = `
-  <div class="w-full max-w-2xl mx-auto space-y-4">
-    <section class="pc-section p-4 md:p-5 rounded-2xl">
-      <div class="text-[11px] tracking-wider uppercase mb-2" style="color:var(--pc-secondary);">Consignment Docket Scanner</div>
-      <h3 class="text-base md:text-lg font-semibold mb-1">Scan or enter docket number</h3>
-      <p class="text-xs md:text-sm mb-3" style="color:var(--pc-text-muted);">Mobile friendly mode: use camera scan or type docket no manually.</p>
-
-      <div class="space-y-3">
-        <input
-          id="docketScanInput"
-          type="text"
-          inputmode="text"
-          autocomplete="off"
-          placeholder="Enter / scan docket no."
-          class="pc-field w-full text-base md:text-lg px-4 py-3 rounded-xl"
-        />
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <button class="top-btn w-full justify-center" onclick="lookupDocketRows()">Search Docket</button>
-          <button class="top-btn w-full justify-center" onclick="startDocketCameraScanner()">Start Camera</button>
-          <button class="top-btn w-full justify-center" onclick="stopDocketCameraScanner()">Stop Camera</button>
-        </div>
-      </div>
-
-      <div id="docketScannerView" class="hidden mt-4 rounded-xl overflow-hidden" style="border:1px solid var(--pc-border); background:#020617;">
-        <video id="docketScannerVideo" class="w-full h-56 object-cover" playsinline muted></video>
-      </div>
-      <div id="docketScanHint" class="text-[11px] mt-2" style="color:var(--pc-text-muted);">
-        Tip: align barcode/QR inside camera frame. For unsupported browsers, use manual search.
-      </div>
-    </section>
-
-    <section class="pc-section p-4 md:p-5 rounded-2xl">
-      <div class="flex items-center justify-between mb-2">
-        <h4 class="text-sm font-semibold">Matched rows</h4>
-        <span id="docketMatchCount" class="text-xs px-2 py-1 rounded-full" style="background:rgba(96,165,250,0.16); border:1px solid rgba(96,165,250,0.35); color:#bfdbfe;">0 rows</span>
-      </div>
-      <div id="docketScanResults" class="space-y-2 text-sm" style="color:var(--pc-text-muted);">
-        Scan a docket number to load row details.
-      </div>
-    </section>
-  </div>
-  `;
-
-  renderIcons();
-  const input = document.getElementById("docketScanInput");
-  if(input){
-    input.focus();
-    input.addEventListener("keydown", (ev)=>{
-      if(ev.key === "Enter") lookupDocketRows();
-    });
-  }
-}
-
-async function lookupDocketRows(rawValue){
-  const inputEl = document.getElementById("docketScanInput");
-  const docket = normalizeDocketNo(rawValue ?? inputEl?.value);
-  const resultsEl = document.getElementById("docketScanResults");
-  const countEl = document.getElementById("docketMatchCount");
-
-  if(inputEl && docket) inputEl.value = docket;
-  if(!docket){
-    if(resultsEl) resultsEl.innerHTML = `<div class="text-xs" style="color:#fca5a5;">Enter docket number first.</div>`;
-    return;
-  }
-
-  if(resultsEl) resultsEl.innerHTML = `<div class="text-xs">Searching...</div>`;
-
-  const { data, error } = await db
-    .from("requests")
-    .select("id,OrderNo,PartNo,Branch,CustomerName,Qty,Status,Docket,created_at")
-    .ilike("Docket", docket)
-    .order("created_at", { ascending: false })
-    .limit(40);
-
-  if(error){
-    console.error(error);
-    if(resultsEl) resultsEl.innerHTML = `<div class="text-xs" style="color:#fca5a5;">Search failed. Try again.</div>`;
-    return;
-  }
-
-  const matches = (data || []).filter(row => normalizeDocketNo(row.Docket) === docket);
-  window.docketScanMatches = matches;
-  renderDocketMatches();
-  if(countEl) countEl.textContent = `${matches.length} row${matches.length === 1 ? "" : "s"}`;
-}
-
-function renderDocketMatches(){
-  const wrap = document.getElementById("docketScanResults");
-  const rows = Array.isArray(window.docketScanMatches) ? window.docketScanMatches : [];
-  if(!wrap) return;
-
-  if(!rows.length){
-    wrap.innerHTML = `<div class="text-xs" style="color:var(--pc-text-muted);">No rows found for this docket.</div>`;
-    return;
-  }
-
-  wrap.innerHTML = rows.map(r=>`
-    <div class="rounded-xl p-3 space-y-2" style="border:1px solid var(--pc-border); background:rgba(15,23,42,0.58);">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="text-sm font-semibold" style="color:#e2e8f0;">Order: ${r.OrderNo || "-"}</div>
-        <span class="px-2 py-1 rounded text-xs font-semibold" style="${getStatusChipStyle(r.Status)}">${normalizeRowStatus(r.Status || "-")}</span>
-      </div>
-      <div class="grid grid-cols-2 gap-2 text-xs">
-        <div><span style="color:var(--pc-text-muted);">Part:</span> <span style="color:#e2e8f0;">${r.PartNo || "-"}</span></div>
-        <div><span style="color:var(--pc-text-muted);">Qty:</span> <span style="color:#e2e8f0;">${r.Qty || 0}</span></div>
-        <div><span style="color:var(--pc-text-muted);">Branch:</span> <span style="color:#e2e8f0;">${r.Branch || "-"}</span></div>
-        <div><span style="color:var(--pc-text-muted);">Docket:</span> <span style="color:#e2e8f0;">${r.Docket || "-"}</span></div>
-      </div>
-      <button
-        class="top-btn w-full justify-center ${normalizeRowStatus(r.Status) === "RECEIVED" ? "opacity-60 cursor-not-allowed" : ""}"
-        ${normalizeRowStatus(r.Status) === "RECEIVED" ? "disabled" : ""}
-        onclick="markDocketRowReceived('${r.id}')">
-        ${normalizeRowStatus(r.Status) === "RECEIVED" ? "Already Received" : "Mark Received"}
-      </button>
-    </div>
-  `).join("");
-}
-
-async function markDocketRowReceived(rowId){
-  const row = (window.docketScanMatches || []).find(x => String(x.id) === String(rowId));
-  if(!row) return;
-
-  const { error } = await db
-    .from("requests")
-    .update({
-      Status: "RECEIVED",
-      ProcessedDate: new Date().toISOString()
-    })
-    .eq("id", rowId);
-
-  if(error){
-    console.error(error);
-    showPopup("Failed to mark as received.");
-    return;
-  }
-
-  await appendOrderActionLog(
-    row.OrderNo,
-    "STATUS_UPDATED",
-    `Row marked as RECEIVED via docket scanner by ${getUser()?.Name || "Unknown User"}.`,
-    { status: "RECEIVED", docket: row.Docket || null }
-  );
-
-  window.docketScanMatches = (window.docketScanMatches || []).map(x =>
-    String(x.id) === String(rowId) ? { ...x, Status: "RECEIVED" } : x
-  );
-  renderDocketMatches();
-  showPopup("Marked as received ✅");
-}
-
-async function startDocketCameraScanner(){
-  const view = document.getElementById("docketScannerView");
-  const video = document.getElementById("docketScannerVideo");
-  const hint = document.getElementById("docketScanHint");
-
-  if(!view || !video) return;
-
-  if(!navigator.mediaDevices?.getUserMedia){
-    if(hint) hint.textContent = "Camera API unavailable on this browser. Use manual input.";
-    return;
-  }
-
-  if(typeof window.BarcodeDetector === "undefined"){
-    if(hint) hint.textContent = "Barcode scanning is not supported here. Use manual input.";
-    return;
-  }
-
-  try{
-    docketScannerDetector = docketScannerDetector || new BarcodeDetector({
-      formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "itf"]
-    });
-
-    docketScannerStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-
-    video.srcObject = docketScannerStream;
-    await video.play();
-    view.classList.remove("hidden");
-    if(hint) hint.textContent = "Camera scanning started.";
-    pollDocketBarcode();
-  }catch(err){
-    console.error(err);
-    if(hint) hint.textContent = "Unable to start camera. Check permissions and retry.";
-  }
-}
-
-function stopDocketCameraScanner(){
-  const hint = document.getElementById("docketScanHint");
-  if(docketScannerRaf){
-    cancelAnimationFrame(docketScannerRaf);
-    docketScannerRaf = null;
-  }
-  if(docketScannerStream){
-    docketScannerStream.getTracks().forEach(t => t.stop());
-    docketScannerStream = null;
-  }
-  const video = document.getElementById("docketScannerVideo");
-  if(video){
-    video.pause();
-    video.srcObject = null;
-  }
-  if(hint) hint.textContent = "Camera stopped.";
-}
-
-async function pollDocketBarcode(){
-  const video = document.getElementById("docketScannerVideo");
-  if(!video || !docketScannerDetector || !docketScannerStream) return;
-
-  if(!docketScannerBusy){
-    docketScannerBusy = true;
-    try{
-      const barcodes = await docketScannerDetector.detect(video);
-      if(barcodes?.length){
-        const raw = barcodes[0]?.rawValue || "";
-        const docket = normalizeDocketNo(raw);
-        if(docket){
-          const input = document.getElementById("docketScanInput");
-          if(input) input.value = docket;
-          await lookupDocketRows(docket);
-        }
-      }
-    }catch(_){
-      // silent loop for smoother scanning
-    }finally{
-      docketScannerBusy = false;
-    }
-  }
-
-  docketScannerRaf = requestAnimationFrame(pollDocketBarcode);
-}
-
 
 function logout(){
-stopDocketCameraScanner();
 localStorage.clear();
 loadLogin();
 }
 
 // ---------- CREATE ----------
 function loadCreate(tab){
-stopDocketCameraScanner();
-if(isViewerRole(getUser())){
-  showPopup("Viewer role can only access Track Orders.");
-  loadTrack("track");
-  return;
-}
- main
 
 window.activeTab = "create";
 
@@ -2631,7 +2219,7 @@ tr.querySelector(".cat").innerText = data.Cat1;
 // ===== 30 DAY QTY LOGIC =====
 const user = getUser();
 
-const total30 = await getLast30QtyByBranchPart(getUserBranch(user), partNo);
+const total30 = await getLast30QtyByBranchPart(user.Branch, partNo);
 
 // SET VALUE
 tr.querySelector(".qty30").innerText = total30;
@@ -2880,10 +2468,10 @@ for (const r of rows){
 
   if(!part) continue;
 
-  const qtyLast30 = await getLast30QtyByBranchPart(getUserBranch(user), part);
+  const qtyLast30 = await getLast30QtyByBranchPart(user.Branch, part);
 
   inserts.push({
-    Branch: getUserBranch(user),
+    Branch: user.Branch,
 
     OrderType: orderType,
     OrderFor: orderFor,
@@ -2953,7 +2541,6 @@ function updateTrackDateFilter(kind, value){
 }
 
 async function loadTrack(tab, skipReset = false){
-stopDocketCameraScanner();
 
 if(!skipReset){
   CURRENT_PAGE = 1;
@@ -2964,9 +2551,6 @@ window.activeTab = "track";
 updateMenuHighlight();
 
 const user = getUser();
-const isAdmin = isAdminRole(user);
-const isSuper = isSuperLikeRole(user);
-const isViewer = isViewerRole(user);
 
 showLoader();
 
@@ -2975,9 +2559,9 @@ let query = db
   .select(REQUEST_LIST_SELECT)
   .order("created_at", { ascending:false });
 
-// ✅ ONLY FILTER FOR NORMAL BRANCH USERS (viewer sees all branches)
-if(!isAdmin && !isSuper && !isViewer){
-  query = query.eq("Branch", getUserBranch(user));
+// ✅ ONLY FILTER FOR NORMAL USERS
+if(user.Role !== "headoffice"){
+  query = query.eq("Branch", user.Branch);
 }
 
 const { data } = await query;
@@ -3230,7 +2814,6 @@ async function loadPendingCount(){
   
 // ---------- ADMIN ----------
 async function loadAdmin(activeTab = "Approved", skipReset = false){
-stopDocketCameraScanner();
 
 if(!skipReset){
   CURRENT_PAGE = 1;
@@ -3420,7 +3003,6 @@ document.getElementById("main").innerHTML = html;
     
 
 function loadUpload(){
-  stopDocketCameraScanner();
 
   window.activeTab = "upload";
   updateMenuHighlight();
@@ -3533,36 +3115,6 @@ function formatDateTime(val){
   const mins = String(d.getMinutes()).padStart(2, '0');
 
   return `${day}-${month}-${year} ${hours}:${mins} ${ampm}`;
-}
-
-function getUploadReportMeta(){
-  try{
-    const raw = localStorage.getItem("uploadReportMeta");
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  }catch(_){
-    return {};
-  }
-}
-
-function setUploadReportMeta(type, whenISO = new Date().toISOString()){
-  const prev = getUploadReportMeta();
-  const next = { ...prev, [type]: whenISO };
-  localStorage.setItem("uploadReportMeta", JSON.stringify(next));
-}
-
-function formatUploadHeaderTimestamp(value){
-  if(!value) return "-";
-  const dt = new Date(value);
-  if(Number.isNaN(dt.getTime())) return "-";
-  return dt.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
 }
 
 function getEffectiveQty(row){
@@ -3957,7 +3509,7 @@ const orderStatus = getOrderStatusLabel(data);
   window.superPendingEditState[orderNo] = canSuperEditQty ? hasPendingEditedQty : false;
 
 
-const isAdmin = isAdminRole(user);
+const isAdmin = user.Branch === "HQ";
 const orderComments = getOrderComments({ items: data, OrderComments: order.OrderComments })
   .sort((a, b) => new Date(a?.at || 0).getTime() - new Date(b?.at || 0).getTime());
 const hasManagerApprovedLog = orderComments.some(c => c?.action === "MANAGER_APPROVED");
@@ -4736,7 +4288,6 @@ async function processExcelData(rows){
 
   hideLoader();
 
-  setUploadReportMeta("statusReport");
   showPopup(`Upload Complete ✅\nUpdated: ${updated}\nSkipped: ${skipped}`);
 
   loadAdmin(window.activeTab);
@@ -4949,7 +4500,6 @@ async function processInventoryExcelData(rows, reportDate){
     syncCompleted = true;
     setInventoryProgress(100, "Inventory processing completed.");
 
-    setUploadReportMeta("inventoryReport");
     showPopup(
       `Inventory Upload Complete ✅\nUploaded: ${finalPayload.length}\nDuplicate Keys Removed: ${deduped}\nChanged: ${stats.changed_count ?? stats.changed ?? 0}\nCurrent Updated: ${stats.current_updated ?? stats.upserted ?? finalPayload.length}\nSkipped: ${skipped}`
     );
@@ -5520,7 +5070,6 @@ function clearUniversalSearch(){
 CURRENT_PAGE = 1;
 
 async function loadSuper(activeTab = "PendingApproval", skipReset = false){
-  stopDocketCameraScanner();
 
   if(!skipReset){
     CURRENT_PAGE = 1;
@@ -6159,7 +5708,7 @@ async function addOrderComment(orderNo){
     const existing = getOrderComments({ items: allRowsForComments.data || [], OrderComments: targetRow.OrderComments });
   existing.push({
     type: "user",
-    by: user.Name || user.Role || user.role || "User",
+    by: user.Name || user.Role || "User",
     text,
     at: new Date().toISOString(),
     attachmentName,
@@ -6303,7 +5852,7 @@ function goBack(){
   const user = getUser();
   if(isSuperLikeRole(user)){
     loadSuper(window.activeTab || "PendingApproval", true);
-  } else if(isAdminRole(user)){
+  } else if(user.Role === "admin" || user.Branch === "HQ"){
     loadAdmin(window.activeTab || "Approved", true);
   } else {
     loadTrack("track", true);
@@ -6528,7 +6077,7 @@ function refreshCurrentView(){
 
   const user = getUser();
 
-if(isAdminRole(user)){
+if(user.Role === "admin" || user.Branch === "HQ"){
   loadAdmin(window.activeTab, true);   // ✅ PASS TRUE
 } else if(isSuperLikeRole(user)){
   loadSuper(window.activeTab || "PendingApproval", true);
@@ -6553,7 +6102,7 @@ function changePage(direction){
 
   let orders = Object.values(grouped);
 
-  if(isAdminRole(user)){
+  if(user.Role === "admin" || user.Branch === "HQ"){
 
     if(window.activeTab === "Approved"){
       orders = orders.filter(o => getOrderStatusLabel(o) === "APPROVED");
@@ -6566,7 +6115,7 @@ function changePage(direction){
 
   } else {
     orders = orders.filter(o => 
-      o.every(x => x.Branch === getUserBranch(user))
+      o.every(x => x.Branch === user.Branch)
     );
   }
 
@@ -6578,7 +6127,7 @@ function changePage(direction){
   if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
 
   // 🔥 THIS IS THE REAL FIX
-  if(isAdminRole(user)){
+  if(user.Role === "admin" || user.Branch === "HQ"){
     loadAdmin(window.activeTab, true);
   } else {
     loadTrack("track", true);
@@ -6594,7 +6143,7 @@ function changePage(step){
   CURRENT_PAGE = newPage;
 
   const user = getUser();
-  const isAdmin = isAdminRole(user);
+  const isAdmin = user.Role === "admin" || user.Branch === "HQ";
   const isSuper = isSuperLikeRole(user);
 
   if(isAdmin){
