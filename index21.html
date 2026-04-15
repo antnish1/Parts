@@ -268,6 +268,13 @@ body {
   box-shadow: none;
 }
 
+.dev-nav-btn{
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  letter-spacing: 0.01em;
+}
+
 .active-top-btn {
   background: linear-gradient(180deg, rgba(250,204,21,0.18), rgba(161,98,7,0.2));
   color: #fef08a;
@@ -1987,41 +1994,41 @@ document.getElementById("app").innerHTML = `
 
 ${isDeveloper ? `
     <button onclick="loadDeveloperDashboard()" 
-    class="top-btn ${window.activeTab==='DevDashboard' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='DevDashboard' ? 'active-top-btn' : ''}"
     data-tab="DevDashboard">
       Workspace
     </button>
     <button onclick="loadDeveloperUsers()"
-    class="top-btn ${window.activeTab==='DevUsers' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='DevUsers' ? 'active-top-btn' : ''}"
     data-tab="DevUsers">
       Users
     </button>
     <button onclick="loadDeveloperRequestsEditor()"
-    class="top-btn ${window.activeTab==='DevRequests' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='DevRequests' ? 'active-top-btn' : ''}"
     data-tab="DevRequests">
       Requests
     </button>
     <button onclick="loadDeveloperCommentsInbox()"
-    class="top-btn ${window.activeTab==='DevComments' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='DevComments' ? 'active-top-btn' : ''}"
     data-tab="DevComments">
       Comments
     </button>
     <button onclick="openDeveloperInventoryLookup()"
-    class="top-btn ${window.activeTab==='DevInventory' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='DevInventory' ? 'active-top-btn' : ''}"
     data-tab="DevInventory">Inventory</button>
     <button onclick="loadUpload()" 
-    class="top-btn ${window.activeTab==='upload' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='upload' ? 'active-top-btn' : ''}"
     data-tab="upload">Reports</button>
     <button onclick="loadDocketScanner()"
-    class="top-btn ${window.activeTab==='scanner' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='scanner' ? 'active-top-btn' : ''}"
     data-tab="scanner">Docket</button>
     <button onclick="loadCreate('create')" 
-    class="top-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='create' ? 'active-top-btn' : ''}"
     data-tab="create">
       New Order
     </button>
     <button onclick="loadTrack('track')" 
-    class="top-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
+    class="top-btn dev-nav-btn ${window.activeTab==='track' ? 'active-top-btn' : ''}"
     data-tab="track">
       Track
     </button>
@@ -4867,13 +4874,42 @@ async function processExcelData(rows){
   showLoader();
 
   let updated = 0;
+  let inserted = 0;
   let skipped = 0;
   const statusLoggedOrders = new Set();
+  let requestIdSeed = null;
+
+  const getUploadCellValueLocal = (row, aliases = []) => {
+    const normalizedEntries = Object.entries(row || {}).map(([key, value]) => ({
+      key: (key || "").toString().trim().toLowerCase().replace(/\s+/g, " "),
+      value
+    }));
+    for(const alias of aliases){
+      const hit = normalizedEntries.find(entry => entry.key === (alias || "").toString().trim().toLowerCase().replace(/\s+/g, " "));
+      if(hit) return hit.value;
+    }
+    return "";
+  };
+  const normalizeCompareLocal = (value) => (value || "").toString().trim().toUpperCase().replace(/\s+/g, " ");
+  const isReceivedLockedStatus = (statusValue) => normalizeCompareLocal(statusValue).includes("RECEIVED");
+  const allocateRequestId = async () => {
+    if(requestIdSeed === null){
+      const { data: latestIdRows } = await db
+        .from("requests")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1);
+      requestIdSeed = Number(latestIdRows?.[0]?.id || 0);
+    }
+    requestIdSeed += 1;
+    return requestIdSeed;
+  };
 
   for(const r of rows){
     console.log("🟡 RAW EXCEL ROW:", r);
     const orderNo = r["Order No"]?.toString().trim().toUpperCase();
     const partNo = r["Material No"]?.toString().trim().toUpperCase();
+    const branchName = (getUploadCellValueLocal(r, ["branch", "branch name", "plant", "location", "branch_name"]) || "").toString().trim();
     console.log("📦 Excel OrderNo:", orderNo);
     console.log("🔩 Excel PartNo:", partNo);
     
@@ -4885,16 +4921,27 @@ async function processExcelData(rows){
       if(/^\d+(\.\d+)?$/.test(raw)){
         const serial = Math.floor(Number(raw));
         if(!Number.isFinite(serial)) return null;
-        const base = new Date(Date.UTC(1899, 11, 30));
-        base.setUTCDate(base.getUTCDate() + serial);
-        return base.toISOString().slice(0, 10);
+        try{
+          const base = new Date(Date.UTC(1899, 11, 30));
+          base.setUTCDate(base.getUTCDate() + serial);
+          if(Number.isNaN(base.getTime())) return null;
+          const year = base.getUTCFullYear();
+          if(year < 1900 || year > 2100) return null;
+          return base.toISOString().slice(0, 10);
+        }catch{
+          return null;
+        }
       }
       const normalized = raw.replace(/\//g, "-");
       if(/^\d{2}-\d{2}-\d{4}$/.test(normalized)){
         const [dd, mm, yyyy] = normalized.split("-");
+        const candidate = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+        if(Number.isNaN(candidate.getTime())) return null;
         return `${yyyy}-${mm}-${dd}`;
       }
       if(/^\d{4}-\d{2}-\d{2}/.test(normalized)){
+        const candidate = new Date(`${normalized.slice(0, 10)}T00:00:00Z`);
+        if(Number.isNaN(candidate.getTime())) return null;
         return normalized.slice(0, 10);
       }
       return null;
@@ -4906,17 +4953,45 @@ async function processExcelData(rows){
       continue;
     }
 
-    // 🔍 CHECK IF MATCH EXISTS FIRST (SAFE UPDATE)
-    const { data: existing } = await db
-      .from("requests")
-      .select("id,Qty,Status")
-      .eq("OrderNo", orderNo)
-      .eq("PartNo", partNo.replace(/\s/g,"").toUpperCase())
-      .maybeSingle();
-      console.log("🧾 DB MATCH RESULT:", existing);
-   if(!existing){
+    const normalizedPartNo = partNo.replace(/\s/g,"").toUpperCase();
+    const billedQty = Number(r["Billed Qty"] || 0);
+    const billingDt = normalizeBillingDateValue(r["Billing Dt"]);
+    const deliveryNo = (r["Delivery No"] || "").toString().trim();
+    const billNo = (r["BillNo & Image"] || "").toString().trim();
+    const docketNo = (r["Docket"] || "").toString().trim();
+    const transportName = (r["Transport Name"] || "").toString().trim();
+
+    // 🔍 CHECK IF MATCH EXISTS FIRST (SAFE UPDATE) using OrderNo + PartNo
+    let existing = null;
+    if(orderNo){
+      const { data: matchesByOrder } = await db
+        .from("requests")
+        .select("*")
+        .eq("OrderNo", orderNo)
+        .eq("PartNo", normalizedPartNo)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if(matchesByOrder?.length){
+        existing = matchesByOrder[0];
+      }
+    }
+    if(!existing){
+      const { data: fallbackByBranch } = await db
+        .from("requests")
+        .select("*")
+        .eq("PartNo", normalizedPartNo)
+        .order("created_at", { ascending: false });
+      const branchMatched = (fallbackByBranch || []).find(x =>
+        normalizeCompareLocal(x.Branch || "") === normalizeCompareLocal(branchName || "")
+      );
+      if(branchMatched){
+        existing = branchMatched;
+      }
+    }
+    console.log("🧾 DB MATCH RESULT:", existing);
+    if(!existing){
       console.log("❌ NO MATCH FOUND");
-      console.log("Excel:", orderNo, partNo);
+      console.log("Excel:", orderNo, partNo, branchName);
       skipped++;
       continue;
     } else {
@@ -4924,17 +4999,76 @@ async function processExcelData(rows){
       console.log("DB Row:", existing);
     }
 
-    if(normalizeRowStatus(existing.Status) === "RECEIVED"){
+    if(isReceivedLockedStatus(existing.Status)){
       console.log("⏭️ SKIPPED: Existing row already in final RECEIVED status.");
       skipped++;
       continue;
     }
 
-    const normalizedPartNo = partNo.replace(/\s/g,"").toUpperCase();
-    const billedQty = Number(r["Billed Qty"] || 0);
-    const billingDt = normalizeBillingDateValue(r["Billing Dt"]);
-    const deliveryNo = (r["Delivery No"] || "").toString().trim();
-    const billNo = (r["BillNo & Image"] || "").toString().trim();
+    const existingBillNo = (existing.BillNo || "").toString().trim();
+    const existingDocket = (existing.Docket || "").toString().trim();
+    const existingTransport = (existing.TransportName || "").toString().trim();
+    const hasExistingBill = !!existingBillNo;
+    const hasExistingDocket = !!existingDocket;
+    const hasExistingTransport = !!existingTransport;
+    const hasMismatchOnExistingFilledFields =
+      (hasExistingBill && normalizeCompareLocal(existingBillNo) !== normalizeCompareLocal(billNo)) ||
+      (hasExistingDocket && normalizeCompareLocal(existingDocket) !== normalizeCompareLocal(docketNo)) ||
+      (hasExistingTransport && normalizeCompareLocal(existingTransport) !== normalizeCompareLocal(transportName));
+
+    const normalizedUploadStatus = normalizeRowStatus(status || "");
+    const allowedLifecycleStatuses = ["PENDING APPROVAL", "APPROVED", "PROCESSED", "NOT DISPATCHED", "DISPATCHED"];
+    var resolvedDispatchStatus = "PROCESSED";
+    if(allowedLifecycleStatuses.includes(normalizedUploadStatus)){
+      resolvedDispatchStatus = normalizedUploadStatus;
+    }
+
+    if(hasMismatchOnExistingFilledFields){
+      const nextRequestId = await allocateRequestId();
+      const insertPayload = {
+        ...existing,
+        id: nextRequestId,
+        Status: resolvedDispatchStatus,
+        ProcessedDate: new Date().toISOString(),
+        OrderRegDt: r["Order Reg. Dt"] || "",
+        DeliveryNo: deliveryNo || "",
+        BillNo: billNo || "",
+        BillingDt: r["Billing Dt"] || "",
+        BilledQty: billedQty,
+        TransportName: transportName || "",
+        TransportMode: (r["Transport Mode"] || "").toString().trim(),
+        Docket: docketNo || "",
+        PackingDetail: (r["Packing Detail"] || "").toString().trim(),
+        EWayBillNo: (r["E-Way Bill No"] || "").toString().trim(),
+        GSTInvoiceNo: (r["GST Invoice No."] || "").toString().trim()
+      };
+      delete insertPayload.created_at;
+      delete insertPayload.updated_at;
+
+      const { error: insertError } = await db
+        .from("requests")
+        .insert([insertPayload])
+        .select("id,OrderNo")
+        .limit(1);
+
+      if(insertError){
+        console.error(insertError);
+        skipped++;
+        continue;
+      }
+      inserted++;
+      if(!statusLoggedOrders.has(orderNo)){
+        await appendOrderActionLog(
+          orderNo,
+          "STATUS_UPDATED",
+          `New request row inserted from upload due Bill/Docket/Transport mismatch by ${getUser()?.Name || "Unknown User"}.`,
+          { status: resolvedDispatchStatus, mode: "insert_on_mismatch" }
+        );
+        statusLoggedOrders.add(orderNo);
+      }
+      continue;
+    }
+
     const idempotencyKey = [
       String(existing.id),
       orderNo,
@@ -4953,8 +5087,8 @@ async function processExcelData(rows){
       billing_dt: billingDt,
       delivery_no: deliveryNo || null,
       bill_no: billNo || null,
-      docket: (r["Docket"] || "").toString().trim() || null,
-      transport_name: (r["Transport Name"] || "").toString().trim() || null,
+      docket: docketNo || null,
+      transport_name: transportName || null,
       transport_mode: (r["Transport Mode"] || "").toString().trim() || null,
       packing_detail: (r["Packing Detail"] || "").toString().trim() || null,
       eway_bill_no: (r["E-Way Bill No"] || "").toString().trim() || null,
@@ -4989,9 +5123,7 @@ async function processExcelData(rows){
     const billedQtyTotal = (billingRows || []).reduce((sum, row) => sum + Number(row.billed_qty || 0), 0);
     const orderedQty = Number(existing.Qty || 0);
     const pendingQty = Math.max(orderedQty - billedQtyTotal, 0);
-    const normalizedUploadStatus = normalizeRowStatus(status || "");
-    const allowedLifecycleStatuses = ["PENDING APPROVAL", "APPROVED", "PROCESSED", "NOT DISPATCHED", "DISPATCHED"];
-    var resolvedDispatchStatus = pendingQty > 0 ? "NOT DISPATCHED" : "DISPATCHED";
+    resolvedDispatchStatus = pendingQty > 0 ? "NOT DISPATCHED" : "DISPATCHED";
     if(allowedLifecycleStatuses.includes(normalizedUploadStatus)){
       resolvedDispatchStatus = normalizedUploadStatus;
     }
@@ -5015,9 +5147,9 @@ async function processExcelData(rows){
         billed_qty_total: billedQtyTotal,
         pending_qty: pendingQty,
         dispatch_status: resolvedDispatchStatus,
-        TransportName: r["Transport Name"] || "",
+        TransportName: transportName || "",
         TransportMode: r["Transport Mode"] || "",
-        Docket: r["Docket"] || "",
+        Docket: docketNo || "",
         PackingDetail: r["Packing Detail"] || "",
         EWayBillNo: r["E-Way Bill No"] || "",
         GSTInvoiceNo: r["GST Invoice No."] || ""
@@ -5044,7 +5176,7 @@ async function processExcelData(rows){
   hideLoader();
 
   setUploadReportMeta("statusReport");
-  showPopup(`Upload Complete ✅\nUpdated: ${updated}\nSkipped: ${skipped}`);
+  showPopup(`Upload Complete ✅\nUpdated: ${updated}\nInserted: ${inserted}\nSkipped: ${skipped}`);
 
   loadAdmin(window.activeTab);
 }
@@ -6139,7 +6271,7 @@ async function loadDeveloperDashboard(){
   try{
     const [{ data: users }, { data: requests }] = await Promise.all([
       db.from("users").select("id,Name,Role,Branch").order("Name", { ascending: true }),
-      db.from("requests").select("id,OrderNo,OrderType,Status,created_at,OrderComments").order("created_at", { ascending: false })
+      db.from("requests").select("id,OrderNo,OrderType,Status,created_at,OrderComments,Value,Qty,DNP,editedvalue,editedqty").order("created_at", { ascending: false })
     ]);
     const byOrder = {};
     (requests || []).forEach(r => {
@@ -6178,26 +6310,26 @@ async function loadDeveloperDashboard(){
       .sort((a, b) => b[1].count - a[1].count)
       .map(([k, v]) => `
         <button onclick="${statusAction(k)}"
-          class="text-left rounded-lg px-3 py-2 transition-all hover:-translate-y-[1px]"
-          style="background:rgba(15,23,42,0.92); border:1px solid rgba(99,102,241,0.45);">
-          <div class="flex items-center justify-between gap-3">
+          class="text-left rounded-md px-3 py-2 transition-all hover:-translate-y-[1px]"
+          style="background:linear-gradient(180deg, rgba(20,25,40,0.98), rgba(7,11,23,0.98)); border:1px solid rgba(99,102,241,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 3px 0 rgba(30,41,59,0.95);">
+          <div class="flex items-start justify-between gap-3">
             <span class="text-[11px] uppercase tracking-[0.12em] font-semibold" style="color:#a5b4fc;">${escapeHtml(k)}</span>
-            <span class="text-sm font-bold" style="color:#e2e8f0;">${v.count}</span>
+            <span class="text-2xl leading-none font-extrabold" style="color:#e2e8f0;">${v.count}</span>
           </div>
-          <div class="text-[11px] mt-1" style="color:#93c5fd;">₹ ${Math.round(v.value).toLocaleString("en-IN")}</div>
+          <div class="text-[11px] mt-2 font-semibold" style="color:#93c5fd;">VALUE ₹ ${Math.round(v.value).toLocaleString("en-IN")}</div>
         </button>
       `).join("");
     const typeCards = Object.entries(typeMap)
       .sort((a, b) => b[1].count - a[1].count)
       .map(([k, v]) => `
         <button onclick="loadTrack('track')"
-          class="text-left rounded-lg px-3 py-2 transition-all hover:-translate-y-[1px]"
-          style="background:rgba(8,47,73,0.55); border:1px solid rgba(45,212,191,0.45);">
-          <div class="flex items-center justify-between gap-3">
+          class="text-left rounded-md px-3 py-2 transition-all hover:-translate-y-[1px]"
+          style="background:linear-gradient(180deg, rgba(10,50,62,0.92), rgba(6,28,36,0.95)); border:1px solid rgba(45,212,191,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 3px 0 rgba(17,24,39,0.95);">
+          <div class="flex items-start justify-between gap-3">
             <span class="text-[11px] uppercase tracking-[0.12em] font-semibold" style="color:#99f6e4;">${escapeHtml(k)}</span>
-            <span class="text-sm font-bold" style="color:#e2e8f0;">${v.count}</span>
+            <span class="text-2xl leading-none font-extrabold" style="color:#e2e8f0;">${v.count}</span>
           </div>
-          <div class="text-[11px] mt-1" style="color:#5eead4;">₹ ${Math.round(v.value).toLocaleString("en-IN")}</div>
+          <div class="text-[11px] mt-2 font-semibold" style="color:#5eead4;">VALUE ₹ ${Math.round(v.value).toLocaleString("en-IN")}</div>
         </button>
       `).join("");
     const recentUnreadRows = unreadComments.slice(0, 12).map(c => `
@@ -6269,6 +6401,10 @@ async function loadDeveloperUsers(){
   try{
     const { data, error } = await db.from("users").select("*").order("Name", { ascending: true });
     if(error) throw error;
+    const roleOptions = [...new Set((data || []).map(u => (getUserField(u, ["role"]) || "").toString().trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b))
+      .map(role => `<option value="${escapeHtml(role)}">${escapeHtml(role)}</option>`)
+      .join("");
     document.getElementById("main").innerHTML = `
       <div class="space-y-4">
         <section class="rounded-xl p-4" style="background:linear-gradient(140deg, rgba(9,13,24,0.98), rgba(15,23,42,0.95)); border:1px solid rgba(56,189,248,0.3);">
@@ -6276,7 +6412,10 @@ async function loadDeveloperUsers(){
           <div class="grid md:grid-cols-5 gap-2 mt-2">
             <input id="devNewUserName" class="pc-field" placeholder="Name" />
             <input id="devNewUserBranch" class="pc-field" placeholder="Branch" />
-            <input id="devNewUserRole" class="pc-field" placeholder="Role (developer/admin/...)" />
+            <select id="devNewUserRole" class="pc-field">
+              <option value="">Select role</option>
+              ${roleOptions}
+            </select>
             <input id="devNewUserPassword" class="pc-field" placeholder="Password" />
             <button class="track-page-btn" onclick="createDeveloperUser()">Add User</button>
           </div>
@@ -6434,20 +6573,28 @@ async function loadDeveloperCommentsInbox(){
   try{
     const feed = await fetchDeveloperCommentFeed();
     const seenAt = getDeveloperCommentSeenAt();
+    if(window.devCommentsShowAll === undefined) window.devCommentsShowAll = false;
     const unreadOnly = seenAt ? feed.filter(c => new Date(c?.at || 0).getTime() > new Date(seenAt).getTime()) : feed;
+    const rowsToShow = window.devCommentsShowAll ? feed : unreadOnly;
     document.getElementById("main").innerHTML = `
       <div class="space-y-4">
         <section class="rounded-xl p-4" style="background:linear-gradient(140deg, rgba(9,13,24,0.98), rgba(15,23,42,0.95)); border:1px solid rgba(244,114,182,0.28);">
           <div class="flex items-center justify-between gap-3 flex-wrap">
-            <div class="text-xs uppercase font-bold tracking-[0.12em]" style="color:#f9a8d4;">Unread comments since last login: ${unreadOnly.length}</div>
-            <button class="track-page-btn" onclick="markDeveloperCommentsRead()">Mark all read</button>
+            <div class="text-xs uppercase font-bold tracking-[0.12em]" style="color:#f9a8d4;">Unread comments since last login: ${unreadOnly.length} • Total comments: ${feed.length}</div>
+            <div class="flex items-center gap-2">
+              <label class="text-xs flex items-center gap-2" style="color:#e2e8f0;">
+                <input type="checkbox" ${window.devCommentsShowAll ? "checked" : ""} onchange="window.devCommentsShowAll=this.checked; loadDeveloperCommentsInbox();" />
+                Show All
+              </label>
+              <button class="track-page-btn" onclick="markDeveloperCommentsRead()">Mark all read</button>
+            </div>
           </div>
           <div class="overflow-x-auto mt-2">
             <table class="track-table w-full text-sm table-fixed">
-              <thead><tr><th class="w-[120px]">Order</th><th class="w-[140px]">Branch</th><th class="w-[110px]">Type</th><th class="w-[160px]">Status</th><th class="w-[160px]">By</th><th>Comment</th><th class="w-[170px]">At</th><th class="w-[90px]"></th></tr></thead>
+              <thead><tr><th class="w-[120px]">Order</th><th class="w-[140px]">Branch</th><th class="w-[110px]">Type</th><th class="w-[160px]">Status</th><th class="w-[160px]">By</th><th>Comment</th><th class="w-[170px]">At</th></tr></thead>
               <tbody>
-                ${unreadOnly.map(c => `
-                  <tr>
+                ${rowsToShow.map(c => `
+                  <tr class="cursor-pointer" onclick="openOrderView('${c.OrderNo}')">
                     <td class="px-2 py-2">${escapeHtml(c.OrderNo || "-")}</td>
                     <td class="px-2 py-2 truncate">${escapeHtml(c.Branch || "-")}</td>
                     <td class="px-2 py-2">${escapeHtml(c.OrderType || "-")}</td>
@@ -6455,9 +6602,8 @@ async function loadDeveloperCommentsInbox(){
                     <td class="px-2 py-2 truncate">${escapeHtml(c.by || "-")}</td>
                     <td class="px-2 py-2 break-words">${escapeHtml(c.text || "-")}</td>
                     <td class="px-2 py-2">${escapeHtml(formatDateTimeIST(c.at || ""))}</td>
-                    <td class="px-2 py-2"><button class="track-page-btn" onclick="openOrderView('${c.OrderNo}')">Open</button></td>
                   </tr>
-                `).join("") || `<tr><td colspan="8" class="text-center py-4">No unread comments 🎉</td></tr>`}
+                `).join("") || `<tr><td colspan="7" class="text-center py-4">No comments to show.</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -6531,9 +6677,10 @@ const grouped = {};
   grouped[r.OrderNo].items.push(r);
 });
 
-  const orders = applyOrderSort(
+  const allOrders = applyOrderSort(
     Object.values(grouped).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  ).filter(shouldShowOrder);
+  );
+  const orders = allOrders.filter(shouldShowOrder);
 
   if(isManager && activeTab === "Dashboard"){
     renderManagerDashboard(orders);
@@ -6569,7 +6716,8 @@ else if(activeTab === "Approved"){
   });
 }
 else if(activeTab === "Rejected"){
-  filtered = orders.filter(o => getOrderStatusLabel(o) === "REJECTED");
+  const rejectedSource = isDeveloperRole(user) ? allOrders : orders;
+  filtered = rejectedSource.filter(o => getOrderStatusLabel(o) === "REJECTED");
 }
 else if(activeTab === "All"){
   filtered = isManager
