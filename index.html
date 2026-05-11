@@ -3403,8 +3403,11 @@ for(let attempt = 1; attempt <= 3; attempt++){
   }
 
   submitError = error;
-  const isDuplicateOrderNo = String(error?.code || "") === "23505" &&
-    /orderno/i.test(`${error?.message || ""} ${error?.details || ""}`);
+  const errorText = `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`;
+  const httpStatus = Number(error?.status || 0);
+  const isConflict = httpStatus === 409 || String(error?.code || "") === "23505";
+  const isDuplicateOrderNo = isConflict && /duplicate|unique|orderno/i.test(errorText);
+
   if(isDuplicateOrderNo && attempt < 3){
     orderNo = createOrderNo();
     continue;
@@ -3416,7 +3419,8 @@ hideLoader();
 
 if(submitError){
   console.error("Order submit failed:", submitError);
-  return showPopup(`Submit failed ❌\n${submitError.message || "Unknown error"}`, "error");
+  const statusSuffix = submitError?.status ? ` (HTTP ${submitError.status})` : "";
+  return showPopup(`Submit failed ❌\n${submitError.message || "Unknown error"}${statusSuffix}`, "error");
 }
 
 await appendOrderActionLog(orderNo, "ORDER_CREATED", `Order placed by ${getUser()?.Name || "Unknown User"}.`);
