@@ -1575,8 +1575,31 @@ db.channel('requests-changes')
 
 
 // ---------- UTIL ----------
-function showLoader(){ document.getElementById("loader").classList.remove("hidden"); }
-function hideLoader(){ document.getElementById("loader").classList.add("hidden"); }
+const LOADER_STUCK_TIMEOUT_MS = 30000;
+let loaderFailsafeTimer = null;
+function showLoader(){
+  const loader = document.getElementById("loader");
+  if(!loader) return;
+  loader.classList.remove("hidden");
+  if(loaderFailsafeTimer) clearTimeout(loaderFailsafeTimer);
+  loaderFailsafeTimer = setTimeout(() => {
+    const stillVisible = loader && !loader.classList.contains("hidden");
+    if(!stillVisible) return;
+    console.warn("Loader stayed visible too long; hiding it so the page remains usable.");
+    hideLoader();
+    if(typeof showPopup === "function"){
+      showPopup("The request is taking longer than expected. Please check your connection and try again.", "warning");
+    }
+  }, LOADER_STUCK_TIMEOUT_MS);
+}
+function hideLoader(){
+  if(loaderFailsafeTimer){
+    clearTimeout(loaderFailsafeTimer);
+    loaderFailsafeTimer = null;
+  }
+  const loader = document.getElementById("loader");
+  if(loader) loader.classList.add("hidden");
+}
 function cancelUpload(){
   cancelUploadFlag = true;
 }
@@ -1921,10 +1944,19 @@ function renderIcons(){
 }
     
 // ---------- INIT ----------
-window.onload = () => {
-  const user = getUser();
-  if(user) loadBranch();
-  else loadLogin();
+window.onload = async () => {
+  try{
+    hideLoader();
+    const user = getUser();
+    if(user) await loadBranch();
+    else await loadLogin();
+  }catch(error){
+    console.error("Application startup failed:", error);
+    hideLoader();
+    localStorage.removeItem("user");
+    await loadLogin();
+    showPopup("We could not restore your session after reload. Please sign in again.", "warning");
+  }
 };
 
 // ---------- LOGIN ----------
@@ -2412,25 +2444,25 @@ if(!isAdmin && window.pendingCountIntervalId){
     
 // ✅ Load correct screen
 if(window.activeTab === "scanner"){
-  loadDocketScanner();
+  return loadDocketScanner();
 }
 else if(isAdmin){
-  loadAdmin(window.activeTab || "Approved");
   startPendingCountAutoRefresh();
+  return await loadAdmin(window.activeTab || "Approved");
 }
 else if(isDeveloper){
   if(window.activeTab === "DevUsers"){
-    loadDeveloperUsers();
+    return await loadDeveloperUsers();
   }else if(window.activeTab === "DevRequests"){
-    loadDeveloperRequestsEditor();
+    return await loadDeveloperRequestsEditor();
   }else if(window.activeTab === "DevComments"){
-    loadDeveloperCommentsInbox();
+    return await loadDeveloperCommentsInbox();
   }else{
-    loadDeveloperDashboard();
+    return await loadDeveloperDashboard();
   }
 }
 else if(isSuper){
-  loadSuper(window.activeTab || "PendingApproval");
+  return await loadSuper(window.activeTab || "PendingApproval");
 }
 else{
   if(window.pendingCountIntervalId){
@@ -2439,12 +2471,12 @@ else{
   }
 
   if(isViewer){
-    loadTrack("track");
+    return await loadTrack("track");
   }
   else if(window.activeTab === "track"){
-    loadTrack("track");
+    return await loadTrack("track");
   }else{
-    loadCreate("create");
+    return loadCreate("create");
   }
 }
 }
