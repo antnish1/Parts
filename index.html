@@ -1575,9 +1575,106 @@ db.channel('requests-changes')
 
 
 // ---------- UTIL ----------
+const DEBUG_LOG_KEY = "partsConnectDebugLog";
+const DEBUG_LOG_LIMIT = 250;
+const DEBUG_PARAM = new URLSearchParams(window.location.search).get("debug");
+if(DEBUG_PARAM === "1") localStorage.setItem("partsConnectDebug", "1");
+if(DEBUG_PARAM === "0") localStorage.removeItem("partsConnectDebug");
+function isDebugEnabled(){
+  return localStorage.getItem("partsConnectDebug") === "1";
+}
+function serializeDebugValue(value){
+  if(value instanceof Error){
+    return { name: value.name, message: value.message, stack: value.stack };
+  }
+  if(value && typeof value === "object"){
+    try{
+      return JSON.parse(JSON.stringify(value));
+    }catch(_){
+      return String(value);
+    }
+  }
+  return value;
+}
+function getDebugSnapshot(){
+  const user = getUser?.();
+  const loader = document.getElementById("loader");
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  return {
+    url: window.location.href,
+    online: navigator.onLine,
+    activeTab: window.activeTab || "",
+    userRole: user ? getUserRole(user) : "",
+    userBranch: user ? getUserBranch(user) : "",
+    loaderVisible: loader ? !loader.classList.contains("hidden") : false,
+    connection: connection ? {
+      effectiveType: connection.effectiveType,
+      downlink: connection.downlink,
+      rtt: connection.rtt,
+      saveData: connection.saveData
+    } : null
+  };
+}
+function debugLog(event, details = {}){
+  if(!isDebugEnabled()) return;
+  const entry = {
+    at: new Date().toISOString(),
+    event,
+    details: serializeDebugValue(details),
+    snapshot: getDebugSnapshot()
+  };
+  console.info(`[PartsDebug] ${event}`, entry);
+  try{
+    const prev = JSON.parse(localStorage.getItem(DEBUG_LOG_KEY) || "[]");
+    prev.push(entry);
+    localStorage.setItem(DEBUG_LOG_KEY, JSON.stringify(prev.slice(-DEBUG_LOG_LIMIT)));
+  }catch(err){
+    console.warn("Unable to persist debug log:", err);
+  }
+}
+async function debugMeasure(label, promiseFactory, details = {}){
+  const start = performance.now();
+  debugLog(`${label}:start`, details);
+  try{
+    const result = await promiseFactory();
+    debugLog(`${label}:success`, {
+      ...details,
+      durationMs: Math.round(performance.now() - start),
+      rowCount: Array.isArray(result?.data) ? result.data.length : (result?.data ? 1 : 0),
+      supabaseError: result?.error ? serializeDebugValue(result.error) : null
+    });
+    return result;
+  }catch(error){
+    debugLog(`${label}:failed`, {
+      ...details,
+      durationMs: Math.round(performance.now() - start),
+      error: serializeDebugValue(error)
+    });
+    throw error;
+  }
+}
+window.PartsDebug = {
+  enable(){ localStorage.setItem("partsConnectDebug", "1"); debugLog("debug:enabled"); return "Parts debug enabled. Reload and run PartsDebug.dump() after the issue."; },
+  disable(){ localStorage.removeItem("partsConnectDebug"); return "Parts debug disabled."; },
+  clear(){ localStorage.removeItem(DEBUG_LOG_KEY); return "Parts debug log cleared."; },
+  dump(){ return JSON.parse(localStorage.getItem(DEBUG_LOG_KEY) || "[]"); },
+  snapshot: getDebugSnapshot
+};
+window.addEventListener("error", event => {
+  debugLog("window:error", { message: event.message, source: event.filename, line: event.lineno, column: event.colno, error: event.error });
+});
+window.addEventListener("unhandledrejection", event => {
+  debugLog("window:unhandledrejection", { reason: event.reason });
+});
+window.addEventListener("online", () => debugLog("network:online"));
+window.addEventListener("offline", () => debugLog("network:offline"));
+
 const LOADER_STUCK_TIMEOUT_MS = 30000;
 let loaderFailsafeTimer = null;
-function showLoader(){
+let loaderContext = "";
+function showLoader(context = ""){
+  loaderContext = context || loaderContext || "unspecified";
+  debugLog("loader:show", { context: loaderContext });
   const loader = document.getElementById("loader");
   if(!loader) return;
   loader.classList.remove("hidden");
@@ -1586,17 +1683,20 @@ function showLoader(){
     const stillVisible = loader && !loader.classList.contains("hidden");
     if(!stillVisible) return;
     console.warn("Loader stayed visible too long; hiding it so the page remains usable.");
-    hideLoader();
+    debugLog("loader:failsafe", { context: loaderContext, timeoutMs: LOADER_STUCK_TIMEOUT_MS });
+    hideLoader("failsafe");
     if(typeof showPopup === "function"){
       showPopup("The request is taking longer than expected. Please check your connection and try again.", "warning");
     }
   }, LOADER_STUCK_TIMEOUT_MS);
 }
-function hideLoader(){
+function hideLoader(context = ""){
+  debugLog("loader:hide", { context: context || loaderContext || "unspecified" });
   if(loaderFailsafeTimer){
     clearTimeout(loaderFailsafeTimer);
     loaderFailsafeTimer = null;
   }
+  loaderContext = "";
   const loader = document.getElementById("loader");
   if(loader) loader.classList.add("hidden");
 }
@@ -1946,13 +2046,17 @@ function renderIcons(){
 // ---------- INIT ----------
 window.onload = async () => {
   try{
-    hideLoader();
+    debugLog("startup:onload:start");
+    hideLoader("startup-reset");
     const user = getUser();
+    debugLog("startup:user", { hasUser: !!user, role: user ? getUserRole(user) : "", branch: user ? getUserBranch(user) : "" });
     if(user) await loadBranch();
     else await loadLogin();
+    debugLog("startup:onload:success");
   }catch(error){
     console.error("Application startup failed:", error);
-    hideLoader();
+    debugLog("startup:onload:failed", { error });
+    hideLoader("startup-error");
     localStorage.removeItem("user");
     await loadLogin();
     showPopup("We could not restore your session after reload. Please sign in again.", "warning");
@@ -2190,7 +2294,9 @@ function goHomeTab(){
 // ---------- BRANCH ----------
 async function loadBranch(){
 
-const user = await syncUserRoleFromDb(getUser());
+debugLog("loadBranch:start");
+const user = await debugMeasure("loadBranch:syncUserRole", () => syncUserRoleFromDb(getUser()));
+debugLog("loadBranch:userResolved", { hasUser: !!user, role: user ? getUserRole(user) : "", branch: user ? getUserBranch(user) : "" });
 if(!user){
   loadLogin();
   return;
@@ -2442,6 +2548,7 @@ if(!isAdmin && window.pendingCountIntervalId){
 }
 
     
+debugLog("loadBranch:route", { activeTab: window.activeTab, isAdmin, isDeveloper, isSuper, isManager, isViewer });
 // ✅ Load correct screen
 if(window.activeTab === "scanner"){
   return loadDocketScanner();
@@ -3579,7 +3686,8 @@ const isSuper = isSuperLikeRole(user);
 const isViewer = isViewerRole(user);
 const isDeveloper = isDeveloperRole(user);
 
-showLoader();
+showLoader("loadTrack");
+debugLog("loadTrack:start", { tab, skipReset, isAdmin, isSuper, isViewer, isDeveloper, branch: getUserBranch(user) });
 
 const pageSize = 1000;
 let offset = 0;
@@ -3597,9 +3705,20 @@ while(true){
     query = query.eq("Branch", getUserBranch(user));
   }
 
-  const { data, error } = await query;
+  let response;
+  try{
+    response = await debugMeasure("loadTrack:requestsPage", () => query, { offset, pageSize, filteredToBranch: !isAdmin && !isSuper && !isViewer && !isDeveloper });
+  }catch(error){
+    console.error("loadTrack request error:", error);
+    debugLog("loadTrack:requestError", { offset, pageSize, error });
+    showPopup("Unable to load track data. Please check network/Supabase and share PartsDebug.dump().", "error");
+    break;
+  }
+
+  const { data, error } = response;
   if(error){
     console.error("loadTrack pagination error:", error.message || error);
+    debugLog("loadTrack:supabaseError", { offset, pageSize, error });
     break;
   }
   if(!data || data.length === 0) break;
@@ -3610,7 +3729,8 @@ while(true){
 }
 
 GLOBAL_DATA = allRows;
-hideLoader();
+debugLog("loadTrack:loaded", { rows: allRows.length });
+hideLoader("loadTrack");
 
 const grouped = {};
 
@@ -3892,19 +4012,34 @@ if(!skipReset){
     
 window.activeTab = activeTab;
 updateMenuHighlight();
-showLoader();
+showLoader("loadAdmin");
+debugLog("loadAdmin:start", { activeTab, skipReset });
 
-const { data } = await db
-    
-.from("requests")
-.select(REQUEST_LIST_SELECT)
-.order("created_at",{ascending:false});
-GLOBAL_DATA = data;
-hideLoader();
+let adminResponse;
+try{
+  adminResponse = await debugMeasure("loadAdmin:requests", () => db
+    .from("requests")
+    .select(REQUEST_LIST_SELECT)
+    .order("created_at", { ascending:false }), { activeTab });
+}catch(error){
+  console.error("loadAdmin request error:", error);
+  debugLog("loadAdmin:requestError", { activeTab, error });
+  showPopup("Unable to load admin data. Please check network/Supabase and share PartsDebug.dump().", "error");
+  adminResponse = { data: [], error };
+}
+
+const { data, error } = adminResponse;
+if(error){
+  console.error("loadAdmin Supabase error:", error.message || error);
+  debugLog("loadAdmin:supabaseError", { activeTab, error });
+}
+GLOBAL_DATA = data || [];
+debugLog("loadAdmin:loaded", { rows: GLOBAL_DATA.length, activeTab });
+hideLoader("loadAdmin");
 
 // GROUP BY ORDER
 const grouped = {};
-data.forEach(r=>{
+(data || []).forEach(r=>{
 if(!grouped[r.OrderNo]){
 grouped[r.OrderNo] = { ...r, items:[] };
 }
@@ -7534,7 +7669,8 @@ async function loadSuper(activeTab = "PendingApproval", skipReset = false){
 
   window.activeTab = activeTab;
   updateMenuHighlight();
-  showLoader();
+  showLoader("loadSuper");
+  debugLog("loadSuper:start", { activeTab, skipReset });
 
   const user = getUser();
   const isManager = isManagerRole(user) || isDeveloperRole(user);
@@ -7554,9 +7690,20 @@ async function loadSuper(activeTab = "PendingApproval", skipReset = false){
       query = query.or(`ApprovedBy.eq.${user.Name},ApprovedBySuper.eq.${user.Name}`);
     }
 
-    const { data, error } = await query;
+    let response;
+    try{
+      response = await debugMeasure("loadSuper:requestsPage", () => query, { offset, pageSize, isManager });
+    }catch(error){
+      console.error("loadSuper request error:", error);
+      debugLog("loadSuper:requestError", { offset, pageSize, isManager, error });
+      showPopup("Unable to load approvals. Please check network/Supabase and share PartsDebug.dump().", "error");
+      break;
+    }
+
+    const { data, error } = response;
     if(error){
       console.error("loadSuper pagination error:", error.message || error);
+      debugLog("loadSuper:supabaseError", { offset, pageSize, isManager, error });
       break;
     }
     if(!data || data.length === 0) break;
@@ -7586,7 +7733,8 @@ async function loadSuper(activeTab = "PendingApproval", skipReset = false){
   }
 
   GLOBAL_DATA = allRows;
-  hideLoader();
+  debugLog("loadSuper:loaded", { rows: allRows.length, activeTab });
+  hideLoader("loadSuper");
 
   // GROUP
 const grouped = {};
