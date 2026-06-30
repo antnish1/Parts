@@ -6,6 +6,8 @@ import { getTestInventory } from '../../services/testInventory.service';
 export function InventoryUploadPage() {
   const [search, setSearch] = useState('');
   const { data: rows = [], isLoading } = useQuery({ queryKey: ['test-inventory'], queryFn: getTestInventory });
+  const branchCount = new Set(rows.map((row) => row.branch_code)).size;
+  const totalQty = rows.reduce((sum, row) => sum + Number(row.qty ?? 0), 0);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -15,6 +17,11 @@ export function InventoryUploadPage() {
 
   return (
     <PageCard eyebrow="Inventory" title="Inventory Lookup" description="Branch and item stock review workspace.">
+      <div className="mb-2 grid grid-cols-3 gap-2">
+        <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5"><p className="text-[10px] uppercase text-[#6D8196]">Rows</p><p className="text-sm font-black text-white">{rows.length}</p></div>
+        <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5"><p className="text-[10px] uppercase text-[#6D8196]">Branches</p><p className="text-sm font-black text-white">{branchCount}</p></div>
+        <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5"><p className="text-[10px] uppercase text-[#6D8196]">Total Qty</p><p className="text-sm font-black text-white">{totalQty}</p></div>
+      </div>
       <input
         className="mb-2 w-full rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]"
         placeholder="Search branch, item code, or item name"
