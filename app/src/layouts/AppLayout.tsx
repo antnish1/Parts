@@ -1,6 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
-import { Boxes, ClipboardCheck, FilePlus2, LayoutDashboard, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Boxes, ClipboardCheck, FilePlus2, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../auth/useAuth';
 
 const navItems = [
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
@@ -15,14 +17,22 @@ const navItems = [
 ];
 
 export function AppLayout() {
+  const navigate = useNavigate();
+  const { profile } = useAuth();
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    navigate('/login', { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-pc-bg text-pc-text">
       <div className="flex min-h-screen">
         <aside className="hidden w-72 border-r border-slate-800 bg-slate-950/70 p-4 lg:block">
           <div className="rounded-2xl border border-pc-gold/20 bg-slate-900/80 p-4 shadow-panel">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-pc-gold">Parts Connect</p>
-            <h1 className="mt-2 text-xl font-black text-white">Production Rebuild</h1>
-            <p className="mt-2 text-xs leading-relaxed text-pc-muted">New React foundation. Legacy index.html remains untouched during migration.</p>
+            <h1 className="mt-2 text-xl font-black text-white">Production Portal</h1>
+            <p className="mt-2 text-xs leading-relaxed text-pc-muted">Secure React rebuild with Supabase Auth and role-based access.</p>
           </div>
 
           <nav className="mt-5 space-y-1">
@@ -50,12 +60,18 @@ export function AppLayout() {
           <header className="sticky top-0 z-20 border-b border-slate-800 bg-pc-bg/90 px-4 py-3 backdrop-blur lg:px-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-pc-gold">Migration Workspace</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-pc-gold">Secure Workspace</p>
                 <h2 className="text-lg font-black text-white">Parts Connect Portal</h2>
               </div>
-              <div className="flex gap-2">
-                <Button variant="secondary">Legacy Reference Intact</Button>
-                <Button>Next: Auth Foundation</Button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm">
+                  <p className="font-black text-white">{profile?.fullName ?? 'User'}</p>
+                  <p className="text-xs text-pc-muted">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
+                </div>
+                <Button variant="secondary" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </Button>
               </div>
             </div>
           </header>
