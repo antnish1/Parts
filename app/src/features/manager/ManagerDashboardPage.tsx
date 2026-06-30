@@ -20,62 +20,62 @@ export function ManagerDashboardPage() {
   const latestOrders = orders.slice(0, 8);
 
   return (
-    <PageCard eyebrow="Manager" title="Manager Dashboard" description="Reading summary from test_orders only. Live database tables are untouched.">
-      {isLoading ? <p className="text-sm text-pc-muted">Loading dashboard...</p> : null}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <PageCard eyebrow="Manager" title="Manager Dashboard" description="Operational order summary workspace.">
+      {isLoading ? <p className="text-xs text-[#c7d2df]">Loading dashboard...</p> : null}
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
-          <div key={card.key} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-pc-muted">{card.label}</p>
-            <p className="mt-3 text-3xl font-black text-white">{data?.[card.key] ?? 0}</p>
+          <div key={card.key} className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#6D8196]">{card.label}</p>
+            <p className="mt-1 text-lg font-black text-white">{data?.[card.key] ?? 0}</p>
           </div>
         ))}
       </div>
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="mb-3 text-sm font-black text-white">Branch Summary</p>
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Branch Summary</p>
           {branchRows.map((row) => (
-            <div key={row.label} className="flex justify-between border-t border-slate-800 py-2 text-sm">
-              <span className="text-pc-muted">{row.label}</span>
+            <div key={row.label} className="flex justify-between border-t border-[#263244] py-1.5 text-xs">
+              <span className="text-[#c7d2df]">{row.label}</span>
               <span className="font-black text-white">{row.count}</span>
             </div>
           ))}
         </div>
-        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="mb-3 text-sm font-black text-white">Status Summary</p>
+        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Status Summary</p>
           {statusRows.map((row) => (
-            <div key={row.label} className="flex justify-between border-t border-slate-800 py-2 text-sm">
-              <span className="text-pc-muted">{row.label}</span>
+            <div key={row.label} className="flex justify-between border-t border-[#263244] py-1.5 text-xs">
+              <span className="text-[#c7d2df]">{row.label}</span>
               <span className="font-black text-white">{row.count}</span>
             </div>
           ))}
         </div>
       </div>
-      <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-        <p className="mb-3 text-sm font-black text-white">Latest Test Orders</p>
-        <div className="overflow-hidden rounded-xl border border-slate-800">
-          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-            <thead className="bg-slate-900 text-xs uppercase tracking-wider text-pc-muted">
+      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Latest Orders</p>
+        <div className="overflow-hidden rounded-md border border-[#263244]">
+          <table className="w-full min-w-[720px] border-collapse text-left text-xs">
+            <thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]">
               <tr>
-                <th className="px-4 py-3">Order No</th>
-                <th className="px-4 py-3">Branch</th>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-2.5 py-2">Order No</th>
+                <th className="px-2.5 py-2">Branch</th>
+                <th className="px-2.5 py-2">Customer</th>
+                <th className="px-2.5 py-2">Type</th>
+                <th className="px-2.5 py-2">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-[#263244]">
               {latestOrders.map((order) => (
                 <tr key={order.id}>
-                  <td className="px-4 py-3 font-black text-white">{order.order_no}</td>
-                  <td className="px-4 py-3 text-slate-300">{order.branch}</td>
-                  <td className="px-4 py-3 text-slate-300">{order.customer_name ?? '-'}</td>
-                  <td className="px-4 py-3 text-slate-300">{order.order_type}</td>
-                  <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
+                  <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.customer_name ?? '-'}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
+                  <td className="px-2.5 py-2"><StatusBadge status={order.status} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {latestOrders.length === 0 ? <p className="p-4 text-sm text-pc-muted">No test orders found.</p> : null}
+          {latestOrders.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No orders found.</p> : null}
         </div>
       </div>
     </PageCard>
