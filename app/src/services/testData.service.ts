@@ -21,6 +21,13 @@ export type DashboardSummary = {
   rejected: number;
 };
 
+export type CreateTestOrderItemInput = {
+  partNo: string;
+  description: string;
+  dnp: number;
+  qty: number;
+};
+
 export type CreateTestOrderInput = {
   branch: string;
   orderType: string;
@@ -29,10 +36,11 @@ export type CreateTestOrderInput = {
   customerName?: string;
   callId?: string;
   warrantyStatus?: string;
-  partNo: string;
-  description: string;
-  dnp: number;
-  qty: number;
+  partNo?: string;
+  description?: string;
+  dnp?: number;
+  qty?: number;
+  items?: CreateTestOrderItemInput[];
 };
 
 export async function getTestOrders(): Promise<TestOrder[]> {
@@ -64,7 +72,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 
 export async function createTestOrder(input: CreateTestOrderInput) {
   const orderNo = `TEST-${Date.now()}`;
-  const value = Number((input.dnp * input.qty).toFixed(2));
+  const orderItems = input.items?.length
+    ? input.items
+    : [{ partNo: input.partNo ?? '', description: input.description ?? '', dnp: input.dnp ?? 0, qty: input.qty ?? 0 }];
 
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
@@ -85,16 +95,17 @@ export async function createTestOrder(input: CreateTestOrderInput) {
 
   if (orderError) throw orderError;
 
-  const { error: itemError } = await supabase.from('test_order_items').insert({
+  const rows = orderItems.map((item) => ({
     order_id: order.id,
-    part_no: input.partNo,
-    description: input.description,
-    dnp: input.dnp,
-    qty: input.qty,
-    value,
+    part_no: item.partNo,
+    description: item.description,
+    dnp: item.dnp,
+    qty: item.qty,
+    value: Number((item.dnp * item.qty).toFixed(2)),
     previous_30d_qty: 0,
-  });
+  }));
 
+  const { error: itemError } = await supabase.from('test_order_items').insert(rows);
   if (itemError) throw itemError;
 
   await supabase.from('test_order_events').insert({
@@ -102,7 +113,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
     event_type: 'TEST_ORDER_CREATED',
     old_status: null,
     new_status: 'pending_approval',
-    notes: 'Created from rebuild test form',
+    notes: `Created with ${rows.length} test item row(s)`,
   });
 
   return order;
