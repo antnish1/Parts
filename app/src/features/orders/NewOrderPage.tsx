@@ -4,6 +4,7 @@ import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
 import { createTestOrder } from '../../services/testData.service';
 import { getTestParts } from '../../services/testPart.service';
+import { getTestBranches } from '../../services/testBranch.service';
 
 const inputClass = 'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-pc-gold';
 const labelClass = 'text-xs font-black uppercase tracking-widest text-pc-muted';
@@ -11,6 +12,7 @@ const labelClass = 'text-xs font-black uppercase tracking-widest text-pc-muted';
 export function NewOrderPage() {
   const queryClient = useQueryClient();
   const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
+  const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
     branch: 'Jabalpur BHL',
@@ -90,16 +92,14 @@ export function NewOrderPage() {
   }
 
   return (
-    <PageCard eyebrow="Orders" title="New Order" description="This test form writes only to test_orders and test_order_items. It reads parts only from test_part_master.">
+    <PageCard eyebrow="Orders" title="New Order" description="This test form writes only to test_orders and test_order_items. It reads branches and parts only from test tables.">
       <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
         <div>
           <label className={labelClass}>Branch</label>
           <select className={inputClass} value={form.branch} onChange={(e) => updateField('branch', e.target.value)}>
-            <option>Jabalpur BHL</option>
-            <option>Jabalpur HL</option>
-            <option>Katni</option>
-            <option>Damoh</option>
-            <option>Seoni</option>
+            {(branches.length ? branches : [{ branch_name: 'Jabalpur BHL', branch_code: 'JBP_BHL', id: 'fallback' }]).map((branch) => (
+              <option key={branch.id} value={branch.branch_name}>{branch.branch_name}</option>
+            ))}
           </select>
         </div>
         <div>
