@@ -17,6 +17,10 @@ export function summarizeByStatus(orders: TestOrder[]): ReportRow[] {
   return Array.from(map.entries()).map(([label, count]) => ({ label, count }));
 }
 
+function escapeCsvCell(cell: unknown) {
+  return `"${String(cell).split('"').join('""')}"`;
+}
+
 export function downloadOrdersCsv(orders: TestOrder[]) {
   const header = ['Order No', 'Branch', 'Type', 'For', 'Machine No', 'Customer', 'Status', 'Created At'];
   const lines = orders.map((order) => [
@@ -30,7 +34,7 @@ export function downloadOrdersCsv(orders: TestOrder[]) {
     order.created_at,
   ]);
   const csv = [header, ...lines]
-    .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+    .map((row) => row.map(escapeCsvCell).join(','))
     .join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
