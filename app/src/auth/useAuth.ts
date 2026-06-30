@@ -3,13 +3,45 @@ import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { UserProfile, UserRole } from './roleGuards';
 
-const fallbackProfile: UserProfile = {
-  id: 'scaffold-user',
-  fullName: 'Migration User',
-  branch: 'HQ',
-  role: 'developer',
-  isActive: true,
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  branch: string | null;
+  role: UserRole | null;
+  is_active: boolean | null;
 };
+
+async function loadProfile(session: Session | null): Promise<UserProfile | null> {
+  if (!session?.user?.id) return null;
+
+  const { data, error } = await supabase
+    .from('test_profiles')
+    .select('id, full_name, branch, role, is_active')
+    .eq('id', session.user.id)
+    .maybeSingle<ProfileRow>();
+
+  if (error) {
+    console.error('Failed to load auth profile', error);
+  }
+
+  if (!data) {
+    return {
+      id: session.user.id,
+      fullName: session.user.email ?? 'Authenticated User',
+      branch: 'Unassigned',
+      role: 'viewer',
+      isActive: true,
+    };
+  }
+
+  return {
+    id: data.id,
+    fullName: data.full_name ?? session.user.email ?? 'Authenticated User',
+    branch: data.branch ?? 'Unassigned',
+    role: data.role ?? 'viewer',
+    isActive: data.is_active ?? false,
+  };
+}
 
 export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
@@ -19,17 +51,18 @@ export function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    async function refresh(nextSession: Session | null) {
+      const nextProfile = await loadProfile(nextSession);
       if (!isMounted) return;
-      setSession(data.session ?? null);
-      setProfile(data.session ? fallbackProfile : null);
+      setSession(nextSession);
+      setProfile(nextProfile);
       setIsLoading(false);
-    });
+    }
+
+    supabase.auth.getSession().then(({ data }) => refresh(data.session ?? null));
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setProfile(nextSession ? fallbackProfile : null);
-      setIsLoading(false);
+      refresh(nextSession);
     });
 
     return () => {
@@ -44,7 +77,7 @@ export function useAuth() {
     session,
     profile,
     role,
-    isAuthenticated: Boolean(session),
+    isAuthenticated: Boolean(session && profile?.isActive),
     isLoading,
   };
 }
