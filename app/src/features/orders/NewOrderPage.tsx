@@ -1,14 +1,16 @@
 import { FormEvent, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
 import { createTestOrder } from '../../services/testData.service';
+import { getTestParts } from '../../services/testPart.service';
 
 const inputClass = 'mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-pc-gold';
 const labelClass = 'text-xs font-black uppercase tracking-widest text-pc-muted';
 
 export function NewOrderPage() {
   const queryClient = useQueryClient();
+  const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
     branch: 'Jabalpur BHL',
@@ -38,6 +40,16 @@ export function NewOrderPage() {
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function selectPart(partNo: string) {
+    const part = parts.find((item) => item.part_no === partNo);
+    setForm((current) => ({
+      ...current,
+      partNo,
+      description: part?.description ?? current.description,
+      dnp: part?.dnp != null ? String(part.dnp) : current.dnp,
+    }));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -78,7 +90,7 @@ export function NewOrderPage() {
   }
 
   return (
-    <PageCard eyebrow="Orders" title="New Order" description="This test form writes only to test_orders and test_order_items. It does not use the live requests table.">
+    <PageCard eyebrow="Orders" title="New Order" description="This test form writes only to test_orders and test_order_items. It reads parts only from test_part_master.">
       <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
         <div>
           <label className={labelClass}>Branch</label>
@@ -125,6 +137,14 @@ export function NewOrderPage() {
         <div>
           <label className={labelClass}>Call ID</label>
           <input className={inputClass} value={form.callId} onChange={(e) => updateField('callId', e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass}>Part Lookup</label>
+          <select className={inputClass} value={form.partNo} onChange={(e) => selectPart(e.target.value)}>
+            {parts.map((part) => (
+              <option key={part.part_no} value={part.part_no}>{part.part_no} - {part.description ?? 'No description'}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className={labelClass}>Part No</label>
