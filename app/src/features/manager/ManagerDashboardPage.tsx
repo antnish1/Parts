@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { getDashboardSummary, getTestOrders } from '../../services/testData.service';
-import { summarizeByBranch } from '../../services/testReport.service';
+import { summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
 
 const cards = [
   { key: 'totalOrders', label: 'Total Orders' },
@@ -15,6 +15,7 @@ export function ManagerDashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ['test-dashboard-summary'], queryFn: getDashboardSummary });
   const { data: orders = [] } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
   const branchRows = summarizeByBranch(orders);
+  const statusRows = summarizeByStatus(orders);
 
   return (
     <PageCard eyebrow="Manager" title="Manager Dashboard" description="Reading summary from test_orders only. Live database tables are untouched.">
@@ -27,14 +28,25 @@ export function ManagerDashboardPage() {
           </div>
         ))}
       </div>
-      <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-        <p className="mb-3 text-sm font-black text-white">Branch Summary</p>
-        {branchRows.map((row) => (
-          <div key={row.label} className="flex justify-between border-t border-slate-800 py-2 text-sm">
-            <span className="text-pc-muted">{row.label}</span>
-            <span className="font-black text-white">{row.count}</span>
-          </div>
-        ))}
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+          <p className="mb-3 text-sm font-black text-white">Branch Summary</p>
+          {branchRows.map((row) => (
+            <div key={row.label} className="flex justify-between border-t border-slate-800 py-2 text-sm">
+              <span className="text-pc-muted">{row.label}</span>
+              <span className="font-black text-white">{row.count}</span>
+            </div>
+          ))}
+        </div>
+        <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+          <p className="mb-3 text-sm font-black text-white">Status Summary</p>
+          {statusRows.map((row) => (
+            <div key={row.label} className="flex justify-between border-t border-slate-800 py-2 text-sm">
+              <span className="text-pc-muted">{row.label}</span>
+              <span className="font-black text-white">{row.count}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </PageCard>
   );
