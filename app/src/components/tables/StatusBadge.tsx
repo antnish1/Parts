@@ -13,7 +13,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const normalized = status.trim().replaceAll('_', ' ').toUpperCase();
+  const normalized = status.trim().split('_').join(' ').toUpperCase();
   return (
     <span className={clsx('inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] before:h-2 before:w-2 before:rounded-sm', statusStyles[normalized] ?? 'border-[#6D8196]/45 bg-[#263244] text-[#dbeafe] before:bg-[#6D8196]')}>
       {normalized || 'NA'}
