@@ -27,16 +27,16 @@ export function TrackOrdersPage() {
   });
 
   return (
-    <PageCard eyebrow="Tracking" title="Track Orders" description="Reading only from test_orders and test_order_items. Live requests table is not used.">
-      <div className="mb-4 grid gap-3 lg:grid-cols-2">
+    <PageCard eyebrow="Tracking" title="Track Orders" description="Test order tracking workspace.">
+      <div className="mb-3 grid gap-2 lg:grid-cols-2">
         <input
-          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-pc-gold"
+          className="rounded-lg border border-[#263244] bg-[#0b1020] px-3 py-2 text-[13px] text-white outline-none focus:border-[#82C8E5]"
           placeholder="Search order, branch, customer, or machine"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
         <select
-          className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-pc-gold"
+          className="rounded-lg border border-[#263244] bg-[#0b1020] px-3 py-2 text-[13px] text-white outline-none focus:border-[#82C8E5]"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
@@ -48,64 +48,64 @@ export function TrackOrdersPage() {
           <option value="rejected">Rejected</option>
         </select>
       </div>
-      {isLoading ? <p className="text-sm text-pc-muted">Loading test orders...</p> : null}
-      <div className="overflow-hidden rounded-2xl border border-slate-800">
-        <table className="w-full min-w-[820px] border-collapse text-left text-sm">
-          <thead className="bg-slate-950 text-xs uppercase tracking-wider text-pc-muted">
+      {isLoading ? <p className="text-[13px] text-[#c7d2df]">Loading test orders...</p> : null}
+      <div className="overflow-hidden rounded-xl border border-[#263244]">
+        <table className="w-full min-w-[760px] border-collapse text-left text-[13px]">
+          <thead className="bg-[#0b1020] text-[11px] uppercase tracking-[0.12em] text-[#c7d2df]">
             <tr>
-              <th className="px-4 py-3">Order No</th>
-              <th className="px-4 py-3">Branch</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">For</th>
-              <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Action</th>
+              <th className="px-3 py-2.5">Order No</th>
+              <th className="px-3 py-2.5">Branch</th>
+              <th className="px-3 py-2.5">Type</th>
+              <th className="px-3 py-2.5">For</th>
+              <th className="px-3 py-2.5">Customer</th>
+              <th className="px-3 py-2.5">Status</th>
+              <th className="px-3 py-2.5">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800 bg-slate-900/60">
+          <tbody className="divide-y divide-[#263244] bg-[#111827]">
             {filteredOrders.map((order) => (
-              <tr key={order.id} className="hover:bg-slate-800/60">
-                <td className="px-4 py-3 font-black text-white">{order.order_no}</td>
-                <td className="px-4 py-3 text-slate-300">{order.branch}</td>
-                <td className="px-4 py-3 text-slate-300">{order.order_type}</td>
-                <td className="px-4 py-3 text-slate-300">{order.order_for}</td>
-                <td className="px-4 py-3 text-slate-300">{order.customer_name ?? '-'}</td>
-                <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
-                <td className="px-4 py-3"><Button onClick={() => setSelectedOrderId(order.id)}>View</Button></td>
+              <tr key={order.id} className="hover:bg-[#182235]">
+                <td className="px-3 py-2.5 font-black leading-5 text-white">{order.order_no}</td>
+                <td className="px-3 py-2.5 text-[#d8e3ee]">{order.branch}</td>
+                <td className="px-3 py-2.5 text-[#d8e3ee]">{order.order_type}</td>
+                <td className="px-3 py-2.5 text-[#d8e3ee]">{order.order_for}</td>
+                <td className="px-3 py-2.5 text-[#d8e3ee]">{order.customer_name ?? '-'}</td>
+                <td className="px-3 py-2.5"><StatusBadge status={order.status} /></td>
+                <td className="px-3 py-2.5"><Button className="rounded-md px-3 py-1.5 text-xs" onClick={() => setSelectedOrderId(order.id)}>View</Button></td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filteredOrders.length === 0 ? <p className="p-4 text-sm text-pc-muted">No matching test orders found.</p> : null}
+        {filteredOrders.length === 0 ? <p className="p-3 text-[13px] text-[#c7d2df]">No matching test orders found.</p> : null}
       </div>
       {selectedOrder ? (
-        <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
-          <p className="text-lg font-black text-white">{selectedOrder.order_no} Details</p>
-          <p className="mt-1 text-sm text-pc-muted">{selectedOrder.branch} • {selectedOrder.order_type} • {selectedOrder.customer_name ?? '-'}</p>
-          <div className="mt-4 overflow-hidden rounded-xl border border-slate-800">
-            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-              <thead className="bg-slate-900 text-xs uppercase tracking-wider text-pc-muted">
+        <div className="mt-4 rounded-xl border border-[#263244] bg-[#0b1020] p-3">
+          <p className="text-base font-black text-white">{selectedOrder.order_no} Details</p>
+          <p className="mt-1 text-[13px] text-[#c7d2df]">{selectedOrder.branch} • {selectedOrder.order_type} • {selectedOrder.customer_name ?? '-'}</p>
+          <div className="mt-3 overflow-hidden rounded-lg border border-[#263244]">
+            <table className="w-full min-w-[620px] border-collapse text-left text-[13px]">
+              <thead className="bg-[#111827] text-[11px] uppercase tracking-[0.12em] text-[#c7d2df]">
                 <tr>
-                  <th className="px-4 py-3">Part No</th>
-                  <th className="px-4 py-3">Description</th>
-                  <th className="px-4 py-3">Qty</th>
-                  <th className="px-4 py-3">DNP</th>
-                  <th className="px-4 py-3">Value</th>
+                  <th className="px-3 py-2">Part No</th>
+                  <th className="px-3 py-2">Description</th>
+                  <th className="px-3 py-2">Qty</th>
+                  <th className="px-3 py-2">DNP</th>
+                  <th className="px-3 py-2">Value</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-[#263244]">
                 {items.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-4 py-3 font-black text-white">{item.part_no}</td>
-                    <td className="px-4 py-3 text-slate-300">{item.description ?? '-'}</td>
-                    <td className="px-4 py-3 text-slate-300">{item.qty}</td>
-                    <td className="px-4 py-3 text-slate-300">{item.dnp ?? '-'}</td>
-                    <td className="px-4 py-3 text-slate-300">{item.value ?? '-'}</td>
+                    <td className="px-3 py-2 font-black text-white">{item.part_no}</td>
+                    <td className="px-3 py-2 text-[#d8e3ee]">{item.description ?? '-'}</td>
+                    <td className="px-3 py-2 text-[#d8e3ee]">{item.qty}</td>
+                    <td className="px-3 py-2 text-[#d8e3ee]">{item.dnp ?? '-'}</td>
+                    <td className="px-3 py-2 text-[#d8e3ee]">{item.value ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {items.length === 0 ? <p className="p-4 text-sm text-pc-muted">No item rows found for this test order.</p> : null}
+            {items.length === 0 ? <p className="p-3 text-[13px] text-[#c7d2df]">No item rows found for this test order.</p> : null}
           </div>
         </div>
       ) : null}
