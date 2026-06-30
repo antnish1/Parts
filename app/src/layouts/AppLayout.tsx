@@ -26,16 +26,15 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-pc-bg text-pc-text">
+    <div className="min-h-screen bg-[#111827] text-pc-text">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 border-r border-slate-800 bg-slate-950/70 p-4 lg:block">
-          <div className="rounded-2xl border border-pc-gold/20 bg-slate-900/80 p-4 shadow-panel">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-pc-gold">Parts Connect</p>
-            <h1 className="mt-2 text-xl font-black text-white">Production Portal</h1>
-            <p className="mt-2 text-xs leading-relaxed text-pc-muted">Secure React rebuild with Supabase Auth and role-based access.</p>
+        <aside className="hidden w-56 shrink-0 border-r border-[#263244] bg-[#0b1020] p-3 xl:block">
+          <div className="rounded-xl border border-[#263244] bg-[#111827] p-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#82C8E5]">Parts Connect</p>
+            <h1 className="mt-1 text-base font-black text-white">Production Portal</h1>
           </div>
 
-          <nav className="mt-5 space-y-1">
+          <nav className="mt-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -43,8 +42,8 @@ export function AppLayout() {
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold transition ${
-                      isActive ? 'bg-pc-gold text-slate-950' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    `flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-extrabold transition ${
+                      isActive ? 'bg-[#82C8E5] text-[#000080]' : 'text-[#d8e3ee] hover:bg-[#263244] hover:text-white'
                     }`
                   }
                 >
@@ -57,18 +56,18 @@ export function AppLayout() {
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-slate-800 bg-pc-bg/90 px-4 py-3 backdrop-blur lg:px-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <header className="sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-4 py-2.5 backdrop-blur lg:px-5">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-pc-gold">Secure Workspace</p>
-                <h2 className="text-lg font-black text-white">Parts Connect Portal</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#82C8E5]">Secure Workspace</p>
+                <h2 className="text-base font-black text-white">Parts Connect Portal</h2>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-2 text-sm">
-                  <p className="font-black text-white">{profile?.fullName ?? 'User'}</p>
-                  <p className="text-xs text-pc-muted">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
+              <div className="flex items-center gap-2">
+                <div className="rounded-xl border border-[#263244] bg-[#0b1020] px-3 py-1.5 text-sm">
+                  <p className="leading-4 font-black text-white">{profile?.fullName ?? 'User'}</p>
+                  <p className="text-[11px] text-[#c7d2df]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
                 </div>
-                <Button variant="secondary" onClick={handleSignOut}>
+                <Button variant="secondary" className="rounded-lg px-3 py-2 text-xs" onClick={handleSignOut}>
                   <LogOut className="h-4 w-4" />
                   Sign Out
                 </Button>
@@ -76,7 +75,7 @@ export function AppLayout() {
             </div>
           </header>
 
-          <div className="p-4 lg:p-6">
+          <div className="p-3 lg:p-4 xl:p-5">
             <Outlet />
           </div>
         </main>
