@@ -3,28 +3,89 @@ import { supabase } from '../lib/supabase';
 export type ManagerInventoryRow = {
   id: string;
   branch_code: string;
+  branch_name: string | null;
   item_code: string;
   item_name: string | null;
   item_group: string | null;
   uom: string | null;
-  qty: number | null;
   dnp: number | null;
+  qty: number | null;
   inv_value: number | null;
+  report_date: string | null;
 };
 
-export async function getManagerInventoryLookup(search = '', branch = 'all') {
+export type ManagerInventoryTxnRow = {
+  id: string;
+  report_date: string | null;
+  branch_code: string;
+  branch_name: string | null;
+  item_code: string;
+  item_name: string | null;
+  item_group: string | null;
+  uom: string | null;
+  dnp: number | null;
+  received: number | null;
+  issued: number | null;
+  closing_balance: number | null;
+  closing_value: number | null;
+};
+
+export async function getLatestInventoryReportDate() {
+  const { data, error } = await supabase
+    .from('test_inventory_staging')
+    .select('report_date')
+    .order('report_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) return null;
+  return data?.report_date ?? null;
+}
+
+export async function getManagerInventoryLookup(search = '', branch = 'all', reportDate = '') {
+  const latestDate = reportDate || await getLatestInventoryReportDate();
   let query = supabase
-    .from('test_inventory_current')
-    .select('id, branch_code, item_code, item_name, item_group, uom, qty, dnp, inv_value')
+    .from('test_inventory_staging')
+    .select('id, report_date, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, closing_balance, closing_value')
     .order('branch_code', { ascending: true })
     .order('item_code', { ascending: true })
-    .limit(50);
+    .limit(100);
 
+  if (latestDate) query = query.eq('report_date', latestDate);
   if (branch !== 'all') query = query.eq('branch_code', branch);
   const term = search.trim();
   if (term) query = query.or(`item_code.ilike.%${term}%,item_name.ilike.%${term}%,item_group.ilike.%${term}%`);
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as ManagerInventoryRow[];
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    branch_code: row.branch_code,
+    branch_name: row.branch_name,
+    item_code: row.item_code,
+    item_name: row.item_name,
+    item_group: row.item_group,
+    uom: row.uom,
+    dnp: row.dnp,
+    qty: row.closing_balance,
+    inv_value: row.closing_value,
+    report_date: row.report_date,
+  })) as ManagerInventoryRow[];
+}
+
+export async function getManagerInventoryTransactions(branch = 'all', reportDate = '') {
+  const latestDate = reportDate || await getLatestInventoryReportDate();
+  let query = supabase
+    .from('test_inventory_staging')
+    .select('id, report_date, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, received, issued, closing_balance, closing_value')
+    .order('branch_code', { ascending: true })
+    .order('item_code', { ascending: true })
+    .limit(100);
+
+  if (latestDate) query = query.eq('report_date', latestDate);
+  if (branch !== 'all') query = query.eq('branch_code', branch);
+  query = query.or('received.neq.0,issued.neq.0');
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as ManagerInventoryTxnRow[];
 }
