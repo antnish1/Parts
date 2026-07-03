@@ -119,52 +119,14 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
 }
 
 export async function createTestOrder(input: CreateTestOrderInput) {
-  const orderNo = `TEST-${Date.now()}`;
   const orderItems = input.items?.length
     ? input.items
     : [{ partNo: input.partNo ?? '', description: input.description ?? '', dnp: input.dnp ?? 0, qty: input.qty ?? 0 }];
 
-  const { data: order, error: orderError } = await supabase
-    .from('test_orders')
-    .insert({
-      order_no: orderNo,
-      branch: input.branch,
-      order_type: input.orderType,
-      order_for: input.orderFor,
-      approver_id: input.approverId || null,
-      machine_no: input.machineNo || null,
-      customer_name: input.customerName || null,
-      call_id: input.callId || null,
-      warranty_status: input.warrantyStatus || 'NA',
-      status: 'pending_approval',
-      approval_status: 'pending',
-    })
-    .select('id, order_no')
-    .single();
-
-  if (orderError) throw orderError;
-
-  const rows = orderItems.map((item) => ({
-    order_id: order.id,
-    part_no: item.partNo,
-    description: item.description,
-    dnp: item.dnp,
-    qty: item.qty,
-    value: Number((item.dnp * item.qty).toFixed(2)),
-    previous_30d_qty: item.previous30dQty ?? 0,
-    row_status: 'pending_approval',
-  }));
-
-  const { error: itemError } = await supabase.from('test_order_items').insert(rows);
-  if (itemError) throw itemError;
-
-  await supabase.from('test_order_events').insert({
-    order_id: order.id,
-    event_type: 'TEST_ORDER_CREATED',
-    old_status: null,
-    new_status: 'pending_approval',
-    notes: `Created with ${rows.length} test item row(s)`,
+  const { data, error } = await supabase.functions.invoke('create-order-action', {
+    body: { ...input, items: orderItems },
   });
-
-  return order;
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return { id: data.id as string, order_no: data.order_no as string };
 }
