@@ -40,6 +40,7 @@ export async function setTestOrderProcessed(order: TestOrder, processingReferenc
     .like('order_no', 'TEST-%');
 
   if (error) throw error;
+  await supabase.from('test_order_items').update({ row_status: 'processed' }).eq('order_id', order.id);
   await appendAdminEvent(order.id, 'ADMIN_PROCESSED', order.status, 'processed', `Processed with final order number ${reference}.`);
 }
 
@@ -51,26 +52,38 @@ export async function setTestOrderAdminRejected(order: TestOrder, reason = '') {
     .like('order_no', 'TEST-%');
 
   if (error) throw error;
+  await supabase.from('test_order_items').update({ row_status: 'rejected' }).eq('order_id', order.id);
   await appendAdminEvent(order.id, 'ADMIN_REJECTED', order.status, 'rejected', reason.trim() || 'Rejected by admin.');
 }
 
-export async function markTestOrderIssued(order: TestOrder, invoiceNo: string, invoiceDate: string) {
+export async function markTestOrderIssued(order: TestOrder, invoiceNo: string, invoiceDate: string, docketNo = '', transportName = '') {
   const dbmsInvoiceNo = invoiceNo.trim().toUpperCase();
+  const docket = docketNo.trim().toUpperCase();
+  const transport = transportName.trim();
   if (!dbmsInvoiceNo) throw new Error('Invoice number is required.');
   if (!invoiceDate) throw new Error('Invoice date is required.');
   if (order.order_for !== 'Customer') throw new Error('Only customer orders can be marked issued.');
 
-  const { error } = await supabase
-    .from('test_orders')
+  const { error: itemError } = await supabase
+    .from('test_order_items')
     .update({
-      status: 'issued',
       dbms_invoice_no: dbmsInvoiceNo,
       dbms_invoice_date: invoiceDate,
+      docket_no: docket || null,
+      transport_name: transport || null,
+      row_status: 'issued',
       updated_at: new Date().toISOString(),
     })
+    .eq('order_id', order.id)
+    .neq('row_status', 'received');
+  if (itemError) throw itemError;
+
+  const { error } = await supabase
+    .from('test_orders')
+    .update({ status: 'issued', updated_at: new Date().toISOString() })
     .eq('id', order.id)
     .like('order_no', 'TEST-%');
 
   if (error) throw error;
-  await appendAdminEvent(order.id, 'ORDER_ISSUED', order.status, 'issued', `Issued with invoice ${dbmsInvoiceNo}.`);
+  await appendAdminEvent(order.id, 'ORDER_ISSUED', order.status, 'issued', `Issued item rows with invoice ${dbmsInvoiceNo}.`);
 }
