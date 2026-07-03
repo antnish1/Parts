@@ -1,14 +1,16 @@
 import { supabase } from '../lib/supabase';
 import type { TestOrder } from './testData.service';
 
-async function appendAdminEvent(orderId: string, eventType: string, oldStatus: string | null, newStatus: string | null, notes: string) {
-  await supabase.from('test_order_events').insert({
-    order_id: orderId,
-    event_type: eventType,
-    old_status: oldStatus,
-    new_status: newStatus,
-    notes,
-  });
+type AdminActionPayload = Record<string, string> & {
+  action: 'process' | 'reject' | 'issue';
+  orderId: string;
+};
+
+async function runAdminOrderAction(payload: AdminActionPayload) {
+  const { data, error } = await supabase.functions.invoke('admin-order-action', { body: payload });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data;
 }
 
 export async function setTestOrderProcessed(order: TestOrder, processingReference: string, processedNotes = '') {
@@ -16,74 +18,34 @@ export async function setTestOrderProcessed(order: TestOrder, processingReferenc
   if (!reference) throw new Error('Final order number is required.');
   if (reference === order.order_no.toUpperCase()) throw new Error('Final order number cannot be same as temporary order number.');
 
-  const { data: duplicate, error: duplicateError } = await supabase
-    .from('test_orders')
-    .select('id, order_no')
-    .or(`final_order_no.eq.${reference},processing_reference.eq.${reference},order_no.eq.${reference}`)
-    .neq('id', order.id)
-    .maybeSingle();
-  if (duplicateError) throw duplicateError;
-  if (duplicate) throw new Error('Final order number already exists.');
-
-  const { error } = await supabase
-    .from('test_orders')
-    .update({
-      status: 'processed',
-      approval_status: 'approved',
-      processing_reference: reference,
-      final_order_no: reference,
-      processed_notes: processedNotes.trim() || null,
-      processed_date: new Date().toISOString().slice(0, 10),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  await supabase.from('test_order_items').update({ row_status: 'processed' }).eq('order_id', order.id);
-  await appendAdminEvent(order.id, 'ADMIN_PROCESSED', order.status, 'processed', `Processed with final order number ${reference}.`);
+  await runAdminOrderAction({
+    action: 'process',
+    orderId: order.id,
+    processingReference: reference,
+    processedNotes: processedNotes.trim(),
+  });
 }
 
 export async function setTestOrderAdminRejected(order: TestOrder, reason = '') {
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'rejected', approval_status: 'rejected', processed_notes: reason.trim() || null, updated_at: new Date().toISOString() })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  await supabase.from('test_order_items').update({ row_status: 'rejected' }).eq('order_id', order.id);
-  await appendAdminEvent(order.id, 'ADMIN_REJECTED', order.status, 'rejected', reason.trim() || 'Rejected by admin.');
+  await runAdminOrderAction({
+    action: 'reject',
+    orderId: order.id,
+    reason: reason.trim(),
+  });
 }
 
 export async function markTestOrderIssued(order: TestOrder, invoiceNo: string, invoiceDate: string, docketNo = '', transportName = '') {
   const dbmsInvoiceNo = invoiceNo.trim().toUpperCase();
-  const docket = docketNo.trim().toUpperCase();
-  const transport = transportName.trim();
   if (!dbmsInvoiceNo) throw new Error('Invoice number is required.');
   if (!invoiceDate) throw new Error('Invoice date is required.');
   if (order.order_for !== 'Customer') throw new Error('Only customer orders can be marked issued.');
 
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({
-      dbms_invoice_no: dbmsInvoiceNo,
-      dbms_invoice_date: invoiceDate,
-      docket_no: docket || null,
-      transport_name: transport || null,
-      row_status: 'issued',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('order_id', order.id)
-    .neq('row_status', 'received');
-  if (itemError) throw itemError;
-
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'issued', updated_at: new Date().toISOString() })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  await appendAdminEvent(order.id, 'ORDER_ISSUED', order.status, 'issued', `Issued item rows with invoice ${dbmsInvoiceNo}.`);
+  await runAdminOrderAction({
+    action: 'issue',
+    orderId: order.id,
+    invoiceNo: dbmsInvoiceNo,
+    invoiceDate,
+    docketNo: docketNo.trim().toUpperCase(),
+    transportName: transportName.trim(),
+  });
 }
