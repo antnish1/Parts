@@ -15,6 +15,7 @@ Use this tracker before stopping day-to-day use of the old root `index.html` wor
 - Manager Dashboard with inventory lookup and exports
 - Reports with paged orders
 - Developer Workspace with paged orders and user tools
+- Order Detail comments with private staging attachment upload and signed download links
 
 ## Functions to deploy
 
@@ -29,7 +30,15 @@ supabase functions deploy order-item-qty-action
 supabase functions deploy status-report-action
 supabase functions deploy docket-receive-action
 supabase functions deploy inventory-upload-action
+supabase functions deploy comment-attachment-upload-action
+supabase functions deploy comment-attachment-link-action
 ```
+
+## Staging migrations to confirm
+
+- `010_add_test_comment_attachments_storage.sql` has been applied.
+- Private bucket `test_order_comment_attachments` exists.
+- Table `test_order_comment_attachments` exists.
 
 ## Final smoke test
 
@@ -39,9 +48,13 @@ supabase functions deploy inventory-upload-action
 4. Process it with a final order number.
 5. Dispatch selected item rows.
 6. Receive the dispatched rows.
-7. Upload one status report.
-8. Upload one inventory file.
-9. Check Track Orders, Manager Dashboard, Reports, and Developer Workspace.
+7. Add one user comment on Order Detail.
+8. Attach one small PDF or JPG to that comment.
+9. Download that attachment using the signed link.
+10. Upload one status report.
+11. Upload one inventory file.
+12. Check Track Orders, Manager Dashboard, Reports, and Developer Workspace.
+13. Run `docs/comment-attachments-staging-smoke-test.md`.
 
 ## Cutover rule
 
