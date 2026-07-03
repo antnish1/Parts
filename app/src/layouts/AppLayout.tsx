@@ -28,7 +28,7 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111827] text-pc-text">
+    <div data-theme="light-pro" className="min-h-screen bg-[#111827] text-pc-text">
       <div className="flex min-h-screen">
         <aside className="hidden w-48 shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 xl:block">
           <div className="rounded-lg border border-[#263244] bg-[#111827] p-2.5">
