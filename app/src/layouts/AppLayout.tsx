@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
 import { RoleAwareNav } from './RoleAwareNav';
+import { MobileRoleNav } from './MobileRoleNav';
 
 const navItems = [
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
@@ -34,7 +35,6 @@ export function AppLayout() {
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect</p>
             <h1 className="mt-1 text-sm font-black text-white">Production Portal</h1>
           </div>
-
           <RoleAwareNav items={navItems} role={profile?.role} />
         </aside>
 
@@ -57,10 +57,8 @@ export function AppLayout() {
               </div>
             </div>
           </header>
-
-          <div className="p-2.5 lg:p-3">
-            <Outlet />
-          </div>
+          <MobileRoleNav items={navItems} role={profile?.role} />
+          <div className="p-2.5 lg:p-3"><Outlet /></div>
         </main>
       </div>
     </div>
