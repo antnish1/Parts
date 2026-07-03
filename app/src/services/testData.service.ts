@@ -13,6 +13,12 @@ export type TestOrder = {
   processing_reference: string | null;
   processed_notes: string | null;
   processed_date: string | null;
+  final_order_no: string | null;
+  dbms_invoice_no: string | null;
+  dbms_invoice_date: string | null;
+  received_date: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
   created_at: string;
 };
 
@@ -51,7 +57,7 @@ export type CreateTestOrderInput = {
 export async function getTestOrders(): Promise<TestOrder[]> {
   const { data, error } = await supabase
     .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, processing_reference, processed_notes, processed_date, created_at')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
