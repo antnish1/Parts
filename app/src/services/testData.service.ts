@@ -33,6 +33,7 @@ export type CreateTestOrderInput = {
   branch: string;
   orderType: string;
   orderFor: string;
+  approverId?: string;
   machineNo?: string;
   customerName?: string;
   callId?: string;
@@ -84,6 +85,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
       branch: input.branch,
       order_type: input.orderType,
       order_for: input.orderFor,
+      approver_id: input.approverId || null,
       machine_no: input.machineNo || null,
       customer_name: input.customerName || null,
       call_id: input.callId || null,
