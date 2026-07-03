@@ -3,6 +3,7 @@ import { AppLayout } from '../layouts/AppLayout';
 import { LoginPage } from '../auth/LoginPage';
 import { RequireAuth } from '../auth/RequireAuth';
 import { NewOrderPage } from '../features/orders/NewOrderPage';
+import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { TrackOrdersPage } from '../features/tracking/TrackOrdersPage';
 import { ApprovalsPage } from '../features/approvals/ApprovalsPage';
 import { AdminPage } from '../features/admin/AdminPage';
@@ -21,6 +22,7 @@ export function AppRouter() {
           <Route index element={<Navigate to="/orders/new" replace />} />
           <Route path="/orders/new" element={<NewOrderPage />} />
           <Route path="/orders/track" element={<TrackOrdersPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
           <Route path="/approvals/:queue" element={<ApprovalsPage />} />
           <Route path="/admin/:queue" element={<AdminPage />} />
           <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
