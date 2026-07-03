@@ -36,6 +36,12 @@ export type TestOrderViewItem = {
   value: number | null;
   edited_value: number | null;
   previous_30d_qty: number | null;
+  dbms_invoice_no: string | null;
+  dbms_invoice_date: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
+  received_date: string | null;
+  row_status: string | null;
 };
 
 export type TestOrderEvent = {
@@ -87,7 +93,7 @@ export async function getTestOrderView(orderId: string) {
 
   const { data: items, error: itemError } = await supabase
     .from('test_order_items')
-    .select('id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty')
+    .select('id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   if (itemError) throw itemError;
