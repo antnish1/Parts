@@ -14,9 +14,14 @@ type StatusReportRow = {
   transportName: string;
 };
 
+function keyOf(value: string) {
+  return value.toLowerCase().replace(/\s|_|\.|-|\(|\)|\//g, '');
+}
+
 function cell(row: Record<string, unknown>, names: string[]) {
   const keys = Object.keys(row);
-  const key = keys.find((item) => names.some((name) => item.toLowerCase().replace(/\s|_|\./g, '').includes(name)));
+  const normalizedNames = names.map(keyOf);
+  const key = keys.find((item) => normalizedNames.some((name) => keyOf(item).includes(name)));
   return key ? String(row[key] ?? '').trim() : '';
 }
 
@@ -39,13 +44,13 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   return rows.map((row) => ({
-    finalOrderNo: cell(row, ['finalorderno', 'orderno', 'saporderno', 'dbmsorderno']).toUpperCase(),
-    partNo: normalizePartNo(cell(row, ['partno', 'material', 'itemcode'])),
-    billedQty: toNumber(cell(row, ['billedqty', 'billqty', 'qty'])),
-    invoiceNo: cell(row, ['invoiceno', 'dbmsinvoice']).toUpperCase(),
-    invoiceDate: parseDate(cell(row, ['invoicedate', 'billdate'])),
-    docketNo: cell(row, ['docketno', 'lrno', 'awb']).toUpperCase(),
-    transportName: cell(row, ['transport', 'transporter']),
+    finalOrderNo: cell(row, ['finalorderno', 'finalorder', 'orderno', 'saporderno', 'saporder', 'dbmsorderno', 'dbmsorder', 'salesorderno', 'salesorder']).toUpperCase(),
+    partNo: normalizePartNo(cell(row, ['partno', 'partnumber', 'materialno', 'materialnumber', 'material', 'itemcode', 'itemno'])),
+    billedQty: toNumber(cell(row, ['billedqty', 'billedquantity', 'billqty', 'qty', 'quantity', 'dispatchqty', 'invoiceqty'])),
+    invoiceNo: cell(row, ['invoiceno', 'invoicenumber', 'dbmsinvoice', 'dbmsinvoiceno', 'billno', 'billingdoc']).toUpperCase(),
+    invoiceDate: parseDate(cell(row, ['invoicedate', 'billdate', 'billingdate', 'dbmsinvoicedate'])),
+    docketNo: cell(row, ['docketno', 'docketnumber', 'lrno', 'lrnumber', 'awb', 'awbno', 'waybill']).toUpperCase(),
+    transportName: cell(row, ['transport', 'transporter', 'transportname', 'transportername', 'courier', 'carrier']),
   })).filter((row) => row.finalOrderNo && row.partNo);
 }
 
