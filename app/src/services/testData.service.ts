@@ -26,6 +26,7 @@ export type CreateTestOrderItemInput = {
   description: string;
   dnp: number;
   qty: number;
+  previous30dQty?: number;
 };
 
 export type CreateTestOrderInput = {
@@ -102,7 +103,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
     dnp: item.dnp,
     qty: item.qty,
     value: Number((item.dnp * item.qty).toFixed(2)),
-    previous_30d_qty: 0,
+    previous_30d_qty: item.previous30dQty ?? 0,
   }));
 
   const { error: itemError } = await supabase.from('test_order_items').insert(rows);
