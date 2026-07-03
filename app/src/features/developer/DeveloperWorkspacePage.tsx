@@ -5,7 +5,7 @@ import { PageCard } from '../../components/ui/PageCard';
 import { getTestOrders } from '../../services/testData.service';
 import { getTestBranches } from '../../services/testBranch.service';
 import { getTestParts } from '../../services/testPart.service';
-import { createTestProfile, getTestApprovers, getTestProfiles } from '../../services/testProfile.service';
+import { createPortalUser, getTestApprovers, getTestProfiles } from '../../services/testProfile.service';
 
 const roles = ['branch', 'admin', 'super', 'manager', 'viewer', 'developer'];
 
@@ -13,6 +13,8 @@ export function DeveloperWorkspacePage() {
   const [fullName, setFullName] = useState('');
   const [branch, setBranch] = useState('');
   const [role, setRole] = useState('branch');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const { data: orders = [] } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
@@ -22,16 +24,18 @@ export function DeveloperWorkspacePage() {
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('Saving...');
+    setMessage('Creating Supabase Auth user...');
     try {
-      await createTestProfile({ fullName, branch, role });
+      await createPortalUser({ email, password, fullName, branch, role });
       setFullName('');
       setBranch('');
       setRole('branch');
-      setMessage('Profile added. Create matching Supabase Auth email/password user separately before login use.');
+      setEmail('');
+      setPassword('');
+      setMessage('Supabase Auth user and portal profile created.');
       await refetch();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Failed to add profile.');
+      setMessage(error instanceof Error ? error.message : 'Failed to create user.');
     }
   }
 
@@ -40,20 +44,22 @@ export function DeveloperWorkspacePage() {
   ];
 
   return (
-    <PageCard eyebrow="Developer" title="Developer Workspace" description="Staging diagnostics and user profile setup.">
+    <PageCard eyebrow="Developer" title="Developer Workspace" description="Staging diagnostics and Supabase user setup.">
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {checks.map(([label, value]) => (<div key={label} className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#6D8196]">{label}</p><p className="mt-1 text-lg font-black text-white">{value}</p></div>))}
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Add New User Profile</p>
-        <form onSubmit={addUser} className="grid gap-2 lg:grid-cols-[1fr_1fr_160px_auto]">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Create Supabase User</p>
+        <form onSubmit={addUser} className="grid gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_150px_auto]">
+          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input type="password" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Branch" value={branch} onChange={(event) => setBranch(event.target.value)} />
           <select className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={role} onChange={(event) => setRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select>
-          <button type="submit" className="text-xs font-black text-[#82C8E5] hover:underline">Add User</button>
+          <button type="submit" className="text-xs font-black text-[#82C8E5] hover:underline">Create</button>
         </form>
-        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'Creates only the portal profile in test_profiles. Supabase Auth account must also exist for login.'}</p>
+        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'Creates Supabase Auth user through secure Edge Function and inserts matching test_profiles row.'}</p>
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
@@ -63,7 +69,7 @@ export function DeveloperWorkspacePage() {
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3"><p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Quick Navigation</p><div className="grid gap-2 text-xs sm:grid-cols-3 xl:grid-cols-6"><Link className="font-black text-[#82C8E5] hover:underline" to="/orders/new">New Order</Link><Link className="font-black text-[#82C8E5] hover:underline" to="/orders/track">Track Orders</Link><Link className="font-black text-[#82C8E5] hover:underline" to="/approvals/pending">Approvals</Link><Link className="font-black text-[#82C8E5] hover:underline" to="/admin/approved">Admin</Link><Link className="font-black text-[#82C8E5] hover:underline" to="/inventory/upload">Inventory</Link><Link className="font-black text-[#82C8E5] hover:underline" to="/docket-scanner">Docket</Link></div></div>
 
-      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3"><p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Safety Guardrails</p><div className="grid gap-2 text-xs text-[#d8e3ee] md:grid-cols-2"><p>Only test_ tables are used in rebuild modules.</p><p>Live tables remain untouched until cutover.</p><p>Order numbers are restricted to TEST-* during staging.</p><p>Auth is Supabase email/password, not legacy frontend password matching.</p></div></div>
+      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3"><p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Safety Guardrails</p><div className="grid gap-2 text-xs text-[#d8e3ee] md:grid-cols-2"><p>Service-role key stays only inside Supabase Edge Function.</p><p>Only active developer profile can create users.</p><p>Live tables remain untouched until cutover.</p><p>Auth is Supabase email/password, not legacy frontend password matching.</p></div></div>
     </PageCard>
   );
 }
