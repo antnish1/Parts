@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Boxes, ClipboardCheck, FilePlus2, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { Boxes, ClipboardCheck, FilePlus2, Home, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
@@ -7,6 +7,7 @@ import { RoleAwareNav } from './RoleAwareNav';
 import { MobileRoleNav } from './MobileRoleNav';
 
 const navItems = [
+  { to: '/', label: 'Home', icon: Home },
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
   { to: '/orders/track', label: 'Track Orders', icon: PackageSearch },
   { to: '/approvals/pending', label: 'Approvals', icon: ClipboardCheck },
@@ -33,7 +34,7 @@ export function AppLayout() {
         <aside className="hidden w-48 shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 xl:block">
           <div className="rounded-lg border border-[#263244] bg-[#111827] p-2.5">
             <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect</p>
-            <h1 className="mt-1 text-sm font-black text-white">Production Portal</h1>
+            <h1 className="mt-1 text-sm font-black text-white">New Portal</h1>
           </div>
           <RoleAwareNav items={navItems} role={profile?.role} />
         </aside>
