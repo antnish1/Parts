@@ -30,6 +30,7 @@ function isDocketWorkspace(path: string) {
 }
 
 export function canAccessRoute(role: UserRole, path: string) {
+  if (path === '/') return true;
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');
