@@ -38,6 +38,14 @@ export type TestOrderEvent = {
   created_at: string;
 };
 
+export type TestOrderComment = {
+  id: string;
+  comment_type: string;
+  body: string | null;
+  attachment_path: string | null;
+  created_at: string;
+};
+
 type RawOrderView = Omit<TestOrderView, 'approver'> & {
   approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null;
 };
@@ -70,9 +78,18 @@ export async function getTestOrderView(orderId: string) {
     .limit(20);
   if (eventError) throw eventError;
 
+  const { data: comments, error: commentError } = await supabase
+    .from('test_order_comments')
+    .select('id, comment_type, body, attachment_path, created_at')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (commentError) throw commentError;
+
   return {
     order: normalizeOrderView(order as unknown as RawOrderView),
     items: (items ?? []) as TestOrderViewItem[],
     events: (events ?? []) as TestOrderEvent[],
+    comments: (comments ?? []) as TestOrderComment[],
   };
 }
