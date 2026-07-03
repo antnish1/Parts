@@ -35,7 +35,7 @@ export function OrderDetailPage() {
   if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#c7d2df]">Loading...</p></PageCard>;
   if (error || !data) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
 
-  const { order, items, events } = data;
+  const { order, items, events, comments } = data;
   const inventoryMap = inventoryQuery.data ?? {};
   const totalQty = items.reduce((sum, item) => sum + getEffectiveQty(item), 0);
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
@@ -95,11 +95,21 @@ export function OrderDetailPage() {
         </table>
       </div>
 
-      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Action Log</p>
-        <div className="space-y-2">
-          {events.map((event) => (<div key={event.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="font-black text-white">{event.event_type}</p><p className="text-[#c7d2df]">{event.notes || '-'} • {formatDate(event.created_at)}</p></div>))}
-          {events.length === 0 ? <p className="text-xs text-[#c7d2df]">No action logs yet.</p> : null}
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Comments</p>
+          <div className="space-y-2">
+            {comments.map((comment) => (<div key={comment.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="text-white">{comment.body || '-'}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">{comment.comment_type} • {formatDate(comment.created_at)}</p></div>))}
+            {comments.length === 0 ? <p className="text-xs text-[#c7d2df]">No user comments yet.</p> : null}
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Action Log</p>
+          <div className="space-y-2">
+            {events.map((event) => (<div key={event.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="font-black text-white">{event.event_type}</p><p className="text-[#c7d2df]">{event.notes || '-'} • {formatDate(event.created_at)}</p></div>))}
+            {events.length === 0 ? <p className="text-xs text-[#c7d2df]">No action logs yet.</p> : null}
+          </div>
         </div>
       </div>
     </PageCard>
