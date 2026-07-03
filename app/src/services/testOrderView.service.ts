@@ -38,6 +38,15 @@ export type TestOrderEvent = {
   created_at: string;
 };
 
+type RawOrderView = Omit<TestOrderView, 'approver'> & {
+  approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null;
+};
+
+function normalizeOrderView(order: RawOrderView): TestOrderView {
+  const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
+  return { ...order, approver };
+}
+
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
@@ -62,7 +71,7 @@ export async function getTestOrderView(orderId: string) {
   if (eventError) throw eventError;
 
   return {
-    order: order as TestOrderView,
+    order: normalizeOrderView(order as unknown as RawOrderView),
     items: (items ?? []) as TestOrderViewItem[],
     events: (events ?? []) as TestOrderEvent[],
   };
