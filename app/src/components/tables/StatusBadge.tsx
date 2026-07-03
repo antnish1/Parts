@@ -19,7 +19,7 @@ const statusStyles: Record<string, string> = {
 export function StatusBadge({ status }: StatusBadgeProps) {
   const normalized = normalizeStatus(status);
   return (
-    <span className={clsx('inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.12em] before:h-1.5 before:w-1.5 before:rounded-full', statusStyles[normalized] ?? 'text-[#c7d2df] before:bg-[#6D8196]')}>
+    <span className={clsx('inline-flex items-center gap-1.5 bg-transparent px-0 py-0 text-[10px] font-black uppercase tracking-[0.12em] shadow-none before:h-1.5 before:w-1.5 before:rounded-full', statusStyles[normalized] ?? 'text-[#c7d2df] before:bg-[#6D8196]')} style={{ backgroundColor: 'transparent' }}>
       {normalized || 'NA'}
     </span>
   );
