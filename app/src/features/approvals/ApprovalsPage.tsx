@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { acceptTestOrderReviewEdits, approveTestOrderWithOriginalQty, forwardTestOrderToManager, resetTestOrderItemQty, setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected, updateTestOrderItemQty, zeroTestOrderItemForReview } from '../../services/testApproval.service';
 import { getTestOrderView } from '../../services/testOrderView.service';
 import { getEffectiveQty, getEffectiveValue } from '../../lib/orderLogic';
@@ -15,7 +15,7 @@ export function ApprovalsPage() {
   const [busyId, setBusyId] = useState('');
   const [reviewId, setReviewId] = useState('');
   const [editedQty, setEditedQty] = useState<Record<string, string>>({});
-  const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const reviewQuery = useQuery({ queryKey: ['approval-review', reviewId], queryFn: () => getTestOrderView(reviewId), enabled: !!reviewId });
 
   const pendingOrders = useMemo(() => orders.filter((order) => order.status.includes('pending')), [orders]);
