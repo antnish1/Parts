@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { setTestOrderAdminRejected, setTestOrderProcessed } from '../../services/testAdmin.service';
 import { getTestOrderView } from '../../services/testOrderView.service';
 import { dispatchSelectedTestItems } from '../../services/testDispatch.service';
@@ -21,7 +21,7 @@ export function AdminPage() {
   const [transports, setTransports] = useState<Record<string, string>>({});
   const [dispatchOrderId, setDispatchOrderId] = useState('');
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
-  const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const dispatchQuery = useQuery({ queryKey: ['admin-dispatch-order', dispatchOrderId], queryFn: () => getTestOrderView(dispatchOrderId), enabled: !!dispatchOrderId });
 
   const term = search.trim().toLowerCase();
