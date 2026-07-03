@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+const fail = (message: string, code = 'ORDER_CREATE_VALIDATION') => json({ ok: false, error: message, code });
 const clean = (value: unknown) => String(value ?? '').trim();
 const normalizePart = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
 const normalizeMachine = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
@@ -17,7 +18,7 @@ function findBranchMapping(branches: BranchMapping[], value: string) {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (req.method !== 'POST') return json({ ok: false, error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
@@ -27,15 +28,16 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
 
   const { data: userData } = await userClient.auth.getUser();
-  if (!userData.user) return json({ error: 'Unauthorized' }, 401);
+  if (!userData.user) return fail('Unauthorized. Please logout and login again.', 'UNAUTHORIZED');
   const { data: profile, error: profileError } = await adminClient
     .from('test_profiles')
     .select('id,full_name,branch,role,is_active')
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
-  if (profileError) return json({ error: profileError.message }, 400);
-  if (!profile?.is_active) return json({ error: 'Only active users can create orders' }, 403);
-  if (!['branch', 'admin', 'super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Role cannot create orders' }, 403);
+  if (profileError) return fail(profileError.message, 'PROFILE_LOOKUP_FAILED');
+  if (!profile) return fail('No active profile is linked with this login. Please check test_profiles.auth_user_id.', 'PROFILE_NOT_LINKED');
+  if (!profile.is_active) return fail('Only active users can create orders. Please activate this profile in Developer Workspace.', 'PROFILE_INACTIVE');
+  if (!['branch', 'admin', 'super', 'manager', 'developer'].includes(profile.role)) return fail('Role cannot create orders', 'ROLE_NOT_ALLOWED');
 
   const body = await req.json().catch(() => ({}));
   const branch = clean(body.branch);
@@ -48,13 +50,13 @@ serve(async (req) => {
   const warrantyStatus = clean(body.warrantyStatus) || (orderFor === 'Stock' ? 'NA' : 'UW');
   const items = Array.isArray(body.items) ? body.items : [];
 
-  if (!branch || !orderType || !orderFor) return json({ error: 'Branch, order type and order for are required' }, 400);
+  if (!branch || !orderType || !orderFor) return fail('Branch, order type and order for are required');
 
   const { data: branchRows, error: branchError } = await adminClient
     .from('test_branch_mapping')
     .select('branch_name, branch_code')
     .eq('is_active', true);
-  if (branchError) return json({ error: branchError.message }, 400);
+  if (branchError) return fail(branchError.message, 'BRANCH_LOOKUP_FAILED');
   const branches = (branchRows ?? []) as BranchMapping[];
   const submittedBranch = findBranchMapping(branches, branch);
   const profileBranch = findBranchMapping(branches, profile.branch ?? '');
@@ -64,14 +66,14 @@ serve(async (req) => {
     const submittedKey = normalizeBranchKey(submittedBranch?.branch_name ?? branch);
     const profileKey = normalizeBranchKey(profileBranch?.branch_name ?? profile.branch ?? '');
     if (!submittedKey || !profileKey || submittedKey !== profileKey) {
-      return json({ error: `Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}` }, 403);
+      return fail(`Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}`, 'BRANCH_MISMATCH');
     }
   }
 
-  if (!approverId) return json({ error: 'Approver is required' }, 400);
-  if (orderType === 'VOR' && orderFor !== 'Customer') return json({ error: 'VOR order must be for Customer' }, 400);
-  if (orderFor === 'Customer' && (!machineNo || !customerName || !warrantyStatus)) return json({ error: 'Customer order requires machine, customer and machine type' }, 400);
-  if (items.length === 0) return json({ error: 'At least one item row is required' }, 400);
+  if (!approverId) return fail('Approver is required', 'APPROVER_REQUIRED');
+  if (orderType === 'VOR' && orderFor !== 'Customer') return fail('VOR order must be for Customer');
+  if (orderFor === 'Customer' && (!machineNo || !customerName || !warrantyStatus)) return fail('Customer order requires machine, customer and machine type');
+  if (items.length === 0) return fail('At least one item row is required');
 
   const parsedItems = items.map((item) => {
     const partNo = normalizePart(item.partNo);
@@ -82,9 +84,9 @@ serve(async (req) => {
     return { partNo, description, dnp, qty, previous30dQty };
   });
   const invalid = parsedItems.find((item) => !item.partNo || !item.description || !Number.isFinite(item.dnp) || item.dnp < 0 || !Number.isInteger(item.qty) || item.qty < 1);
-  if (invalid) return json({ error: 'Every item must have valid part, description, DNP and whole quantity above zero' }, 400);
+  if (invalid) return fail('Every item must have valid part, description, DNP and whole quantity above zero');
   const duplicate = parsedItems.find((item, index) => parsedItems.findIndex((candidate) => candidate.partNo === item.partNo) !== index);
-  if (duplicate) return json({ error: `Duplicate item not allowed: ${duplicate.partNo}` }, 400);
+  if (duplicate) return fail(`Duplicate item not allowed: ${duplicate.partNo}`, 'DUPLICATE_ITEM');
 
   try {
     const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
@@ -120,6 +122,6 @@ serve(async (req) => {
     await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s)` });
     return json({ ok: true, id: order.id, order_no: order.order_no });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : 'Order creation failed' }, 400);
+    return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
   }
 });
