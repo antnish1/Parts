@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { getTestBranches } from '../../services/testBranch.service';
 import { getTestParts } from '../../services/testPart.service';
 import { createPortalUser, getTestApprovers, getTestProfiles, setTestProfileActive, updateTestProfile } from '../../services/testProfile.service';
@@ -22,7 +22,7 @@ export function DeveloperWorkspacePage() {
   const [editName, setEditName] = useState('');
   const [editBranch, setEditBranch] = useState('');
   const [editRole, setEditRole] = useState('branch');
-  const { data: orders = [] } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [] } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
