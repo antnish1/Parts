@@ -1,7 +1,8 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
+import { useAuth } from '../../auth/useAuth';
 import { createTestOrder } from '../../services/testData.service';
 import { getTestParts } from '../../services/testPart.service';
 import { getTestBranches } from '../../services/testBranch.service';
@@ -17,10 +18,24 @@ const labelClass = 'text-[10px] font-black uppercase tracking-[0.12em] text-[#6D
 
 type ItemLine = { lineId: number; partNo: string; description: string; dnp: string; qty: string; previous30dQty: number };
 type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number };
+type BranchOption = { id: string; branch_name: string; branch_code: string };
 const defaultItem: ItemLine = { lineId: 1, partNo: '400/35820', description: 'FILTER ELEMENT', dnp: '182', qty: '1', previous30dQty: 0 };
+const fallbackBranches: BranchOption[] = [{ branch_name: 'Jabalpur BHL', branch_code: 'JBP_BHL', id: 'fallback' }];
+
+function normalizeBranchKey(value: string | null | undefined) {
+  return (value || '').trim().replace(/[\s_-]+/g, '').toUpperCase();
+}
+
+function resolveBranchName(branches: BranchOption[], value: string | null | undefined) {
+  const key = normalizeBranchKey(value);
+  if (!key) return '';
+  const match = branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key);
+  return match?.branch_name ?? value?.trim() ?? '';
+}
 
 export function NewOrderPage() {
   const queryClient = useQueryClient();
+  const { profile, role } = useAuth();
   const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
@@ -30,7 +45,22 @@ export function NewOrderPage() {
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: 'VOR', orderFor: 'Customer', approverId: '', machineNo: 'JCB3DX-TEST', customerName: 'Demo Customer', callId: 'CALL-TEST', warrantyStatus: 'UW' });
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
+  const branchOptions = useMemo(() => {
+    const list = (branches.length ? branches : fallbackBranches) as BranchOption[];
+    if (role !== 'branch' || !profile?.branch) return list;
+    const profileBranchName = resolveBranchName(list, profile.branch);
+    if (!profileBranchName) return list;
+    const exists = list.some((branch) => normalizeBranchKey(branch.branch_name) === normalizeBranchKey(profileBranchName));
+    return exists ? list : [{ id: 'profile-branch', branch_name: profileBranchName, branch_code: profileBranchName }, ...list];
+  }, [branches, profile?.branch, role]);
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
+
+  useEffect(() => {
+    if (role !== 'branch' || !profile?.branch) return;
+    const nextBranch = resolveBranchName(branchOptions, profile.branch);
+    if (!nextBranch) return;
+    setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch }));
+  }, [branchOptions, profile?.branch, role]);
 
   const mutation = useMutation({
     mutationFn: createTestOrder,
@@ -40,6 +70,7 @@ export function NewOrderPage() {
       setMessage('Order created successfully.');
       queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Order creation failed. Check write policies.'),
   });
@@ -75,7 +106,7 @@ export function NewOrderPage() {
     <PageCard eyebrow="Orders" title="New Order" description="Create multi-item branch order.">
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="grid gap-3 lg:grid-cols-4">
-          <div><label className={labelClass}>Branch</label><select className={inputClass} value={form.branch} onChange={(e) => { updateField('branch', e.target.value); items.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo, e.target.value)); }}>{(branches.length ? branches : [{ branch_name: 'Jabalpur BHL', branch_code: 'JBP_BHL', id: 'fallback' }]).map((branch) => (<option key={branch.id} value={branch.branch_name}>{branch.branch_name}</option>))}</select></div>
+          <div><label className={labelClass}>Branch</label><select className={inputClass} value={form.branch} disabled={role === 'branch'} onChange={(e) => { updateField('branch', e.target.value); items.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo, e.target.value)); }}>{branchOptions.map((branch) => (<option key={branch.id} value={branch.branch_name}>{branch.branch_name}</option>))}</select>{role === 'branch' ? <p className="mt-1 text-[10px] text-[#c7d2df]">Locked to your login branch.</p> : null}</div>
           <div><label className={labelClass}>Order Type</label><select className={inputClass} value={form.orderType} onChange={(e) => { const value = e.target.value; updateField('orderType', value); if (value === 'VOR') updateField('orderFor', 'Customer'); }}><option>VOR</option><option>SOP</option><option>ZSPL</option><option>ZMAC</option><option>LUBES</option></select></div>
           <div><label className={labelClass}>Order For</label><select className={inputClass} value={form.orderFor} disabled={form.orderType === 'VOR'} onChange={(e) => updateField('orderFor', e.target.value)}><option>Customer</option><option>Stock</option></select></div>
           <div><label className={labelClass}>Approved By</label><select className={inputClass} value={form.approverId} onChange={(e) => updateField('approverId', e.target.value)}><option value="">Select Approver</option>{approvers.map((approver) => <option key={approver.id} value={approver.id}>{approver.full_name} ({approver.role})</option>)}</select></div>
