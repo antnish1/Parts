@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
@@ -8,6 +8,7 @@ import { getTestBranches } from '../../services/testBranch.service';
 import { getTestApprovers } from '../../services/testProfile.service';
 import { getTestLast30QtyByBranchPart } from '../../services/testPartUsage.service';
 import { getTestMachineByNo, normalizeMachineNo, saveTestMachineCustomer } from '../../services/testMachine.service';
+import { parseBulkPartsFile } from '../../services/bulkParts.service';
 import { normalizePartNo } from '../../lib/orderLogic';
 
 const inputClass = 'mt-2 w-full rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5] disabled:cursor-not-allowed disabled:opacity-50';
@@ -23,6 +24,7 @@ export function NewOrderPage() {
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
   const [message, setMessage] = useState('');
   const [machineStatus, setMachineStatus] = useState('');
+  const [bulkHasHeader, setBulkHasHeader] = useState(true);
   const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: 'VOR', orderFor: 'Customer', approverId: '', machineNo: 'JCB3DX-TEST', customerName: 'Demo Customer', callId: 'CALL-TEST', warrantyStatus: 'UW' });
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
@@ -47,26 +49,15 @@ export function NewOrderPage() {
     try {
       const machine = await getTestMachineByNo(normalized);
       updateField('machineNo', normalized);
-      if (machine) {
-        updateField('customerName', machine.customer_name);
-        setMachineStatus(`Customer found: ${machine.customer_name}`);
-      } else {
-        setMachineStatus('Machine not found. Enter customer name and save.');
-      }
-    } catch (error) {
-      setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.');
-    }
+      if (machine) { updateField('customerName', machine.customer_name); setMachineStatus(`Customer found: ${machine.customer_name}`); }
+      else setMachineStatus('Machine not found. Enter customer name and save.');
+    } catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.'); }
   }
 
   async function saveMachine() {
     if (!form.machineNo || !form.customerName) return setMachineStatus('Machine number and customer name are required.');
-    try {
-      const saved = await saveTestMachineCustomer(form.machineNo, form.customerName);
-      updateField('machineNo', saved.machine_no);
-      setMachineStatus('Machine customer saved.');
-    } catch (error) {
-      setMachineStatus(error instanceof Error ? error.message : 'Machine save failed. Check insert policy.');
-    }
+    try { const saved = await saveTestMachineCustomer(form.machineNo, form.customerName); updateField('machineNo', saved.machine_no); setMachineStatus('Machine customer saved.'); }
+    catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine save failed. Check insert policy.'); }
   }
 
   async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) {
@@ -82,6 +73,22 @@ export function NewOrderPage() {
     void refreshPreviousQty(lineId, partNo);
   }
 
+  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const result = await parseBulkPartsFile(file, bulkHasHeader, parts);
+      const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 }));
+      if (!nextItems.length) return setMessage(`Bulk upload failed. Invalid rows: ${result.failed}`);
+      setItems(nextItems);
+      nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo));
+      setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Bulk upload failed.');
+    }
+  }
+
   function addItem() { const next = { ...defaultItem, lineId: Date.now(), previous30dQty: 0 }; setItems((current) => [...current, next]); void refreshPreviousQty(next.lineId, next.partNo); }
   function removeItem(lineId: number) { setItems((current) => (current.length === 1 ? current : current.filter((item) => item.lineId !== lineId))); }
 
@@ -90,7 +97,6 @@ export function NewOrderPage() {
     const parsedItems = items.map((item) => ({ partNo: normalizePartNo(item.partNo), description: item.description.trim(), dnp: Number(item.dnp), qty: Number(item.qty), previous30dQty: item.previous30dQty || 0 }));
     const duplicatePart = parsedItems.find((item, index) => parsedItems.findIndex((candidate) => candidate.partNo === item.partNo) !== index);
     const invalidItem = parsedItems.find((item) => !item.partNo || !item.description || !Number.isFinite(item.dnp) || !Number.isFinite(item.qty) || item.dnp < 0 || item.qty <= 0 || !Number.isInteger(item.qty));
-
     if (!form.branch || !form.orderType || !form.orderFor) return setMessage('Please fill all mandatory order fields.');
     if (!form.approverId) return setMessage('Please select approver.');
     if (form.orderType === 'VOR' && (!form.machineNo || !form.customerName || !form.warrantyStatus || form.orderFor !== 'Customer')) return setMessage('VOR order requires customer, machine, machine type, and approver.');
@@ -98,7 +104,6 @@ export function NewOrderPage() {
     if (form.orderFor === 'Customer' && (!form.machineNo || !form.customerName || !form.warrantyStatus)) return setMessage('Customer order requires machine, customer, and machine type.');
     if (duplicatePart) return setMessage(`Duplicate item not allowed: ${duplicatePart.partNo}`);
     if (invalidItem) return setMessage('Each item must have valid Part No, Description, DNP zero or above, and whole Qty greater than zero.');
-
     mutation.mutate({ branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems });
   }
 
@@ -117,12 +122,10 @@ export function NewOrderPage() {
           <div><label className={labelClass}>Call ID</label><input className={inputClass} value={form.callId} onChange={(e) => updateField('callId', e.target.value)} /></div>
           <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2 lg:col-span-3"><p className={labelClass}>Order Value</p><p className="mt-1 text-lg font-black text-white">₹{totalValue.toFixed(2)}</p>{machineStatus ? <p className="mt-1 text-xs text-[#c7d2df]">{machineStatus}</p> : null}</div>
         </div>
-
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-          <div className="mb-2 flex items-center justify-between"><p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Item Lines</p><Button type="button" className="rounded-md px-3 py-1.5 text-xs" onClick={addItem}>Add Item</Button></div>
+          <div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Item Lines</p><div className="flex items-center gap-3"><label className="text-xs text-[#c7d2df]"><input type="checkbox" checked={bulkHasHeader} onChange={(e) => setBulkHasHeader(e.target.checked)} /> Header</label><label className="text-xs font-black text-[#82C8E5] hover:underline">Bulk Upload<input className="hidden" type="file" accept=".xlsx,.xls" onChange={handleBulkUpload} /></label><Button type="button" className="rounded-md px-3 py-1.5 text-xs" onClick={addItem}>Add Item</Button></div></div>
           <div className="space-y-2">{items.map((item, index) => (<div key={item.lineId} className="grid gap-2 rounded-md border border-[#263244] p-2 lg:grid-cols-8"><div><label className={labelClass}>Lookup</label><select className={inputClass} value={item.partNo} onChange={(e) => selectPart(item.lineId, e.target.value)}>{parts.map((part) => <option key={part.part_no} value={part.part_no}>{part.part_no}</option>)}</select></div><div><label className={labelClass}>Part No</label><input className={inputClass} value={item.partNo} onBlur={() => void refreshPreviousQty(item.lineId, item.partNo)} onChange={(e) => updateItem(item.lineId, 'partNo', e.target.value)} /></div><div className="lg:col-span-2"><label className={labelClass}>Description</label><input className={inputClass} value={item.description} onChange={(e) => updateItem(item.lineId, 'description', e.target.value)} /></div><div><label className={labelClass}>30D Qty</label><input className={inputClass} value={item.previous30dQty} readOnly /></div><div><label className={labelClass}>DNP</label><input className={inputClass} value={item.dnp} onChange={(e) => updateItem(item.lineId, 'dnp', e.target.value)} /></div><div><label className={labelClass}>Qty</label><input className={inputClass} value={item.qty} onChange={(e) => updateItem(item.lineId, 'qty', e.target.value)} /></div><div className="flex items-end justify-end"><Button type="button" variant="danger" className="rounded-md px-3 py-1.5 text-xs" onClick={() => removeItem(item.lineId)}>Remove</Button></div><div className="lg:col-span-8 text-xs text-[#c7d2df]">Line {index + 1}: ₹{(Number(item.dnp || 0) * Number(item.qty || 0)).toFixed(2)} • Previous 30D branch qty: {item.previous30dQty}</div></div>))}</div>
         </div>
-
         <Button type="submit" disabled={mutation.isPending} className="w-full rounded-md py-2 text-xs">{mutation.isPending ? 'Creating...' : 'Create Order'}</Button>
       </form>
       {message ? <p className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3 text-xs text-[#d8e3ee]">{message}</p> : null}
