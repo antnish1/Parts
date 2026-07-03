@@ -6,6 +6,14 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const clean = (value: unknown) => String(value ?? '').trim();
 const normalizePart = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
 const normalizeMachine = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
+const normalizeBranchKey = (value: unknown) => clean(value).replace(/[\s_-]+/g, '').toUpperCase();
+
+type BranchMapping = { branch_name: string; branch_code: string };
+
+function findBranchMapping(branches: BranchMapping[], value: string) {
+  const key = normalizeBranchKey(value);
+  return branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key) ?? null;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -41,7 +49,25 @@ serve(async (req) => {
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!branch || !orderType || !orderFor) return json({ error: 'Branch, order type and order for are required' }, 400);
-  if (profile.role === 'branch' && profile.branch && branch !== profile.branch) return json({ error: 'Branch user can create orders only for own branch' }, 403);
+
+  const { data: branchRows, error: branchError } = await adminClient
+    .from('test_branch_mapping')
+    .select('branch_name, branch_code')
+    .eq('is_active', true);
+  if (branchError) return json({ error: branchError.message }, 400);
+  const branches = (branchRows ?? []) as BranchMapping[];
+  const submittedBranch = findBranchMapping(branches, branch);
+  const profileBranch = findBranchMapping(branches, profile.branch ?? '');
+  const canonicalBranch = submittedBranch?.branch_name ?? branch;
+
+  if (profile.role === 'branch') {
+    const submittedKey = normalizeBranchKey(submittedBranch?.branch_name ?? branch);
+    const profileKey = normalizeBranchKey(profileBranch?.branch_name ?? profile.branch ?? '');
+    if (!submittedKey || !profileKey || submittedKey !== profileKey) {
+      return json({ error: `Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}` }, 403);
+    }
+  }
+
   if (!approverId) return json({ error: 'Approver is required' }, 400);
   if (orderType === 'VOR' && orderFor !== 'Customer') return json({ error: 'VOR order must be for Customer' }, 400);
   if (orderFor === 'Customer' && (!machineNo || !customerName || !warrantyStatus)) return json({ error: 'Customer order requires machine, customer and machine type' }, 400);
@@ -64,9 +90,10 @@ serve(async (req) => {
     const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
     const { data: order, error: orderError } = await adminClient.from('test_orders').insert({
       order_no: orderNo,
-      branch,
+      branch: canonicalBranch,
       order_type: orderType,
       order_for: orderFor,
+      employee_id: profile.id,
       approver_id: approverId,
       machine_no: orderFor === 'Stock' ? null : machineNo,
       customer_name: orderFor === 'Stock' ? null : customerName,
@@ -90,7 +117,7 @@ serve(async (req) => {
     const { error: itemError } = await adminClient.from('test_order_items').insert(itemRows);
     if (itemError) throw itemError;
 
-    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s)` });
+    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s)` });
     return json({ ok: true, id: order.id, order_no: order.order_no });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Order creation failed' }, 400);
