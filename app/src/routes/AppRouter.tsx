@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { LoginPage } from '../auth/LoginPage';
 import { RequireAuth } from '../auth/RequireAuth';
+import { useAuth } from '../auth/useAuth';
+import { roleHomePath } from '../auth/roleGuards';
 import { NewOrderPage } from '../features/orders/NewOrderPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { TrackOrdersPage } from '../features/tracking/TrackOrdersPage';
@@ -13,13 +15,18 @@ import { InventoryUploadPage } from '../features/inventory/InventoryUploadPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { DocketScannerPage } from '../features/docket/DocketScannerPage';
 
+function RoleLanding() {
+  const { role } = useAuth();
+  return <Navigate to={role ? roleHomePath[role] : '/login'} replace />;
+}
+
 export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
-          <Route index element={<Navigate to="/orders/new" replace />} />
+          <Route index element={<RoleLanding />} />
           <Route path="/orders/new" element={<NewOrderPage />} />
           <Route path="/orders/track" element={<TrackOrdersPage />} />
           <Route path="/orders/:orderId" element={<OrderDetailPage />} />
@@ -32,7 +39,7 @@ export function AppRouter() {
           <Route path="/docket-scanner" element={<DocketScannerPage />} />
         </Route>
       </Route>
-      <Route path="*" element={<Navigate to="/orders/new" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
