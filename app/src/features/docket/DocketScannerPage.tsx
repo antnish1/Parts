@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageCard } from '../../components/ui/PageCard';
 import { markTestDocketReceived, lookupTestDocketOrders, normalizeDocketNo, type TestDocketOrder } from '../../services/testDocket.service';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
+
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => { detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>> };
+
+declare global {
+  interface Window {
+    BarcodeDetector?: BarcodeDetectorCtor;
+  }
+}
 
 export function DocketScannerPage() {
   const [docketNo, setDocketNo] = useState('');
@@ -11,9 +19,15 @@ export function DocketScannerPage() {
   const [scannerStatus, setScannerStatus] = useState('Idle');
   const [orders, setOrders] = useState<TestDocketOrder[]>([]);
   const [busyId, setBusyId] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanTimerRef = useRef<number | null>(null);
+  const lastScanRef = useRef('');
+  const lastScanAtRef = useRef(0);
 
-  async function lookupOrders() {
-    const value = normalizeDocketNo(searchTerm || docketNo);
+  async function lookupOrders(valueOverride?: string) {
+    const value = normalizeDocketNo(valueOverride || searchTerm || docketNo);
     setScannerStatus(value ? `Searching ${value}...` : 'Enter docket, order, invoice or machine number.');
     if (!value) return;
     try {
@@ -25,6 +39,55 @@ export function DocketScannerPage() {
     }
   }
 
+  function stopScanner() {
+    if (scanTimerRef.current) window.clearInterval(scanTimerRef.current);
+    scanTimerRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setIsScanning(false);
+    setScannerStatus('Scanner stopped.');
+  }
+
+  async function startScanner() {
+    if (!window.BarcodeDetector) {
+      setScannerStatus('BarcodeDetector is not supported on this browser. Use manual lookup.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      const detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf'] });
+      setIsScanning(true);
+      setScannerStatus('Scanner running. Point camera at docket barcode.');
+      scanTimerRef.current = window.setInterval(() => {
+        const video = videoRef.current;
+        if (!video || video.readyState < 2) return;
+        detector.detect(video).then((codes) => {
+          const raw = normalizeDocketNo(codes[0]?.rawValue ?? '');
+          if (!raw) return;
+          const now = Date.now();
+          if (lastScanRef.current === raw && now - lastScanAtRef.current < 2500) return;
+          lastScanRef.current = raw;
+          lastScanAtRef.current = now;
+          setDocketNo(raw);
+          setSearchTerm('');
+          setScannerStatus(`Detected ${raw}. Searching...`);
+          void lookupOrders(raw);
+        }).catch(() => undefined);
+      }, 700);
+    } catch (error) {
+      setScannerStatus(error instanceof Error ? error.message : 'Unable to start camera.');
+      stopScanner();
+    }
+  }
+
+  useEffect(() => () => stopScanner(), []);
+
   async function receiveOrder(order: TestDocketOrder) {
     const value = normalizeDocketNo(docketNo || searchTerm || order.docket_no || order.final_order_no || order.order_no);
     setBusyId(order.id);
@@ -32,7 +95,7 @@ export function DocketScannerPage() {
     try {
       await markTestDocketReceived(order, value);
       setScannerStatus(`${order.final_order_no || order.order_no} marked received.`);
-      await lookupOrders();
+      await lookupOrders(value);
     } catch (error) {
       setScannerStatus(error instanceof Error ? error.message : 'Receive update failed.');
     } finally {
@@ -45,8 +108,8 @@ export function DocketScannerPage() {
       <div className="grid gap-3 xl:grid-cols-[0.75fr_1.25fr]">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Scanner Control</p>
-          <div className="flex h-44 items-center justify-center rounded-lg border border-dashed border-[#6D8196] bg-[#111827] text-center text-xs text-[#c7d2df]">Camera scanner area<br />Manual lookup is active now</div>
-          <div className="mt-3 flex gap-2"><button className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => setScannerStatus('Camera scanner will be connected in next step.')}>Start Scanner</button><button className="text-xs font-black text-[#ef6f7b] hover:underline" onClick={() => setScannerStatus('Scanner stopped')}>Stop Scanner</button></div>
+          <div className="flex h-44 items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#6D8196] bg-[#111827] text-center text-xs text-[#c7d2df]"><video ref={videoRef} className="h-full w-full object-cover" muted playsInline />{!isScanning ? <span className="absolute">Camera scanner area<br />Manual lookup is active</span> : null}</div>
+          <div className="mt-3 flex gap-2"><button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={isScanning} onClick={() => void startScanner()}>Start Scanner</button><button className="text-xs font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!isScanning} onClick={stopScanner}>Stop Scanner</button></div>
           <p className="mt-2 text-xs text-[#c7d2df]">Status: {scannerStatus}</p>
         </div>
 
