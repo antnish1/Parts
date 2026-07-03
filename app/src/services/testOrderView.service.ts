@@ -55,6 +55,19 @@ function normalizeOrderView(order: RawOrderView): TestOrderView {
   return { ...order, approver };
 }
 
+export async function addTestOrderComment(orderId: string, body: string) {
+  const text = body.trim();
+  if (!orderId || !text) throw new Error('Comment is required.');
+
+  const { error } = await supabase.from('test_order_comments').insert({
+    order_id: orderId,
+    comment_type: 'user',
+    body: text,
+  });
+
+  if (error) throw error;
+}
+
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
