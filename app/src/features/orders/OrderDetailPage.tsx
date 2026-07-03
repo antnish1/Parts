@@ -1,8 +1,9 @@
+import { FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrderView } from '../../services/testOrderView.service';
+import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
 
@@ -25,12 +26,30 @@ function coverageLabel(inventoryQty: number, pendingQty: number) {
 export function OrderDetailPage() {
   const { orderId = '' } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = useState('');
+  const [commentMessage, setCommentMessage] = useState('');
   const { data, isLoading, error } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
   const inventoryQuery = useQuery({
     queryKey: ['test-order-inventory', data?.order.branch, data?.items.map((item) => item.part_no).join('|')],
     queryFn: () => getInventoryQtyByBranchParts(data!.order.branch, data!.items.map((item) => item.part_no)),
     enabled: !!data?.order.branch && data.items.length > 0,
   });
+  const commentMutation = useMutation({
+    mutationFn: () => addTestOrderComment(orderId, commentText),
+    onSuccess: () => {
+      setCommentText('');
+      setCommentMessage('Comment added.');
+      queryClient.invalidateQueries({ queryKey: ['test-order-view', orderId] });
+    },
+    onError: (commentError) => setCommentMessage(commentError instanceof Error ? commentError.message : 'Comment failed.'),
+  });
+
+  function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCommentMessage('');
+    commentMutation.mutate();
+  }
 
   if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#c7d2df]">Loading...</p></PageCard>;
   if (error || !data) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
@@ -98,6 +117,10 @@ export function OrderDetailPage() {
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Comments</p>
+          <form onSubmit={handleCommentSubmit} className="mb-3 space-y-2">
+            <textarea className="min-h-[72px] w-full rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} />
+            <div className="flex items-center justify-between gap-3"><p className="text-xs text-[#c7d2df]">{commentMessage}</p><button type="submit" disabled={commentMutation.isPending} className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-50">{commentMutation.isPending ? 'Saving...' : 'Add Comment'}</button></div>
+          </form>
           <div className="space-y-2">
             {comments.map((comment) => (<div key={comment.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="text-white">{comment.body || '-'}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">{comment.comment_type} • {formatDate(comment.created_at)}</p></div>))}
             {comments.length === 0 ? <p className="text-xs text-[#c7d2df]">No user comments yet.</p> : null}
