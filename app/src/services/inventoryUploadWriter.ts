@@ -1,9 +1,12 @@
 import { supabase } from '../lib/supabase';
 import { parseInventoryExcel } from './inventoryExcelParser';
+import { logInventoryChanges } from './inventoryChangeLog.service';
 
 export async function uploadInventoryExcel(file: File, reportDate: string) {
   const parsed = await parseInventoryExcel(file, reportDate);
   if (parsed.rows.length === 0) throw new Error('No valid inventory rows found.');
+
+  const changedRows = await logInventoryChanges(parsed.rows, reportDate, file.name);
 
   const { error } = await supabase
     .from('test_inventory_current')
@@ -23,5 +26,6 @@ export async function uploadInventoryExcel(file: File, reportDate: string) {
     totalRows: parsed.totalRows,
     validRows: parsed.rows.length,
     failedRows: parsed.failedRows,
+    changedRows,
   };
 }
