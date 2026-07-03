@@ -66,13 +66,14 @@ export type CreateTestOrderInput = {
 function friendlyOrderError(message: string) {
   const text = message.toLowerCase();
   if (text.includes('branch user can create orders only for own branch')) return 'Your login is mapped to another branch. Please select your own branch or update the profile branch in Developer Workspace.';
-  if (text.includes('active users')) return 'Your user profile is inactive or not linked with this login. Please check test_profiles.auth_user_id.';
+  if (text.includes('no active profile') || text.includes('profile') && text.includes('linked')) return 'No active profile is linked with this login. Please check test_profiles.auth_user_id in Developer Workspace.';
+  if (text.includes('active users') || text.includes('profile_inactive')) return 'Your user profile is inactive or not linked with this login. Please check test_profiles.auth_user_id.';
   if (text.includes('role cannot create')) return 'This user role cannot create orders.';
   if (text.includes('approver')) return 'Please select an active approver before placing the order.';
   if (text.includes('duplicate item')) return message;
   if (text.includes('required')) return message;
   if (text.includes('failed to fetch') || text.includes('send a request')) return 'Could not connect to create-order-action. Please deploy the Edge Function and check Supabase function secrets.';
-  if (text.includes('non-2xx')) return 'Order creation was rejected by create-order-action. Please check that your branch, approver, and profile mapping are valid.';
+  if (text.includes('non-2xx')) return 'Order creation was rejected by create-order-action. Please redeploy create-order-action, then try again to see the exact reason.';
   return message || 'Order creation failed.';
 }
 
@@ -151,6 +152,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
     body: { ...input, items: orderItems },
   });
   if (error) throw new Error(await readFunctionError(error));
-  if (data?.error) throw new Error(friendlyOrderError(String(data.error)));
+  if (data?.ok === false || data?.error) throw new Error(friendlyOrderError(String(data.error || 'Order creation failed.')));
+  if (!data?.id || !data?.order_no) throw new Error('Order creation response was incomplete. Please redeploy create-order-action.');
   return { id: data.id as string, order_no: data.order_no as string };
 }
