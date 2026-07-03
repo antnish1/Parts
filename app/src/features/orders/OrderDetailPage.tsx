@@ -65,6 +65,7 @@ export function OrderDetailPage() {
 
   const summaryRows = [
     ['Order No', order.order_no],
+    ['Final Order No', order.final_order_no || order.processing_reference || '-'],
     ['Branch', order.branch],
     ['Order Type', order.order_type],
     ['Order For', order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock'],
@@ -72,6 +73,13 @@ export function OrderDetailPage() {
     ['Machine Type', order.warranty_status || '-'],
     ['Call ID', order.call_id || '-'],
     ['Approver', order.approver?.full_name || '-'],
+    ['Processed Date', order.processed_date || '-'],
+    ['Invoice No', order.dbms_invoice_no || '-'],
+    ['Invoice Date', order.dbms_invoice_date || '-'],
+    ['Docket No', order.docket_no || '-'],
+    ['Transport', order.transport_name || '-'],
+    ['Received Date', formatDate(order.received_date)],
+    ['Notes', order.processed_notes || '-'],
   ];
 
   return (
