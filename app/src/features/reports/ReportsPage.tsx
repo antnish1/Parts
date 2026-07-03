@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
 import { getTestOrders } from '../../services/testData.service';
-import { downloadOrdersCsv, summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
+import { downloadOrdersCsv, downloadOrdersExcel, summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
 import { applyStatusReportRows, parseStatusReportFile, type StatusReportResult } from '../../services/statusReport.service';
 
 export function ReportsPage() {
@@ -50,11 +50,11 @@ export function ReportsPage() {
         {uploadResult ? <div className="mt-2 grid grid-cols-4 gap-2 text-xs"><p className="text-[#c7d2df]">Total: <b className="text-white">{uploadResult.total}</b></p><p className="text-[#c7d2df]">Updated: <b className="text-white">{uploadResult.updated}</b></p><p className="text-[#c7d2df]">Skipped: <b className="text-white">{uploadResult.skipped}</b></p><p className="text-[#c7d2df]">Failed: <b className="text-white">{uploadResult.failed}</b></p></div> : null}
         {uploadResult?.errors.length ? <div className="mt-2 max-h-24 overflow-auto rounded-md border border-[#263244] bg-[#111827] p-2 text-[11px] text-[#c7d2df]">{uploadResult.errors.slice(0, 10).map((item) => <p key={item}>{item}</p>)}</div> : null}
       </div>
-
-      <div className="mb-3 grid gap-2 lg:grid-cols-[1fr_1fr_auto]">
+      <div className="mb-3 grid gap-2 lg:grid-cols-[1fr_1fr_auto_auto]">
         <select className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="all">All Branches</option>{branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}</select>
         <select className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">All Status</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select>
-        <Button onClick={() => downloadOrdersCsv(filteredOrders)} disabled={filteredOrders.length === 0} className="rounded-md px-3 py-1.5 text-xs">Download CSV</Button>
+        <Button onClick={() => downloadOrdersCsv(filteredOrders)} disabled={filteredOrders.length === 0} className="rounded-md px-3 py-1.5 text-xs">CSV</Button>
+        <Button onClick={() => downloadOrdersExcel(filteredOrders, 'filtered-orders')} disabled={filteredOrders.length === 0} className="rounded-md px-3 py-1.5 text-xs">Excel</Button>
       </div>
       {isLoading ? <p className="text-xs text-[#c7d2df]">Loading reports...</p> : null}
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
