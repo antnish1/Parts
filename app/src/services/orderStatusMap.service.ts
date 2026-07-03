@@ -5,8 +5,6 @@ import type { TestOrder } from './testData.service';
 type ItemStatusRow = {
   order_id: string;
   row_status: string | null;
-  status: string | null;
-  approval_status: string | null;
   qty: number | null;
   edited_qty: number | null;
   billed_qty: number | null;
@@ -27,9 +25,12 @@ export async function getOrderStatusMap(orders: TestOrder[]) {
     const chunk = ids.slice(index, index + CHUNK_SIZE);
     const { data, error } = await supabase
       .from('test_order_items')
-      .select('order_id, row_status, status, approval_status, qty, edited_qty, billed_qty')
+      .select('order_id, row_status, qty, edited_qty, billed_qty')
       .in('order_id', chunk);
-    if (error) throw error;
+    if (error) {
+      console.warn('Item status rows unavailable, using order header status.', error.message);
+      return {} as Record<string, string>;
+    }
     itemRows.push(...((data ?? []) as ItemStatusRow[]));
   }
 
