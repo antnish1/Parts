@@ -10,11 +10,13 @@ import { getTestLast30QtyByBranchPart } from '../../services/testPartUsage.servi
 import { getTestMachineByNo, normalizeMachineNo, saveTestMachineCustomer } from '../../services/testMachine.service';
 import { parseBulkPartsFile } from '../../services/bulkParts.service';
 import { normalizePartNo } from '../../lib/orderLogic';
+import { OrderPlacedSummary } from './OrderPlacedSummary';
 
 const inputClass = 'mt-2 w-full rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5] disabled:cursor-not-allowed disabled:opacity-50';
 const labelClass = 'text-[10px] font-black uppercase tracking-[0.12em] text-[#6D8196]';
 
 type ItemLine = { lineId: number; partNo: string; description: string; dnp: string; qty: string; previous30dQty: number };
+type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number };
 const defaultItem: ItemLine = { lineId: 1, partNo: '400/35820', description: 'FILTER ELEMENT', dnp: '182', qty: '1', previous30dQty: 0 };
 
 export function NewOrderPage() {
@@ -25,6 +27,7 @@ export function NewOrderPage() {
   const [message, setMessage] = useState('');
   const [machineStatus, setMachineStatus] = useState('');
   const [bulkHasHeader, setBulkHasHeader] = useState(true);
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: 'VOR', orderFor: 'Customer', approverId: '', machineNo: 'JCB3DX-TEST', customerName: 'Demo Customer', callId: 'CALL-TEST', warrantyStatus: 'UW' });
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
@@ -32,7 +35,9 @@ export function NewOrderPage() {
   const mutation = useMutation({
     mutationFn: createTestOrder,
     onSuccess: (order) => {
-      setMessage(`Created ${order.order_no} with ${items.length} item row(s).`);
+      const approver = approvers.find((item) => item.id === form.approverId);
+      setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue });
+      setMessage('Order created successfully.');
       queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] });
     },
@@ -42,58 +47,17 @@ export function NewOrderPage() {
   function updateField(field: keyof typeof form, value: string) { setForm((current) => ({ ...current, [field]: value })); }
   function updateItem(lineId: number, field: keyof ItemLine, value: string | number) { setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, [field]: value } : item))); }
 
-  async function lookupMachine() {
-    const normalized = normalizeMachineNo(form.machineNo);
-    if (!normalized || form.orderFor === 'Stock') return;
-    setMachineStatus('Checking machine...');
-    try {
-      const machine = await getTestMachineByNo(normalized);
-      updateField('machineNo', normalized);
-      if (machine) { updateField('customerName', machine.customer_name); setMachineStatus(`Customer found: ${machine.customer_name}`); }
-      else setMachineStatus('Machine not found. Enter customer name and save.');
-    } catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.'); }
-  }
+  async function lookupMachine() { const normalized = normalizeMachineNo(form.machineNo); if (!normalized || form.orderFor === 'Stock') return; setMachineStatus('Checking machine...'); try { const machine = await getTestMachineByNo(normalized); updateField('machineNo', normalized); if (machine) { updateField('customerName', machine.customer_name); setMachineStatus(`Customer found: ${machine.customer_name}`); } else setMachineStatus('Machine not found. Enter customer name and save.'); } catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.'); } }
+  async function saveMachine() { if (!form.machineNo || !form.customerName) return setMachineStatus('Machine number and customer name are required.'); try { const saved = await saveTestMachineCustomer(form.machineNo, form.customerName); updateField('machineNo', saved.machine_no); setMachineStatus('Machine customer saved.'); } catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine save failed. Check insert policy.'); } }
+  async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) { const normalized = normalizePartNo(partNo); if (!normalized || !branch) return; try { updateItem(lineId, 'previous30dQty', await getTestLast30QtyByBranchPart(branch, normalized, 30)); } catch (error) { console.warn('Previous quantity lookup failed', error); } }
+  function selectPart(lineId: number, partNo: string) { const part = parts.find((item) => item.part_no === partNo); setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, partNo, description: part?.description ?? item.description, dnp: part?.dnp != null ? String(part.dnp) : item.dnp } : item))); void refreshPreviousQty(lineId, partNo); }
 
-  async function saveMachine() {
-    if (!form.machineNo || !form.customerName) return setMachineStatus('Machine number and customer name are required.');
-    try { const saved = await saveTestMachineCustomer(form.machineNo, form.customerName); updateField('machineNo', saved.machine_no); setMachineStatus('Machine customer saved.'); }
-    catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine save failed. Check insert policy.'); }
-  }
-
-  async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) {
-    const normalized = normalizePartNo(partNo);
-    if (!normalized || !branch) return;
-    try { updateItem(lineId, 'previous30dQty', await getTestLast30QtyByBranchPart(branch, normalized, 30)); }
-    catch (error) { console.warn('Previous quantity lookup failed', error); }
-  }
-
-  function selectPart(lineId: number, partNo: string) {
-    const part = parts.find((item) => item.part_no === partNo);
-    setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, partNo, description: part?.description ?? item.description, dnp: part?.dnp != null ? String(part.dnp) : item.dnp } : item)));
-    void refreshPreviousQty(lineId, partNo);
-  }
-
-  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    try {
-      const result = await parseBulkPartsFile(file, bulkHasHeader, parts);
-      const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 }));
-      if (!nextItems.length) return setMessage(`Bulk upload failed. Invalid rows: ${result.failed}`);
-      setItems(nextItems);
-      nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo));
-      setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Bulk upload failed.');
-    }
-  }
-
+  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; event.target.value = ''; if (!file) return; try { const result = await parseBulkPartsFile(file, bulkHasHeader, parts); const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 })); if (!nextItems.length) return setMessage(`Bulk upload failed. Invalid rows: ${result.failed}`); setItems(nextItems); nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo)); setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}.`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Bulk upload failed.'); } }
   function addItem() { const next = { ...defaultItem, lineId: Date.now(), previous30dQty: 0 }; setItems((current) => [...current, next]); void refreshPreviousQty(next.lineId, next.partNo); }
   function removeItem(lineId: number) { setItems((current) => (current.length === 1 ? current : current.filter((item) => item.lineId !== lineId))); }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setMessage('');
+    event.preventDefault(); setMessage(''); setOrderSummary(null);
     const parsedItems = items.map((item) => ({ partNo: normalizePartNo(item.partNo), description: item.description.trim(), dnp: Number(item.dnp), qty: Number(item.qty), previous30dQty: item.previous30dQty || 0 }));
     const duplicatePart = parsedItems.find((item, index) => parsedItems.findIndex((candidate) => candidate.partNo === item.partNo) !== index);
     const invalidItem = parsedItems.find((item) => !item.partNo || !item.description || !Number.isFinite(item.dnp) || !Number.isFinite(item.qty) || item.dnp < 0 || item.qty <= 0 || !Number.isInteger(item.qty));
@@ -128,6 +92,7 @@ export function NewOrderPage() {
         </div>
         <Button type="submit" disabled={mutation.isPending} className="w-full rounded-md py-2 text-xs">{mutation.isPending ? 'Creating...' : 'Create Order'}</Button>
       </form>
+      {orderSummary ? <OrderPlacedSummary {...orderSummary} onClose={() => setOrderSummary(null)} /> : null}
       {message ? <p className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3 text-xs text-[#d8e3ee]">{message}</p> : null}
     </PageCard>
   );
