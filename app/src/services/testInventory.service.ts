@@ -19,7 +19,7 @@ export async function getTestInventory(): Promise<TestInventoryRow[]> {
     .from('test_inventory_current')
     .select('id, report_date, branch_code, item_code, item_name, item_group, uom, dnp, qty, inv_value, updated_at')
     .order('branch_code', { ascending: true })
-    .limit(100);
+    .limit(1000);
 
   if (error) {
     console.error('Failed to load test inventory', error);
