@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getCurrentBranchScopeValues } from './branchScope.service';
 
 export type TestDocketOrder = {
   id: string;
@@ -28,6 +29,7 @@ function safeSearch(value: string) {
 export async function lookupTestDocketOrders(value: string): Promise<TestDocketOrder[]> {
   const docket = safeSearch(value);
   if (!docket) return [];
+  const branchValues = await getCurrentBranchScopeValues();
 
   const { data: matchingItems, error: itemError } = await supabase
     .from('test_order_items')
@@ -40,12 +42,16 @@ export async function lookupTestDocketOrders(value: string): Promise<TestDocketO
   const orderFilters = [`final_order_no.eq.${docket}`, `processing_reference.eq.${docket}`, `order_no.eq.${docket}`, `machine_no.ilike.%${docket}%`];
   if (itemOrderIds.length > 0) orderFilters.push(`id.in.(${itemOrderIds.join(',')})`);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('test_orders')
     .select('id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, docket_no, transport_name, received_date, dbms_invoice_no, dbms_invoice_date')
     .or(orderFilters.join(','))
     .order('created_at', { ascending: false })
     .limit(20);
+
+  if (branchValues?.length) query = query.in('branch', branchValues);
+
+  const { data, error } = await query;
 
   if (error) throw error;
   return data ?? [];
