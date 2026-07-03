@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/tables/StatusBadge';
 import { getTestOrders } from '../../services/testData.service';
 import { getTestTrackingMeta } from '../../services/testTrackingMeta.service';
 import { summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
+import { getManagerInventoryLookup } from '../../services/managerInventory.service';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
 
 const cards = [
@@ -32,11 +33,15 @@ export function ManagerDashboardPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [inventoryBranch, setInventoryBranch] = useState('all');
   const { data: orders = [], isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const inventoryQuery = useQuery({ queryKey: ['manager-inventory', inventorySearch, inventoryBranch], queryFn: () => getManagerInventoryLookup(inventorySearch, inventoryBranch) });
   const metaQuery = useQuery({ queryKey: ['manager-tracking-meta', orders.map((order) => order.id).join('|')], queryFn: () => getTestTrackingMeta(orders.map((order) => order.id)), enabled: orders.length > 0 });
   const metaMap = metaQuery.data ?? {};
   const branches = useMemo(() => [...new Set(orders.map((order) => order.branch))].sort(), [orders]);
   const statuses = useMemo(() => [...new Set(orders.map((order) => order.status))].sort(), [orders]);
+  const inventoryRows = inventoryQuery.data ?? [];
   const filteredOrders = useMemo(() => orders.filter((order) => {
     const orderDate = order.created_at.slice(0, 10);
     const matchesBranch = branchFilter === 'all' || order.branch === branchFilter;
@@ -82,7 +87,7 @@ export function ManagerDashboardPage() {
   }
 
   return (
-    <PageCard eyebrow="Manager" title="Manager Dashboard" description="Operational order summary workspace.">
+    <PageCard eyebrow="Manager" title="Manager Dashboard" description="Operational order and inventory summary workspace.">
       {isLoading || metaQuery.isLoading ? <p className="text-xs text-[#c7d2df]">Loading dashboard...</p> : null}
       <div className="mb-3 grid gap-2 lg:grid-cols-[1fr_1fr_140px_140px_auto]">
         <select className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={branchFilter} onChange={(event) => setBranchFilter(event.target.value)}><option value="all">All Branches</option>{branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}</select>
@@ -98,6 +103,12 @@ export function ManagerDashboardPage() {
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Filtered Qty</p><p className="text-sm font-black text-white">{totals.qty}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Filtered Value</p><p className="text-sm font-black text-white">{formatMoney(totals.value)}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Comments</p><p className="text-sm font-black text-white">{totals.comments}</p></div>
+      </div>
+      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+        <div className="mb-2 grid gap-2 lg:grid-cols-[1fr_160px]"><input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Search inventory by part no, item name, or group" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} /><select className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={inventoryBranch} onChange={(event) => setInventoryBranch(event.target.value)}><option value="all">All Branches</option>{branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}</select></div>
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Inventory Lookup</p>
+        {inventoryQuery.isLoading ? <p className="text-xs text-[#c7d2df]">Loading inventory...</p> : null}
+        <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[900px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Branch</th><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Item Name</th><th className="px-2.5 py-2">Group</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">DNP</th><th className="px-2.5 py-2 text-right">Value</th></tr></thead><tbody className="divide-y divide-[#263244]">{inventoryRows.map((row) => (<tr key={row.id} className="bg-[#111827]"><td className="px-2.5 py-2 font-black text-white">{row.branch_code}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_code}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_name ?? '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_group ?? '-'}</td><td className="px-2.5 py-2 text-right font-black text-white">{Number(row.qty ?? 0)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{Number(row.dnp ?? 0)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{formatMoney(Number(row.inv_value ?? 0))}</td></tr>))}</tbody></table>{inventoryRows.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No inventory rows found.</p> : null}</div>
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3"><p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Branch Summary</p>{branchRows.map((row) => (<button key={row.label} className="flex w-full justify-between border-t border-[#263244] py-1.5 text-xs" onClick={() => setBranchFilter(row.label)}><span className="text-[#c7d2df]">{row.label}</span><span className="font-black text-white">{row.count}</span></button>))}</div>
