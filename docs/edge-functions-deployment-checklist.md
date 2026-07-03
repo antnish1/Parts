@@ -17,6 +17,8 @@ supabase functions deploy order-item-qty-action
 supabase functions deploy status-report-action
 supabase functions deploy docket-receive-action
 supabase functions deploy inventory-upload-action
+supabase functions deploy comment-attachment-upload-action
+supabase functions deploy comment-attachment-link-action
 ```
 
 ## Required function environment
@@ -39,6 +41,8 @@ Do not place the service role value in Vercel, frontend environment files, brows
 | `statusReport.service.ts` | `status-report-action` | Apply DBMS status report rows server-side |
 | `testDocket.service.ts` | `docket-receive-action` | Receive item rows by docket or invoice |
 | `inventoryUploadWriter.ts` | `inventory-upload-action` | Stage inventory, log changes, upsert current stock, save upload summary |
+| `commentAttachment.service.ts` | `comment-attachment-upload-action` | Upload one comment attachment to private staging storage |
+| `commentAttachment.service.ts` | `comment-attachment-link-action` | Generate a short-lived signed download URL |
 
 ## Role checks
 
@@ -54,6 +58,8 @@ Do not place the service role value in Vercel, frontend environment files, brows
 | `status-report-action` | `admin`, `developer` |
 | `docket-receive-action` | `admin`, `developer` |
 | `inventory-upload-action` | `admin`, `developer` |
+| `comment-attachment-upload-action` | `branch`, `super`, `admin`, `manager`, `developer` |
+| `comment-attachment-link-action` | `branch`, `super`, `admin`, `manager`, `viewer`, `developer` with order access |
 
 Each function checks that the logged-in user has an active row in `test_profiles` linked through `auth_user_id`.
 
@@ -71,6 +77,8 @@ Confirm these exist before testing:
 - `test_order_items.received_date`
 - `test_order_events`
 - `test_order_comments`
+- `test_order_comment_attachments`
+- Private Storage bucket `test_order_comment_attachments`
 - `test_inventory_current`
 - `test_inventory_staging`
 - `test_inventory_changes`
@@ -87,12 +95,16 @@ Confirm these exist before testing:
 7. Receive the dispatched item rows from Docket Scanner.
 8. Upload one small DBMS status report.
 9. Upload one small inventory Excel file.
-10. Confirm Developer Workspace profile and comments tools still load.
+10. Add a comment on Order Detail.
+11. Attach one small PDF or JPG to the comment.
+12. Download the attachment using the generated signed URL.
+13. Confirm Developer Workspace profile and comments tools still load.
 
 ## Production safety notes
 
 - These functions are wired to staging tables until final cutover.
 - Live production tables must remain untouched until migration approval.
+- Comment attachments currently use the private staging bucket `test_order_comment_attachments`.
 - Function errors about authentication usually mean the user session or `auth_user_id` profile link is missing.
 - Function errors about role access usually mean `role` or `is_active` in `test_profiles` needs correction.
 - After deploying new functions, run the smoke test before connecting the workflow to any production table names.
