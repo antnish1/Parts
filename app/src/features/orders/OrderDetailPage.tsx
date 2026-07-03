@@ -5,6 +5,7 @@ import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { useAuth } from '../../auth/useAuth';
 import { setTestOrderApproved, setTestOrderRejected } from '../../services/testApproval.service';
+import { markTestOrderIssued, setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
@@ -74,6 +75,34 @@ export function OrderDetailPage() {
     }
   }
 
+  async function runAdminAction(action: 'process' | 'issue') {
+    if (!data) return;
+    setActionMessage('');
+    setBusyAction(action);
+    try {
+      if (action === 'process') {
+        const finalNo = window.prompt('Enter final DBMS/SAP order number', data.order.final_order_no || data.order.processing_reference || '');
+        if (!finalNo) throw new Error('Final order number is required.');
+        await setTestOrderProcessed(data.order as unknown as TestOrder, finalNo);
+      } else {
+        const invoiceNo = window.prompt('Enter invoice number', data.items.find((item) => item.dbms_invoice_no)?.dbms_invoice_no || '');
+        if (!invoiceNo) throw new Error('Invoice number is required.');
+        const invoiceDate = window.prompt('Enter invoice date in YYYY-MM-DD format', new Date().toISOString().slice(0, 10));
+        if (!invoiceDate) throw new Error('Invoice date is required.');
+        const docketNo = window.prompt('Enter docket number', '') ?? '';
+        const transport = window.prompt('Enter transport name', '') ?? '';
+        await markTestOrderIssued(data.order as unknown as TestOrder, invoiceNo, invoiceDate, docketNo, transport);
+      }
+      setActionMessage(`${action} completed.`);
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
+    } catch (adminError) {
+      setActionMessage(adminError instanceof Error ? adminError.message : 'Admin action failed.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
   if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#c7d2df]">Loading...</p></PageCard>;
   if (error || !data) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
 
@@ -85,7 +114,11 @@ export function OrderDetailPage() {
   const totalValue = items.reduce((sum, item) => sum + getEffectiveValue(item), 0);
   const totalInventoryCoverage = items.reduce((sum, item) => sum + Math.min(inventoryMap[normalizePartNo(item.part_no)] ?? 0, getPendingQty(item)), 0);
   const status = getOrderStatusLabel({ ...order, items });
-  const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && order.status.toLowerCase().includes('pending');
+  const rawStatus = order.status.toLowerCase();
+  const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && rawStatus.includes('pending');
+  const canAdmin = role === 'developer' || role === 'admin';
+  const canProcess = canAdmin && rawStatus === 'approved';
+  const canIssue = canAdmin && rawStatus === 'processed';
 
   const summaryRows = [
     ['Order No', order.order_no],
@@ -108,6 +141,8 @@ export function OrderDetailPage() {
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canApprove ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('approve')}>{busyAction === 'approve' ? 'Approving' : 'Approve'}</button> : null}
           {canApprove ? <button type="button" className="text-xs font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('reject')}>{busyAction === 'reject' ? 'Rejecting' : 'Reject'}</button> : null}
+          {canProcess ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runAdminAction('process')}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
+          {canIssue ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runAdminAction('issue')}>{busyAction === 'issue' ? 'Issuing' : 'Issue Item Rows'}</button> : null}
           <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => window.print()}>Print</button><StatusBadge status={status} />
         </div>
       </div>
