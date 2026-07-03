@@ -45,7 +45,8 @@ export type TestOrderViewItem = {
 };
 
 export type TestOrderEvent = { id: string; event_type: string; old_status: string | null; new_status: string | null; notes: string | null; created_at: string; };
-export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; };
+export type TestOrderCommentAttachment = { id: string; comment_id: string; original_file_name: string; mime_type: string; file_size_bytes: number; created_at: string; };
+export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; attachments: TestOrderCommentAttachment[]; };
 
 type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 function normalizeOrderView(order: RawOrderView): TestOrderView { const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null; return { ...order, approver }; }
@@ -68,6 +69,31 @@ export async function addTestOrderComment(orderId: string, body: string) {
 
   const { error } = await supabase.from('test_order_comments').insert({ order_id: orderId, comment_type: 'user', body: text });
   if (error) throw error;
+}
+
+async function getCommentAttachments(orderId: string, comments: Array<{ id: string }>) {
+  if (!comments.length) return new Map<string, TestOrderCommentAttachment[]>();
+  const map = new Map<string, TestOrderCommentAttachment[]>();
+  const commentIds = comments.map((comment) => comment.id);
+  const { data, error } = await supabase
+    .from('test_order_comment_attachments')
+    .select('id, comment_id, original_file_name, mime_type, file_size_bytes, created_at')
+    .eq('order_id', orderId)
+    .in('comment_id', commentIds)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('Comment attachments are not available yet.', error.message);
+    return map;
+  }
+
+  for (const attachment of (data ?? []) as TestOrderCommentAttachment[]) {
+    const list = map.get(attachment.comment_id) ?? [];
+    list.push(attachment);
+    map.set(attachment.comment_id, list);
+  }
+  return map;
 }
 
 export async function getTestOrderView(orderId: string) {
@@ -102,5 +128,12 @@ export async function getTestOrderView(orderId: string) {
     .limit(20);
   if (commentError) throw commentError;
 
-  return { order: normalizeOrderView(order as unknown as RawOrderView), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: (comments ?? []) as TestOrderComment[] };
+  const rawComments = comments ?? [];
+  const attachmentMap = await getCommentAttachments(orderId, rawComments);
+  const commentsWithAttachments = rawComments.map((comment) => ({
+    ...comment,
+    attachments: attachmentMap.get(comment.id) ?? [],
+  })) as TestOrderComment[];
+
+  return { order: normalizeOrderView(order as unknown as RawOrderView), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
 }
