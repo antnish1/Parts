@@ -9,7 +9,13 @@ export type BulkPartResult = {
   merged: number;
   unknown: number;
   unknownParts: string[];
+  detectedPartColumn: number;
+  detectedQtyColumn: number;
+  totalSourceRows: number;
 };
+
+const PART_HEADERS = ['materialno', 'materialnumber', 'partno', 'partnumber', 'itemcode', 'itemno', 'material'];
+const QTY_HEADERS = ['billedqty', 'billedquantity', 'qty', 'quantity', 'orderqty', 'orderedqty', 'billqty'];
 
 function normalizeHeader(value: unknown) {
   return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -20,15 +26,50 @@ function findHeaderIndex(headers: Array<string | number>, names: string[]) {
   return normalized.findIndex((header) => names.includes(header));
 }
 
+function looksLikePartNo(value: unknown) {
+  return /^[A-Z0-9]+\/[A-Z0-9]+$/i.test(String(value ?? '').trim());
+}
+
+function parseQty(value: unknown) {
+  if (typeof value === 'number') return value;
+  const cleaned = String(value ?? '').replace(/,/g, '').trim();
+  return Number(cleaned);
+}
+
 function getColumnIndexes(rawRows: Array<Array<string | number>>, hasHeader: boolean) {
-  if (!hasHeader || rawRows.length === 0) return { partIndex: 0, qtyIndex: 1 };
-  const headers = rawRows[0] ?? [];
-  const partIndex = findHeaderIndex(headers, ['materialno', 'materialnumber', 'partno', 'partnumber', 'itemcode', 'itemno']);
-  const qtyIndex = findHeaderIndex(headers, ['billedqty', 'billedquantity', 'qty', 'quantity', 'orderqty', 'orderedqty']);
-  return {
-    partIndex: partIndex >= 0 ? partIndex : 0,
-    qtyIndex: qtyIndex >= 0 ? qtyIndex : 1,
-  };
+  const firstRow = rawRows[0] ?? [];
+  const headerPartIndex = findHeaderIndex(firstRow, PART_HEADERS);
+  const headerQtyIndex = findHeaderIndex(firstRow, QTY_HEADERS);
+  if (headerPartIndex >= 0 || headerQtyIndex >= 0) {
+    return {
+      partIndex: headerPartIndex >= 0 ? headerPartIndex : 0,
+      qtyIndex: headerQtyIndex >= 0 ? headerQtyIndex : 1,
+      skipFirstRow: true,
+    };
+  }
+
+  const sampleRows = rawRows.slice(hasHeader ? 1 : 0, Math.min(rawRows.length, 12));
+  let bestPartIndex = 0;
+  let bestQtyIndex = 1;
+  let bestScore = -1;
+  for (let partIndex = 0; partIndex < 8; partIndex += 1) {
+    for (let qtyIndex = 0; qtyIndex < 8; qtyIndex += 1) {
+      if (partIndex === qtyIndex) continue;
+      const score = sampleRows.reduce((sum, row) => {
+        const partOk = looksLikePartNo(row[partIndex]) ? 1 : 0;
+        const qty = parseQty(row[qtyIndex]);
+        const qtyOk = Number.isFinite(qty) && qty > 0 ? 1 : 0;
+        return sum + partOk + qtyOk;
+      }, 0);
+      if (score > bestScore) {
+        bestScore = score;
+        bestPartIndex = partIndex;
+        bestQtyIndex = qtyIndex;
+      }
+    }
+  }
+
+  return { partIndex: bestPartIndex, qtyIndex: bestQtyIndex, skipFirstRow: hasHeader };
 }
 
 export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts: TestPart[]): Promise<BulkPartResult> {
@@ -36,14 +77,14 @@ export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts: 
   const workbook = XLSX.read(buffer);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rawRows = XLSX.utils.sheet_to_json<Array<string | number>>(sheet, { header: 1, defval: '' });
-  const { partIndex, qtyIndex } = getColumnIndexes(rawRows, hasHeader);
-  const sourceRows = hasHeader ? rawRows.slice(1) : rawRows;
+  const { partIndex, qtyIndex, skipFirstRow } = getColumnIndexes(rawRows, hasHeader);
+  const sourceRows = skipFirstRow ? rawRows.slice(1) : rawRows;
   const merged = new Map<string, number>();
   let failed = 0;
 
   sourceRows.forEach((row) => {
     const partNo = normalizePartNo(String(row[partIndex] ?? ''));
-    const qty = Number(row[qtyIndex] ?? 0);
+    const qty = parseQty(row[qtyIndex]);
     if (!partNo || !Number.isFinite(qty) || qty <= 0) {
       failed += 1;
       return;
@@ -69,5 +110,15 @@ export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts: 
     });
   });
 
-  return { rows, success: rows.length, failed, merged: sourceRows.length - merged.size - failed, unknown: unknownParts.length, unknownParts };
+  return {
+    rows,
+    success: rows.length,
+    failed,
+    merged: Math.max(0, sourceRows.length - failed - merged.size),
+    unknown: unknownParts.length,
+    unknownParts,
+    detectedPartColumn: partIndex + 1,
+    detectedQtyColumn: qtyIndex + 1,
+    totalSourceRows: sourceRows.length,
+  };
 }
