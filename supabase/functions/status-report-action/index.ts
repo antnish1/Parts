@@ -9,6 +9,7 @@ const normNo = (value: unknown) => clean(value).toUpperCase();
 const num = (value: unknown) => Number(value ?? 0);
 
 type Result = { total: number; updated: number; skipped: number; failed: number; errors: string[] };
+type HeaderCandidate = { value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 
 function deriveStatus(rows: Array<{ row_status: string | null }>) {
   if (!rows.length) return 'processed';
@@ -24,6 +25,11 @@ function deriveStatus(rows: Array<{ row_status: string | null }>) {
   return 'processed';
 }
 
+function singleOrNull(values: unknown[]) {
+  const unique = [...new Set(values.map((value) => clean(value)).filter(Boolean))];
+  return unique.length === 1 ? unique[0] : null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -37,7 +43,7 @@ serve(async (req) => {
 
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile, error: profileError } = await adminClient.from('test_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile, error: profileError } = await adminClient.from('test_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (profileError) return json({ error: profileError.message }, 400);
   if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can apply status reports' }, 403);
 
@@ -45,6 +51,7 @@ serve(async (req) => {
   const rows = Array.isArray(body.rows) ? body.rows : [];
   const result: Result = { total: rows.length, updated: 0, skipped: 0, failed: 0, errors: [] };
   const touchedOrders = new Map<string, string>();
+  const headerCandidates = new Map<string, HeaderCandidate[]>();
   const now = new Date().toISOString();
 
   for (const rawRow of rows) {
@@ -82,7 +89,18 @@ serve(async (req) => {
       if (itemError) throw itemError;
 
       touchedOrders.set(order.id, order.order_no);
-      await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'STATUS_REPORT_UPDATED', old_status: order.status, new_status: 'issued', notes: `Status report updated ${partNo} invoice ${payload.dbms_invoice_no || '-'}.` });
+      const existingHeaders = headerCandidates.get(order.id) ?? [];
+      existingHeaders.push({ value: payload.dbms_invoice_no, dateValue: payload.dbms_invoice_date, docket: payload.docket_no, transport: payload.transport_name });
+      headerCandidates.set(order.id, existingHeaders);
+      await adminClient.from('test_order_events').insert({
+        order_id: order.id,
+        event_type: 'STATUS_REPORT_UPDATED',
+        old_status: order.status,
+        new_status: 'issued',
+        actor_id: profile.id,
+        notes: `Status report updated ${partNo} invoice ${payload.dbms_invoice_no || '-'}.`,
+        metadata: { part_no: partNo, billed_qty: payload.billed_qty, invoice_no: payload.dbms_invoice_no, invoice_date: payload.dbms_invoice_date, docket_no: payload.docket_no, transport_name: payload.transport_name },
+      });
       result.updated += 1;
     } catch (error) {
       result.failed += 1;
@@ -92,12 +110,32 @@ serve(async (req) => {
 
   for (const [orderId, orderNo] of touchedOrders.entries()) {
     try {
-      const { data: items, error: itemError } = await adminClient.from('test_order_items').select('row_status').eq('order_id', orderId);
+      const { data: items, error: itemError } = await adminClient
+        .from('test_order_items')
+        .select('row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name')
+        .eq('order_id', orderId);
       if (itemError) throw itemError;
-      const nextStatus = deriveStatus(items ?? []);
-      const { error: statusError } = await adminClient.from('test_orders').update({ status: nextStatus, updated_at: now }).eq('id', orderId).like('order_no', 'TEST-%');
+      const itemRows = items ?? [];
+      const nextStatus = deriveStatus(itemRows);
+      const updatePayload = {
+        status: nextStatus,
+        dbms_invoice_no: singleOrNull(itemRows.map((item) => item.dbms_invoice_no)),
+        dbms_invoice_date: singleOrNull(itemRows.map((item) => item.dbms_invoice_date)),
+        docket_no: singleOrNull(itemRows.map((item) => item.docket_no)),
+        transport_name: singleOrNull(itemRows.map((item) => item.transport_name)),
+        updated_at: now,
+      };
+      const { error: statusError } = await adminClient.from('test_orders').update(updatePayload).eq('id', orderId).like('order_no', 'TEST-%');
       if (statusError) throw statusError;
-      await adminClient.from('test_order_events').insert({ order_id: orderId, event_type: 'ORDER_STATUS_RECALCULATED', old_status: null, new_status: nextStatus, notes: `Order ${orderNo} recalculated after status upload.` });
+      await adminClient.from('test_order_events').insert({
+        order_id: orderId,
+        event_type: 'ORDER_STATUS_RECALCULATED',
+        old_status: null,
+        new_status: nextStatus,
+        actor_id: profile.id,
+        notes: `Order ${orderNo} recalculated after status upload. Header fields synced when invoice/docket values are unique.`,
+        metadata: { header_candidates: headerCandidates.get(orderId) ?? [], synced_header: updatePayload },
+      });
     } catch (error) {
       result.errors.push(`${orderNo}: status recalculation failed - ${error instanceof Error ? error.message : 'failed'}`);
     }
