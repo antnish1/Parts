@@ -12,6 +12,7 @@ export type LegacyLikeOrderItem = {
   editedvalue?: number | string | null;
   billed_qty?: number | string | null;
   BilledQty?: number | string | null;
+  row_status?: string | null;
   status?: string | null;
   Status?: string | null;
   approval_status?: string | null;
@@ -62,6 +63,7 @@ export function normalizeStatus(status: string | null | undefined) {
   if (!value) return 'NA';
   if (value === 'PENDINGAPPROVAL' || value === 'APPROVAL PENDING') return 'PENDING APPROVAL';
   if (value === 'PENDINGMANAGERAPPROVAL') return 'PENDING MANAGER APPROVAL';
+  if (value === 'PARTIALLY ISSUED') return 'PARTIALLY DISPATCHED';
   if (value === 'NOT DISPATCHED') return 'NOT DESPATCHED';
   return value;
 }
@@ -72,8 +74,10 @@ export function isPendingApprovalStatus(status: string | null | undefined) {
 }
 
 export function getResolvedRowStatus(row: LegacyLikeOrderItem) {
+  const rowStatus = normalizeStatus(row.row_status ?? '');
   const approval = normalizeStatus(row.approval_status ?? row.ApprovalStatus ?? '');
   const status = normalizeStatus(row.status ?? row.Status ?? '');
+  if (rowStatus !== 'NA') return rowStatus;
   if (approval === 'REJECTED' || status === 'REJECTED') return 'REJECTED';
   if (approval === 'PENDING MANAGER APPROVAL') return 'PENDING MANAGER APPROVAL';
   if (approval === 'PENDING APPROVAL') return 'PENDING APPROVAL';
@@ -85,12 +89,15 @@ export function getOrderStatusLabel(order: LegacyLikeOrder | LegacyLikeOrderItem
   const items = Array.isArray(order) ? order : order.items || [order];
   if (!items.length) return 'NA';
   const statuses = items.map(getResolvedRowStatus);
-  if (statuses.some((status) => status === 'REJECTED')) return 'REJECTED';
+  if (statuses.every((status) => status === 'REJECTED')) return 'REJECTED';
+  if (statuses.some((status) => status === 'REJECTED')) return 'PARTIALLY REJECTED';
   if (statuses.every((status) => status === 'RECEIVED')) return 'RECEIVED';
   if (statuses.some((status) => status === 'RECEIVED')) return 'PARTIALLY RECEIVED';
   if (statuses.every((status) => status === 'ISSUED')) return 'ISSUED';
+  if (statuses.some((status) => status === 'ISSUED')) return 'PARTIALLY DISPATCHED';
   if (statuses.every((status) => status === 'PROCESSED')) return 'PROCESSED';
   if (statuses.some((status) => status === 'PROCESSED')) return 'PROCESSED';
+  if (statuses.every((status) => status === 'APPROVED')) return 'APPROVED';
   if (statuses.some((status) => status === 'APPROVED')) return 'APPROVED';
   if (statuses.some((status) => status === 'PENDING MANAGER APPROVAL')) return 'PENDING MANAGER APPROVAL';
   if (statuses.some((status) => status === 'PENDING APPROVAL')) return 'PENDING APPROVAL';
@@ -111,6 +118,7 @@ export function getPrintableStatusLabel(statusOrRow: string | LegacyLikeOrderIte
     RECEIVED: 'Received',
     'PARTIALLY RECEIVED': 'Partially Received',
     ISSUED: 'Issued',
+    'PARTIALLY REJECTED': 'Partially Rejected',
     'NOT DESPATCHED': 'Not Dispatched',
     REJECTED: 'Rejected',
   };
