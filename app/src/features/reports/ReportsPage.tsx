@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { downloadOrdersCsv, downloadOrdersExcel, summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
 import { applyStatusReportRows, parseStatusReportFile, type StatusReportResult } from '../../services/statusReport.service';
 import { readUploadMeta, saveUploadMeta, uploadProgress, type UploadMeta } from '../../lib/uploadMeta';
@@ -16,7 +16,7 @@ export function ReportsPage() {
   const [uploadStep, setUploadStep] = useState('idle');
   const [uploadMeta, setUploadMeta] = useState<UploadMeta | null>(() => readUploadMeta('partsConnectStatusUploadMeta'));
   const queryClient = useQueryClient();
-  const { data: orders = [], isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const branches = useMemo(() => [...new Set(orders.map((order) => order.branch))].sort(), [orders]);
   const statuses = useMemo(() => [...new Set(orders.map((order) => order.status))].sort(), [orders]);
   const filteredOrders = useMemo(() => orders.filter((order) => (branchFilter === 'all' || order.branch === branchFilter) && (statusFilter === 'all' || order.status === statusFilter)), [orders, branchFilter, statusFilter]);
@@ -41,7 +41,7 @@ export function ReportsPage() {
       setUploadMeta(meta);
       saveUploadMeta('partsConnectStatusUploadMeta', meta);
       setUploadMessage('Refreshing orders...');
-      await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
       setUploadStep('complete');
       setUploadMessage(`Updated ${result.updated}, skipped ${result.skipped}, failed ${result.failed}.`);
     } catch (error) {
