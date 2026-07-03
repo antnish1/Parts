@@ -44,42 +44,29 @@ export type TestOrderViewItem = {
   row_status: string | null;
 };
 
-export type TestOrderEvent = {
-  id: string;
-  event_type: string;
-  old_status: string | null;
-  new_status: string | null;
-  notes: string | null;
-  created_at: string;
-};
+export type TestOrderEvent = { id: string; event_type: string; old_status: string | null; new_status: string | null; notes: string | null; created_at: string; };
+export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; };
 
-export type TestOrderComment = {
-  id: string;
-  comment_type: string;
-  body: string | null;
-  attachment_path: string | null;
-  created_at: string;
-};
-
-type RawOrderView = Omit<TestOrderView, 'approver'> & {
-  approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null;
-};
-
-function normalizeOrderView(order: RawOrderView): TestOrderView {
-  const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
-  return { ...order, approver };
-}
+type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
+function normalizeOrderView(order: RawOrderView): TestOrderView { const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null; return { ...order, approver }; }
+function normalizeCommentText(value: string) { return value.trim().replace(/\s+/g, ' '); }
 
 export async function addTestOrderComment(orderId: string, body: string) {
-  const text = body.trim();
+  const text = normalizeCommentText(body);
   if (!orderId || !text) throw new Error('Comment is required.');
 
-  const { error } = await supabase.from('test_order_comments').insert({
-    order_id: orderId,
-    comment_type: 'user',
-    body: text,
-  });
+  const { data: recent, error: recentError } = await supabase
+    .from('test_order_comments')
+    .select('id, body, created_at')
+    .eq('order_id', orderId)
+    .eq('comment_type', 'user')
+    .order('created_at', { ascending: false })
+    .limit(5);
+  if (recentError) throw recentError;
+  const duplicate = (recent ?? []).some((comment) => normalizeCommentText(comment.body ?? '').toLowerCase() === text.toLowerCase());
+  if (duplicate) throw new Error('Duplicate comment already exists for this order.');
 
+  const { error } = await supabase.from('test_order_comments').insert({ order_id: orderId, comment_type: 'user', body: text });
   if (error) throw error;
 }
 
@@ -110,14 +97,10 @@ export async function getTestOrderView(orderId: string) {
     .from('test_order_comments')
     .select('id, comment_type, body, attachment_path, created_at')
     .eq('order_id', orderId)
+    .eq('comment_type', 'user')
     .order('created_at', { ascending: false })
     .limit(20);
   if (commentError) throw commentError;
 
-  return {
-    order: normalizeOrderView(order as unknown as RawOrderView),
-    items: (items ?? []) as TestOrderViewItem[],
-    events: (events ?? []) as TestOrderEvent[],
-    comments: (comments ?? []) as TestOrderComment[],
-  };
+  return { order: normalizeOrderView(order as unknown as RawOrderView), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: (comments ?? []) as TestOrderComment[] };
 }
