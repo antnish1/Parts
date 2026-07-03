@@ -83,7 +83,22 @@ export function NewOrderPage() {
   async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) { const normalized = normalizePartNo(partNo); if (!normalized || !branch) return; try { updateItem(lineId, 'previous30dQty', await getTestLast30QtyByBranchPart(branch, normalized, 30)); } catch (error) { console.warn('Previous quantity lookup failed', error); } }
   function selectPart(lineId: number, partNo: string) { const part = parts.find((item) => item.part_no === partNo); setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, partNo, description: part?.description ?? item.description, dnp: part?.dnp != null ? String(part.dnp) : item.dnp } : item))); void refreshPreviousQty(lineId, partNo); }
 
-  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; event.target.value = ''; if (!file) return; try { const result = await parseBulkPartsFile(file, bulkHasHeader, parts); const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 })); if (!nextItems.length) return setMessage(`Bulk upload failed. Invalid rows: ${result.failed}`); setItems(nextItems); nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo)); setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}.`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Bulk upload failed.'); } }
+  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const result = await parseBulkPartsFile(file, bulkHasHeader, parts);
+      const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 }));
+      if (!nextItems.length) return setMessage(`Bulk upload failed. Invalid rows: ${result.failed}`);
+      setItems(nextItems);
+      nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo));
+      const unknownNote = result.unknown ? ` Unknown in part master: ${result.unknown}. Review description/DNP before creating order.` : '';
+      setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}.${unknownNote}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Bulk upload failed.');
+    }
+  }
   function addItem() { const next = { ...defaultItem, lineId: Date.now(), previous30dQty: 0 }; setItems((current) => [...current, next]); void refreshPreviousQty(next.lineId, next.partNo); }
   function removeItem(lineId: number) { setItems((current) => (current.length === 1 ? current : current.filter((item) => item.lineId !== lineId))); }
 
