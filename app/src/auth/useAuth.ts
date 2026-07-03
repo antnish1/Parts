@@ -17,7 +17,7 @@ async function loadProfile(session: Session | null): Promise<UserProfile | null>
   const { data, error } = await supabase
     .from('test_profiles')
     .select('id, full_name, branch, role, is_active')
-    .eq('id', session.user.id)
+    .eq('auth_user_id', session.user.id)
     .maybeSingle<ProfileRow>();
 
   if (error) {
