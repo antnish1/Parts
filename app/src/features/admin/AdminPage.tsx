@@ -14,6 +14,8 @@ export function AdminPage() {
   const [references, setReferences] = useState<Record<string, string>>({});
   const [invoiceNos, setInvoiceNos] = useState<Record<string, string>>({});
   const [invoiceDates, setInvoiceDates] = useState<Record<string, string>>({});
+  const [docketNos, setDocketNos] = useState<Record<string, string>>({});
+  const [transports, setTransports] = useState<Record<string, string>>({});
   const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
 
   const term = search.trim().toLowerCase();
@@ -62,10 +64,12 @@ export function AdminPage() {
     setMessage('');
     setBusyId(order.id);
     try {
-      await markTestOrderIssued(order, invoiceNos[order.id] ?? '', invoiceDates[order.id] ?? '');
-      setMessage(`${order.final_order_no || order.order_no} marked issued.`);
+      await markTestOrderIssued(order, invoiceNos[order.id] ?? '', invoiceDates[order.id] ?? '', docketNos[order.id] ?? '', transports[order.id] ?? '');
+      setMessage(`${order.final_order_no || order.order_no} item rows marked issued.`);
       setInvoiceNos((current) => ({ ...current, [order.id]: '' }));
       setInvoiceDates((current) => ({ ...current, [order.id]: '' }));
+      setDocketNos((current) => ({ ...current, [order.id]: '' }));
+      setTransports((current) => ({ ...current, [order.id]: '' }));
       await refetch();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Issue failed.');
@@ -75,7 +79,7 @@ export function AdminPage() {
   }
 
   return (
-    <PageCard eyebrow="Admin" title="Admin Processing" description="Process approved orders, reject exceptions, and mark customer orders issued.">
+    <PageCard eyebrow="Admin" title="Admin Processing" description="Process approved orders, reject exceptions, and issue item rows.">
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5"><p className="text-[10px] uppercase text-[#6D8196]">Approved</p><p className="text-sm font-black text-white">{counts.approved}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5"><p className="text-[10px] uppercase text-[#6D8196]">Processed</p><p className="text-sm font-black text-white">{counts.processed}</p></div>
@@ -103,7 +107,7 @@ export function AdminPage() {
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Processed / Ready To Issue</p>
           <div className="space-y-2">
-            {processedOrders.map((order) => (<div key={order.id} className={`rounded-md border border-[#263244] px-2.5 py-2 ${getStatusRowClasses(order.status)}`}><div className="flex items-start justify-between gap-2"><div><p className="text-xs font-black text-white">{order.final_order_no || order.processing_reference || order.order_no}</p><p className="text-xs text-[#c7d2df]">{order.branch} • {order.customer_name ?? '-'} • {order.order_for}</p><p className="text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">Processed {order.processed_date ?? '-'}</p></div><Link className="text-xs font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link></div><div className="mt-2 grid grid-cols-[1fr_120px_auto] gap-2"><input className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Invoice No." value={invoiceNos[order.id] ?? ''} onChange={(event) => setInvoiceNos((current) => ({ ...current, [order.id]: event.target.value }))} /><input type="date" className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={invoiceDates[order.id] ?? ''} onChange={(event) => setInvoiceDates((current) => ({ ...current, [order.id]: event.target.value }))} /><button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={busyId === order.id || order.order_for !== 'Customer'} onClick={() => void issueOrder(order)}>Issue</button></div></div>))}
+            {processedOrders.map((order) => (<div key={order.id} className={`rounded-md border border-[#263244] px-2.5 py-2 ${getStatusRowClasses(order.status)}`}><div className="flex items-start justify-between gap-2"><div><p className="text-xs font-black text-white">{order.final_order_no || order.processing_reference || order.order_no}</p><p className="text-xs text-[#c7d2df]">{order.branch} • {order.customer_name ?? '-'} • {order.order_for}</p><p className="text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">Processed {order.processed_date ?? '-'}</p></div><Link className="text-xs font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link></div><div className="mt-2 grid grid-cols-2 gap-2"><input className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Invoice No." value={invoiceNos[order.id] ?? ''} onChange={(event) => setInvoiceNos((current) => ({ ...current, [order.id]: event.target.value }))} /><input type="date" className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={invoiceDates[order.id] ?? ''} onChange={(event) => setInvoiceDates((current) => ({ ...current, [order.id]: event.target.value }))} /><input className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Docket No." value={docketNos[order.id] ?? ''} onChange={(event) => setDocketNos((current) => ({ ...current, [order.id]: event.target.value }))} /><input className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Transport" value={transports[order.id] ?? ''} onChange={(event) => setTransports((current) => ({ ...current, [order.id]: event.target.value }))} /></div><div className="mt-2 text-right"><button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={busyId === order.id || order.order_for !== 'Customer'} onClick={() => void issueOrder(order)}>Issue All Item Rows</button></div></div>))}
             {processedOrders.length === 0 ? <p className="text-xs text-[#c7d2df]">No processed orders ready to issue.</p> : null}
           </div>
         </div>
@@ -112,7 +116,7 @@ export function AdminPage() {
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Recently Issued</p>
         <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {issuedOrders.map((order) => (<div key={order.id} className={`rounded-md border border-[#263244] px-2.5 py-2 ${getStatusRowClasses(order.status)}`}><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-white">{order.final_order_no || order.order_no}</p><p className="text-xs text-[#c7d2df]">Invoice {order.dbms_invoice_no ?? '-'} • {order.dbms_invoice_date ?? '-'}</p></div><Link className="text-xs font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link></div></div>))}
+          {issuedOrders.map((order) => (<div key={order.id} className={`rounded-md border border-[#263244] px-2.5 py-2 ${getStatusRowClasses(order.status)}`}><div className="flex items-center justify-between gap-2"><div><p className="text-xs font-black text-white">{order.final_order_no || order.order_no}</p><p className="text-xs text-[#c7d2df]">Item rows issued</p></div><Link className="text-xs font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link></div></div>))}
           {issuedOrders.length === 0 ? <p className="text-xs text-[#c7d2df]">No issued orders yet.</p> : null}
         </div>
       </div>
