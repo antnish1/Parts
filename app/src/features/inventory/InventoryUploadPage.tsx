@@ -28,7 +28,7 @@ export function InventoryUploadPage() {
     setIsUploading(true);
     try {
       const result = await uploadInventoryExcel(file, reportDate);
-      setUploadMessage(`Upload complete. Total ${result.totalRows}, valid ${result.validRows}, failed ${result.failedRows}.`);
+      setUploadMessage(`Upload complete. Total ${result.totalRows}, valid ${result.validRows}, failed ${result.failedRows}, staged ${result.stagedRows ?? 0}, changed ${result.changedRows ?? 0}${result.batchId ? `, batch ${result.batchId}` : ''}.`);
       setFile(null);
       await refetch();
     } catch (error) {
