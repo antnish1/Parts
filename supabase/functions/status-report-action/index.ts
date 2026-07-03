@@ -9,7 +9,7 @@ const normNo = (value: unknown) => clean(value).toUpperCase();
 const num = (value: unknown) => Number(value ?? 0);
 
 type Result = { total: number; updated: number; skipped: number; failed: number; errors: string[] };
-type HeaderCandidate = { value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
+type HeaderCandidate = { orderRegDate: string | null; value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 
 function deriveStatus(rows: Array<{ row_status: string | null }>) {
   if (!rows.length) return 'processed';
@@ -77,6 +77,7 @@ serve(async (req) => {
 
       const payload = {
         billed_qty: num(rawRow.billedQty),
+        order_reg_date: clean(rawRow.orderRegDate) || null,
         dbms_invoice_no: normNo(rawRow.invoiceNo) || null,
         dbms_invoice_date: clean(rawRow.invoiceDate) || null,
         docket_no: normNo(rawRow.docketNo) || null,
@@ -90,7 +91,7 @@ serve(async (req) => {
 
       touchedOrders.set(order.id, order.order_no);
       const existingHeaders = headerCandidates.get(order.id) ?? [];
-      existingHeaders.push({ value: payload.dbms_invoice_no, dateValue: payload.dbms_invoice_date, docket: payload.docket_no, transport: payload.transport_name });
+      existingHeaders.push({ orderRegDate: payload.order_reg_date, value: payload.dbms_invoice_no, dateValue: payload.dbms_invoice_date, docket: payload.docket_no, transport: payload.transport_name });
       headerCandidates.set(order.id, existingHeaders);
       await adminClient.from('test_order_events').insert({
         order_id: order.id,
@@ -98,8 +99,8 @@ serve(async (req) => {
         old_status: order.status,
         new_status: 'issued',
         actor_id: profile.id,
-        notes: `Status report updated ${partNo} invoice ${payload.dbms_invoice_no || '-'}.`,
-        metadata: { part_no: partNo, billed_qty: payload.billed_qty, invoice_no: payload.dbms_invoice_no, invoice_date: payload.dbms_invoice_date, docket_no: payload.docket_no, transport_name: payload.transport_name },
+        notes: `Status report updated ${partNo} bill ${payload.dbms_invoice_no || '-'}.`,
+        metadata: { part_no: partNo, billed_qty: payload.billed_qty, order_reg_date: payload.order_reg_date, bill_no: payload.dbms_invoice_no, billing_date: payload.dbms_invoice_date, docket_no: payload.docket_no, transport_name: payload.transport_name },
       });
       result.updated += 1;
     } catch (error) {
@@ -112,13 +113,14 @@ serve(async (req) => {
     try {
       const { data: items, error: itemError } = await adminClient
         .from('test_order_items')
-        .select('row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name')
+        .select('row_status, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name')
         .eq('order_id', orderId);
       if (itemError) throw itemError;
       const itemRows = items ?? [];
       const nextStatus = deriveStatus(itemRows);
       const updatePayload = {
         status: nextStatus,
+        order_reg_date: singleOrNull(itemRows.map((item) => item.order_reg_date)),
         dbms_invoice_no: singleOrNull(itemRows.map((item) => item.dbms_invoice_no)),
         dbms_invoice_date: singleOrNull(itemRows.map((item) => item.dbms_invoice_date)),
         docket_no: singleOrNull(itemRows.map((item) => item.docket_no)),
@@ -133,7 +135,7 @@ serve(async (req) => {
         old_status: null,
         new_status: nextStatus,
         actor_id: profile.id,
-        notes: `Order ${orderNo} recalculated after status upload. Header fields synced when invoice/docket values are unique.`,
+        notes: `Order ${orderNo} recalculated after status upload. Header fields synced when bill/docket values are unique.`,
         metadata: { header_candidates: headerCandidates.get(orderId) ?? [], synced_header: updatePayload },
       });
     } catch (error) {
