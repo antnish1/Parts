@@ -8,6 +8,7 @@ type StatusReportRow = {
   finalOrderNo: string;
   partNo: string;
   billedQty: number;
+  orderRegDate: string | null;
   invoiceNo: string;
   invoiceDate: string | null;
   docketNo: string;
@@ -15,7 +16,7 @@ type StatusReportRow = {
 };
 
 function keyOf(value: string) {
-  return value.toLowerCase().replace(/\s|_|\.|-|\(|\)|\//g, '');
+  return value.toLowerCase().replace(/\s|_|\.|-|\(|\)|\/|&/g, '');
 }
 
 function cell(row: Record<string, unknown>, names: string[]) {
@@ -47,9 +48,10 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
     finalOrderNo: cell(row, ['finalorderno', 'finalorder', 'orderno', 'saporderno', 'saporder', 'dbmsorderno', 'dbmsorder', 'salesorderno', 'salesorder']).toUpperCase(),
     partNo: normalizePartNo(cell(row, ['partno', 'partnumber', 'materialno', 'materialnumber', 'material', 'itemcode', 'itemno'])),
     billedQty: toNumber(cell(row, ['billedqty', 'billedquantity', 'billqty', 'qty', 'quantity', 'dispatchqty', 'invoiceqty'])),
-    invoiceNo: cell(row, ['invoiceno', 'invoicenumber', 'dbmsinvoice', 'dbmsinvoiceno', 'billno', 'billingdoc']).toUpperCase(),
-    invoiceDate: parseDate(cell(row, ['invoicedate', 'billdate', 'billingdate', 'dbmsinvoicedate'])),
-    docketNo: cell(row, ['docketno', 'docketnumber', 'lrno', 'lrnumber', 'awb', 'awbno', 'waybill']).toUpperCase(),
+    orderRegDate: parseDate(cell(row, ['orderregdt', 'orderregdate', 'regdt', 'regdate', 'registrationdate', 'orderregistrationdate'])),
+    invoiceNo: cell(row, ['billnoimage', 'billnoandimage', 'billno', 'invoiceno', 'invoicenumber', 'dbmsinvoice', 'dbmsinvoiceno', 'billingdoc']).toUpperCase(),
+    invoiceDate: parseDate(cell(row, ['billingdt', 'billingdate', 'billdate', 'invoicedate', 'dbmsinvoicedate'])),
+    docketNo: cell(row, ['docket', 'docketno', 'docketnumber', 'lrno', 'lrnumber', 'awb', 'awbno', 'waybill']).toUpperCase(),
     transportName: cell(row, ['transport', 'transporter', 'transportname', 'transportername', 'courier', 'carrier']),
   })).filter((row) => row.finalOrderNo && row.partNo);
 }
