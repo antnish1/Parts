@@ -35,6 +35,14 @@ function coverageLabel(inventoryQty: number, pendingQty: number) {
   return 'No Stock';
 }
 
+function compactUniqueLabel(values: Array<string | null | undefined>, fallback?: string | null) {
+  const unique = [...new Set(values.map((value) => (value || '').trim()).filter(Boolean))];
+  if (fallback) return fallback;
+  if (unique.length === 0) return '-';
+  if (unique.length === 1) return unique[0];
+  return `Multiple (${unique.length})`;
+}
+
 export function OrderDetailPage() {
   const { orderId = '' } = useParams();
   const navigate = useNavigate();
@@ -151,6 +159,18 @@ export function OrderDetailPage() {
   const canProcess = canAdmin && rawStatus === 'approved';
   const canDispatchInAdmin = canAdmin && rawStatus === 'processed';
 
+  const invoiceLabel = compactUniqueLabel(items.map((item) => item.dbms_invoice_no), order.dbms_invoice_no);
+  const invoiceDateLabel = compactUniqueLabel(items.map((item) => item.dbms_invoice_date), order.dbms_invoice_date);
+  const docketLabel = compactUniqueLabel(items.map((item) => item.docket_no), order.docket_no);
+  const transportLabel = compactUniqueLabel(items.map((item) => item.transport_name), order.transport_name);
+  const reportRows = [
+    ['Invoice No', invoiceLabel],
+    ['Invoice Date', invoiceDateLabel],
+    ['Docket No', docketLabel],
+    ['Transport', transportLabel],
+    ['Billed Qty', String(totalBilled)],
+  ];
+
   const summaryRows = [
     ['Order No', order.order_no],
     ['Final Order No', order.final_order_no || order.processing_reference || '-'],
@@ -162,6 +182,9 @@ export function OrderDetailPage() {
     ['Call ID', order.call_id || '-'],
     ['Approver', order.approver?.full_name || '-'],
     ['Processed Date', order.processed_date || '-'],
+    ['Invoice No', invoiceLabel],
+    ['Docket No', docketLabel],
+    ['Transport', transportLabel],
     ['Notes', order.processed_notes || '-'],
   ];
 
@@ -188,6 +211,19 @@ export function OrderDetailPage() {
             <p className="mt-1 text-xs font-black text-white">{value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Status Report Fields</p>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {reportRows.map(([label, value]) => (
+            <div key={label} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2">
+              <p className="text-[10px] uppercase text-[#6D8196]">{label}</p>
+              <p className="mt-1 text-xs font-black text-white">{value}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-[#6D8196]">If an order has multiple invoices, dockets, or transporters, the item table below shows exact row-wise values.</p>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-5">
