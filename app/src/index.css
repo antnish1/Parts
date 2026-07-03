@@ -115,3 +115,50 @@ body {
 [data-theme='light-pro'] [class*='shadow'] {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06) !important;
 }
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  aside,
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  main,
+  #root,
+  .print-area {
+    background: #ffffff !important;
+    color: #111827 !important;
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-area * {
+    color: #111827 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .print-area table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .print-area th,
+  .print-area td,
+  .print-area [class*='border'] {
+    border-color: #cbd5e1 !important;
+  }
+
+  .print-area th,
+  .print-area td {
+    padding: 6px !important;
+    font-size: 10px !important;
+  }
+}
