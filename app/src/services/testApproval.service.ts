@@ -1,104 +1,33 @@
 import { supabase } from '../lib/supabase';
 import type { TestOrder } from './testData.service';
 
-async function appendApprovalEvent(orderId: string, eventType: string, oldStatus: string | null, newStatus: string | null, notes: string) {
-  await supabase.from('test_order_events').insert({
-    order_id: orderId,
-    event_type: eventType,
-    old_status: oldStatus,
-    new_status: newStatus,
-    notes,
-  });
+type ApprovalAction = 'approve' | 'reject' | 'forward_manager' | 'manager_approve' | 'manager_reject';
+
+async function runApprovalAction(orderId: string, action: ApprovalAction, body: Record<string, string> = {}) {
+  const { data, error } = await supabase.functions.invoke('approval-order-action', { body: { orderId, action, ...body } });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data;
 }
 
 export async function setTestOrderApproved(order: TestOrder) {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'approved', approval_status: 'approved', updated_at: now })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'approved', updated_at: now })
-    .eq('order_id', order.id)
-    .in('row_status', ['pending_approval', 'pending_manager_approval']);
-  if (itemError) throw itemError;
-  await appendApprovalEvent(order.id, 'ORDER_APPROVED', order.status, 'approved', 'Order item rows approved.');
+  await runApprovalAction(order.id, 'approve');
 }
 
 export async function forwardTestOrderToManager(order: TestOrder, managerName = 'Manager') {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'pending_manager_approval', approval_status: 'pending_manager_approval', updated_at: now })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'pending_manager_approval', updated_at: now })
-    .eq('order_id', order.id)
-    .in('row_status', ['pending_approval', 'approved']);
-  if (itemError) throw itemError;
-  await appendApprovalEvent(order.id, 'SUPER_FORWARDED_MANAGER', order.status, 'pending_manager_approval', `Forwarded to ${managerName}.`);
+  await runApprovalAction(order.id, 'forward_manager', { managerName });
 }
 
 export async function setTestOrderManagerApproved(order: TestOrder) {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'approved', approval_status: 'approved', updated_at: now })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'approved', updated_at: now })
-    .eq('order_id', order.id)
-    .eq('row_status', 'pending_manager_approval');
-  if (itemError) throw itemError;
-  await appendApprovalEvent(order.id, 'MANAGER_APPROVED', order.status, 'approved', 'Manager approved order item rows.');
+  await runApprovalAction(order.id, 'manager_approve');
 }
 
 export async function setTestOrderManagerRejected(order: TestOrder) {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'rejected', approval_status: 'rejected', updated_at: now })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'rejected', updated_at: now })
-    .eq('order_id', order.id)
-    .eq('row_status', 'pending_manager_approval');
-  if (itemError) throw itemError;
-  await appendApprovalEvent(order.id, 'MANAGER_REJECTED', order.status, 'rejected', 'Manager rejected order item rows.');
+  await runApprovalAction(order.id, 'manager_reject');
 }
 
 export async function setTestOrderRejected(order: TestOrder) {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from('test_orders')
-    .update({ status: 'rejected', approval_status: 'rejected', updated_at: now })
-    .eq('id', order.id)
-    .like('order_no', 'TEST-%');
-
-  if (error) throw error;
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'rejected', updated_at: now })
-    .eq('order_id', order.id)
-    .in('row_status', ['pending_approval', 'pending_manager_approval', 'approved']);
-  if (itemError) throw itemError;
-  await appendApprovalEvent(order.id, 'ORDER_REJECTED', order.status, 'rejected', 'Order item rows rejected.');
+  await runApprovalAction(order.id, 'reject');
 }
 
 export async function updateTestOrderItemQty(itemId: string, qty: number) {
