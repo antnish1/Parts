@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { getTestOrders } from '../../services/testData.service';
-import { forwardTestOrderToManager, resetTestOrderItemQty, setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected, updateTestOrderItemQty } from '../../services/testApproval.service';
+import { acceptTestOrderReviewEdits, approveTestOrderWithOriginalQty, forwardTestOrderToManager, resetTestOrderItemQty, setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected, updateTestOrderItemQty, zeroTestOrderItemForReview } from '../../services/testApproval.service';
 import { getTestOrderView } from '../../services/testOrderView.service';
 import { getEffectiveQty, getEffectiveValue } from '../../lib/orderLogic';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
@@ -82,6 +82,40 @@ export function ApprovalsPage() {
     }
   }
 
+  async function zeroItemQty(itemId: string) {
+    setMessage('');
+    setBusyId(itemId);
+    try {
+      await zeroTestOrderItemForReview(itemId);
+      setEditedQty((current) => ({ ...current, [itemId]: '0' }));
+      setMessage('Review quantity set to 0.');
+      await reviewQuery.refetch();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Review update failed.');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function runReviewOrderAction(action: 'acceptEdits' | 'approveOriginal') {
+    if (!reviewQuery.data) return;
+    const order = reviewQuery.data.order as unknown as (typeof orders)[number];
+    setMessage('');
+    setBusyId(`${order.id}-${action}`);
+    try {
+      if (action === 'acceptEdits') await acceptTestOrderReviewEdits(order);
+      if (action === 'approveOriginal') await approveTestOrderWithOriginalQty(order);
+      setMessage(action === 'acceptEdits' ? 'Saved review quantities accepted.' : 'Approved with original quantities.');
+      if (action === 'approveOriginal') setReviewId('');
+      await reviewQuery.refetch();
+      await refetch();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Review action failed.');
+    } finally {
+      setBusyId('');
+    }
+  }
+
   return (
     <PageCard eyebrow="Approvals" title="Approval Queue" description="Review, approve, reject, or forward pending orders to manager.">
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -116,8 +150,8 @@ export function ApprovalsPage() {
         <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <div className="mb-2 flex items-center justify-between gap-3"><p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Item Review</p><button className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => setReviewId('')}>Close</button></div>
           {reviewQuery.isLoading ? <p className="text-xs text-[#c7d2df]">Loading item review...</p> : null}
-          {reviewQuery.data ? <p className="mb-2 text-xs text-[#c7d2df]">{reviewQuery.data.order.order_no} • {reviewQuery.data.order.branch} • edit qty before approval</p> : null}
-          <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[900px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Description</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">Edited</th><th className="px-2.5 py-2 text-right">DNP</th><th className="px-2.5 py-2 text-right">Value</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-[#263244]">{reviewQuery.data?.items.map((item) => (<tr key={item.id} className="bg-[#111827]"><td className="px-2.5 py-2 font-black text-white">{item.part_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.description || '-'}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.qty}</td><td className="px-2.5 py-2 text-right"><input className="w-20 rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1 text-right text-xs text-white outline-none focus:border-[#82C8E5]" value={editedQty[item.id] ?? String(item.edited_qty ?? getEffectiveQty(item))} onChange={(event) => setEditedQty((current) => ({ ...current, [item.id]: event.target.value }))} /></td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.dnp ?? 0}</td><td className="px-2.5 py-2 text-right font-black text-white">₹{getEffectiveValue(item).toFixed(2)}</td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3"><button className="font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void saveItemQty(item.id)}>Save</button><button className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void resetItemQty(item.id)}>Reset</button></div></td></tr>))}</tbody></table></div>
+          {reviewQuery.data ? <div className="mb-2 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-[#c7d2df]">{reviewQuery.data.order.order_no} • {reviewQuery.data.order.branch} • edit qty before approval</p><div className="flex gap-3"><button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runReviewOrderAction('acceptEdits')}>Accept Saved Edits</button><button className="text-xs font-black text-[#c7d2df] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runReviewOrderAction('approveOriginal')}>Approve Original Qty</button></div></div> : null}
+          <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[1080px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Description</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">Prev 30D</th><th className="px-2.5 py-2 text-right">Edited</th><th className="px-2.5 py-2 text-right">DNP</th><th className="px-2.5 py-2 text-right">Value</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-[#263244]">{reviewQuery.data?.items.map((item) => { const suggested = Math.max(0, Number(item.qty ?? 0) - Number(item.previous_30d_qty ?? 0)); return (<tr key={item.id} className="bg-[#111827]"><td className="px-2.5 py-2 font-black text-white">{item.part_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.description || '-'}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.qty}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.previous_30d_qty ?? 0}</td><td className="px-2.5 py-2 text-right"><input className="w-20 rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1 text-right text-xs text-white outline-none focus:border-[#82C8E5]" value={editedQty[item.id] ?? String(item.edited_qty ?? getEffectiveQty(item))} onChange={(event) => setEditedQty((current) => ({ ...current, [item.id]: event.target.value }))} /></td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.dnp ?? 0}</td><td className="px-2.5 py-2 text-right font-black text-white">₹{getEffectiveValue(item).toFixed(2)}</td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3"><button className="font-black text-[#c7d2df] hover:underline" onClick={() => setEditedQty((current) => ({ ...current, [item.id]: String(suggested) }))}>Suggest</button><button className="font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void saveItemQty(item.id)}>Save</button><button className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void zeroItemQty(item.id)}>Zero</button><button className="font-black text-[#c7d2df] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void resetItemQty(item.id)}>Reset</button></div></td></tr>); })}</tbody></table></div>
         </div>
       ) : null}
     </PageCard>
