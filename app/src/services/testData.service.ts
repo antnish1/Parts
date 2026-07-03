@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getOrderStatusLabel } from '../lib/orderLogic';
+import { getCurrentBranchScopeValues } from './branchScope.service';
 
 export type TestOrder = {
   id: string;
@@ -91,11 +92,16 @@ async function readFunctionError(error: unknown) {
 }
 
 export async function getTestOrders(): Promise<TestOrder[]> {
-  const { data, error } = await supabase
+  const branchValues = await getCurrentBranchScopeValues();
+  let query = supabase
     .from('test_orders')
     .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
+
+  if (branchValues?.length) query = query.in('branch', branchValues);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Failed to load test orders', error);
