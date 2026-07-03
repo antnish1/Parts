@@ -7,6 +7,17 @@ export type TestProfileOption = {
   role: string;
 };
 
+export type TestProfileRow = TestProfileOption & {
+  is_active: boolean;
+  created_at: string;
+};
+
+export type CreateTestProfileInput = {
+  fullName: string;
+  branch: string;
+  role: string;
+};
+
 export async function getTestApprovers(): Promise<TestProfileOption[]> {
   const { data, error } = await supabase
     .from('test_profiles')
@@ -22,4 +33,35 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
   }
 
   return data ?? [];
+}
+
+export async function getTestProfiles(): Promise<TestProfileRow[]> {
+  const { data, error } = await supabase
+    .from('test_profiles')
+    .select('id, full_name, branch, role, is_active, created_at')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('Failed to load test profiles', error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function createTestProfile(input: CreateTestProfileInput) {
+  const fullName = input.fullName.trim();
+  const branch = input.branch.trim();
+  const role = input.role.trim();
+  if (!fullName || !branch || !role) throw new Error('Name, branch and role are required.');
+
+  const { error } = await supabase.from('test_profiles').insert({
+    full_name: fullName,
+    branch,
+    role,
+    is_active: true,
+  });
+
+  if (error) throw error;
 }
