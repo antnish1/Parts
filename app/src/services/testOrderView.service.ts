@@ -17,6 +17,7 @@ export type TestOrderView = {
   processed_notes: string | null;
   processed_date: string | null;
   final_order_no: string | null;
+  order_reg_date: string | null;
   dbms_invoice_no: string | null;
   dbms_invoice_date: string | null;
   received_date: string | null;
@@ -37,6 +38,7 @@ export type TestOrderViewItem = {
   value: number | null;
   edited_value: number | null;
   previous_30d_qty: number | null;
+  order_reg_date: string | null;
   dbms_invoice_no: string | null;
   dbms_invoice_date: string | null;
   docket_no: string | null;
@@ -100,7 +102,7 @@ async function getCommentAttachments(orderId: string, comments: Array<{ id: stri
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:test_profiles!test_orders_approver_id_fkey(full_name, role)')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:test_profiles!test_orders_approver_id_fkey(full_name, role)')
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
@@ -108,7 +110,7 @@ export async function getTestOrderView(orderId: string) {
 
   const { data: items, error: itemError } = await supabase
     .from('test_order_items')
-    .select('id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status')
+    .select('id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   if (itemError) throw itemError;
