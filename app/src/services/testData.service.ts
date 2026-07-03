@@ -26,8 +26,6 @@ export type TestOrder = {
 type OrderItemStatusRow = {
   order_id: string;
   row_status: string | null;
-  status: string | null;
-  approval_status: string | null;
   qty: number | null;
   edited_qty: number | null;
   billed_qty: number | null;
@@ -65,6 +63,32 @@ export type CreateTestOrderInput = {
   items?: CreateTestOrderItemInput[];
 };
 
+function friendlyOrderError(message: string) {
+  const text = message.toLowerCase();
+  if (text.includes('branch user can create orders only for own branch')) return 'Your login is mapped to another branch. Please select your own branch or update the profile branch in Developer Workspace.';
+  if (text.includes('active users')) return 'Your user profile is inactive or not linked with this login. Please check test_profiles.auth_user_id.';
+  if (text.includes('role cannot create')) return 'This user role cannot create orders.';
+  if (text.includes('approver')) return 'Please select an active approver before placing the order.';
+  if (text.includes('duplicate item')) return message;
+  if (text.includes('required')) return message;
+  if (text.includes('failed to fetch') || text.includes('send a request')) return 'Could not connect to create-order-action. Please deploy the Edge Function and check Supabase function secrets.';
+  if (text.includes('non-2xx')) return 'Order creation was rejected by create-order-action. Please check that your branch, approver, and profile mapping are valid.';
+  return message || 'Order creation failed.';
+}
+
+async function readFunctionError(error: unknown) {
+  const maybeError = error as { message?: string; context?: Response };
+  if (maybeError?.context) {
+    try {
+      const body = await maybeError.context.clone().json();
+      if (body?.error) return friendlyOrderError(String(body.error));
+    } catch {
+      // Ignore body parse error and use fallback message.
+    }
+  }
+  return friendlyOrderError(maybeError?.message ?? 'Order creation failed.');
+}
+
 export async function getTestOrders(): Promise<TestOrder[]> {
   const { data, error } = await supabase
     .from('test_orders')
@@ -83,7 +107,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
 
   const { data: itemRows, error: itemError } = await supabase
     .from('test_order_items')
-    .select('order_id, row_status, status, approval_status, qty, edited_qty, billed_qty')
+    .select('order_id, row_status, qty, edited_qty, billed_qty')
     .in('order_id', ids);
 
   if (itemError) {
@@ -126,7 +150,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
   const { data, error } = await supabase.functions.invoke('create-order-action', {
     body: { ...input, items: orderItems },
   });
-  if (error) throw error;
-  if (data?.error) throw new Error(String(data.error));
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.error) throw new Error(friendlyOrderError(String(data.error)));
   return { id: data.id as string, order_no: data.order_no as string };
 }
