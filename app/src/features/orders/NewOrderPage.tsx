@@ -7,6 +7,7 @@ import { getTestParts } from '../../services/testPart.service';
 import { getTestBranches } from '../../services/testBranch.service';
 import { getTestApprovers } from '../../services/testProfile.service';
 import { getTestLast30QtyByBranchPart } from '../../services/testPartUsage.service';
+import { getTestMachineByNo, normalizeMachineNo, saveTestMachineCustomer } from '../../services/testMachine.service';
 import { normalizePartNo } from '../../lib/orderLogic';
 
 const inputClass = 'mt-2 w-full rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5] disabled:cursor-not-allowed disabled:opacity-50';
@@ -21,6 +22,7 @@ export function NewOrderPage() {
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
   const [message, setMessage] = useState('');
+  const [machineStatus, setMachineStatus] = useState('');
   const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: 'VOR', orderFor: 'Customer', approverId: '', machineNo: 'JCB3DX-TEST', customerName: 'Demo Customer', callId: 'CALL-TEST', warrantyStatus: 'UW' });
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
@@ -37,6 +39,35 @@ export function NewOrderPage() {
 
   function updateField(field: keyof typeof form, value: string) { setForm((current) => ({ ...current, [field]: value })); }
   function updateItem(lineId: number, field: keyof ItemLine, value: string | number) { setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, [field]: value } : item))); }
+
+  async function lookupMachine() {
+    const normalized = normalizeMachineNo(form.machineNo);
+    if (!normalized || form.orderFor === 'Stock') return;
+    setMachineStatus('Checking machine...');
+    try {
+      const machine = await getTestMachineByNo(normalized);
+      updateField('machineNo', normalized);
+      if (machine) {
+        updateField('customerName', machine.customer_name);
+        setMachineStatus(`Customer found: ${machine.customer_name}`);
+      } else {
+        setMachineStatus('Machine not found. Enter customer name and save.');
+      }
+    } catch (error) {
+      setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.');
+    }
+  }
+
+  async function saveMachine() {
+    if (!form.machineNo || !form.customerName) return setMachineStatus('Machine number and customer name are required.');
+    try {
+      const saved = await saveTestMachineCustomer(form.machineNo, form.customerName);
+      updateField('machineNo', saved.machine_no);
+      setMachineStatus('Machine customer saved.');
+    } catch (error) {
+      setMachineStatus(error instanceof Error ? error.message : 'Machine save failed. Check insert policy.');
+    }
+  }
 
   async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) {
     const normalized = normalizePartNo(partNo);
@@ -68,7 +99,7 @@ export function NewOrderPage() {
     if (duplicatePart) return setMessage(`Duplicate item not allowed: ${duplicatePart.partNo}`);
     if (invalidItem) return setMessage('Each item must have valid Part No, Description, DNP zero or above, and whole Qty greater than zero.');
 
-    mutation.mutate({ branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : form.machineNo, customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems });
+    mutation.mutate({ branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems });
   }
 
   return (
@@ -80,10 +111,11 @@ export function NewOrderPage() {
           <div><label className={labelClass}>Order For</label><select className={inputClass} value={form.orderFor} disabled={form.orderType === 'VOR'} onChange={(e) => updateField('orderFor', e.target.value)}><option>Customer</option><option>Stock</option></select></div>
           <div><label className={labelClass}>Approved By</label><select className={inputClass} value={form.approverId} onChange={(e) => updateField('approverId', e.target.value)}><option value="">Select Approver</option>{approvers.map((approver) => <option key={approver.id} value={approver.id}>{approver.full_name} ({approver.role})</option>)}</select></div>
           <div><label className={labelClass}>Machine Type</label><select className={inputClass} value={form.warrantyStatus} onChange={(e) => updateField('warrantyStatus', e.target.value)} disabled={form.orderFor === 'Stock'}><option>UW</option><option>BW</option><option>NA</option></select></div>
-          <div><label className={labelClass}>Machine No</label><input className={inputClass} value={form.machineNo} onChange={(e) => updateField('machineNo', e.target.value)} disabled={form.orderFor === 'Stock'} /></div>
+          <div><label className={labelClass}>Machine No</label><input className={inputClass} value={form.machineNo} onBlur={() => void lookupMachine()} onChange={(e) => { updateField('machineNo', e.target.value); setMachineStatus(''); }} disabled={form.orderFor === 'Stock'} /></div>
           <div><label className={labelClass}>Customer Name</label><input className={inputClass} value={form.customerName} onChange={(e) => updateField('customerName', e.target.value)} disabled={form.orderFor === 'Stock'} /></div>
+          <div className="flex items-end gap-2"><button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => void lookupMachine()} disabled={form.orderFor === 'Stock'}>Lookup</button><button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => void saveMachine()} disabled={form.orderFor === 'Stock'}>Save</button></div>
           <div><label className={labelClass}>Call ID</label><input className={inputClass} value={form.callId} onChange={(e) => updateField('callId', e.target.value)} /></div>
-          <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2 lg:col-span-4"><p className={labelClass}>Order Value</p><p className="mt-1 text-lg font-black text-white">₹{totalValue.toFixed(2)}</p></div>
+          <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2 lg:col-span-3"><p className={labelClass}>Order Value</p><p className="mt-1 text-lg font-black text-white">₹{totalValue.toFixed(2)}</p>{machineStatus ? <p className="mt-1 text-xs text-[#c7d2df]">{machineStatus}</p> : null}</div>
         </div>
 
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
