@@ -23,6 +23,13 @@ export type CreatePortalUserInput = CreateTestProfileInput & {
   password: string;
 };
 
+export type UpdateTestProfileInput = {
+  fullName: string;
+  branch: string;
+  role: string;
+  isActive: boolean;
+};
+
 function friendlyUserError(message: string) {
   const text = message.toLowerCase();
   if (text.includes('already') || text.includes('registered') || text.includes('duplicate')) return 'This email is already registered. Please use another email, or edit the existing user profile.';
@@ -91,6 +98,30 @@ export async function createTestProfile(input: CreateTestProfileInput) {
     is_active: true,
   });
 
+  if (error) throw error;
+}
+
+export async function updateTestProfile(profileId: string, input: UpdateTestProfileInput) {
+  const fullName = input.fullName.trim();
+  const branch = input.branch.trim();
+  const role = input.role.trim();
+  if (!profileId) throw new Error('Profile id is required.');
+  if (!fullName || !branch || !role) throw new Error('Name, branch and role are required.');
+
+  const { error } = await supabase
+    .from('test_profiles')
+    .update({ full_name: fullName, branch, role, is_active: input.isActive })
+    .eq('id', profileId);
+
+  if (error) throw error;
+}
+
+export async function setTestProfileActive(profileId: string, isActive: boolean) {
+  if (!profileId) throw new Error('Profile id is required.');
+  const { error } = await supabase
+    .from('test_profiles')
+    .update({ is_active: isActive })
+    .eq('id', profileId);
   if (error) throw error;
 }
 
