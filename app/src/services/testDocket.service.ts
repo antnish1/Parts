@@ -25,31 +25,6 @@ function safeSearch(value: string) {
   return normalizeDocketNo(value).replace(/[^A-Z0-9/_-]/g, '');
 }
 
-async function recalculateOrderReceiveStatus(orderId: string) {
-  const { data: items, error } = await supabase
-    .from('test_order_items')
-    .select('row_status')
-    .eq('order_id', orderId);
-  if (error) throw error;
-
-  const rows = items ?? [];
-  const receivedCount = rows.filter((row) => row.row_status === 'received').length;
-  const issuedCount = rows.filter((row) => row.row_status === 'issued').length;
-  let nextStatus = 'issued';
-  if (rows.length > 0 && receivedCount === rows.length) nextStatus = 'received';
-  else if (receivedCount > 0) nextStatus = 'partially_received';
-  else if (issuedCount > 0) nextStatus = 'issued';
-
-  const { error: updateError } = await supabase
-    .from('test_orders')
-    .update({ status: nextStatus, updated_at: new Date().toISOString() })
-    .eq('id', orderId)
-    .like('order_no', 'TEST-%');
-  if (updateError) throw updateError;
-
-  return nextStatus;
-}
-
 export async function lookupTestDocketOrders(value: string): Promise<TestDocketOrder[]> {
   const docket = safeSearch(value);
   if (!docket) return [];
@@ -81,32 +56,12 @@ export async function markTestDocketReceived(order: TestDocketOrder, docketInput
   if (!docket) throw new Error('Docket number is required.');
   if (order.status === 'received') throw new Error('Order is already fully received.');
 
-  const receivedAt = new Date().toISOString();
-  const { data: matchedRows, error: matchError } = await supabase
-    .from('test_order_items')
-    .select('id')
-    .eq('order_id', order.id)
-    .or(`docket_no.eq.${docket},dbms_invoice_no.eq.${docket}`);
-  if (matchError) throw matchError;
-
-  const targetIds = (matchedRows ?? []).map((row) => row.id);
-  if (targetIds.length === 0) throw new Error('No item rows found for this docket or invoice.');
-
-  const { error: itemError } = await supabase
-    .from('test_order_items')
-    .update({ row_status: 'received', received_date: receivedAt })
-    .in('id', targetIds);
-  if (itemError) throw itemError;
-
-  const nextStatus = await recalculateOrderReceiveStatus(order.id);
-  await supabase.from('test_order_events').insert({
-    order_id: order.id,
-    event_type: 'STATUS_UPDATED',
-    old_status: order.status,
-    new_status: nextStatus,
-    notes: `Marked ${targetIds.length} item row(s) received for docket/invoice ${docket}.`,
-    metadata: { docket_no: docket, item_count: targetIds.length },
+  const { data, error } = await supabase.functions.invoke('docket-receive-action', {
+    body: { orderId: order.id, docketNo: docket },
   });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data;
 }
 
 export const searchTestOrderForDocket = lookupTestDocketOrders;
