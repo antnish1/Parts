@@ -3,9 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { useAuth } from '../../auth/useAuth';
+import { setTestOrderApproved, setTestOrderRejected } from '../../services/testApproval.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
+import type { TestOrder } from '../../services/testData.service';
 
 function formatMoney(value: number) {
   return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -27,9 +30,12 @@ export function OrderDetailPage() {
   const { orderId = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { role } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [commentMessage, setCommentMessage] = useState('');
-  const { data, isLoading, error } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
+  const [actionMessage, setActionMessage] = useState('');
+  const [busyAction, setBusyAction] = useState('');
+  const { data, isLoading, error, refetch } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
   const inventoryQuery = useQuery({
     queryKey: ['test-order-inventory', data?.order.branch, data?.items.map((item) => item.part_no).join('|')],
     queryFn: () => getInventoryQtyByBranchParts(data!.order.branch, data!.items.map((item) => item.part_no)),
@@ -51,6 +57,23 @@ export function OrderDetailPage() {
     commentMutation.mutate();
   }
 
+  async function runApprovalAction(action: 'approve' | 'reject') {
+    if (!data) return;
+    setActionMessage('');
+    setBusyAction(action);
+    try {
+      if (action === 'approve') await setTestOrderApproved(data.order as unknown as TestOrder);
+      else await setTestOrderRejected(data.order as unknown as TestOrder);
+      setActionMessage(`${data.order.order_no} ${action === 'approve' ? 'approved' : 'rejected'}.`);
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
+    } catch (approvalError) {
+      setActionMessage(approvalError instanceof Error ? approvalError.message : 'Approval action failed.');
+    } finally {
+      setBusyAction('');
+    }
+  }
+
   if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#c7d2df]">Loading...</p></PageCard>;
   if (error || !data) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
 
@@ -62,6 +85,7 @@ export function OrderDetailPage() {
   const totalValue = items.reduce((sum, item) => sum + getEffectiveValue(item), 0);
   const totalInventoryCoverage = items.reduce((sum, item) => sum + Math.min(inventoryMap[normalizePartNo(item.part_no)] ?? 0, getPendingQty(item)), 0);
   const status = getOrderStatusLabel({ ...order, items });
+  const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && order.status.toLowerCase().includes('pending');
 
   const summaryRows = [
     ['Order No', order.order_no],
@@ -81,8 +105,13 @@ export function OrderDetailPage() {
     <PageCard eyebrow="Orders" title="Order Detail" description="Shared order review workspace.">
       <div className="no-print mb-3 flex items-center justify-between gap-3">
         <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => navigate(-1)}>Back</button>
-        <div className="flex items-center gap-3"><button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => window.print()}>Print</button><StatusBadge status={status} /></div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {canApprove ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('approve')}>{busyAction === 'approve' ? 'Approving' : 'Approve'}</button> : null}
+          {canApprove ? <button type="button" className="text-xs font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('reject')}>{busyAction === 'reject' ? 'Rejecting' : 'Reject'}</button> : null}
+          <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => window.print()}>Print</button><StatusBadge status={status} />
+        </div>
       </div>
+      {actionMessage ? <p className="no-print mb-2 text-xs text-[#c7d2df]">{actionMessage}</p> : null}
 
       <div className="print-area">
       <div className="hidden border-b border-[#263244] pb-2 print:block"><p className="text-lg font-black">Parts Connect Portal - Order Detail</p><p className="text-xs">{order.final_order_no || order.order_no} • {order.branch} • {status}</p></div>
