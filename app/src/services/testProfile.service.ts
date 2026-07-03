@@ -18,6 +18,11 @@ export type CreateTestProfileInput = {
   role: string;
 };
 
+export type CreatePortalUserInput = CreateTestProfileInput & {
+  email: string;
+  password: string;
+};
+
 export async function getTestApprovers(): Promise<TestProfileOption[]> {
   const { data, error } = await supabase
     .from('test_profiles')
@@ -64,4 +69,20 @@ export async function createTestProfile(input: CreateTestProfileInput) {
   });
 
   if (error) throw error;
+}
+
+export async function createPortalUser(input: CreatePortalUserInput) {
+  const { data, error } = await supabase.functions.invoke('create-portal-user', {
+    body: {
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      fullName: input.fullName.trim(),
+      branch: input.branch.trim(),
+      role: input.role.trim(),
+    },
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return data;
 }
