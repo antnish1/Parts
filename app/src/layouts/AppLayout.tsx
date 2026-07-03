@@ -1,8 +1,9 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Boxes, ClipboardCheck, FilePlus2, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
+import { RoleAwareNav } from './RoleAwareNav';
 
 const navItems = [
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
@@ -34,25 +35,7 @@ export function AppLayout() {
             <h1 className="mt-1 text-sm font-black text-white">Production Portal</h1>
           </div>
 
-          <nav className="mt-3 space-y-0.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-extrabold transition ${
-                      isActive ? 'bg-[#82C8E5] text-[#000080]' : 'text-[#d8e3ee] hover:bg-[#263244] hover:text-white'
-                    }`
-                  }
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {item.label}
-                </NavLink>
-              );
-            })}
-          </nav>
+          <RoleAwareNav items={navItems} role={profile?.role} />
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
