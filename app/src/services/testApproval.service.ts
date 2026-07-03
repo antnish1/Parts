@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import type { TestOrder } from './testData.service';
 
 type ApprovalAction = 'approve' | 'reject' | 'forward_manager' | 'manager_approve' | 'manager_reject';
+type ReviewQtyAction = 'accept_edits' | 'approve_original' | 'zero_item';
 
 async function runApprovalAction(orderId: string, action: ApprovalAction, body: Record<string, string> = {}) {
   const { data, error } = await supabase.functions.invoke('approval-order-action', { body: { orderId, action, ...body } });
@@ -12,6 +13,13 @@ async function runApprovalAction(orderId: string, action: ApprovalAction, body: 
 
 async function runQtyAction(itemId: string, action: 'set' | 'reset', qty?: number) {
   const { data, error } = await supabase.functions.invoke('order-item-qty-action', { body: { itemId, action, qty } });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return data;
+}
+
+async function runReviewQtyAction(payload: { action: ReviewQtyAction; orderId?: string; itemId?: string }) {
+  const { data, error } = await supabase.functions.invoke('approval-qty-review-action', { body: payload });
   if (error) throw error;
   if (data?.error) throw new Error(String(data.error));
   return data;
@@ -44,4 +52,16 @@ export async function updateTestOrderItemQty(itemId: string, qty: number) {
 
 export async function resetTestOrderItemQty(itemId: string) {
   await runQtyAction(itemId, 'reset');
+}
+
+export async function acceptTestOrderReviewEdits(order: TestOrder) {
+  await runReviewQtyAction({ action: 'accept_edits', orderId: order.id });
+}
+
+export async function approveTestOrderWithOriginalQty(order: TestOrder) {
+  await runReviewQtyAction({ action: 'approve_original', orderId: order.id });
+}
+
+export async function zeroTestOrderItemForReview(itemId: string) {
+  await runReviewQtyAction({ action: 'zero_item', itemId });
 }
