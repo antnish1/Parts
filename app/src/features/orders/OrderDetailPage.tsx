@@ -10,6 +10,7 @@ import { addTestOrderComment, getTestOrderView } from '../../services/testOrderV
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
 import type { TestOrder } from '../../services/testData.service';
+import { OrderActivityPanel } from './OrderActivityPanel';
 
 function formatMoney(value: number) {
   return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -186,13 +187,7 @@ export function OrderDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Action Log</p>
-          <div className="space-y-2">
-            {events.map((event) => (<div key={event.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="font-black text-white">{event.event_type}</p><p className="text-[#c7d2df]">{event.notes || '-'} • {formatDate(event.created_at)}</p></div>))}
-            {events.length === 0 ? <p className="text-xs text-[#c7d2df]">No action logs yet.</p> : null}
-          </div>
-        </div>
+        <OrderActivityPanel events={events} />
       </div>
       </div>
     </PageCard>
