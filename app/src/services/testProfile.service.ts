@@ -23,6 +23,29 @@ export type CreatePortalUserInput = CreateTestProfileInput & {
   password: string;
 };
 
+function friendlyUserError(message: string) {
+  const text = message.toLowerCase();
+  if (text.includes('already') || text.includes('registered') || text.includes('duplicate')) return 'This email is already registered. Please use another email, or edit the existing user profile.';
+  if (text.includes('password')) return 'Password is not valid. Please use at least 8 characters.';
+  if (text.includes('unauthorized') || text.includes('jwt')) return 'Your login session expired. Please logout and login again as developer.';
+  if (text.includes('developer')) return 'Only an active developer user can create new portal users.';
+  if (text.includes('failed to fetch') || text.includes('send a request')) return 'Could not connect to the user creation function. Please check Edge Function deployment and project URL.';
+  return message || 'User creation failed. Please check the details and try again.';
+}
+
+async function readFunctionError(error: unknown) {
+  const maybeError = error as { message?: string; context?: Response };
+  if (maybeError?.context) {
+    try {
+      const body = await maybeError.context.clone().json();
+      if (body?.error) return friendlyUserError(String(body.error));
+    } catch {
+      // Ignore body parse error and use fallback message.
+    }
+  }
+  return friendlyUserError(maybeError?.message ?? 'User creation failed.');
+}
+
 export async function getTestApprovers(): Promise<TestProfileOption[]> {
   const { data, error } = await supabase
     .from('test_profiles')
@@ -82,7 +105,7 @@ export async function createPortalUser(input: CreatePortalUserInput) {
     },
   });
 
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.error) throw new Error(friendlyUserError(data.error));
   return data;
 }
