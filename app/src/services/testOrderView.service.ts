@@ -12,6 +12,15 @@ export type TestOrderView = {
   warranty_status: string | null;
   status: string;
   approval_status: string;
+  processing_reference: string | null;
+  processed_notes: string | null;
+  processed_date: string | null;
+  final_order_no: string | null;
+  dbms_invoice_no: string | null;
+  dbms_invoice_date: string | null;
+  received_date: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
   created_at: string;
   approver?: { full_name: string | null; role: string | null } | null;
 };
@@ -71,7 +80,7 @@ export async function addTestOrderComment(orderId: string, body: string) {
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, created_at, approver:test_profiles!test_orders_approver_id_fkey(full_name, role)')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:test_profiles!test_orders_approver_id_fkey(full_name, role)')
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
