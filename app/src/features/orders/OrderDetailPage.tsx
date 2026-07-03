@@ -28,13 +28,6 @@ function formatBytes(value: number) {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function coverageLabel(inventoryQty: number, pendingQty: number) {
-  if (pendingQty <= 0) return 'Closed';
-  if (inventoryQty >= pendingQty) return 'Available';
-  if (inventoryQty > 0) return 'Partial';
-  return 'No Stock';
-}
-
 function compactUniqueLabel(values: Array<string | null | undefined>, fallback?: string | null) {
   const unique = [...new Set(values.map((value) => (value || '').trim()).filter(Boolean))];
   if (fallback) return fallback;
@@ -151,7 +144,6 @@ export function OrderDetailPage() {
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
   const totalPending = items.reduce((sum, item) => sum + getPendingQty(item), 0);
   const totalValue = items.reduce((sum, item) => sum + getEffectiveValue(item), 0);
-  const totalInventoryCoverage = items.reduce((sum, item) => sum + Math.min(inventoryMap[normalizePartNo(item.part_no)] ?? 0, getPendingQty(item)), 0);
   const status = getOrderStatusLabel({ ...order, items });
   const rawStatus = order.status.toLowerCase();
   const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && rawStatus.includes('pending');
@@ -159,15 +151,17 @@ export function OrderDetailPage() {
   const canProcess = canAdmin && rawStatus === 'approved';
   const canDispatchInAdmin = canAdmin && rawStatus === 'processed';
 
+  const orderRegDateLabel = compactUniqueLabel(items.map((item) => item.order_reg_date), order.order_reg_date);
   const invoiceLabel = compactUniqueLabel(items.map((item) => item.dbms_invoice_no), order.dbms_invoice_no);
   const invoiceDateLabel = compactUniqueLabel(items.map((item) => item.dbms_invoice_date), order.dbms_invoice_date);
   const docketLabel = compactUniqueLabel(items.map((item) => item.docket_no), order.docket_no);
   const transportLabel = compactUniqueLabel(items.map((item) => item.transport_name), order.transport_name);
   const reportRows = [
-    ['Invoice No', invoiceLabel],
-    ['Invoice Date', invoiceDateLabel],
-    ['Docket No', docketLabel],
-    ['Transport', transportLabel],
+    ['Order Reg. Dt', orderRegDateLabel],
+    ['BillNo & Image', invoiceLabel],
+    ['Billing Dt', invoiceDateLabel],
+    ['Transport Name', transportLabel],
+    ['Docket', docketLabel],
     ['Billed Qty', String(totalBilled)],
   ];
 
@@ -181,10 +175,11 @@ export function OrderDetailPage() {
     ['Machine Type', order.warranty_status || '-'],
     ['Call ID', order.call_id || '-'],
     ['Approver', order.approver?.full_name || '-'],
-    ['Processed Date', order.processed_date || '-'],
-    ['Invoice No', invoiceLabel],
-    ['Docket No', docketLabel],
-    ['Transport', transportLabel],
+    ['Order Reg. Dt', orderRegDateLabel],
+    ['BillNo & Image', invoiceLabel],
+    ['Billing Dt', invoiceDateLabel],
+    ['Transport Name', transportLabel],
+    ['Docket', docketLabel],
     ['Notes', order.processed_notes || '-'],
   ];
 
@@ -204,7 +199,7 @@ export function OrderDetailPage() {
 
       <div className="print-area">
       <div className="hidden border-b border-[#263244] pb-2 print:block"><p className="text-lg font-black">Parts Connect Portal - Order Detail</p><p className="text-xs">{order.final_order_no || order.order_no} • {order.branch} • {status}</p></div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
         {summaryRows.map(([label, value]) => (
           <div key={label} className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#6D8196]">{label}</p>
@@ -215,7 +210,7 @@ export function OrderDetailPage() {
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Status Report Fields</p>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
           {reportRows.map(([label, value]) => (
             <div key={label} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2">
               <p className="text-[10px] uppercase text-[#6D8196]">{label}</p>
@@ -223,27 +218,25 @@ export function OrderDetailPage() {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-[#6D8196]">If an order has multiple invoices, dockets, or transporters, the item table below shows exact row-wise values.</p>
+        <p className="mt-2 text-[11px] text-[#6D8196]">If an order has multiple bill numbers, dockets, or transporters, the item table below shows exact row-wise values.</p>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-5">
+      <div className="mt-3 grid gap-2 sm:grid-cols-4">
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Qty</p><p className="text-sm font-black text-white">{totalQty}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Billed</p><p className="text-sm font-black text-white">{totalBilled}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Pending</p><p className="text-sm font-black text-white">{totalPending}</p></div>
-        <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Inventory Cover</p><p className="text-sm font-black text-white">{totalInventoryCoverage}</p></div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2"><p className="text-[10px] uppercase text-[#6D8196]">Value</p><p className="text-sm font-black text-white">{formatMoney(totalValue)}</p></div>
       </div>
 
       <div className="mt-3 overflow-hidden rounded-lg border border-[#263244]">
-        <table className="w-full min-w-[1420px] border-collapse text-left text-xs">
-          <thead className="bg-[#0b1020] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Description</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">Billed</th><th className="px-2.5 py-2 text-right">Pending</th><th className="px-2.5 py-2 text-right">Inventory</th><th className="px-2.5 py-2">Cover</th><th className="px-2.5 py-2">Invoice No</th><th className="px-2.5 py-2">Invoice Date</th><th className="px-2.5 py-2">Docket</th><th className="px-2.5 py-2">Transport</th><th className="px-2.5 py-2">Received</th><th className="px-2.5 py-2 text-right">Value</th></tr></thead>
+        <table className="w-full min-w-[1360px] border-collapse text-left text-xs">
+          <thead className="bg-[#0b1020] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Description</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">Billed</th><th className="px-2.5 py-2 text-right">Pending</th><th className="px-2.5 py-2 text-right">Inventory</th><th className="px-2.5 py-2">Order Reg. Dt</th><th className="px-2.5 py-2">BillNo & Image</th><th className="px-2.5 py-2">Billing Dt</th><th className="px-2.5 py-2">Docket</th><th className="px-2.5 py-2">Transport Name</th><th className="px-2.5 py-2">Received</th><th className="px-2.5 py-2 text-right">Value</th></tr></thead>
           <tbody className="divide-y divide-[#263244] bg-[#111827]">
             {items.map((item) => {
               const pendingQty = getPendingQty(item);
               const inventoryQty = inventoryMap[normalizePartNo(item.part_no)] ?? 0;
-              const cover = coverageLabel(inventoryQty, pendingQty);
               return (
-                <tr key={item.id} className="hover:bg-[#182235]"><td className="px-2.5 py-2 font-black text-white">{item.part_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.description || '-'}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{getEffectiveQty(item)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{getBilledQty(item)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{pendingQty}</td><td className="px-2.5 py-2 text-right font-black text-white">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2.5 py-2"><span className="text-[10px] font-black uppercase text-[#82C8E5]">{cover}</span></td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.dbms_invoice_no || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.dbms_invoice_date || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.docket_no || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.transport_name || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{formatDate(item.received_date)}</td><td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(getEffectiveValue(item))}</td></tr>
+                <tr key={item.id} className="hover:bg-[#182235]"><td className="px-2.5 py-2 font-black text-white">{item.part_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.description || '-'}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{getEffectiveQty(item)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{getBilledQty(item)}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{pendingQty}</td><td className="px-2.5 py-2 text-right font-black text-white">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.order_reg_date || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.dbms_invoice_no || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.dbms_invoice_date || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.docket_no || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.transport_name || '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{formatDate(item.received_date)}</td><td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(getEffectiveValue(item))}</td></tr>
               );
             })}
           </tbody>
