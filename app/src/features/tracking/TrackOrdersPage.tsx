@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { getTestTrackingMeta } from '../../services/testTrackingMeta.service';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
 
@@ -22,7 +22,7 @@ export function TrackOrdersPage() {
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const { data: orders = [], isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const metaQuery = useQuery({ queryKey: ['test-tracking-meta', orders.map((order) => order.id).join('|')], queryFn: () => getTestTrackingMeta(orders.map((order) => order.id)), enabled: orders.length > 0 });
   const metaMap = metaQuery.data ?? {};
 
