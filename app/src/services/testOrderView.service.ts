@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { currentBranchScopeIncludes } from './branchScope.service';
 
 export type TestOrderView = {
   id: string;
@@ -103,6 +104,7 @@ export async function getTestOrderView(orderId: string) {
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
+  if (!(await currentBranchScopeIncludes((order as RawOrderView).branch))) throw new Error('This order belongs to another branch.');
 
   const { data: items, error: itemError } = await supabase
     .from('test_order_items')
