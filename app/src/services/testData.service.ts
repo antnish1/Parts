@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getOrderStatusLabel } from '../lib/orderLogic';
 
 export type TestOrder = {
   id: string;
@@ -20,6 +21,16 @@ export type TestOrder = {
   docket_no: string | null;
   transport_name: string | null;
   created_at: string;
+};
+
+type OrderItemStatusRow = {
+  order_id: string;
+  row_status: string | null;
+  status: string | null;
+  approval_status: string | null;
+  qty: number | null;
+  edited_qty: number | null;
+  billed_qty: number | null;
 };
 
 export type DashboardSummary = {
@@ -66,7 +77,33 @@ export async function getTestOrders(): Promise<TestOrder[]> {
     return [];
   }
 
-  return data ?? [];
+  const orders = data ?? [];
+  const ids = orders.map((order) => order.id);
+  if (ids.length === 0) return orders;
+
+  const { data: itemRows, error: itemError } = await supabase
+    .from('test_order_items')
+    .select('order_id, row_status, status, approval_status, qty, edited_qty, billed_qty')
+    .in('order_id', ids);
+
+  if (itemError) {
+    console.error('Failed to load item status rows', itemError);
+    return orders;
+  }
+
+  const itemsByOrder = (itemRows ?? []).reduce<Record<string, OrderItemStatusRow[]>>((acc, row) => {
+    const key = row.order_id;
+    acc[key] = acc[key] ?? [];
+    acc[key].push(row as OrderItemStatusRow);
+    return acc;
+  }, {});
+
+  return orders.map((order) => {
+    const items = itemsByOrder[order.id] ?? [];
+    if (!items.length) return order;
+    const status = getOrderStatusLabel({ ...order, items });
+    return { ...order, status: status.toLowerCase().replace(/ /g, '_') };
+  });
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
@@ -115,6 +152,7 @@ export async function createTestOrder(input: CreateTestOrderInput) {
     qty: item.qty,
     value: Number((item.dnp * item.qty).toFixed(2)),
     previous_30d_qty: item.previous30dQty ?? 0,
+    row_status: 'pending_approval',
   }));
 
   const { error: itemError } = await supabase.from('test_order_items').insert(rows);
