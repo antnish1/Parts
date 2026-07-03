@@ -5,7 +5,7 @@ import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { useAuth } from '../../auth/useAuth';
 import { setTestOrderApproved, setTestOrderRejected } from '../../services/testApproval.service';
-import { markTestOrderIssued, setTestOrderProcessed } from '../../services/testAdmin.service';
+import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
@@ -75,25 +75,15 @@ export function OrderDetailPage() {
     }
   }
 
-  async function runAdminAction(action: 'process' | 'issue') {
+  async function runProcessAction() {
     if (!data) return;
     setActionMessage('');
-    setBusyAction(action);
+    setBusyAction('process');
     try {
-      if (action === 'process') {
-        const finalNo = window.prompt('Enter final DBMS/SAP order number', data.order.final_order_no || data.order.processing_reference || '');
-        if (!finalNo) throw new Error('Final order number is required.');
-        await setTestOrderProcessed(data.order as unknown as TestOrder, finalNo);
-      } else {
-        const invoiceNo = window.prompt('Enter invoice number', data.items.find((item) => item.dbms_invoice_no)?.dbms_invoice_no || '');
-        if (!invoiceNo) throw new Error('Invoice number is required.');
-        const invoiceDate = window.prompt('Enter invoice date in YYYY-MM-DD format', new Date().toISOString().slice(0, 10));
-        if (!invoiceDate) throw new Error('Invoice date is required.');
-        const docketNo = window.prompt('Enter docket number', '') ?? '';
-        const transport = window.prompt('Enter transport name', '') ?? '';
-        await markTestOrderIssued(data.order as unknown as TestOrder, invoiceNo, invoiceDate, docketNo, transport);
-      }
-      setActionMessage(`${action} completed.`);
+      const finalNo = window.prompt('Enter final DBMS/SAP order number', data.order.final_order_no || data.order.processing_reference || '');
+      if (!finalNo) throw new Error('Final order number is required.');
+      await setTestOrderProcessed(data.order as unknown as TestOrder, finalNo);
+      setActionMessage('Process completed.');
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
     } catch (adminError) {
@@ -118,7 +108,7 @@ export function OrderDetailPage() {
   const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && rawStatus.includes('pending');
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = canAdmin && rawStatus === 'approved';
-  const canIssue = canAdmin && rawStatus === 'processed';
+  const canDispatchInAdmin = canAdmin && rawStatus === 'processed';
 
   const summaryRows = [
     ['Order No', order.order_no],
@@ -141,8 +131,8 @@ export function OrderDetailPage() {
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canApprove ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('approve')}>{busyAction === 'approve' ? 'Approving' : 'Approve'}</button> : null}
           {canApprove ? <button type="button" className="text-xs font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runApprovalAction('reject')}>{busyAction === 'reject' ? 'Rejecting' : 'Reject'}</button> : null}
-          {canProcess ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runAdminAction('process')}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
-          {canIssue ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runAdminAction('issue')}>{busyAction === 'issue' ? 'Issuing' : 'Issue Item Rows'}</button> : null}
+          {canProcess ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyAction} onClick={() => void runProcessAction()}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
+          {canDispatchInAdmin ? <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => navigate('/admin/approved')}>Dispatch Selected Rows</button> : null}
           <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => window.print()}>Print</button><StatusBadge status={status} />
         </div>
       </div>
