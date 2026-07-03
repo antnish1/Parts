@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
-import { getTestOrders } from '../../services/testData.service';
+import { getOrderList } from '../../services/orderList.service';
 import { getTestTrackingMeta } from '../../services/testTrackingMeta.service';
 import { summarizeByBranch, summarizeByStatus } from '../../services/testReport.service';
 import { getLatestInventoryReportDate, getManagerInventoryLookup, getManagerInventoryTransactions } from '../../services/managerInventory.service';
@@ -40,7 +40,7 @@ export function ManagerDashboardPage() {
   const [inventorySearch, setInventorySearch] = useState('');
   const [inventoryBranch, setInventoryBranch] = useState('all');
   const [inventoryDate, setInventoryDate] = useState('');
-  const { data: orders = [], isLoading } = useQuery({ queryKey: ['test-orders'], queryFn: getTestOrders });
+  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
   const latestDateQuery = useQuery({ queryKey: ['manager-inventory-latest-date'], queryFn: getLatestInventoryReportDate });
   const effectiveInventoryDate = inventoryDate || latestDateQuery.data || '';
   const inventoryQuery = useQuery({ queryKey: ['manager-inventory', inventorySearch, inventoryBranch, effectiveInventoryDate], queryFn: () => getManagerInventoryLookup(inventorySearch, inventoryBranch, effectiveInventoryDate) });
