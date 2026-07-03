@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
@@ -8,6 +8,7 @@ import { setTestOrderApproved, setTestOrderRejected } from '../../services/testA
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
+import { getCommentAttachmentSignedUrl, uploadCommentAttachment } from '../../services/commentAttachment.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
 import type { TestOrder } from '../../services/testData.service';
 import { OrderActivityPanel } from './OrderActivityPanel';
@@ -19,6 +20,12 @@ function formatMoney(value: number) {
 function formatDate(value: string | null | undefined) {
   if (!value) return '-';
   return new Date(value).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+function formatBytes(value: number) {
+  if (!value) return '0 KB';
+  if (value < 1024 * 1024) return `${Math.ceil(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function coverageLabel(inventoryQty: number, pendingQty: number) {
@@ -35,6 +42,8 @@ export function OrderDetailPage() {
   const { role } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [commentMessage, setCommentMessage] = useState('');
+  const [attachmentMessage, setAttachmentMessage] = useState('');
+  const [attachmentBusy, setAttachmentBusy] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [busyAction, setBusyAction] = useState('');
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
@@ -57,6 +66,37 @@ export function OrderDetailPage() {
     event.preventDefault();
     setCommentMessage('');
     commentMutation.mutate();
+  }
+
+  async function handleAttachmentUpload(commentId: string, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setAttachmentMessage('');
+    setAttachmentBusy(commentId);
+    try {
+      await uploadCommentAttachment(orderId, commentId, file);
+      setAttachmentMessage('Attachment uploaded.');
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['test-order-view', orderId] });
+    } catch (uploadError) {
+      setAttachmentMessage(uploadError instanceof Error ? uploadError.message : 'Attachment upload failed.');
+    } finally {
+      setAttachmentBusy('');
+    }
+  }
+
+  async function handleAttachmentDownload(attachmentId: string) {
+    setAttachmentMessage('');
+    setAttachmentBusy(attachmentId);
+    try {
+      const result = await getCommentAttachmentSignedUrl(attachmentId);
+      window.open(result.signedUrl, '_blank', 'noopener,noreferrer');
+    } catch (downloadError) {
+      setAttachmentMessage(downloadError instanceof Error ? downloadError.message : 'Attachment download failed.');
+    } finally {
+      setAttachmentBusy('');
+    }
   }
 
   async function runApprovalAction(action: 'approve' | 'reject') {
@@ -176,13 +216,32 @@ export function OrderDetailPage() {
 
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-          <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Comments</p>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Comments</p>
+            {attachmentMessage ? <p className="text-xs text-[#c7d2df]">{attachmentMessage}</p> : null}
+          </div>
           <form onSubmit={handleCommentSubmit} className="no-print mb-3 space-y-2">
             <textarea className="min-h-[72px] w-full rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} />
             <div className="flex items-center justify-between gap-3"><p className="text-xs text-[#c7d2df]">{commentMessage}</p><button type="submit" disabled={commentMutation.isPending} className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-50">{commentMutation.isPending ? 'Saving...' : 'Add Comment'}</button></div>
           </form>
           <div className="space-y-2">
-            {comments.map((comment) => (<div key={comment.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs"><p className="text-white">{comment.body || '-'}</p><p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">{comment.comment_type} • {formatDate(comment.created_at)}</p></div>))}
+            {comments.map((comment) => (
+              <div key={comment.id} className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs">
+                <p className="text-white">{comment.body || '-'}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#6D8196]">{comment.comment_type} • {formatDate(comment.created_at)}</p>
+                <div className="no-print mt-2 flex flex-wrap items-center gap-3">
+                  <label className="cursor-pointer text-[11px] font-black text-[#82C8E5] hover:underline">
+                    {attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}
+                    <input type="file" className="hidden" disabled={!!attachmentBusy} onChange={(event) => void handleAttachmentUpload(comment.id, event)} />
+                  </label>
+                  {comment.attachments.map((attachment) => (
+                    <button key={attachment.id} type="button" className="text-[11px] font-black text-[#82C8E5] hover:underline disabled:opacity-50" disabled={!!attachmentBusy} onClick={() => void handleAttachmentDownload(attachment.id)}>
+                      {attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
             {comments.length === 0 ? <p className="text-xs text-[#c7d2df]">No user comments yet.</p> : null}
           </div>
         </div>
