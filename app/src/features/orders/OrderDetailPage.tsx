@@ -84,11 +84,13 @@ export function OrderDetailPage() {
 
   return (
     <PageCard eyebrow="Orders" title="Order Detail" description="Shared order review workspace.">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="no-print mb-3 flex items-center justify-between gap-3">
         <button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => navigate(-1)}>Back</button>
-        <StatusBadge status={status} />
+        <div className="flex items-center gap-3"><button type="button" className="text-xs font-black text-[#82C8E5] hover:underline" onClick={() => window.print()}>Print</button><StatusBadge status={status} /></div>
       </div>
 
+      <div className="print-area">
+      <div className="hidden border-b border-[#263244] pb-2 print:block"><p className="text-lg font-black">Parts Connect Portal - Order Detail</p><p className="text-xs">{order.final_order_no || order.order_no} • {order.branch} • {status}</p></div>
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {summaryRows.map(([label, value]) => (
           <div key={label} className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2">
@@ -125,7 +127,7 @@ export function OrderDetailPage() {
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Comments</p>
-          <form onSubmit={handleCommentSubmit} className="mb-3 space-y-2">
+          <form onSubmit={handleCommentSubmit} className="no-print mb-3 space-y-2">
             <textarea className="min-h-[72px] w-full rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} />
             <div className="flex items-center justify-between gap-3"><p className="text-xs text-[#c7d2df]">{commentMessage}</p><button type="submit" disabled={commentMutation.isPending} className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-50">{commentMutation.isPending ? 'Saving...' : 'Add Comment'}</button></div>
           </form>
@@ -142,6 +144,7 @@ export function OrderDetailPage() {
             {events.length === 0 ? <p className="text-xs text-[#c7d2df]">No action logs yet.</p> : null}
           </div>
         </div>
+      </div>
       </div>
     </PageCard>
   );
