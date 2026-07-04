@@ -10,8 +10,9 @@ export function RequireAuth() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-pc-bg p-4 text-pc-text">
         <div className="rounded-3xl border border-slate-800 bg-slate-950 p-8 text-center shadow-panel">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-pc-gold">Parts Connect Portal</p>
-          <p className="mt-3 text-sm text-pc-muted">Checking secure session...</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-pc-gold">Sankalp Insurance Brokers Private Limited</p>
+          <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-pc-muted">formerly known as insureit</p>
+          <p className="mt-3 text-sm text-pc-muted">Checking secure Parts Connect Portal session...</p>
         </div>
       </main>
     );
