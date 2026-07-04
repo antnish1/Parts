@@ -8,8 +8,6 @@ import { roleHomePath } from './roleGuards';
 
 const inputClass = 'w-full rounded-lg border border-[#6D8196]/45 bg-white px-12 py-3.5 text-sm font-semibold text-[#000080] outline-none transition placeholder:text-[#6D8196] focus:border-[#0047AB]';
 const labelClass = 'mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6D8196]';
-const companyName = 'Sankalp Insurance Brokers Private Limited';
-const formerName = 'formerly known as insureit';
 
 export function LoginPage() {
   const { isAuthenticated, role, isLoading } = useAuth();
@@ -42,10 +40,8 @@ export function LoginPage() {
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#82C8E5] text-[#000080]">
             <ShieldCheck className="h-7 w-7" />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#0047AB]">{companyName}</p>
-          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#6D8196]">{formerName}</p>
-          <h1 className="mt-3 text-3xl font-black text-[#000080]">Parts Connect Portal</h1>
-          <p className="mt-2 text-sm font-semibold text-[#6D8196]">Sign in to continue</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect</p>
+          <h1 className="mt-3 text-3xl font-black text-[#000080]">Sign in</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
