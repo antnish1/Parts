@@ -1,5 +1,6 @@
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Paperclip, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
@@ -53,6 +54,8 @@ export function OrderDetailPage() {
   const { role, profile } = useAuth();
 
   const [commentText, setCommentText] = useState('');
+  const [commentFile, setCommentFile] = useState<File | null>(null);
+  const [commentFileInputKey, setCommentFileInputKey] = useState(0);
   const [commentMessage, setCommentMessage] = useState('');
   const [attachmentMessage, setAttachmentMessage] = useState('');
   const [attachmentBusy, setAttachmentBusy] = useState('');
@@ -69,10 +72,17 @@ export function OrderDetailPage() {
     enabled: !!data?.order.branch && data.items.length > 0,
   });
   const commentMutation = useMutation({
-    mutationFn: () => addTestOrderComment(orderId, commentText),
+    mutationFn: async () => {
+      const comment = await addTestOrderComment(orderId, commentText);
+      if (commentFile) await uploadCommentAttachment(orderId, comment.id, commentFile);
+      return comment;
+    },
     onSuccess: () => {
       setCommentText('');
-      setCommentMessage('Comment added.');
+      setCommentFile(null);
+      setCommentFileInputKey((current) => current + 1);
+      setCommentMessage('Comment posted.');
+      setAttachmentMessage('');
       queryClient.invalidateQueries({ queryKey: ['test-order-view', orderId] });
     },
     onError: (commentError) => setCommentMessage(commentError instanceof Error ? commentError.message : 'Comment failed.'),
@@ -94,7 +104,7 @@ export function OrderDetailPage() {
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = canAdmin && rawStatus === 'approved';
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
-  const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Saving comment' : attachmentBusy ? 'Handling attachment' : 'Working';
+  const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Posting comment' : attachmentBusy ? 'Opening attachment' : 'Working';
 
   const totalQty = items.reduce((sum, item) => sum + getEffectiveQty(item), 0);
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
@@ -107,11 +117,12 @@ export function OrderDetailPage() {
     { label: 'Order For', value: order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock' },
     { label: 'Branch', value: order.branch },
     { label: 'Employee', value: '-' },
-    { label: 'Call ID', value: order.call_id || '-' },
+    { label: 'Status', value: displayStatus, type: 'status' },
     { label: 'Machine No', value: order.machine_no || '-' },
     { label: 'Customer', value: order.customer_name || '-' },
     { label: 'Machine Type', value: order.warranty_status || '-' },
     { label: 'Approved By', value: order.approver?.full_name || '-' },
+    { label: 'Call ID', value: order.call_id || '-' },
   ];
 
   function needsManagerOverride() {
@@ -170,25 +181,14 @@ export function OrderDetailPage() {
   function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setCommentMessage('');
+    setAttachmentMessage('');
     commentMutation.mutate();
   }
 
-  async function handleAttachmentUpload(commentId: string, event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    setAttachmentMessage('');
-    setAttachmentBusy(commentId);
-    try {
-      await uploadCommentAttachment(orderId, commentId, file);
-      setAttachmentMessage('Attachment uploaded.');
-      await refetch();
-      await queryClient.invalidateQueries({ queryKey: ['test-order-view', orderId] });
-    } catch (uploadError) {
-      setAttachmentMessage(uploadError instanceof Error ? uploadError.message : 'Attachment upload failed.');
-    } finally {
-      setAttachmentBusy('');
-    }
+  function handleCommentFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setCommentFile(file);
+    setAttachmentMessage(file ? `Selected attachment: ${file.name}` : '');
   }
 
   async function handleAttachmentDownload(attachmentId: string) {
@@ -236,22 +236,21 @@ export function OrderDetailPage() {
       {actionMessage ? <p className="no-print mb-2 rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2 text-xs font-medium text-[#344054]">{actionMessage}</p> : null}
 
       <section className="rounded-lg border border-[#d9dee7] bg-white px-4 py-3">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-[#eef2f6] pb-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0f4c81]">Order Summary</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="break-all text-sm font-semibold tracking-tight text-[#0f172a]">{order.final_order_no || order.order_no}</p>
-              <span className="text-xs font-normal text-[#667085]">{formatDate(order.created_at)}</span>
-            </div>
-          </div>
-          <StatusBadge status={displayStatus} />
+        <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-[#eef2f6] pb-2">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0f4c81]">Order Summary</p>
+          <p className="break-all text-sm font-semibold tracking-tight text-[#0f172a]">{order.final_order_no || order.order_no}</p>
+          <span className="text-xs font-normal text-[#667085]">{formatDate(order.created_at)}</span>
         </div>
 
         <div className="grid gap-x-8 gap-y-2 text-xs sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {summaryRows.map((row) => (
             <div key={row.label} className="min-w-0 border-b border-[#f1f5f9] pb-1.5">
               <p className="text-[10px] font-medium uppercase tracking-[0.11em] text-[#64748b]">{row.label}</p>
-              <p className="mt-0.5 truncate text-sm font-normal text-[#0f172a]" title={summaryValue(row.value)}>{summaryValue(row.value)}</p>
+              {row.type === 'status' ? (
+                <div className="mt-1"><StatusBadge status={displayStatus} /></div>
+              ) : (
+                <p className="mt-0.5 truncate text-sm font-normal text-[#0f172a]" title={summaryValue(row.value)}>{summaryValue(row.value)}</p>
+              )}
             </div>
           ))}
         </div>
@@ -264,31 +263,43 @@ export function OrderDetailPage() {
           {attachmentMessage ? <p className="text-xs text-[#667085]">{attachmentMessage}</p> : null}
         </div>
 
-        <form onSubmit={handleCommentSubmit} className="no-print mb-2 flex gap-2">
+        <form onSubmit={handleCommentSubmit} className="no-print mb-2 flex flex-col gap-2 md:flex-row md:items-center">
           <input className="h-9 flex-1 rounded-md border border-[#d9dee7] bg-white px-3 text-xs text-[#0f172a] outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} disabled={isBlockingAction} />
-          <button type="submit" disabled={isBlockingAction} className="rounded-md border border-[#d9dee7] px-3 text-xs font-black text-[#0f172a] disabled:opacity-50">{commentMutation.isPending ? 'Saving' : 'Add'}</button>
+          <label className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md border border-[#d9dee7] bg-white px-3 text-xs font-black text-[#0f4c81] hover:bg-[#f8fbff]">
+            <Paperclip className="h-3.5 w-3.5" />
+            Attach
+            <input key={commentFileInputKey} type="file" className="hidden" disabled={isBlockingAction} onChange={handleCommentFileChange} />
+          </label>
+          {commentFile ? (
+            <button type="button" className="inline-flex h-9 items-center gap-1 rounded-md border border-[#d9dee7] bg-[#f8fbff] px-2 text-[11px] font-semibold text-[#344054]" onClick={() => { setCommentFile(null); setCommentFileInputKey((current) => current + 1); setAttachmentMessage(''); }} disabled={isBlockingAction}>
+              <span className="max-w-[180px] truncate">{commentFile.name}</span><X className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          <button type="submit" disabled={isBlockingAction} className="h-9 rounded-md border border-[#d9dee7] px-4 text-xs font-black text-[#0f172a] disabled:opacity-50">{commentMutation.isPending ? 'Posting' : 'Post'}</button>
         </form>
 
         {commentMessage ? <p className="mb-2 text-xs text-[#667085]">{commentMessage}</p> : null}
 
         <div className="space-y-2">
-          {comments.map((comment) => (
-            <div key={comment.id} className="rounded-md border border-[#e4e7ec] bg-[#f8fbff] px-3 py-2 text-xs">
-              <p className="font-semibold text-[#0f172a]">{comment.body || '-'}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#667085]">{comment.comment_type} • {formatDate(comment.created_at)}</p>
-              <div className="no-print mt-2 flex flex-wrap items-center gap-3">
-                <label className="cursor-pointer text-[11px] font-black text-[#0f4c81] hover:underline">
-                  {attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}
-                  <input type="file" className="hidden" disabled={isBlockingAction} onChange={(event) => void handleAttachmentUpload(comment.id, event)} />
-                </label>
-                {comment.attachments.map((attachment) => (
-                  <button key={attachment.id} type="button" className="text-[11px] font-black text-[#0f4c81] hover:underline disabled:opacity-50" disabled={isBlockingAction} onClick={() => void handleAttachmentDownload(attachment.id)}>
-                    {attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}
-                  </button>
-                ))}
+          {comments.map((comment) => {
+            const authorName = comment.author?.full_name || 'Unknown User';
+            return (
+              <div key={comment.id} className="rounded-md border border-[#e4e7ec] bg-[#f8fbff] px-3 py-2 text-xs">
+                <p className="font-semibold text-[#0f172a]">{comment.body || '-'}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#667085]">Comment by {authorName} • {formatDate(comment.created_at)}</p>
+                {comment.attachments.length ? (
+                  <div className="no-print mt-2 flex flex-wrap items-center gap-3">
+                    {comment.attachments.map((attachment) => (
+                      <button key={attachment.id} type="button" className="inline-flex items-center gap-1.5 rounded-md border border-[#d9dee7] bg-white px-2 py-1 text-[11px] font-black text-[#0f4c81] hover:bg-[#eef8ff] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void handleAttachmentDownload(attachment.id)}>
+                        <Paperclip className="h-3.5 w-3.5" />
+                        {attachmentBusy === attachment.id ? 'Opening...' : `${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-            </div>
-          ))}
+            );
+          })}
           {comments.length === 0 ? <p className="text-xs text-[#667085]">No user comments yet.</p> : null}
         </div>
 
