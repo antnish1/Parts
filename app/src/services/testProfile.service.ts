@@ -39,9 +39,9 @@ function friendlyUserError(message: string) {
   if (text.includes('already') || text.includes('registered') || text.includes('duplicate')) return 'This email or User ID is already registered. Please use another User ID, or edit the existing user profile.';
   if (text.includes('password')) return message || 'Password is not valid.';
   if (text.includes('unauthorized') || text.includes('jwt')) return 'Your login session expired. Please logout and login again as developer.';
-  if (text.includes('developer')) return 'Only an active developer user can create new portal users.';
-  if (text.includes('failed to fetch') || text.includes('send a request')) return 'Could not connect to the user creation function. Please check Edge Function deployment and project URL.';
-  return message || 'User creation failed. Please check the details and try again.';
+  if (text.includes('developer')) return 'Only an active developer user can create or edit portal users.';
+  if (text.includes('failed to fetch') || text.includes('send a request')) return 'Could not connect to the user function. Please check Edge Function deployment and project URL.';
+  return message || 'User operation failed. Please check the details and try again.';
 }
 
 async function readFunctionError(error: unknown) {
@@ -54,7 +54,7 @@ async function readFunctionError(error: unknown) {
       // Ignore body parse error and use fallback message.
     }
   }
-  return friendlyUserError(maybeError?.message ?? 'User creation failed.');
+  return friendlyUserError(maybeError?.message ?? 'User operation failed.');
 }
 
 export async function getTestApprovers(): Promise<TestProfileOption[]> {
@@ -109,16 +109,18 @@ export async function updateTestProfile(profileId: string, input: UpdateTestProf
   const fullName = input.fullName.trim();
   const branch = input.branch.trim();
   const role = input.role.trim();
-  const loginId = input.loginId?.trim().replace(/\s+/g, '').toUpperCase() || null;
+  const loginId = input.loginId?.trim().replace(/\s+/g, '').toUpperCase() || '';
   if (!profileId) throw new Error('Profile id is required.');
   if (!fullName || !branch || !role) throw new Error('Name, branch and role are required.');
 
-  const { error } = await supabase
-    .from('test_profiles')
-    .update({ full_name: fullName, branch, role, login_id: loginId, is_active: input.isActive })
-    .eq('id', profileId);
+  const { data, error } = await supabase.functions.invoke('update-portal-user', {
+    body: { profileId, fullName, branch, role, loginId, isActive: input.isActive },
+  });
 
-  if (error) throw error;
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.error) throw new Error(friendlyUserError(String(data.error)));
+  if (!data?.ok) throw new Error('Profile update was not confirmed by the server.');
+  return data;
 }
 
 export async function setTestProfileActive(profileId: string, isActive: boolean) {
