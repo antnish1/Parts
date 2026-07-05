@@ -62,7 +62,6 @@ export function NewOrderPage() {
   }, [branches, profile?.branch, role]);
 
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
-  const isOrderSubmitting = submitStarted || mutation?.isPending;
 
   useEffect(() => {
     if (role !== 'branch' || !profile?.branch) return;
@@ -87,6 +86,8 @@ export function NewOrderPage() {
       setMessage(error instanceof Error ? error.message : 'Order creation failed. Check write policies.');
     },
   });
+
+  const isOrderSubmitting = submitStarted || mutation.isPending;
 
   function updateField(field: keyof typeof form, value: string) { setForm((current) => ({ ...current, [field]: value })); }
   function updateItem(lineId: number, field: keyof ItemLine, value: string | number) { setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, [field]: value } : item))); }
