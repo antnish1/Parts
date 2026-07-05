@@ -49,7 +49,6 @@ export function LoginPage() {
             <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-full w-full object-contain" />
           </div>
           <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect Portal</p>
-          <h1 className="mt-3 text-3xl font-black text-[#000080]">Sign in</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
