@@ -51,7 +51,7 @@ async function attachBillingChunks(rows: TestUsageRow[]) {
   return rows.map((row) => ({ ...row, billing_chunks: map.get(row.id) ?? [] }));
 }
 
-export async function getTestLast30QtyByBranchPart(branch: string, partNo: string) {
+export async function getTestLast30QtyByBranchPart(branch: string, partNo: string, _days = 30) {
   const normalizedPartNo = normalizePartNo(partNo);
   if (!branch || !normalizedPartNo) return 0;
 
