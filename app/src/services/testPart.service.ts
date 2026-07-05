@@ -8,78 +8,77 @@ export type TestPart = {
   cat2: string | null;
 };
 
-const PAGE_SIZE = 1000;
-type RawRow = Record<string, unknown>;
-
-function normalizeKey(value: string) {
-  return value.trim().replace(/[\s_./-]+/g, '').toLowerCase();
-}
-
 function normalizePartNo(value: string | null | undefined) {
   return (value || '').trim().replace(/\s+/g, '').toUpperCase();
 }
 
-function readValue(row: RawRow, aliases: string[]) {
-  const wanted = aliases.map(normalizeKey);
-  const key = Object.keys(row).find((item) => wanted.includes(normalizeKey(item)));
-  return key ? row[key] : null;
-}
-
-function readText(row: RawRow, aliases: string[]) {
-  const value = readValue(row, aliases);
-  return value == null ? '' : String(value).trim();
-}
-
-function readNumber(row: RawRow, aliases: string[]) {
-  const value = readValue(row, aliases);
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  const parsed = Number(String(value ?? '').replace(/,/g, '').trim());
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function mapPartMasterRow(row: RawRow): TestPart | null {
-  const partNo = normalizePartNo(readText(row, ['part_no', 'partno', 'part number', 'part_number', 'item_code', 'itemcode', 'material', 'material no', 'material_no', 'material number', 'materialnumber', 'Material', 'Material No', 'Material No.']));
+function normalizePartResponse(part: unknown): TestPart | null {
+  if (!part || typeof part !== 'object') return null;
+  const row = part as Partial<TestPart>;
+  const partNo = normalizePartNo(row.part_no);
   if (!partNo) return null;
 
   return {
     part_no: partNo,
-    description: readText(row, ['description', 'part_description', 'material_description', 'item_name', 'itemname', 'name', 'Description', 'Material Description']) || null,
-    dnp: readNumber(row, ['dnp', 'DNP', 'new rtl', 'new_rtl', 'rtl', 'RTL', 'price', 'sale_price', 'rate']),
-    cat1: readText(row, ['cat1', 'cat_1', 'category', 'category1', 'item_group', 'group', 'Cat1']) || null,
-    cat2: readText(row, ['cat2', 'cat_2', 'category2', 'sub_category', 'subgroup', 'Cat2']) || null,
+    description: row.description ?? null,
+    dnp: row.dnp == null || Number.isNaN(Number(row.dnp)) ? null : Number(row.dnp),
+    cat1: row.cat1 ?? null,
+    cat2: row.cat2 ?? null,
   };
 }
 
-async function getPartMasterRows() {
-  const rows: RawRow[] = [];
-
-  for (let start = 0; ; start += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from('part_master')
-      .select('*')
-      .range(start, start + PAGE_SIZE - 1);
-
-    if (error) {
-      console.warn('Failed to load part_master', error.message);
-      return rows;
-    }
-
-    const page = (data ?? []) as RawRow[];
-    rows.push(...page);
-    if (page.length < PAGE_SIZE) break;
+function friendlyPartError(message: string) {
+  const text = message.toLowerCase();
+  if (text.includes('failed to fetch') || text.includes('send a request')) {
+    return 'Could not connect to lookup-part-action. Please deploy the Edge Function and try again.';
   }
+  if (text.includes('non-2xx')) {
+    return 'Part lookup was rejected by lookup-part-action. Please redeploy lookup-part-action and try again.';
+  }
+  return message || 'Part lookup failed.';
+}
 
-  return rows;
+async function readFunctionError(error: unknown) {
+  const maybeError = error as { message?: string; context?: Response };
+  if (maybeError?.context) {
+    try {
+      const body = await maybeError.context.clone().json();
+      if (body?.error) return friendlyPartError(String(body.error));
+    } catch {
+      // Ignore body parse error and use fallback message.
+    }
+  }
+  return friendlyPartError(maybeError?.message ?? 'Part lookup failed.');
+}
+
+export async function lookupTestPartByNo(partNo: string): Promise<TestPart | null> {
+  const normalized = normalizePartNo(partNo);
+  if (!normalized) return null;
+
+  const { data, error } = await supabase.functions.invoke('lookup-part-action', {
+    body: { partNo: normalized },
+  });
+
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.ok === false || data?.error) throw new Error(friendlyPartError(String(data.error || 'Part lookup failed.')));
+  return normalizePartResponse(data?.part);
+}
+
+export async function lookupTestPartsByNos(partNos: string[]): Promise<TestPart[]> {
+  const normalized = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
+  if (!normalized.length) return [];
+
+  const { data, error } = await supabase.functions.invoke('lookup-part-action', {
+    body: { partNos: normalized },
+  });
+
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.ok === false || data?.error) throw new Error(friendlyPartError(String(data.error || 'Part lookup failed.')));
+  return ((data?.parts ?? []) as unknown[]).map(normalizePartResponse).filter(Boolean) as TestPart[];
 }
 
 export async function getTestParts(): Promise<TestPart[]> {
-  const merged = new Map<string, TestPart>();
-  const liveRows = await getPartMasterRows();
-
-  liveRows.forEach((row) => {
-    const mapped = mapPartMasterRow(row);
-    if (mapped) merged.set(mapped.part_no, mapped);
-  });
-
-  return [...merged.values()].sort((a, b) => a.part_no.localeCompare(b.part_no));
+  // Deprecated: New Order no longer downloads the full production part_master to the browser.
+  // Use lookupTestPartByNo() or lookupTestPartsByNos() so part_master is searched on the backend only when needed.
+  return [];
 }
