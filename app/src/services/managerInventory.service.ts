@@ -30,6 +30,10 @@ export type ManagerInventoryTxnRow = {
   closing_value: number | null;
 };
 
+function cleanPartSearch(search: string) {
+  return search.trim().replace(/\s+/g, '').toUpperCase();
+}
+
 export async function getLatestInventoryReportDate() {
   const { data, error } = await supabase
     .from('test_inventory_staging')
@@ -42,6 +46,9 @@ export async function getLatestInventoryReportDate() {
 }
 
 export async function getManagerInventoryLookup(search = '', branch = 'all', reportDate = '') {
+  const term = cleanPartSearch(search);
+  if (!term) return [] as ManagerInventoryRow[];
+
   const latestDate = reportDate || await getLatestInventoryReportDate();
   let query = supabase
     .from('test_inventory_staging')
@@ -52,8 +59,7 @@ export async function getManagerInventoryLookup(search = '', branch = 'all', rep
 
   if (latestDate) query = query.eq('report_date', latestDate);
   if (branch !== 'all') query = query.eq('branch_code', branch);
-  const term = search.trim();
-  if (term) query = query.or(`item_code.ilike.%${term}%,item_name.ilike.%${term}%,item_group.ilike.%${term}%`);
+  query = query.ilike('item_code', `%${term}%`);
 
   const { data, error } = await query;
   if (error) throw error;
@@ -72,7 +78,10 @@ export async function getManagerInventoryLookup(search = '', branch = 'all', rep
   })) as ManagerInventoryRow[];
 }
 
-export async function getManagerInventoryTransactions(branch = 'all', reportDate = '') {
+export async function getManagerInventoryTransactions(search = '', branch = 'all', reportDate = '') {
+  const term = cleanPartSearch(search);
+  if (!term) return [] as ManagerInventoryTxnRow[];
+
   const latestDate = reportDate || await getLatestInventoryReportDate();
   let query = supabase
     .from('test_inventory_staging')
@@ -83,6 +92,7 @@ export async function getManagerInventoryTransactions(branch = 'all', reportDate
 
   if (latestDate) query = query.eq('report_date', latestDate);
   if (branch !== 'all') query = query.eq('branch_code', branch);
+  query = query.ilike('item_code', `%${term}%`);
   query = query.or('received.neq.0,issued.neq.0');
 
   const { data, error } = await query;
