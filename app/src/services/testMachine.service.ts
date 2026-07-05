@@ -41,21 +41,7 @@ function mapMachine(row: RawRow): TestMachine | null {
   };
 }
 
-async function findInTestMachineMaster(normalized: string) {
-  const { data, error } = await supabase
-    .from('test_machine_master')
-    .select('id, machine_no, customer_name')
-    .eq('machine_no', normalized)
-    .maybeSingle();
-
-  if (error) {
-    console.warn('Failed to search test_machine_master', error.message);
-    return null;
-  }
-  return data ?? null;
-}
-
-async function findInLiveMachineMaster(normalized: string) {
+async function findInMachineMaster(normalized: string) {
   for (const column of MACHINE_COLUMNS) {
     const { data, error } = await supabase
       .from('machine_master')
@@ -80,11 +66,7 @@ async function findInLiveMachineMaster(normalized: string) {
 export async function getTestMachineByNo(machineNo: string): Promise<TestMachine | null> {
   const normalized = normalizeMachineNo(machineNo);
   if (!normalized) return null;
-
-  const testMachine = await findInTestMachineMaster(normalized);
-  if (testMachine) return testMachine;
-
-  return findInLiveMachineMaster(normalized);
+  return findInMachineMaster(normalized);
 }
 
 export async function saveTestMachineCustomer(machineNo: string, customerName: string) {
@@ -92,10 +74,11 @@ export async function saveTestMachineCustomer(machineNo: string, customerName: s
   const customer = customerName.trim();
   if (!normalized || !customer) throw new Error('Machine number and customer name are required.');
 
-  const { error } = await supabase
-    .from('test_machine_master')
-    .insert({ machine_no: normalized, customer_name: customer });
+  const { data, error } = await supabase.functions.invoke('save-machine-master', {
+    body: { machineNo: normalized, customerName: customer },
+  });
 
   if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
   return { machine_no: normalized, customer_name: customer };
 }
