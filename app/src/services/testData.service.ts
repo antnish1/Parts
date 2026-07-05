@@ -12,6 +12,8 @@ export type TestOrder = {
   customer_name: string | null;
   status: string;
   approval_status: string;
+  approver_id?: string | null;
+  approver?: { full_name: string | null; role: string | null } | null;
   processing_reference: string | null;
   processed_notes: string | null;
   processed_date: string | null;
@@ -95,7 +97,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
   const branchValues = await getCurrentBranchScopeValues();
   let query = supabase
     .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:test_profiles!test_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -110,7 +112,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
     return [];
   }
 
-  const orders = data ?? [];
+  const orders = (data ?? []) as unknown as TestOrder[];
   const ids = orders.map((order) => order.id);
   if (ids.length === 0) return orders;
 
