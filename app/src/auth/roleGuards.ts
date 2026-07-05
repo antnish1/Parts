@@ -1,4 +1,4 @@
-export type UserRole = 'branch' | 'admin' | 'super' | 'manager' | 'viewer' | 'developer';
+export type UserRole = 'branch' | 'admin' | 'super' | 'manager' | 'viewer' | 'developer' | 'hq';
 
 export type UserProfile = {
   id: string;
@@ -15,9 +15,11 @@ export const roleHomePath: Record<UserRole, string> = {
   manager: '/manager/dashboard',
   viewer: '/orders/track',
   developer: '/developer/workspace',
+  hq: '/',
 };
 
 function isOrderWorkspace(path: string) {
+  if (path === '/orders/new') return false;
   return path.startsWith('/orders/track') || /^\/orders\/[^/]+$/.test(path);
 }
 
@@ -31,6 +33,8 @@ function isDocketWorkspace(path: string) {
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  if (role === 'hq') return false;
+  if (path === '/orders/new') return role === 'branch';
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');
