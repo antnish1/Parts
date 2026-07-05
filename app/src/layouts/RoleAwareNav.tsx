@@ -7,8 +7,13 @@ type RoleAwareNavProps = {
   role?: UserRole;
 };
 
+function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label: string }) {
+  if (role === 'admin' && item.to.startsWith('/admin')) return false;
+  return role ? canAccessRoute(role, item.to) : true;
+}
+
 export function RoleAwareNav({ items, role }: RoleAwareNavProps) {
-  const visibleItems = role ? items.filter((item) => canAccessRoute(role, item.to)) : items;
+  const visibleItems = items.filter((item) => shouldShowNavItem(role, item));
 
   return (
     <nav className="mt-3 space-y-0.5">
