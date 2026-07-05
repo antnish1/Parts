@@ -87,18 +87,12 @@ serve(async (req) => {
     const chunkRows = (chunks ?? []) as ChunkRow[];
     if (!chunkRows.length) return json({ error: 'No billing chunk found for this docket or invoice' }, 404);
 
-    const chunkIds = chunkRows.map((chunk) => chunk.id);
-    const { error: receiveError } = await adminClient
-      .from('test_order_item_billings')
-      .update({ received_qty: undefined, received_at: receivedAt, received_by: profile.id, updated_at: receivedAt })
-      .in('id', chunkIds);
-    if (receiveError) throw receiveError;
-
     for (const chunk of chunkRows) {
-      await adminClient
+      const { error: updateChunkError } = await adminClient
         .from('test_order_item_billings')
         .update({ received_qty: num(chunk.billed_qty), received_at: receivedAt, received_by: profile.id, updated_at: receivedAt })
         .eq('id', chunk.id);
+      if (updateChunkError) throw updateChunkError;
     }
 
     const itemIds = [...new Set(chunkRows.map((chunk) => chunk.item_id))];
@@ -118,10 +112,11 @@ serve(async (req) => {
       const billedTotal = (itemChunks ?? []).reduce((sum, row) => sum + num(row.billed_qty), 0);
       const receivedTotal = (itemChunks ?? []).reduce((sum, row) => sum + num(row.received_qty), 0);
       const nextItemStatus = itemStatus(item, billedTotal, receivedTotal);
-      await adminClient
+      const { error: itemUpdateError } = await adminClient
         .from('test_order_items')
         .update({ billed_qty: billedTotal, row_status: nextItemStatus, received_date: receivedTotal > 0 ? receivedAt : null, updated_at: receivedAt })
         .eq('id', item.id);
+      if (itemUpdateError) throw itemUpdateError;
     }
 
     const { data: allRows, error: rowsError } = await adminClient.from('test_order_items').select('row_status').eq('order_id', order.id);
