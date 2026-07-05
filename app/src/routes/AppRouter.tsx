@@ -14,6 +14,7 @@ import { ManagerDashboardPage } from '../features/manager/ManagerDashboardPage';
 import { DeveloperWorkspacePage } from '../features/developer/DeveloperWorkspacePage';
 import { InventoryUploadPage } from '../features/inventory/InventoryUploadPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
+import { UploadsPage } from '../features/uploads/UploadsPage';
 import { DocketScannerPage } from '../features/docket/DocketScannerPage';
 
 function RoleLanding() {
@@ -38,6 +39,7 @@ export function AppRouter() {
             <Route path="/admin/:queue" element={<AdminPage />} />
             <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
             <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
+            <Route path="/uploads" element={<UploadsPage />} />
             <Route path="/inventory/upload" element={<InventoryUploadPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/docket-scanner" element={<DocketScannerPage />} />
