@@ -1,13 +1,16 @@
+import { useMemo } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Boxes, ClipboardCheck, FilePlus2, Home, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Boxes, ClipboardCheck, FilePlus2, Home, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
+import { getOrderList } from '../services/orderList.service';
 import { brandLogoSrc } from '../assets/brandLogo';
-import { RoleAwareNav } from './RoleAwareNav';
+import { RoleAwareNav, type NavItem } from './RoleAwareNav';
 import { MobileRoleNav } from './MobileRoleNav';
 
-const navItems = [
+const navItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
   { to: '/orders/track', label: 'Track Orders', icon: PackageSearch },
@@ -24,6 +27,21 @@ const navItems = [
 export function AppLayout() {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+
+  const adminCounterQuery = useQuery({
+    queryKey: ['admin-approved-orders-nav-counter'],
+    queryFn: getOrderList,
+    enabled: isAdmin,
+    refetchInterval: 15000,
+  });
+
+  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
+
+  const roleNavItems = useMemo(
+    () => navItems.map((item) => (isAdmin && item.to === '/' ? { ...item, label: 'Approved Orders', badge: approvedOrdersCount } : item)),
+    [approvedOrdersCount, isAdmin],
+  );
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -38,7 +56,7 @@ export function AppLayout() {
             <p className="leading-4 font-black text-[#020617]">{profile?.fullName ?? 'User'}</p>
             <p className="text-[11px] leading-4 text-[#475569]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
           </div>
-          <RoleAwareNav items={navItems} role={profile?.role} />
+          <RoleAwareNav items={roleNavItems} role={profile?.role} />
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
@@ -54,7 +72,7 @@ export function AppLayout() {
               </Button>
             </div>
           </header>
-          <MobileRoleNav items={navItems} role={profile?.role} />
+          <MobileRoleNav items={roleNavItems} role={profile?.role} />
           <div className="p-2.5 lg:p-3"><Outlet /></div>
         </main>
       </div>
