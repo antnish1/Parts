@@ -6,7 +6,7 @@ import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
-import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderRejected } from '../../services/testApproval.service';
+import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected } from '../../services/testApproval.service';
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
@@ -122,7 +122,8 @@ export function OrderDetailPage() {
         if (role === 'manager') await setTestOrderManagerApproved(order as unknown as TestOrder);
         else await setTestOrderApproved(order as unknown as TestOrder);
       } else {
-        await setTestOrderRejected(order as unknown as TestOrder);
+        if (role === 'manager') await setTestOrderManagerRejected(order as unknown as TestOrder);
+        else await setTestOrderRejected(order as unknown as TestOrder);
       }
       setActionMessage(`${order.order_no} ${action === 'approve' ? (role === 'manager' ? 'approved by manager' : 'sent to manager approval') : 'rejected'}.`);
       setShowManagerOverride(false);
