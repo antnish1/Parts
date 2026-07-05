@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
+import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
 import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderRejected } from '../../services/testApproval.service';
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
@@ -82,6 +83,8 @@ export function OrderDetailPage() {
   const canApprove = ((role === 'developer' || isSelectedSuperApprover || role === 'manager') && rawStatus.includes('pending'));
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = canAdmin && rawStatus === 'approved';
+  const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
+  const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Saving comment' : attachmentBusy ? 'Handling attachment' : 'Working';
   const totalQty = items.reduce((sum, item) => sum + getEffectiveQty(item), 0);
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
   const totalPending = items.reduce((sum, item) => sum + getPendingQty(item), 0);
@@ -205,15 +208,16 @@ export function OrderDetailPage() {
 
   return (
     <PageCard eyebrow="Orders" title="Order Detail" description="Shared order review workspace.">
+      <BlockingActionOverlay show={isBlockingAction} label={blockingLabel} />
       <div className="no-print mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[#d9dee7] bg-[#f8fbff] p-2">
-        {canProcess ? <input className="h-10 w-56 rounded-lg border border-[#82C8E5] bg-white px-3 text-sm font-black uppercase text-[#0f172a] outline-none focus:border-[#0f4c81]" placeholder="DBMS Order No." value={processReference} onChange={(event) => setProcessReference(event.target.value)} disabled={busyAction === 'process'} /> : null}
-        {canProcess ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff] disabled:opacity-50" disabled={busyAction === 'process'} onClick={() => void runProcessAction()}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
-        {canApprove ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#ecfdf3] disabled:opacity-50" disabled={!!busyAction} onClick={() => void runApprovalAction('approve')}>Approve</button> : null}
-        {canApprove ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#b42318] hover:bg-[#fff1f3] disabled:opacity-50" disabled={!!busyAction} onClick={() => void runApprovalAction('reject')}>Reject</button> : null}
-        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" onClick={downloadCsv}>Download</button>
-        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" onClick={() => window.print()}>Print</button>
-        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" onClick={() => document.getElementById('order-comments')?.scrollIntoView({ behavior: 'smooth' })}>Comment</button>
-        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" onClick={() => navigate(-1)}>Back</button>
+        {canProcess ? <input className="h-10 w-56 rounded-lg border border-[#82C8E5] bg-white px-3 text-sm font-black uppercase text-[#0f172a] outline-none focus:border-[#0f4c81]" placeholder="DBMS Order No." value={processReference} onChange={(event) => setProcessReference(event.target.value)} disabled={isBlockingAction} /> : null}
+        {canProcess ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runProcessAction()}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
+        {canApprove ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#ecfdf3] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runApprovalAction('approve')}>Approve</button> : null}
+        {canApprove ? <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#b42318] hover:bg-[#fff1f3] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runApprovalAction('reject')}>Reject</button> : null}
+        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" disabled={isBlockingAction} onClick={downloadCsv}>Download</button>
+        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" disabled={isBlockingAction} onClick={() => window.print()}>Print</button>
+        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" disabled={isBlockingAction} onClick={() => document.getElementById('order-comments')?.scrollIntoView({ behavior: 'smooth' })}>Comment</button>
+        <button type="button" className="h-10 rounded-lg border border-[#d9dee7] bg-white px-4 text-xs font-black text-[#0f172a] hover:bg-[#e6f4ff]" disabled={isBlockingAction} onClick={() => navigate(-1)}>Back</button>
       </div>
 
       {actionMessage ? <p className="no-print mb-2 rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2 text-xs font-semibold text-[#344054]">{actionMessage}</p> : null}
@@ -237,12 +241,12 @@ export function OrderDetailPage() {
       <section id="order-comments" className="mt-3 rounded-xl border border-[#d9dee7] bg-white p-3">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f4c81]">Comments ({comments.length})</p>
-          <button type="button" className="rounded-md border border-[#d9dee7] px-2 py-1 text-[10px] font-black text-[#0f172a]" onClick={() => setShowLogs((current) => !current)}>{showLogs ? 'Hide Logs' : 'Show Logs'}</button>
+          <button type="button" disabled={isBlockingAction} className="rounded-md border border-[#d9dee7] px-2 py-1 text-[10px] font-black text-[#0f172a]" onClick={() => setShowLogs((current) => !current)}>{showLogs ? 'Hide Logs' : 'Show Logs'}</button>
           {attachmentMessage ? <p className="text-xs text-[#667085]">{attachmentMessage}</p> : null}
         </div>
         <form onSubmit={handleCommentSubmit} className="no-print mb-2 flex gap-2">
-          <input className="h-9 flex-1 rounded-md border border-[#d9dee7] bg-white px-3 text-xs text-[#0f172a] outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} />
-          <button type="submit" disabled={commentMutation.isPending} className="rounded-md border border-[#d9dee7] px-3 text-xs font-black text-[#0f172a] disabled:opacity-50">{commentMutation.isPending ? 'Saving' : 'Add'}</button>
+          <input className="h-9 flex-1 rounded-md border border-[#d9dee7] bg-white px-3 text-xs text-[#0f172a] outline-none focus:border-[#82C8E5]" placeholder="Add comment for this order" value={commentText} onChange={(event) => setCommentText(event.target.value)} disabled={isBlockingAction} />
+          <button type="submit" disabled={isBlockingAction} className="rounded-md border border-[#d9dee7] px-3 text-xs font-black text-[#0f172a] disabled:opacity-50">{commentMutation.isPending ? 'Saving' : 'Add'}</button>
         </form>
         {commentMessage ? <p className="mb-2 text-xs text-[#667085]">{commentMessage}</p> : null}
         <div className="space-y-2">
@@ -251,8 +255,8 @@ export function OrderDetailPage() {
               <p className="font-semibold text-[#0f172a]">{comment.body || '-'}</p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#667085]">{comment.comment_type} • {formatDate(comment.created_at)}</p>
               <div className="no-print mt-2 flex flex-wrap items-center gap-3">
-                <label className="cursor-pointer text-[11px] font-black text-[#0f4c81] hover:underline">{attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}<input type="file" className="hidden" disabled={!!attachmentBusy} onChange={(event) => void handleAttachmentUpload(comment.id, event)} /></label>
-                {comment.attachments.map((attachment) => (<button key={attachment.id} type="button" className="text-[11px] font-black text-[#0f4c81] hover:underline disabled:opacity-50" disabled={!!attachmentBusy} onClick={() => void handleAttachmentDownload(attachment.id)}>{attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}</button>))}
+                <label className="cursor-pointer text-[11px] font-black text-[#0f4c81] hover:underline">{attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}<input type="file" className="hidden" disabled={isBlockingAction} onChange={(event) => void handleAttachmentUpload(comment.id, event)} /></label>
+                {comment.attachments.map((attachment) => (<button key={attachment.id} type="button" className="text-[11px] font-black text-[#0f4c81] hover:underline disabled:opacity-50" disabled={isBlockingAction} onClick={() => void handleAttachmentDownload(attachment.id)}>{attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}</button>))}
               </div>
             </div>
           ))}
