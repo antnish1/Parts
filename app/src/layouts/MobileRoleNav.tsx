@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
 import { canAccessRoute, type UserRole } from '../auth/roleGuards';
+import type { NavItem } from './RoleAwareNav';
 
 type MobileRoleNavProps = {
-  items: Array<{ to: string; label: string; icon: LucideIcon }>;
+  items: NavItem[];
   role?: UserRole;
 };
 
@@ -33,6 +33,7 @@ export function MobileRoleNav({ items, role }: MobileRoleNavProps) {
             >
               <Icon className="h-3.5 w-3.5" />
               {item.label}
+              {typeof item.badge === 'number' ? <span className="rounded-full bg-[#ef4444] px-1.5 py-0.5 text-[10px] font-black leading-none text-white">{item.badge}</span> : null}
             </NavLink>
           );
         })}
