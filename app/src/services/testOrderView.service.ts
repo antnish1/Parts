@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { currentBranchScopeIncludes } from './branchScope.service';
+import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
 
 export type TestOrderView = {
   id: string;
@@ -107,7 +107,10 @@ export async function getTestOrderView(orderId: string) {
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
-  if (!(await currentBranchScopeIncludes((order as RawOrderView).branch))) throw new Error('This order belongs to another branch.');
+  const rawOrder = order as unknown as RawOrderView;
+  if (!(await currentBranchScopeIncludes(rawOrder.branch))) throw new Error('This order belongs to another branch.');
+  const profile = await getCurrentPortalProfile();
+  if (profile?.role === 'super' && rawOrder.approver_id !== profile.id) throw new Error('This order is assigned to another approver.');
 
   const { data: items, error: itemError } = await supabase
     .from('test_order_items')
@@ -140,5 +143,5 @@ export async function getTestOrderView(orderId: string) {
     attachments: attachmentMap.get(comment.id) ?? [],
   })) as TestOrderComment[];
 
-  return { order: normalizeOrderView(order as unknown as RawOrderView), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
+  return { order: normalizeOrderView(rawOrder), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
 }
