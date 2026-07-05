@@ -274,6 +274,30 @@ body {
   color: #0f172a !important;
 }
 
+/* File upload buttons must stay readable after dark Tailwind classes are light-themed. */
+label:has(input[type='file']) {
+  background: #e6f4ff !important;
+  border: 1px solid #82c8e5 !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.10) !important;
+}
+
+label:has(input[type='file']) *,
+label:has(input[type='file']):hover *,
+[data-theme='light-pro'] label:has(input[type='file']) *,
+[data-theme='light-pro'] label:has(input[type='file']):hover * {
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+label:has(input[type='file']):hover,
+[data-theme='light-pro'] label:has(input[type='file']):hover {
+  background: #d7ecff !important;
+  border-color: #1677ff !important;
+  color: #0f172a !important;
+}
+
 @media print {
   body {
     background: #ffffff !important;
