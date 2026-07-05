@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { useAuth } from '../../auth/useAuth';
 import { getOrderList } from '../../services/orderList.service';
 import { acceptTestOrderReviewEdits, approveTestOrderWithOriginalQty, resetTestOrderItemQty, setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected, updateTestOrderItemQty, zeroTestOrderItemForReview } from '../../services/testApproval.service';
@@ -18,6 +19,8 @@ export function ApprovalsPage() {
   const [reviewId, setReviewId] = useState('');
   const [editedQty, setEditedQty] = useState<Record<string, string>>({});
   const { data: orders = [], refetch, isLoading } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
+  type OrderRow = (typeof orders)[number];
+  const [pendingOverride, setPendingOverride] = useState<{ order: OrderRow; action: 'approve' | 'managerApprove' } | null>(null);
   const reviewQuery = useQuery({ queryKey: ['approval-review', reviewId], queryFn: () => getTestOrderView(reviewId), enabled: !!reviewId });
 
   const pendingOrders = useMemo(() => orders.filter((order) => {
@@ -40,16 +43,19 @@ export function ApprovalsPage() {
     rejected: orders.filter((order) => order.status === 'rejected').length,
   };
 
-  function confirmManagerOverride(order: (typeof orders)[number]) {
-    if (role !== 'manager') return true;
-    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return true;
-    const approverName = order.approver?.full_name || 'The selected super approver';
-    return window.confirm(`${approverName} is been selected as approver of the order, are you sure you want to approve this order directly?`);
+  function needsManagerOverride(order: OrderRow, action: 'approve' | 'reject' | 'managerApprove' | 'managerReject') {
+    if (role !== 'manager') return false;
+    if (action !== 'approve' && action !== 'managerApprove') return false;
+    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
+    return true;
   }
 
-  async function runAction(order: (typeof orders)[number], action: 'approve' | 'reject' | 'managerApprove' | 'managerReject') {
+  async function runAction(order: OrderRow, action: 'approve' | 'reject' | 'managerApprove' | 'managerReject', confirmedOverride = false) {
     setMessage('');
-    if ((action === 'approve' || action === 'managerApprove') && !confirmManagerOverride(order)) return;
+    if (!confirmedOverride && needsManagerOverride(order, action)) {
+      setPendingOverride({ order, action: action === 'managerApprove' ? 'managerApprove' : 'approve' });
+      return;
+    }
     setBusyId(`${order.id}-${action}`);
     try {
       if (action === 'approve') {
@@ -61,6 +67,7 @@ export function ApprovalsPage() {
       if (action === 'managerReject') await setTestOrderManagerRejected(order);
       const labels = { approve: role === 'manager' ? 'approved by manager' : 'sent to manager approval', reject: 'rejected', managerApprove: 'manager approved', managerReject: 'manager rejected' };
       setMessage(`${order.order_no} ${labels[action]}.`);
+      setPendingOverride(null);
       if (reviewId === order.id) setReviewId('');
       await refetch();
     } catch (error) {
@@ -117,7 +124,7 @@ export function ApprovalsPage() {
 
   async function runReviewOrderAction(action: 'acceptEdits' | 'approveOriginal') {
     if (!reviewQuery.data) return;
-    const order = reviewQuery.data.order as unknown as (typeof orders)[number];
+    const order = reviewQuery.data.order as unknown as OrderRow;
     setMessage('');
     setBusyId(`${order.id}-${action}`);
     try {
@@ -157,7 +164,23 @@ export function ApprovalsPage() {
               const isManagerQueue = order.status === 'pending_manager_approval';
               const approveLabel = role === 'manager' ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
               return (
-                <tr key={order.id} className={getStatusRowClasses(order.status)}><td className="px-2.5 py-2 font-black text-white">{order.order_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{order.customer_name ?? '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{order.machine_no ?? '-'}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{order.approver?.full_name ?? '-'}</td><td className="px-2.5 py-2"><StatusBadge status={order.status} /></td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3"><button className="font-black text-[#82C8E5] hover:underline" onClick={() => setReviewId(order.id)}>Review</button><Link className="font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link><button className="font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runAction(order, isManagerQueue ? 'managerApprove' : 'approve')}>{approveLabel}</button><button className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runAction(order, isManagerQueue && role === 'manager' ? 'managerReject' : 'reject')}>Reject</button></div></td></tr>
+                <tr key={order.id} className={getStatusRowClasses(order.status)}>
+                  <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.customer_name ?? '-'}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.machine_no ?? '-'}</td>
+                  <td className="px-2.5 py-2 text-[#d8e3ee]">{order.approver?.full_name ?? '-'}</td>
+                  <td className="px-2.5 py-2"><StatusBadge status={order.status} /></td>
+                  <td className="px-2.5 py-2 text-right">
+                    <div className="flex justify-end gap-3">
+                      <button className="font-black text-[#82C8E5] hover:underline" onClick={() => setReviewId(order.id)}>Review</button>
+                      <Link className="font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>View</Link>
+                      <button className="font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runAction(order, isManagerQueue ? 'managerApprove' : 'approve')}>{approveLabel}</button>
+                      <button className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={!!busyId} onClick={() => void runAction(order, isManagerQueue && role === 'manager' ? 'managerReject' : 'reject')}>Reject</button>
+                    </div>
+                  </td>
+                </tr>
               );
             })}
           </tbody>
@@ -173,6 +196,15 @@ export function ApprovalsPage() {
           <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[1080px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Part No</th><th className="px-2.5 py-2">Description</th><th className="px-2.5 py-2 text-right">Qty</th><th className="px-2.5 py-2 text-right">Prev 30D</th><th className="px-2.5 py-2 text-right">Edited</th><th className="px-2.5 py-2 text-right">DNP</th><th className="px-2.5 py-2 text-right">Value</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-[#263244]">{reviewQuery.data?.items.map((item) => { const suggested = Math.max(0, Number(item.qty ?? 0) - Number(item.previous_30d_qty ?? 0)); return (<tr key={item.id} className="bg-[#111827]"><td className="px-2.5 py-2 font-black text-white">{item.part_no}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{item.description || '-'}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.qty}</td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.previous_30d_qty ?? 0}</td><td className="px-2.5 py-2 text-right"><input className="w-20 rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1 text-right text-xs text-white outline-none focus:border-[#82C8E5]" value={editedQty[item.id] ?? String(item.edited_qty ?? getEffectiveQty(item))} onChange={(event) => setEditedQty((current) => ({ ...current, [item.id]: event.target.value }))} /></td><td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.dnp ?? 0}</td><td className="px-2.5 py-2 text-right font-black text-white">₹{getEffectiveValue(item).toFixed(2)}</td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3"><button className="font-black text-[#c7d2df] hover:underline" onClick={() => setEditedQty((current) => ({ ...current, [item.id]: String(suggested) }))}>Suggest</button><button className="font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void saveItemQty(item.id)}>Save</button><button className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void zeroItemQty(item.id)}>Zero</button><button className="font-black text-[#c7d2df] hover:underline disabled:opacity-40" disabled={busyId === item.id} onClick={() => void resetItemQty(item.id)}>Reset</button></div></td></tr>); })}</tbody></table></div>
         </div>
       ) : null}
+
+      <ApprovalOverrideConfirm
+        open={!!pendingOverride}
+        approverName={pendingOverride?.order.approver?.full_name || 'The selected super approver'}
+        orderNo={pendingOverride?.order.order_no}
+        busy={!!busyId}
+        onCancel={() => setPendingOverride(null)}
+        onConfirm={() => pendingOverride ? void runAction(pendingOverride.order, pendingOverride.action, true) : undefined}
+      />
     </PageCard>
   );
 }
