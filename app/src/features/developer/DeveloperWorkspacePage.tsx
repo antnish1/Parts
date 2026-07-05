@@ -95,14 +95,14 @@ export function DeveloperWorkspacePage() {
         <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Create Supabase User</p>
         <form onSubmit={addUser} className="grid gap-2 lg:grid-cols-[0.8fr_1fr_1fr_1fr_1fr_150px_auto]">
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="User ID e.g. DAMOH01" value={loginId} onChange={(event) => setLoginId(event.target.value.toUpperCase())} />
-          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Backend email" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Email optional if User ID used" value={email} onChange={(event) => setEmail(event.target.value)} />
           <input type="password" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Branch" value={branch} onChange={(event) => setBranch(event.target.value)} />
           <select className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={role} onChange={(event) => setRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select>
           <button type="submit" className="text-xs font-black text-[#82C8E5] hover:underline">Create</button>
         </form>
-        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'User ID is shown to the staff. Backend email remains the actual Supabase Auth credential.'}</p>
+        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'When User ID is filled, login uses an internal auth alias like damoh01@portal.local. Staff only enters DAMOH01 and password.'}</p>
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
