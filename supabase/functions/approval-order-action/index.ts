@@ -36,52 +36,67 @@ serve(async (req) => {
     if (error) throw error;
   }
 
+  async function updateOrder(status: string, approvalStatus: string) {
+    const { error } = await adminClient.from('test_orders').update({ status, approval_status: approvalStatus, updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+    if (error) throw error;
+  }
+
+  async function updateItems(rowStatus: string, fromStatuses: string[]) {
+    const { error } = await adminClient.from('test_order_items').update({ row_status: rowStatus, updated_at: now }).eq('order_id', order.id).in('row_status', fromStatuses);
+    if (error) throw error;
+  }
+
   function isSelectedApprover() {
     return order.approver_id && order.approver_id === profile.id;
+  }
+
+  async function rejectByManager() {
+    if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can reject manager-pending order' }, 403);
+    await updateOrder('rejected', 'rejected');
+    await updateItems('rejected', ['pending_approval', 'pending_manager_approval', 'approved']);
+    await event('MANAGER_REJECTED', 'rejected', `Manager rejected order item rows. Original approver: ${approver?.full_name || '-'}.`);
+    return json({ ok: true });
   }
 
   try {
     if (action === 'approve') {
       if (profile.role === 'manager') {
-        await adminClient.from('test_orders').update({ status: 'approved', approval_status: 'approved', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-        await adminClient.from('test_order_items').update({ row_status: 'approved', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'pending_manager_approval']);
+        await updateOrder('approved', 'approved');
+        await updateItems('approved', ['pending_approval', 'pending_manager_approval']);
         await event('MANAGER_DIRECT_APPROVED', 'approved', 'Manager directly approved order item rows.');
         return json({ ok: true });
       }
       if (profile.role !== 'developer' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can approve this order.' }, 403);
-      await adminClient.from('test_orders').update({ status: 'pending_manager_approval', approval_status: 'pending_manager_approval', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-      await adminClient.from('test_order_items').update({ row_status: 'pending_manager_approval', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'approved']);
+      await updateOrder('pending_manager_approval', 'pending_manager_approval');
+      await updateItems('pending_manager_approval', ['pending_approval', 'approved']);
       await event('SUPER_APPROVED_PENDING_MANAGER', 'pending_manager_approval', `Approved by ${profile.full_name || 'super'}; pending manager approval.`);
       return json({ ok: true });
     }
     if (action === 'reject') {
+      if (profile.role === 'manager' || profile.role === 'developer') return await rejectByManager();
       if (profile.role === 'super' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can reject this order.' }, 403);
-      await adminClient.from('test_orders').update({ status: 'rejected', approval_status: 'rejected', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-      await adminClient.from('test_order_items').update({ row_status: 'rejected', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'pending_manager_approval', 'approved']);
+      await updateOrder('rejected', 'rejected');
+      await updateItems('rejected', ['pending_approval', 'pending_manager_approval', 'approved']);
       await event('ORDER_REJECTED', 'rejected', 'Order item rows rejected.');
       return json({ ok: true });
     }
     if (action === 'forward_manager') {
       if (profile.role !== 'developer' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can forward this order to manager.' }, 403);
       const managerName = String(body.managerName ?? 'Manager').trim() || 'Manager';
-      await adminClient.from('test_orders').update({ status: 'pending_manager_approval', approval_status: 'pending_manager_approval', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-      await adminClient.from('test_order_items').update({ row_status: 'pending_manager_approval', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'approved']);
+      await updateOrder('pending_manager_approval', 'pending_manager_approval');
+      await updateItems('pending_manager_approval', ['pending_approval', 'approved']);
       await event('SUPER_FORWARDED_MANAGER', 'pending_manager_approval', `Forwarded to ${managerName}.`);
       return json({ ok: true });
     }
     if (action === 'manager_approve') {
       if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can approve manager-pending order' }, 403);
-      await adminClient.from('test_orders').update({ status: 'approved', approval_status: 'approved', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-      await adminClient.from('test_order_items').update({ row_status: 'approved', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'pending_manager_approval']);
+      await updateOrder('approved', 'approved');
+      await updateItems('approved', ['pending_approval', 'pending_manager_approval']);
       await event('MANAGER_APPROVED', 'approved', `Manager approved order item rows. Original approver: ${approver?.full_name || '-'}.`);
       return json({ ok: true });
     }
     if (action === 'manager_reject') {
-      if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can reject manager-pending order' }, 403);
-      await adminClient.from('test_orders').update({ status: 'rejected', approval_status: 'rejected', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
-      await adminClient.from('test_order_items').update({ row_status: 'rejected', updated_at: now }).eq('order_id', order.id).in('row_status', ['pending_approval', 'pending_manager_approval']);
-      await event('MANAGER_REJECTED', 'rejected', 'Manager rejected order item rows.');
-      return json({ ok: true });
+      return await rejectByManager();
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (error) {
