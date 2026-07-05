@@ -99,7 +99,9 @@ export async function getTestOrders(): Promise<TestOrder[]> {
     .order('created_at', { ascending: false })
     .limit(50);
 
-  if (branchValues?.length) query = query.in('branch', branchValues);
+  if (branchValues !== null) {
+    query = query.in('branch', branchValues.length ? branchValues : ['__NO_BRANCH_SCOPE__']);
+  }
 
   const { data, error } = await query;
 
