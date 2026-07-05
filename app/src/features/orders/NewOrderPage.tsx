@@ -26,16 +26,8 @@ type BranchOption = { id: string; branch_name: string; branch_code: string };
 const defaultItem: ItemLine = { lineId: 1, partNo: '', description: '', dnp: '', qty: '', previous30dQty: 0 };
 const fallbackBranches: BranchOption[] = [{ branch_name: 'Jabalpur BHL', branch_code: 'JBP_BHL', id: 'fallback' }];
 
-function normalizeBranchKey(value: string | null | undefined) {
-  return (value || '').trim().replace(/[\s_-]+/g, '').toUpperCase();
-}
-
-function resolveBranchName(branches: BranchOption[], value: string | null | undefined) {
-  const key = normalizeBranchKey(value);
-  if (!key) return '';
-  const match = branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key);
-  return match?.branch_name ?? value?.trim() ?? '';
-}
+function normalizeBranchKey(value: string | null | undefined) { return (value || '').trim().replace(/[\s_-]+/g, '').toUpperCase(); }
+function resolveBranchName(branches: BranchOption[], value: string | null | undefined) { const key = normalizeBranchKey(value); if (!key) return ''; const match = branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key); return match?.branch_name ?? value?.trim() ?? ''; }
 
 export function NewOrderPage() {
   const queryClient = useQueryClient();
@@ -52,41 +44,16 @@ export function NewOrderPage() {
   const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: '', orderFor: '', approverId: '', machineNo: '', customerName: '', callId: '', warrantyStatus: '' });
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
 
-  const branchOptions = useMemo(() => {
-    const list = (branches.length ? branches : fallbackBranches) as BranchOption[];
-    if (role !== 'branch' || !profile?.branch) return list;
-    const profileBranchName = resolveBranchName(list, profile.branch);
-    if (!profileBranchName) return list;
-    const exists = list.some((branch) => normalizeBranchKey(branch.branch_name) === normalizeBranchKey(profileBranchName));
-    return exists ? list : [{ id: 'profile-branch', branch_name: profileBranchName, branch_code: profileBranchName }, ...list];
-  }, [branches, profile?.branch, role]);
-
+  const branchOptions = useMemo(() => { const list = (branches.length ? branches : fallbackBranches) as BranchOption[]; if (role !== 'branch' || !profile?.branch) return list; const profileBranchName = resolveBranchName(list, profile.branch); if (!profileBranchName) return list; const exists = list.some((branch) => normalizeBranchKey(branch.branch_name) === normalizeBranchKey(profileBranchName)); return exists ? list : [{ id: 'profile-branch', branch_name: profileBranchName, branch_code: profileBranchName }, ...list]; }, [branches, profile?.branch, role]);
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
 
-  useEffect(() => {
-    if (role !== 'branch' || !profile?.branch) return;
-    const nextBranch = resolveBranchName(branchOptions, profile.branch);
-    if (!nextBranch) return;
-    setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch }));
-  }, [branchOptions, profile?.branch, role]);
+  useEffect(() => { if (role !== 'branch' || !profile?.branch) return; const nextBranch = resolveBranchName(branchOptions, profile.branch); if (!nextBranch) return; setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch })); }, [branchOptions, profile?.branch, role]);
 
   const mutation = useMutation({
     mutationFn: createTestOrder,
-    onSuccess: (order) => {
-      const approver = approvers.find((item) => item.id === form.approverId);
-      setSubmitStarted(false);
-      setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue });
-      setMessage('Order created successfully.');
-      queryClient.invalidateQueries({ queryKey: ['test-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
-    },
-    onError: (error) => {
-      setSubmitStarted(false);
-      setMessage(error instanceof Error ? error.message : 'Order creation failed. Check write policies.');
-    },
+    onSuccess: (order) => { const approver = approvers.find((item) => item.id === form.approverId); setSubmitStarted(false); setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue }); setMessage(''); queryClient.invalidateQueries({ queryKey: ['test-orders'] }); queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] }); queryClient.invalidateQueries({ queryKey: ['order-list-paged'] }); },
+    onError: (error) => { setSubmitStarted(false); setMessage(error instanceof Error ? error.message : 'Order creation failed. Check write policies.'); },
   });
-
   const isOrderSubmitting = submitStarted || mutation.isPending;
 
   function updateField(field: keyof typeof form, value: string) { setForm((current) => ({ ...current, [field]: value })); }
@@ -94,91 +61,29 @@ export function NewOrderPage() {
   function findPart(partNo: string) { const normalized = normalizePartNo(partNo); return parts.find((part) => normalizePartNo(part.part_no) === normalized); }
   function partCategory(partNo: string) { const part = findPart(partNo); return part?.cat1 || part?.cat2 || '-'; }
 
-  async function lookupMachine() {
-    const normalized = normalizeMachineNo(form.machineNo);
-    if (!normalized || form.orderFor === 'Stock') return;
-    setMachineStatus('Checking machine...');
-    try {
-      const machine = await getTestMachineByNo(normalized);
-      updateField('machineNo', normalized);
-      if (machine?.customer_name) {
-        updateField('customerName', machine.customer_name);
-        setMachineStatus(`Customer found: ${machine.customer_name}`);
-      } else {
-        updateField('customerName', '');
-        setManualCustomerPrompt({ open: true, machineNo: normalized, customerName: '' });
-        setMachineStatus('Machine not found in machine master. Enter customer name in the popup.');
-      }
-    } catch (error) {
-      setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.');
-    }
-  }
-
-  function applyManualCustomerName() {
-    const customerName = manualCustomerPrompt.customerName.trim();
-    if (!customerName) return setMessage('Customer name is required for new machine.');
-    updateField('machineNo', manualCustomerPrompt.machineNo);
-    updateField('customerName', customerName);
-    setMachineStatus(`New machine ${manualCustomerPrompt.machineNo} will be saved to machine_master after order submit.`);
-    setManualCustomerPrompt({ open: false, machineNo: '', customerName: '' });
-  }
-
-  async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) {
-    const normalized = normalizePartNo(partNo);
-    if (!normalized || !branch) return;
-    try { updateItem(lineId, 'previous30dQty', await getTestLast30QtyByBranchPart(branch, normalized, 30)); }
-    catch (error) { console.warn('Previous quantity lookup failed', error); }
-  }
-
-  function handlePartChange(lineId: number, value: string) {
-    const normalized = normalizePartNo(value);
-    const part = findPart(normalized);
-    setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, partNo: normalized, description: part?.description ?? '', dnp: part?.dnp != null ? String(part.dnp) : '' } : item)));
-    if (part) void refreshPreviousQty(lineId, normalized);
-  }
-
-  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (!file) return;
-    try {
-      const result = await parseBulkPartsFile(file, bulkHasHeader, parts);
-      const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 }));
-      if (!nextItems.length) return setMessage(`No valid item rows found. Detected part column ${result.detectedPartColumn}, quantity column ${result.detectedQtyColumn}, source rows ${result.totalSourceRows}, invalid rows ${result.failed}. Expected Material No and Billed Qty columns.`);
-      setItems(nextItems);
-      nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo));
-      const unknownNote = result.unknown ? ` Unknown in part master: ${result.unknown}. Review part numbers before creating order.` : '';
-      setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}. Detected part column ${result.detectedPartColumn}, qty column ${result.detectedQtyColumn}.${unknownNote}`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Bulk upload failed.');
-    }
-  }
-
+  async function lookupMachine() { const normalized = normalizeMachineNo(form.machineNo); if (!normalized || form.orderFor === 'Stock') return; setMachineStatus('Checking machine...'); try { const machine = await getTestMachineByNo(normalized); updateField('machineNo', normalized); if (machine?.customer_name) { updateField('customerName', machine.customer_name); setMachineStatus(`Customer found: ${machine.customer_name}`); } else { updateField('customerName', ''); setManualCustomerPrompt({ open: true, machineNo: normalized, customerName: '' }); setMachineStatus('Machine not found in machine master. Enter customer name in the popup.'); } } catch (error) { setMachineStatus(error instanceof Error ? error.message : 'Machine lookup failed.'); } }
+  function applyManualCustomerName() { const customerName = manualCustomerPrompt.customerName.trim(); if (!customerName) return setMessage('Customer name is required for new machine.'); updateField('machineNo', manualCustomerPrompt.machineNo); updateField('customerName', customerName); setMachineStatus(`New machine ${manualCustomerPrompt.machineNo} will be saved to machine_master after order submit.`); setManualCustomerPrompt({ open: false, machineNo: '', customerName: '' }); }
+  async function refreshPreviousQty(lineId: number, partNo: string, branch = form.branch) { const normalized = normalizePartNo(partNo); if (!normalized || !branch) return; try { updateItem(lineId, 'previous30dQty', await getTestLast30QtyByBranchPart(branch, normalized, 30)); } catch (error) { console.warn('Previous quantity lookup failed', error); } }
+  function handlePartChange(lineId: number, value: string) { const normalized = normalizePartNo(value); const part = findPart(normalized); setItems((current) => current.map((item) => (item.lineId === lineId ? { ...item, partNo: normalized, description: part?.description ?? '', dnp: part?.dnp != null ? String(part.dnp) : '' } : item))); if (part) void refreshPreviousQty(lineId, normalized); }
+  async function handleBulkUpload(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; event.target.value = ''; if (!file) return; try { const result = await parseBulkPartsFile(file, bulkHasHeader, parts); const nextItems: ItemLine[] = result.rows.map((row, index) => ({ lineId: Date.now() + index, partNo: row.partNo, description: row.description, dnp: row.dnp, qty: String(row.qty), previous30dQty: 0 })); if (!nextItems.length) return setMessage(`No valid item rows found. Detected part column ${result.detectedPartColumn}, quantity column ${result.detectedQtyColumn}, source rows ${result.totalSourceRows}, invalid rows ${result.failed}. Expected Material No and Billed Qty columns.`); setItems(nextItems); nextItems.forEach((item) => void refreshPreviousQty(item.lineId, item.partNo)); const unknownNote = result.unknown ? ` Unknown in part master: ${result.unknown}. Review part numbers before creating order.` : ''; setMessage(`Bulk upload complete. Added: ${result.success}, failed: ${result.failed}, merged duplicates: ${Math.max(0, result.merged)}. Detected part column ${result.detectedPartColumn}, qty column ${result.detectedQtyColumn}.${unknownNote}`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Bulk upload failed.'); } }
   function addItem() { setItems((current) => [...current, { ...defaultItem, lineId: Date.now() }]); }
   function removeItem(lineId: number) { setItems((current) => (current.length === 1 ? current : current.filter((item) => item.lineId !== lineId))); }
-
-  function stopWithMessage(text: string) {
-    setSubmitStarted(false);
-    setMessage(text);
-  }
+  function stopWithMessage(text: string) { setSubmitStarted(false); setMessage(text); }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitStarted(true);
     setMessage('');
     setOrderSummary(null);
-
     const parsedItems = items.map((item) => ({ partNo: normalizePartNo(item.partNo), description: item.description.trim(), dnp: Number(item.dnp), qty: Number(item.qty), previous30dQty: item.previous30dQty || 0 }));
     const duplicatePart = parsedItems.find((item, index) => parsedItems.findIndex((candidate) => candidate.partNo === item.partNo) !== index);
     const invalidItem = parsedItems.find((item) => !item.partNo || !item.description || !Number.isFinite(item.dnp) || !Number.isFinite(item.qty) || item.dnp < 0 || item.qty <= 0 || !Number.isInteger(item.qty));
-
     if (!form.branch || !form.orderType || !form.orderFor) return stopWithMessage('Please fill Order Type and Order For.');
     if (!form.approverId) return stopWithMessage('Please select approver.');
     if (form.orderType === 'VOR' && form.orderFor !== 'Customer') return stopWithMessage('VOR order must be for Customer.');
     if (form.orderFor === 'Customer' && (!form.machineNo || !form.customerName || !form.warrantyStatus)) return stopWithMessage('Customer order requires machine number, customer name, and machine type.');
     if (duplicatePart) return stopWithMessage(`Duplicate item not allowed: ${duplicatePart.partNo}`);
     if (invalidItem) return stopWithMessage('Each item must have valid master part, Qty, Description, and DNP. Qty must be a whole number above zero.');
-
     const payload = { branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems };
     window.setTimeout(() => mutation.mutate(payload), 0);
   }
