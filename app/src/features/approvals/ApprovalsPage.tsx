@@ -12,6 +12,21 @@ import { getTestOrderView } from '../../services/testOrderView.service';
 import { getEffectiveQty, getEffectiveValue } from '../../lib/orderLogic';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
 
+function isManagerApprovalStage(order: { status?: string | null; approval_status?: string | null }) {
+  return `${order.status ?? ''} ${order.approval_status ?? ''}`
+    .toLowerCase()
+    .replace(/[^a-z]/g, '')
+    .includes('pendingmanagerapproval');
+}
+
+function isPendingWorkflow(order: { status?: string | null; approval_status?: string | null }) {
+  return `${order.status ?? ''} ${order.approval_status ?? ''}`
+    .toLowerCase()
+    .includes('pending');
+}
+
+
+
 export function ApprovalsPage() {
   const { role, profile } = useAuth();
   const [message, setMessage] = useState('');
@@ -25,7 +40,7 @@ export function ApprovalsPage() {
   const reviewQuery = useQuery({ queryKey: ['approval-review', reviewId], queryFn: () => getTestOrderView(reviewId), enabled: !!reviewId });
 
   const pendingOrders = useMemo(() => orders.filter((order) => {
-    if (!order.status.includes('pending')) return false;
+    if (!isPendingWorkflow(order)) return false;
     if (role === 'super') return order.approver_id === profile?.id && order.status === 'pending_approval';
     if (role === 'manager') return true;
     return role === 'developer';
@@ -39,7 +54,7 @@ export function ApprovalsPage() {
 
   const counts = {
     pending: pendingOrders.filter((order) => order.status === 'pending_approval').length,
-    manager: pendingOrders.filter((order) => order.status === 'pending_manager_approval').length,
+    manager: pendingOrders.filter((order) => isManagerApprovalStage(order)).length,
     approved: orders.filter((order) => order.status === 'approved').length,
     rejected: orders.filter((order) => order.status === 'rejected').length,
   };
