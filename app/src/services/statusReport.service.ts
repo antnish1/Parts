@@ -2,9 +2,9 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import { normalizePartNo, toNumber } from '../lib/orderLogic';
 
-export type StatusReportResult = { total: number; updated: number; skipped: number; failed: number; errors: string[] };
+export type StatusReportResult = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
 
-type StatusReportRow = {
+export type StatusReportRow = {
   finalOrderNo: string;
   partNo: string;
   billedQty: number;
@@ -13,6 +13,13 @@ type StatusReportRow = {
   invoiceDate: string | null;
   docketNo: string;
   transportName: string;
+  deliveryNo: string;
+  transportMode: string;
+  packingDetail: string;
+  ewayBillNo: string;
+  gstInvoiceNo: string;
+  rawStatus: string;
+  branchName: string;
 };
 
 function keyOf(value: string) {
@@ -70,6 +77,13 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
     invoiceDate: parseDate(cell(row, ['billingdt', 'billingdate', 'billdate', 'invoicedate', 'dbmsinvoicedate'])),
     docketNo: cellText(row, ['docket', 'docketno', 'docketnumber', 'lrno', 'lrnumber', 'awb', 'awbno', 'waybill']).toUpperCase(),
     transportName: cellText(row, ['transportname', 'transport', 'transporter', 'transportername', 'courier', 'carrier']),
+    deliveryNo: cellText(row, ['deliveryno', 'deliverynumber', 'challanno', 'challan', 'delivery']).toUpperCase(),
+    transportMode: cellText(row, ['transportmode', 'mode']).toUpperCase(),
+    packingDetail: cellText(row, ['packingdetail', 'packing', 'packaging']),
+    ewayBillNo: cellText(row, ['ewaybillno', 'ewaybill', 'eway']).toUpperCase(),
+    gstInvoiceNo: cellText(row, ['gstinvoiceno', 'gstinvoice', 'gstbillno']).toUpperCase(),
+    rawStatus: cellText(row, ['status', 'orderstatus', 'rowstatus']),
+    branchName: cellText(row, ['branch', 'branchname', 'plant', 'location']),
   })).filter((row) => row.finalOrderNo && row.partNo);
 }
 
@@ -80,6 +94,7 @@ export async function applyStatusReportRows(rows: StatusReportRow[]): Promise<St
   return {
     total: Number(data?.total ?? rows.length),
     updated: Number(data?.updated ?? 0),
+    inserted: Number(data?.inserted ?? 0),
     skipped: Number(data?.skipped ?? 0),
     failed: Number(data?.failed ?? 0),
     errors: Array.isArray(data?.errors) ? data.errors : [],
