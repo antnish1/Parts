@@ -10,6 +10,46 @@ export function getFeedbackVariant(message: string): FeedbackVariant {
   return 'info';
 }
 
+function getMessageTitle(message: string, tone: FeedbackVariant) {
+  const firstSentence = message.trim().split(/[.!?]/)[0]?.trim();
+  if (firstSentence) return firstSentence;
+  if (tone === 'success') return 'Completed';
+  if (tone === 'error') return 'Action needed';
+  return 'Message';
+}
+
+function getMessageDetails(message: string) {
+  const details: Array<{ label: string; value: string; tone?: 'good' | 'bad' }> = [];
+  const addMatch = message.match(/added:\s*([^,.]+)/i);
+  const failedMatch = message.match(/failed:\s*([^,.]+)/i);
+  const duplicateMatch = message.match(/merged duplicates:\s*([^,.]+)/i);
+  const columnMatch = message.match(/detected part column\s+([^,]+),\s*qty column\s+([^,.]+)/i);
+
+  if (addMatch) details.push({ label: 'Added', value: addMatch[1].trim(), tone: 'good' });
+  if (failedMatch) details.push({ label: 'Failed', value: failedMatch[1].trim(), tone: Number(failedMatch[1].trim()) > 0 ? 'bad' : 'good' });
+  if (duplicateMatch) details.push({ label: 'Merged duplicates', value: duplicateMatch[1].trim() });
+  if (columnMatch) {
+    details.push({ label: 'Part column', value: columnMatch[1].trim() });
+    details.push({ label: 'Qty column', value: columnMatch[2].trim() });
+  }
+  return details;
+}
+
+function getMessageBody(message: string, tone: FeedbackVariant) {
+  const body = message
+    .replace(/^[^.!?]+[.!?]?\s*/, '')
+    .replace(/added:\s*[^,.]+[, .]*/i, '')
+    .replace(/failed:\s*[^,.]+[, .]*/i, '')
+    .replace(/merged duplicates:\s*[^,.]+[, .]*/i, '')
+    .replace(/detected part column\s+[^,]+,\s*qty column\s+[^,.]+[.]?/i, '')
+    .trim();
+
+  if (body) return body;
+  if (tone === 'success') return 'The action has been completed successfully.';
+  if (tone === 'error') return 'Please review the details and try again.';
+  return 'Please review the information below.';
+}
+
 export function ActionLoader({ variant = 'orbit', label = 'Loading' }: { variant?: LoaderVariant; label?: string }) {
   if (variant === 'scanner') {
     return (
@@ -90,50 +130,53 @@ export function FeedbackModal({ message, variant, onClose }: { message: string; 
   const isSuccess = tone === 'success';
   const isError = tone === 'error';
   const Icon = isSuccess ? CheckCircle2 : isError ? AlertTriangle : Info;
+  const title = getMessageTitle(message, tone);
+  const body = getMessageBody(message, tone);
+  const details = getMessageDetails(message);
   const toneClass = isSuccess
-    ? {
-        icon: 'text-[#047857]',
-        iconBox: 'bg-[#ecfdf3] border-[#bbf7d0]',
-        accent: 'bg-[#047857]',
-        glow: 'shadow-[0_14px_45px_rgba(4,120,87,0.16)]',
-        button: 'bg-[#047857] hover:bg-[#065f46]',
-      }
+    ? { icon: 'text-[#047857]', box: 'bg-[#ecfdf3] border-[#bbf7d0]', accent: 'bg-[#047857]', button: 'bg-[#047857] hover:bg-[#065f46]' }
     : isError
-      ? {
-          icon: 'text-[#be123c]',
-          iconBox: 'bg-[#fff1f3] border-[#fecdd3]',
-          accent: 'bg-[#be123c]',
-          glow: 'shadow-[0_14px_45px_rgba(190,18,60,0.16)]',
-          button: 'bg-[#be123c] hover:bg-[#9f1239]',
-        }
-      : {
-          icon: 'text-[#1677ff]',
-          iconBox: 'bg-[#e6f4ff] border-[#bfdbfe]',
-          accent: 'bg-[#1677ff]',
-          glow: 'shadow-[0_14px_45px_rgba(22,119,255,0.16)]',
-          button: 'bg-[#1677ff] hover:bg-[#0f5ed7]',
-        };
+      ? { icon: 'text-[#be123c]', box: 'bg-[#fff1f3] border-[#fecdd3]', accent: 'bg-[#be123c]', button: 'bg-[#be123c] hover:bg-[#9f1239]' }
+      : { icon: 'text-[#1677ff]', box: 'bg-[#e6f4ff] border-[#bfdbfe]', accent: 'bg-[#1677ff]', button: 'bg-[#0f4c81] hover:bg-[#0b3b64]' };
+
+  function detailClass(detail: { tone?: 'good' | 'bad' }) {
+    if (detail.tone === 'good') return 'border-[#bbf7d0] bg-[#f0fdf4] text-[#14532d]';
+    if (detail.tone === 'bad') return 'border-[#fecdd3] bg-[#fff1f3] text-[#9f1239]';
+    return 'border-[#d9e2ec] bg-[#f8fbff] text-[#344054]';
+  }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]/58 px-4 backdrop-blur-sm">
-      <div className={`relative w-full max-w-md overflow-hidden rounded-[1.4rem] border border-[#d9dee7] bg-white ${toneClass.glow}`}>
-        <div className={`h-1.5 w-full ${toneClass.accent}`} />
-        <button type="button" className="absolute right-3 top-3 rounded-full border border-[#d9dee7] bg-white p-1.5 text-[#667085] transition hover:bg-[#f2f4f7] hover:text-[#101827]" onClick={onClose} aria-label="Close message">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f172a]/45 px-4 backdrop-blur-[2px]">
+      <div className="relative w-full max-w-[460px] overflow-hidden rounded-2xl border border-[#d7dee8] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
+        <div className={`h-1 w-full ${toneClass.accent}`} />
+        <button type="button" className="absolute right-3 top-3 rounded-full border border-[#d9dee7] bg-white p-1.5 text-[#667085] transition hover:bg-[#f8fafc] hover:text-[#101827]" onClick={onClose} aria-label="Close message">
           <X className="h-4 w-4" />
         </button>
 
-        <div className="p-5 pt-6">
-          <div className="flex items-start gap-4 pr-8">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${toneClass.iconBox}`}>
-              <Icon className={`h-6 w-6 ${toneClass.icon}`} />
+        <div className="px-5 pb-4 pt-5">
+          <div className="flex items-start gap-3 pr-8">
+            <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${toneClass.box}`}>
+              <Icon className={`h-5 w-5 ${toneClass.icon}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="whitespace-pre-wrap text-base font-black leading-6 text-[#101827]">{message}</p>
+              <p className="text-[15px] font-semibold leading-5 text-[#101827]">{title}</p>
+              <p className="mt-1.5 whitespace-pre-wrap text-sm font-normal leading-5 text-[#475467]">{body}</p>
             </div>
           </div>
 
-          <div className="mt-5 flex justify-end border-t border-[#eef2f6] pt-4">
-            <button type="button" className={`rounded-xl px-5 py-2.5 text-sm font-black text-white transition ${toneClass.button}`} onClick={onClose}>OK</button>
+          {details.length ? (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {details.map((detail) => (
+                <div key={detail.label} className={`rounded-xl border px-3 py-2 ${detailClass(detail)}`}>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.12em] opacity-75">{detail.label}</p>
+                  <p className="mt-0.5 text-sm font-semibold">{detail.value}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="mt-4 flex justify-end border-t border-[#eef2f6] pt-3">
+            <button type="button" className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition ${toneClass.button}`} onClick={onClose}>Okay</button>
           </div>
         </div>
       </div>
