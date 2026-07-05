@@ -35,7 +35,7 @@ export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, custo
         <div className="border-b border-[#e5edf5] bg-[#f8fafc] px-5 py-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d4a600]">Parts Connect Portal</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#0f4c81]">Parts Connect Portal</p>
               <h2 className="mt-1 text-2xl font-black tracking-tight text-[#101827]">Order Created</h2>
             </div>
             <div className="flex items-center gap-2">
@@ -46,9 +46,9 @@ export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, custo
         </div>
 
         <div className="px-5 py-4">
-          <div className="rounded-2xl border border-[#ffd94a] bg-[#0b1020] px-4 py-4 text-center shadow-sm">
+          <div className="rounded-2xl border border-[#c8d3e1] bg-[#0b1020] px-4 py-4 text-center shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#82C8E5]">Order Number</p>
-            <p className="mt-2 break-words text-2xl font-black tracking-tight text-[#ffd94a] sm:text-3xl">{orderNo}</p>
+            <p className="mt-2 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">{orderNo}</p>
           </div>
 
           <div className="mt-4 overflow-hidden rounded-2xl border border-[#e5edf5]">
