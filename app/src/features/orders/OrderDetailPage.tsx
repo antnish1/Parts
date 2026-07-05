@@ -280,11 +280,20 @@ export function OrderDetailPage() {
             </tbody>
           </table>
         </div>
-        <div className="mt-2 grid gap-2 text-xs sm:grid-cols-4">
-          <div className="rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2"><span className="text-[#667085]">Qty</span><p className="font-black text-[#0f172a]">{totalQty}</p></div>
-          <div className="rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2"><span className="text-[#667085]">Billed</span><p className="font-black text-[#0f172a]">{totalBilled}</p></div>
-          <div className="rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2"><span className="text-[#667085]">Pending</span><p className="font-black text-[#0f172a]">{totalPending}</p></div>
-          <div className="rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2"><span className="text-[#667085]">Value</span><p className="font-black text-[#0f172a]">{formatMoney(totalValue)}</p></div>
+        <div className="mt-4 rounded-xl border border-[#c7d7e5] bg-gradient-to-br from-[#f8fbff] via-white to-[#eef8ff] p-3 shadow-[0_10px_26px_rgba(15,76,129,0.08)]">
+          <div className="mb-3 flex items-center justify-between gap-3 border-b border-[#d9e7f2] pb-2">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0f4c81]">Order Totals</p>
+              <p className="text-[11px] font-semibold text-[#667085]">Separate summary calculated from all part rows</p>
+            </div>
+            <div className="rounded-full border border-[#82C8E5] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#0f4c81]">Summary</div>
+          </div>
+          <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg border border-[#d9dee7] bg-white px-3 py-2 shadow-sm"><span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Total Qty</span><p className="mt-1 text-lg font-black text-[#0f172a]">{totalQty}</p></div>
+            <div className="rounded-lg border border-[#d9dee7] bg-white px-3 py-2 shadow-sm"><span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Billed Qty</span><p className="mt-1 text-lg font-black text-[#0f172a]">{totalBilled}</p></div>
+            <div className="rounded-lg border border-[#d9dee7] bg-white px-3 py-2 shadow-sm"><span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Pending Qty</span><p className="mt-1 text-lg font-black text-[#0f4c81]">{totalPending}</p></div>
+            <div className="rounded-lg border border-[#d9dee7] bg-white px-3 py-2 shadow-sm"><span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Total Value</span><p className="mt-1 text-lg font-black text-[#0f172a]">{formatMoney(totalValue)}</p></div>
+          </div>
         </div>
       </section>
 
