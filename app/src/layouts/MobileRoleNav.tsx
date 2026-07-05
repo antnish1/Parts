@@ -7,8 +7,13 @@ type MobileRoleNavProps = {
   role?: UserRole;
 };
 
+function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label: string }) {
+  if (role === 'admin' && item.to.startsWith('/admin')) return false;
+  return role ? canAccessRoute(role, item.to) : true;
+}
+
 export function MobileRoleNav({ items, role }: MobileRoleNavProps) {
-  const visibleItems = role ? items.filter((item) => canAccessRoute(role, item.to)) : items;
+  const visibleItems = items.filter((item) => shouldShowNavItem(role, item));
 
   return (
     <div className="border-b border-[#263244] bg-[#0b1020] px-2 py-2 xl:hidden">
