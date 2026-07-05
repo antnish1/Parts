@@ -17,7 +17,7 @@ import { OrderPlacedSummary } from './OrderPlacedSummary';
 const inputClass = 'mt-1 h-9 w-full rounded-lg border border-[#263244] bg-[#0b1020] px-3 text-xs font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/20 disabled:cursor-not-allowed disabled:opacity-55';
 const tableInputClass = 'h-8 w-full rounded-lg border border-[#263244] bg-[#0b1020] px-2 text-xs font-semibold text-white outline-none transition focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/20 disabled:cursor-not-allowed disabled:opacity-55';
 const labelClass = 'text-[9px] font-black uppercase tracking-[0.12em] text-[#c7d2df]';
-const sectionTitleClass = 'mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#fff176]';
+const sectionTitleClass = 'mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#0f4c81]';
 
 type ItemLine = { lineId: number; partNo: string; description: string; dnp: string; qty: string; previous30dQty: number };
 type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number };
@@ -384,12 +384,12 @@ export function NewOrderPage() {
           <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#6b5b15] bg-[#111827] p-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" className="rounded-lg bg-[#ffd94a] px-3 py-1.5 text-xs text-[#0b1020] hover:bg-[#ffe177]" onClick={addItem} disabled={isFormBusy}>⊕ Add Item</Button>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#6b5b15] bg-[#17202d] px-3 py-1.5 text-xs font-black text-[#ffe177] hover:border-[#ffd94a]">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#6b5b15] bg-[#17202d] px-3 py-1.5 text-xs font-black text-white hover:border-[#344054]">
                 ⇧ Bulk Parts Upload
                 <input className="hidden" type="file" accept=".xlsx,.xls" onChange={handleBulkUpload} disabled={isFormBusy} />
               </label>
             </div>
-            {isOrderSubmitting ? <ActionLoader variant="matrix" label="Creating order" /> : <p className="text-sm font-black text-white">Total: ₹ <span className="text-xl text-[#ffd400]">{totalValue.toFixed(2)}</span></p>}
+            {isOrderSubmitting ? <ActionLoader variant="matrix" label="Creating order" /> : <p className="text-sm font-black text-white">Total: ₹ <span className="text-xl text-[#344054]">{totalValue.toFixed(2)}</span></p>}
             <Button type="submit" disabled={isFormBusy || partLookupLineId !== null} className="rounded-lg bg-[#e6a400] px-4 py-2 text-xs text-[#0b1020] shadow-lg shadow-[#e6a400]/20 hover:bg-[#ffbd00]">{isOrderSubmitting ? <><ButtonLoader /> Creating...</> : '⌁ Submit Order'}</Button>
           </div>
         </section>
