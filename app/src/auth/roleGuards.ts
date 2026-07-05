@@ -12,7 +12,7 @@ export const roleHomePath: Record<UserRole, string> = {
   branch: '/orders/new',
   admin: '/admin/approved',
   super: '/approvals/pending',
-  manager: '/manager/dashboard',
+  manager: '/approvals/pending',
   viewer: '/orders/track',
   developer: '/developer/workspace',
   hq: '/',
