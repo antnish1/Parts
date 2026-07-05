@@ -50,15 +50,30 @@ export type TestOrderViewItem = {
 
 export type TestOrderEvent = { id: string; event_type: string; old_status: string | null; new_status: string | null; notes: string | null; created_at: string; };
 export type TestOrderCommentAttachment = { id: string; comment_id: string; original_file_name: string; mime_type: string; file_size_bytes: number; created_at: string; };
-export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; attachments: TestOrderCommentAttachment[]; };
+export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; author?: { full_name: string | null; role: string | null } | null; attachments: TestOrderCommentAttachment[]; };
 
 type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
-function normalizeOrderView(order: RawOrderView): TestOrderView { const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null; return { ...order, approver }; }
-function normalizeCommentText(value: string) { return value.trim().replace(/\s+/g, ' '); }
+type RawComment = Omit<TestOrderComment, 'author' | 'attachments'> & { author?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
+
+function normalizeOrderView(order: RawOrderView): TestOrderView {
+  const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
+  return { ...order, approver };
+}
+
+function normalizeComment(comment: RawComment, attachments: TestOrderCommentAttachment[]): TestOrderComment {
+  const author = Array.isArray(comment.author) ? comment.author[0] ?? null : comment.author ?? null;
+  return { ...comment, author, attachments };
+}
+
+function normalizeCommentText(value: string) {
+  return value.trim().replace(/\s+/g, ' ');
+}
 
 export async function addTestOrderComment(orderId: string, body: string) {
   const text = normalizeCommentText(body);
   if (!orderId || !text) throw new Error('Comment is required.');
+
+  const profile = await getCurrentPortalProfile();
 
   const { data: recent, error: recentError } = await supabase
     .from('test_order_comments')
@@ -68,11 +83,18 @@ export async function addTestOrderComment(orderId: string, body: string) {
     .order('created_at', { ascending: false })
     .limit(5);
   if (recentError) throw recentError;
+
   const duplicate = (recent ?? []).some((comment) => normalizeCommentText(comment.body ?? '').toLowerCase() === text.toLowerCase());
   if (duplicate) throw new Error('Duplicate comment already exists for this order.');
 
-  const { error } = await supabase.from('test_order_comments').insert({ order_id: orderId, comment_type: 'user', body: text });
+  const { data, error } = await supabase
+    .from('test_order_comments')
+    .insert({ order_id: orderId, author_id: profile?.id ?? null, comment_type: 'user', body: text })
+    .select('id')
+    .single();
+
   if (error) throw error;
+  return data as { id: string };
 }
 
 async function getCommentAttachments(orderId: string, comments: Array<{ id: string }>) {
@@ -107,6 +129,7 @@ export async function getTestOrderView(orderId: string) {
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
+
   const rawOrder = order as unknown as RawOrderView;
   if (!(await currentBranchScopeIncludes(rawOrder.branch))) throw new Error('This order belongs to another branch.');
   const profile = await getCurrentPortalProfile();
@@ -129,19 +152,16 @@ export async function getTestOrderView(orderId: string) {
 
   const { data: comments, error: commentError } = await supabase
     .from('test_order_comments')
-    .select('id, comment_type, body, attachment_path, created_at')
+    .select('id, comment_type, body, attachment_path, created_at, author:test_profiles!test_order_comments_author_id_fkey(full_name, role)')
     .eq('order_id', orderId)
     .eq('comment_type', 'user')
     .order('created_at', { ascending: false })
     .limit(20);
   if (commentError) throw commentError;
 
-  const rawComments = comments ?? [];
+  const rawComments = (comments ?? []) as unknown as RawComment[];
   const attachmentMap = await getCommentAttachments(orderId, rawComments);
-  const commentsWithAttachments = rawComments.map((comment) => ({
-    ...comment,
-    attachments: attachmentMap.get(comment.id) ?? [],
-  })) as TestOrderComment[];
+  const commentsWithAttachments = rawComments.map((comment) => normalizeComment(comment, attachmentMap.get(comment.id) ?? []));
 
   return { order: normalizeOrderView(rawOrder), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
 }
