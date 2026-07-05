@@ -59,15 +59,10 @@ export function AppLayout() {
               <form onSubmit={handleGlobalSearch} className="hidden max-w-xl flex-1 md:block">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6D8196]" />
-                  <input
-                    className="h-9 w-full rounded-lg border border-[#263244] bg-[#0b1020] pl-9 pr-3 text-xs font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#82C8E5]"
-                    placeholder="Universal search: order, branch, customer, machine, invoice..."
-                    value={globalSearch}
-                    onChange={(event) => setGlobalSearch(event.target.value)}
-                  />
+                  <input className="h-9 w-full rounded-lg border border-[#263244] bg-[#0b1020] pl-9 pr-3 text-xs font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#82C8E5]" placeholder="Universal search: order, branch, customer, machine, invoice..." value={globalSearch} onChange={(event) => setGlobalSearch(event.target.value)} />
                 </div>
               </form>
-              <Button variant="secondary" className="rounded-md px-2.5 py-1.5 text-xs" onClick={handleSignOut}>
+              <Button variant="secondary" className="rounded-md border-[#b42318] bg-[#d92d20] px-3 py-1.5 text-xs font-black text-white shadow-sm hover:border-[#912018] hover:bg-[#b42318]" onClick={handleSignOut}>
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </Button>
