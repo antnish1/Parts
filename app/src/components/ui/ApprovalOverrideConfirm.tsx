@@ -26,13 +26,13 @@ export function ApprovalOverrideConfirm({ open, approverName, orderNo, busy = fa
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0f4c81]">Manager Override</p>
-              <h2 className="mt-1 text-lg font-black leading-6 text-[#101827]">Approve this order directly?</h2>
+              <h2 className="mt-1 text-lg font-black leading-6 text-[#101827]">Approve directly?</h2>
               {orderNo ? <p className="mt-1 text-xs font-bold text-[#667085]">Order No: <span className="text-[#101827]">{orderNo}</span></p> : null}
             </div>
           </div>
           <div className="mt-5 rounded-2xl border border-[#e4e7ec] bg-[#f8fbff] px-4 py-3">
             <p className="text-sm font-bold leading-6 text-[#344054]">
-              <span className="font-black text-[#101827]">{approverName}</span> has been selected as approver for this order. Are you sure you want to approve it directly as manager?
+              <span className="font-black text-[#101827]">{approverName}</span> is the selected approver for this order. Do you want to approve it directly as Manager?
             </p>
           </div>
           <div className="mt-5 flex justify-end gap-2 border-t border-[#eef2f6] pt-4">
