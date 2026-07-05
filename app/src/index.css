@@ -64,6 +64,27 @@ body {
   color: #1677ff !important;
 }
 
+[data-theme='light-pro'] [class*='text-[#fff176]'],
+[data-theme='light-pro'] [class*='text-[#ffd94a]'],
+[data-theme='light-pro'] [class*='text-[#ffd84d]'],
+[data-theme='light-pro'] [class*='text-[#ffd400]'],
+[data-theme='light-pro'] [class*='text-[#ffe177]'],
+[data-theme='light-pro'] [class*='text-[#d4a600]'],
+[data-theme='light-pro'] [class*='text-[#8a6500]'],
+[data-theme='light-pro'] [class*='text-[#e6a400]'],
+[data-theme='light-pro'] [class*='text-yellow'],
+[data-theme='light-pro'] [class*='text-amber'] {
+  color: #344054 !important;
+}
+
+[data-theme='light-pro'] tr:hover td,
+[data-theme='light-pro'] tr:hover a,
+[data-theme='light-pro'] tr:hover button,
+[data-theme='light-pro'] tr:hover span,
+[data-theme='light-pro'] tr:hover p {
+  color: inherit;
+}
+
 [data-theme='light-pro'] table thead,
 [data-theme='light-pro'] [class*='bg-[#111827]'] thead,
 [data-theme='light-pro'] [class*='bg-[#0b1020]'] thead {
@@ -160,14 +181,14 @@ body {
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) form > div:first-child > section:nth-child(2) {
-  background: #fffdf2 !important;
-  border-color: #e0c766 !important;
+  background: #f8fbff !important;
+  border-color: #c8d3e1 !important;
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) form > section {
   margin-top: 12px !important;
-  background: #fffaf0 !important;
-  border-color: #d7bd5a !important;
+  background: #f8fbff !important;
+  border-color: #c8d3e1 !important;
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) form section > p:first-child {
@@ -178,7 +199,7 @@ body {
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) form section:nth-child(2) > p:first-child,
 [data-theme='light-pro'] section:has(datalist#parts-master-list) form > section > p:first-child {
-  color: #8a6500 !important;
+  color: #0f4c81 !important;
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) label {
@@ -223,7 +244,7 @@ body {
   margin-top: 10px !important;
   padding: 10px !important;
   border-radius: 14px !important;
-  background: #fffdf7 !important;
+  background: #f8fbff !important;
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) button,
@@ -238,13 +259,13 @@ body {
 [data-theme='light-pro'] section:has(datalist#parts-master-list) label[class*='cursor-pointer'] {
   background: #101827 !important;
   border: 1px solid #344054 !important;
-  color: #ffd84d !important;
+  color: #ffffff !important;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12) !important;
 }
 
 [data-theme='light-pro'] section:has(datalist#parts-master-list) label[class*='cursor-pointer']:hover {
   background: #1d2939 !important;
-  border-color: #f2b600 !important;
+  border-color: #344054 !important;
   color: #ffffff !important;
 }
 
@@ -258,39 +279,5 @@ body {
   nav,
   .no-print {
     display: none !important;
-  }
-
-  main,
-  #root,
-  .print-area {
-    background: #ffffff !important;
-    color: #111827 !important;
-    width: 100% !important;
-    max-width: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .print-area * {
-    color: #111827 !important;
-    background: #ffffff !important;
-    box-shadow: none !important;
-  }
-
-  .print-area table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-  }
-
-  .print-area th,
-  .print-area td,
-  .print-area [class*='border'] {
-    border-color: #cbd5e1 !important;
-  }
-
-  .print-area th,
-  .print-area td {
-    padding: 6px !important;
-    font-size: 10px !important;
   }
 }
