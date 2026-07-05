@@ -17,12 +17,14 @@ export function DeveloperWorkspacePage() {
   const [role, setRole] = useState('branch');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [message, setMessage] = useState('');
   const [editId, setEditId] = useState('');
   const [editName, setEditName] = useState('');
   const [editBranch, setEditBranch] = useState('');
   const [editRole, setEditRole] = useState('branch');
-  const { data: orders = [] } = useQuery({ queryKey: ['order-list-paged'], queryFn: getOrderList });
+  const [editLoginId, setEditLoginId] = useState('');
+  const { data: orders = [] } = useQuery({ queryKey: ['order-list-paged', 'developer-workspace'], queryFn: getOrderList });
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
@@ -33,12 +35,13 @@ export function DeveloperWorkspacePage() {
     event.preventDefault();
     setMessage('Creating Supabase Auth user...');
     try {
-      await createPortalUser({ email, password, fullName, branch, role });
+      await createPortalUser({ email, password, fullName, branch, role, loginId });
       setFullName('');
       setBranch('');
       setRole('branch');
       setEmail('');
       setPassword('');
+      setLoginId('');
       setMessage('Supabase Auth user and portal profile created.');
       await refetch();
     } catch (error) {
@@ -51,13 +54,14 @@ export function DeveloperWorkspacePage() {
     setEditName(profile.full_name);
     setEditBranch(profile.branch);
     setEditRole(profile.role);
+    setEditLoginId(profile.login_id ?? '');
     setMessage(`Editing ${profile.full_name}`);
   }
 
   async function saveEdit(profile: (typeof profiles)[number]) {
     setMessage('Saving profile...');
     try {
-      await updateTestProfile(profile.id, { fullName: editName, branch: editBranch, role: editRole, isActive: profile.is_active });
+      await updateTestProfile(profile.id, { fullName: editName, branch: editBranch, role: editRole, loginId: editLoginId, isActive: profile.is_active });
       setEditId('');
       setMessage('Profile updated.');
       await refetch();
@@ -89,20 +93,21 @@ export function DeveloperWorkspacePage() {
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Create Supabase User</p>
-        <form onSubmit={addUser} className="grid gap-2 lg:grid-cols-[1fr_1fr_1fr_1fr_150px_auto]">
-          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <form onSubmit={addUser} className="grid gap-2 lg:grid-cols-[0.8fr_1fr_1fr_1fr_1fr_150px_auto]">
+          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="User ID e.g. DAMOH01" value={loginId} onChange={(event) => setLoginId(event.target.value.toUpperCase())} />
+          <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Backend email" value={email} onChange={(event) => setEmail(event.target.value)} />
           <input type="password" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Branch" value={branch} onChange={(event) => setBranch(event.target.value)} />
           <select className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={role} onChange={(event) => setRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select>
           <button type="submit" className="text-xs font-black text-[#82C8E5] hover:underline">Create</button>
         </form>
-        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'Creates Supabase Auth user through secure Edge Function and inserts matching test_profiles row.'}</p>
+        <p className="mt-2 text-xs text-[#c7d2df]">{message || 'User ID is shown to the staff. Backend email remains the actual Supabase Auth credential.'}</p>
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Recent User Profiles</p>
-        <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[860px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">Name</th><th className="px-2.5 py-2">Branch</th><th className="px-2.5 py-2">Role</th><th className="px-2.5 py-2">Active</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-[#263244]">{profiles.slice(0, 12).map((profile) => { const editing = editId === profile.id; return (<tr key={profile.id}><td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editName} onChange={(event) => setEditName(event.target.value)} /> : profile.full_name}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editBranch} onChange={(event) => setEditBranch(event.target.value)} /> : profile.branch}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <select className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editRole} onChange={(event) => setEditRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select> : profile.role}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{profile.is_active ? 'Yes' : 'No'}</td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3">{editing ? <button className="font-black text-[#82C8E5] hover:underline" onClick={() => void saveEdit(profile)}>Save</button> : <button className="font-black text-[#82C8E5] hover:underline" onClick={() => startEdit(profile)}>Edit</button>}{editing ? <button className="font-black text-[#c7d2df] hover:underline" onClick={() => setEditId('')}>Cancel</button> : <button className="font-black text-[#ef6f7b] hover:underline" onClick={() => void toggleActive(profile)}>{profile.is_active ? 'Deactivate' : 'Activate'}</button>}</div></td></tr>); })}</tbody></table>{profiles.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No profiles found.</p> : null}</div>
+        <div className="overflow-hidden rounded-md border border-[#263244]"><table className="w-full min-w-[960px] border-collapse text-left text-xs"><thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">User ID</th><th className="px-2.5 py-2">Name</th><th className="px-2.5 py-2">Branch</th><th className="px-2.5 py-2">Role</th><th className="px-2.5 py-2">Active</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead><tbody className="divide-y divide-[#263244]">{profiles.slice(0, 12).map((profile) => { const editing = editId === profile.id; return (<tr key={profile.id}><td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editLoginId} onChange={(event) => setEditLoginId(event.target.value.toUpperCase())} /> : profile.login_id || '-'}</td><td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editName} onChange={(event) => setEditName(event.target.value)} /> : profile.full_name}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editBranch} onChange={(event) => setEditBranch(event.target.value)} /> : profile.branch}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <select className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editRole} onChange={(event) => setEditRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select> : profile.role}</td><td className="px-2.5 py-2 text-[#d8e3ee]">{profile.is_active ? 'Yes' : 'No'}</td><td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3">{editing ? <button className="font-black text-[#82C8E5] hover:underline" onClick={() => void saveEdit(profile)}>Save</button> : <button className="font-black text-[#82C8E5] hover:underline" onClick={() => startEdit(profile)}>Edit</button>}{editing ? <button className="font-black text-[#c7d2df] hover:underline" onClick={() => setEditId('')}>Cancel</button> : <button className="font-black text-[#ef6f7b] hover:underline" onClick={() => void toggleActive(profile)}>{profile.is_active ? 'Deactivate' : 'Activate'}</button>}</div></td></tr>); })}</tbody></table>{profiles.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No profiles found.</p> : null}</div>
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
