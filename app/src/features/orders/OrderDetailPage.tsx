@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { useAuth } from '../../auth/useAuth';
-import { setTestOrderApproved, setTestOrderRejected } from '../../services/testApproval.service';
+import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderRejected } from '../../services/testApproval.service';
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
@@ -44,7 +44,7 @@ export function OrderDetailPage() {
   const { orderId = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { role } = useAuth();
+  const { role, profile } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [commentMessage, setCommentMessage] = useState('');
   const [attachmentMessage, setAttachmentMessage] = useState('');
@@ -76,7 +76,8 @@ export function OrderDetailPage() {
   const inventoryMap = inventoryQuery.data ?? {};
   const status = getOrderStatusLabel({ ...order, items });
   const rawStatus = order.status.toLowerCase();
-  const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && rawStatus.includes('pending');
+  const isSelectedSuperApprover = role === 'super' && order.approver_id === profile?.id;
+  const canApprove = ((role === 'developer' || isSelectedSuperApprover || role === 'manager') && rawStatus.includes('pending'));
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = canAdmin && rawStatus === 'approved';
   const totalQty = items.reduce((sum, item) => sum + getEffectiveQty(item), 0);
@@ -98,13 +99,25 @@ export function OrderDetailPage() {
     ['Approved By', order.approver?.full_name || '-', true],
   ] as const;
 
+  function confirmManagerOverride() {
+    if (role !== 'manager') return true;
+    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return true;
+    const approverName = order.approver?.full_name || 'The selected super approver';
+    return window.confirm(`${approverName} is been selected as approver of the order, are you sure you want to approve this order directly?`);
+  }
+
   async function runApprovalAction(action: 'approve' | 'reject') {
     setActionMessage('');
+    if (action === 'approve' && !confirmManagerOverride()) return;
     setBusyAction(action);
     try {
-      if (action === 'approve') await setTestOrderApproved(order as unknown as TestOrder);
-      else await setTestOrderRejected(order as unknown as TestOrder);
-      setActionMessage(`${order.order_no} ${action === 'approve' ? 'approved' : 'rejected'}.`);
+      if (action === 'approve') {
+        if (role === 'manager') await setTestOrderManagerApproved(order as unknown as TestOrder);
+        else await setTestOrderApproved(order as unknown as TestOrder);
+      } else {
+        await setTestOrderRejected(order as unknown as TestOrder);
+      }
+      setActionMessage(`${order.order_no} ${action === 'approve' ? (role === 'manager' ? 'approved by manager' : 'sent to manager approval') : 'rejected'}.`);
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
