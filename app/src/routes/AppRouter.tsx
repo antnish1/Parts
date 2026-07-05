@@ -35,6 +35,7 @@ export function AppRouter() {
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/track" element={<TrackOrdersPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+            <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
             <Route path="/approvals/:queue" element={<ApprovalsPage />} />
             <Route path="/admin/:queue" element={<AdminPage />} />
             <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
