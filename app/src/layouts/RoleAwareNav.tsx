@@ -2,8 +2,10 @@ import { NavLink } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { canAccessRoute, type UserRole } from '../auth/roleGuards';
 
+export type NavItem = { to: string; label: string; icon: LucideIcon; badge?: number };
+
 type RoleAwareNavProps = {
-  items: Array<{ to: string; label: string; icon: LucideIcon }>;
+  items: NavItem[];
   role?: UserRole;
 };
 
@@ -31,7 +33,8 @@ export function RoleAwareNav({ items, role }: RoleAwareNavProps) {
             }
           >
             <Icon className="h-3.5 w-3.5" />
-            {item.label}
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {typeof item.badge === 'number' ? <span className="rounded-full bg-[#ef4444] px-1.5 py-0.5 text-[10px] font-black leading-none text-white">{item.badge}</span> : null}
           </NavLink>
         );
       })}
