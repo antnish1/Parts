@@ -89,8 +89,9 @@ export function UploadsPage() {
       saveUploadMeta('partsConnectStatusUploadMeta', meta);
       setStatusMessage('Refreshing orders...');
       await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
+      await queryClient.invalidateQueries({ queryKey: ['test-order-view'] });
       setStatusStep('complete');
-      setStatusMessage(`Order status upload complete. Updated ${result.updated}, skipped ${result.skipped}, failed ${result.failed}.`);
+      setStatusMessage(`Order status upload complete. Billing chunks ${result.inserted}, item rows updated ${result.updated}, skipped ${result.skipped}, failed ${result.failed}.`);
     } catch (error) {
       setStatusStep('failed');
       setStatusMessage(error instanceof Error ? error.message : 'Order status upload failed.');
@@ -126,18 +127,18 @@ export function UploadsPage() {
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-[#0f4c81]">Order Status Upload</p>
-              <p className="mt-1 text-[11px] text-[#6D8196]">Upload DBMS/order status report.</p>
+              <p className="mt-1 text-[11px] text-[#6D8196]">Upload DBMS/order status report. Each invoice/docket line is stored as a billing chunk.</p>
             </div>
             {statusMeta ? <span className="rounded-full border border-[#d9dee7] px-2.5 py-1 text-[11px] font-black text-[#475569]">Last: {statusMeta.updatedRows ?? 0} updated • {statusMeta.failedRows} failed</span> : null}
           </div>
           <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
             <input type="file" accept=".xlsx,.xls" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" disabled={isStatusUploading} onChange={(event) => void handleStatusUpload(event.target.files?.[0])} />
-            <span className="text-xs text-[#667085]">{isStatusUploading ? `Step: ${statusStep}` : statusMessage || 'Expected: Final Order No, Part/Material, Billed Qty, Invoice No/Date, Docket, Transport'}</span>
+            <span className="text-xs text-[#667085]">{isStatusUploading ? `Step: ${statusStep}` : statusMessage || 'Expected: Order No, Material No, Billed Qty, Billing Dt, Bill No, Docket, Transport, Delivery No'}</span>
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#eef2f6]"><div className="h-full bg-[#1677ff] transition-all" style={{ width: `${statusProgress}%` }} /></div>
           {statusMessage ? <p className="mt-2 whitespace-pre-wrap text-xs font-semibold text-[#101827]">{statusMessage}</p> : null}
           {statusMeta ? <p className="mt-1 text-[11px] text-[#6D8196]">Last file: {statusMeta.file} • {new Date(statusMeta.at).toLocaleString('en-IN')}</p> : null}
-          {statusResult ? <div className="mt-2 grid grid-cols-4 gap-2 text-xs"><p className="text-[#667085]">Total: <b className="text-[#101827]">{statusResult.total}</b></p><p className="text-[#667085]">Updated: <b className="text-[#101827]">{statusResult.updated}</b></p><p className="text-[#667085]">Skipped: <b className="text-[#101827]">{statusResult.skipped}</b></p><p className="text-[#667085]">Failed: <b className="text-[#101827]">{statusResult.failed}</b></p></div> : null}
+          {statusResult ? <div className="mt-2 grid grid-cols-5 gap-2 text-xs"><p className="text-[#667085]">Total: <b className="text-[#101827]">{statusResult.total}</b></p><p className="text-[#667085]">Chunks: <b className="text-[#101827]">{statusResult.inserted}</b></p><p className="text-[#667085]">Updated: <b className="text-[#101827]">{statusResult.updated}</b></p><p className="text-[#667085]">Skipped: <b className="text-[#101827]">{statusResult.skipped}</b></p><p className="text-[#667085]">Failed: <b className="text-[#101827]">{statusResult.failed}</b></p></div> : null}
           {statusResult?.errors.length ? <div className="mt-2 max-h-24 overflow-auto rounded-md border border-[#d9dee7] bg-[#f8fafc] p-2 text-[11px] text-[#475569]">{statusResult.errors.slice(0, 10).map((item) => <p key={item}>{item}</p>)}</div> : null}
         </section>
       </div>
