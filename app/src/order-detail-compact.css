@@ -1,0 +1,168 @@
+/* Compact layout overrides for the Order Detail operational page. */
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) {
+  padding: 10px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > h1 {
+  margin-bottom: 6px !important;
+  font-size: 12px !important;
+  line-height: 14px !important;
+  letter-spacing: 0.16em !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div {
+  margin-top: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div > .no-print:first-child {
+  margin-bottom: 8px !important;
+  gap: 6px !important;
+  padding: 6px !important;
+  border-radius: 10px !important;
+  background: #f8fafc !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div > .no-print:first-child input,
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div > .no-print:first-child button {
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div > .no-print:first-child input {
+  width: 185px !important;
+  font-size: 12px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) > div > p.no-print {
+  margin-bottom: 8px !important;
+  padding: 7px 10px !important;
+  font-size: 11px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section {
+  margin-top: 8px !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type {
+  margin-top: 0 !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:first-child {
+  margin-bottom: 8px !important;
+  padding-bottom: 7px !important;
+  gap: 8px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:first-child p:first-child,
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section > p:first-child,
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section[id='order-comments'] > div:first-child > p:first-child {
+  font-size: 10px !important;
+  line-height: 12px !important;
+  letter-spacing: 0.14em !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:first-child p:nth-child(2) {
+  font-size: 16px !important;
+  line-height: 18px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:first-child p:nth-child(3) {
+  font-size: 11px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:nth-child(2) {
+  gap: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:nth-child(2) > div {
+  padding: 7px 9px !important;
+  min-height: 58px !important;
+  border-radius: 9px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:nth-child(2) > div p:first-child {
+  font-size: 9px !important;
+  line-height: 11px !important;
+  letter-spacing: 0.12em !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:first-of-type > div:nth-child(2) > div p:last-child {
+  margin-top: 3px !important;
+  font-size: 12px !important;
+  line-height: 15px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments {
+  padding: 8px 10px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments > div:first-child {
+  margin-bottom: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments form {
+  margin-bottom: 6px !important;
+  gap: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments input,
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments button[type='submit'] {
+  height: 30px !important;
+  min-height: 30px !important;
+  font-size: 11px !important;
+  border-radius: 8px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments .space-y-2 {
+  margin-top: 4px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) #order-comments .space-y-2 > p {
+  font-size: 11px !important;
+  line-height: 14px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type {
+  padding: 9px 10px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type > p:first-child {
+  margin-bottom: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type th {
+  padding: 6px 8px !important;
+  font-size: 9px !important;
+  line-height: 12px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type td {
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+  line-height: 14px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type .mt-2 {
+  margin-top: 6px !important;
+  gap: 6px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type .mt-2 > div {
+  padding: 6px 9px !important;
+  border-radius: 8px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type .mt-2 span {
+  font-size: 10px !important;
+}
+
+[data-theme='light-pro'] section:has(input[placeholder='DBMS Order No.']) section:last-of-type .mt-2 p {
+  font-size: 12px !important;
+  line-height: 14px !important;
+}
