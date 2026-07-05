@@ -4,23 +4,42 @@ import type { TestOrder } from './testData.service';
 type ApprovalAction = 'approve' | 'reject' | 'forward_manager' | 'manager_approve' | 'manager_reject';
 type ReviewQtyAction = 'accept_edits' | 'approve_original' | 'zero_item';
 
+async function getFunctionErrorMessage(error: unknown) {
+  const fallback = error instanceof Error ? error.message : 'Approval action failed.';
+  const context = (error as { context?: Response })?.context;
+  if (!context) return fallback;
+  try {
+    const body = await context.clone().json();
+    if (body?.error) return String(body.error);
+    if (body?.message) return String(body.message);
+  } catch {
+    try {
+      const text = await context.clone().text();
+      if (text) return text;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 async function runApprovalAction(orderId: string, action: ApprovalAction, body: Record<string, string> = {}) {
   const { data, error } = await supabase.functions.invoke('approval-order-action', { body: { orderId, action, ...body } });
-  if (error) throw error;
+  if (error) throw new Error(await getFunctionErrorMessage(error));
   if (data?.error) throw new Error(String(data.error));
   return data;
 }
 
 async function runQtyAction(itemId: string, action: 'set' | 'reset', qty?: number) {
   const { data, error } = await supabase.functions.invoke('order-item-qty-action', { body: { itemId, action, qty } });
-  if (error) throw error;
+  if (error) throw new Error(await getFunctionErrorMessage(error));
   if (data?.error) throw new Error(String(data.error));
   return data;
 }
 
 async function runReviewQtyAction(payload: { action: ReviewQtyAction; orderId?: string; itemId?: string }) {
   const { data, error } = await supabase.functions.invoke('approval-qty-review-action', { body: payload });
-  if (error) throw error;
+  if (error) throw new Error(await getFunctionErrorMessage(error));
   if (data?.error) throw new Error(String(data.error));
   return data;
 }
