@@ -3,11 +3,19 @@ import { getOrderStatusLabel, normalizeStatus } from '../lib/orderLogic';
 import type { TestOrder } from './testData.service';
 
 type ItemStatusRow = {
+  id: string;
   order_id: string;
   row_status: string | null;
   qty: number | null;
   edited_qty: number | null;
   billed_qty: number | null;
+  billing_chunks?: Array<{ billed_qty: number | null; received_qty: number | null }>;
+};
+
+type BillingChunkRow = {
+  item_id: string;
+  billed_qty: number | null;
+  received_qty: number | null;
 };
 
 const CHUNK_SIZE = 1000;
@@ -24,6 +32,32 @@ function headerApprovalKey(order: TestOrder) {
   return '';
 }
 
+async function getBillingChunksByItem(itemIds: string[]) {
+  const map = new Map<string, BillingChunkRow[]>();
+  if (!itemIds.length) return map;
+
+  for (let index = 0; index < itemIds.length; index += CHUNK_SIZE) {
+    const chunk = itemIds.slice(index, index + CHUNK_SIZE);
+    const { data, error } = await supabase
+      .from('test_order_item_billings')
+      .select('item_id, billed_qty, received_qty')
+      .in('item_id', chunk);
+
+    if (error) {
+      console.warn('Billing chunks unavailable for order status map.', error.message);
+      return map;
+    }
+
+    for (const row of (data ?? []) as BillingChunkRow[]) {
+      const list = map.get(row.item_id) ?? [];
+      list.push(row);
+      map.set(row.item_id, list);
+    }
+  }
+
+  return map;
+}
+
 export async function getOrderStatusMap(orders: TestOrder[]) {
   const ids = orders.map((order) => order.id);
   if (ids.length === 0) return {} as Record<string, string>;
@@ -35,7 +69,7 @@ export async function getOrderStatusMap(orders: TestOrder[]) {
 
     const { data, error } = await supabase
       .from('test_order_items')
-      .select('order_id, row_status, qty, edited_qty, billed_qty')
+      .select('id, order_id, row_status, qty, edited_qty, billed_qty')
       .in('order_id', chunk);
 
     if (error) {
@@ -46,7 +80,10 @@ export async function getOrderStatusMap(orders: TestOrder[]) {
     itemRows.push(...((data ?? []) as ItemStatusRow[]));
   }
 
-  const byOrder = itemRows.reduce<Record<string, ItemStatusRow[]>>((acc, row) => {
+  const chunkMap = await getBillingChunksByItem(itemRows.map((row) => row.id));
+  const rowsWithChunks = itemRows.map((row) => ({ ...row, billing_chunks: chunkMap.get(row.id) ?? [] }));
+
+  const byOrder = rowsWithChunks.reduce<Record<string, ItemStatusRow[]>>((acc, row) => {
     acc[row.order_id] = acc[row.order_id] ?? [];
     acc[row.order_id].push(row);
     return acc;
