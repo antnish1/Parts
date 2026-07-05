@@ -72,6 +72,18 @@ export function ActionLoader({ variant = 'orbit', label = 'Loading' }: { variant
   );
 }
 
+export function BlockingActionOverlay({ show, label = 'Please wait' }: { show: boolean; label?: string }) {
+  if (!show) return null;
+  return (
+    <div className="fixed inset-0 z-[200] flex cursor-wait items-center justify-center bg-[#f5f7fa]/72 px-4 backdrop-blur-[2px]" aria-busy="true" aria-live="polite">
+      <div className="rounded-2xl border border-[#d9dee7] bg-white px-5 py-4 shadow-[0_16px_45px_rgba(16,24,40,0.14)]">
+        <ActionLoader variant="orbit" label={label} />
+        <p className="mt-3 text-center text-[11px] font-semibold text-[#667085]">Action is running. Please do not close or click anywhere.</p>
+      </div>
+    </div>
+  );
+}
+
 export function FeedbackModal({ message, variant, onClose }: { message: string; variant?: FeedbackVariant; onClose: () => void }) {
   if (!message) return null;
   const tone = variant ?? getFeedbackVariant(message);
