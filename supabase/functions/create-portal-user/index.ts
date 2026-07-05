@@ -45,13 +45,13 @@ Deno.serve(async (req) => {
 
   const body = await req.json() as Payload;
   const loginId = normalizeLoginId(String(body.loginId ?? ''));
-  const email = String(body.email ?? '').trim().toLowerCase() || (loginId ? `${loginId.toLowerCase()}@portal.local` : '');
+  const email = loginId ? `${loginId.toLowerCase()}@portal.local` : String(body.email ?? '').trim().toLowerCase();
   const password = String(body.password ?? '');
   const fullName = String(body.fullName ?? '').trim();
   const branch = String(body.branch ?? '').trim();
   const role = String(body.role ?? '').trim();
 
-  if (!email || !password || !fullName || !branch || !role) return new Response(JSON.stringify({ error: 'Email, password, name, branch and role are required.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (!email || !password || !fullName || !branch || !role) return new Response(JSON.stringify({ error: 'User ID or email, password, name, branch and role are required.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   if (!roles.includes(role)) return new Response(JSON.stringify({ error: 'Invalid role.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   if (password.length < 8) return new Response(JSON.stringify({ error: 'Password must be at least 8 characters.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
