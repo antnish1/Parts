@@ -74,11 +74,15 @@ export async function saveTestMachineCustomer(machineNo: string, customerName: s
   const customer = customerName.trim();
   if (!normalized || !customer) throw new Error('Machine number and customer name are required.');
 
-  const { data, error } = await supabase.functions.invoke('save-machine-master', {
-    body: { machineNo: normalized, customerName: customer },
-  });
+  const existing = await findInMachineMaster(normalized);
+  if (existing) return existing;
+
+  const { data, error } = await supabase
+    .from('machine_master')
+    .insert({ machine_no: normalized, customer_name: customer })
+    .select('*')
+    .maybeSingle();
 
   if (error) throw error;
-  if (data?.error) throw new Error(String(data.error));
-  return { machine_no: normalized, customer_name: customer };
+  return mapMachine((data ?? { machine_no: normalized, customer_name: customer }) as RawRow) ?? { id: normalized, machine_no: normalized, customer_name: customer };
 }
