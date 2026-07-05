@@ -69,6 +69,18 @@ export function normalizeStatus(status: string | null | undefined) {
   return value;
 }
 
+function getBillingDrivenStatus(row: LegacyLikeOrderItem) {
+  const rawBilled = row.billed_qty ?? row.BilledQty;
+  if (!hasValue(rawBilled)) return '';
+
+  const billed = getBilledQty(row);
+  const qty = getEffectiveQty(row);
+  if (billed <= 0) return 'PROCESSED';
+  if (qty <= 0) return 'DISPATCHED';
+  if (billed >= qty) return 'DISPATCHED';
+  return 'PARTIALLY DISPATCHED';
+}
+
 export function isPendingApprovalStatus(status: string | null | undefined) {
   const normalized = normalizeStatus(status);
   return normalized === 'PENDING APPROVAL' || normalized === 'PENDING MANAGER APPROVAL';
@@ -78,8 +90,15 @@ export function getResolvedRowStatus(row: LegacyLikeOrderItem) {
   const rowStatus = normalizeStatus(row.row_status ?? '');
   const approval = normalizeStatus(row.approval_status ?? row.ApprovalStatus ?? '');
   const status = normalizeStatus(row.status ?? row.Status ?? '');
+
+  if (rowStatus === 'RECEIVED' || status === 'RECEIVED') return 'RECEIVED';
+  if (rowStatus === 'REJECTED' || approval === 'REJECTED' || status === 'REJECTED') return 'REJECTED';
+
+  const billingDriven = getBillingDrivenStatus(row);
+  if (billingDriven && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED'].includes(rowStatus || status)) return billingDriven;
+  if (billingDriven && rowStatus === 'NA' && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED', 'NA'].includes(status)) return billingDriven;
+
   if (rowStatus !== 'NA') return rowStatus;
-  if (approval === 'REJECTED' || status === 'REJECTED') return 'REJECTED';
   if (approval === 'PENDING MANAGER APPROVAL') return 'PENDING MANAGER APPROVAL';
   if (approval === 'PENDING APPROVAL') return 'PENDING APPROVAL';
   if (approval === 'APPROVED' && (status === 'NA' || status === 'PENDING APPROVAL')) return 'APPROVED';
