@@ -1,6 +1,6 @@
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { ChangeEvent, Fragment, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Paperclip, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Paperclip, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
@@ -64,6 +64,7 @@ export function OrderDetailPage() {
   const [processReference, setProcessReference] = useState('');
   const [showLogs, setShowLogs] = useState(false);
   const [showManagerOverride, setShowManagerOverride] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
   const inventoryQuery = useQuery({
@@ -124,6 +125,10 @@ export function OrderDetailPage() {
     { label: 'Approved By', value: order.approver?.full_name || '-' },
     { label: 'Call ID', value: order.call_id || '-' },
   ];
+
+  function toggleItem(itemId: string) {
+    setExpandedItems((current) => ({ ...current, [itemId]: !current[itemId] }));
+  }
 
   function needsManagerOverride() {
     if (role !== 'manager') return false;
@@ -206,8 +211,8 @@ export function OrderDetailPage() {
 
   function downloadCsv() {
     const rows = [
-      ['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Reg Dt', 'Bill No', 'Billing Dt', 'Transport', 'Docket', 'Inventory', 'Prev 30d'],
-      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), item.row_status || displayStatus, order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
+      ['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Reg Dt', 'Bill No', 'Billing Dt', 'Transport', 'Docket', 'Chunks', 'Inventory', 'Prev 30d'],
+      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), item.row_status || displayStatus, order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', item.billing_chunks.length, inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -309,17 +314,55 @@ export function OrderDetailPage() {
       <section className="mt-3 rounded-xl border border-[#d9dee7] bg-white p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#0f4c81]">Part Details</p>
         <div className="overflow-hidden rounded-lg border border-[#d9dee7]">
-          <table className="w-full min-w-[1450px] border-collapse text-left text-xs">
+          <table className="w-full min-w-[1540px] border-collapse text-left text-xs">
             <thead className="bg-[#f3f6fb] text-[10px] uppercase tracking-[0.12em] text-[#344054]">
-              <tr><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th><th className="px-2 py-2 text-right">PrevQty 30d</th></tr>
+              <tr><th className="px-2 py-2">Chunks</th><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th><th className="px-2 py-2 text-right">PrevQty 30d</th></tr>
             </thead>
             <tbody className="divide-y divide-[#e4e7ec] bg-white">
               {items.map((item) => {
                 const inventoryQty = inventoryMap[normalizePartNo(item.part_no)] ?? 0;
+                const isExpanded = !!expandedItems[item.id];
+                const chunkCount = item.billing_chunks.length;
                 return (
-                  <tr key={item.id} className="hover:bg-[#f8fbff]">
-                    <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={item.row_status || displayStatus} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
-                  </tr>
+                  <Fragment key={item.id}>
+                    <tr className="hover:bg-[#f8fbff]">
+                      <td className="px-2 py-2">
+                        {chunkCount ? (
+                          <button type="button" className="inline-flex items-center gap-1 rounded-md border border-[#d9dee7] px-2 py-1 text-[11px] font-semibold text-[#0f4c81] hover:bg-[#eef8ff]" onClick={() => toggleItem(item.id)}>
+                            {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            {chunkCount}
+                          </button>
+                        ) : <span className="text-[#94a3b8]">-</span>}
+                      </td>
+                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={item.row_status || displayStatus} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
+                    </tr>
+                    {isExpanded ? (
+                      <tr>
+                        <td colSpan={16} className="bg-[#f8fbff] px-4 py-3">
+                          <div className="rounded-lg border border-[#d9dee7] bg-white">
+                            <div className="border-b border-[#eef2f6] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#0f4c81]">Billing / Docket Chunks</div>
+                            <table className="w-full min-w-[980px] border-collapse text-left text-[11px]">
+                              <thead className="bg-[#f8fafc] text-[10px] uppercase tracking-[0.1em] text-[#64748b]"><tr><th className="px-2 py-2">Invoice</th><th className="px-2 py-2">Billing Date</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Delivery</th><th className="px-2 py-2 text-right">Billed Qty</th><th className="px-2 py-2">Raw Status</th><th className="px-2 py-2">Uploaded</th></tr></thead>
+                              <tbody className="divide-y divide-[#eef2f6]">
+                                {item.billing_chunks.map((chunk) => (
+                                  <tr key={chunk.id}>
+                                    <td className="px-2 py-2 text-[#0f172a]">{chunk.invoice_no || '-'}</td>
+                                    <td className="px-2 py-2 text-[#475569]">{chunk.billing_date || '-'}</td>
+                                    <td className="px-2 py-2 font-semibold text-[#0f4c81]">{chunk.docket_no || '-'}</td>
+                                    <td className="px-2 py-2 text-[#475569]">{chunk.transport_name || '-'}</td>
+                                    <td className="px-2 py-2 text-[#475569]">{chunk.delivery_no || '-'}</td>
+                                    <td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{Number(chunk.billed_qty ?? 0)}</td>
+                                    <td className="px-2 py-2 text-[#475569]">{chunk.raw_status || '-'}</td>
+                                    <td className="px-2 py-2 text-[#475569]">{formatDate(chunk.created_at)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
                 );
               })}
             </tbody>
