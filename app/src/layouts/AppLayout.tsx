@@ -1,5 +1,6 @@
+import { FormEvent, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Boxes, ClipboardCheck, FilePlus2, Home, LayoutDashboard, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { Boxes, ClipboardCheck, FilePlus2, Home, LayoutDashboard, LogOut, PackageSearch, ScanLine, Search, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
@@ -23,10 +24,18 @@ const navItems = [
 export function AppLayout() {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const [globalSearch, setGlobalSearch] = useState('');
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     navigate('/login', { replace: true });
+  }
+
+  function handleGlobalSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const term = globalSearch.trim();
+    if (!term) return;
+    navigate(`/orders/track?q=${encodeURIComponent(term)}`);
   }
 
   return (
@@ -43,10 +52,21 @@ export function AppLayout() {
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-3 py-2 backdrop-blur lg:px-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-fit items-center gap-2">
                 <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect Portal</p>
               </div>
+              <form onSubmit={handleGlobalSearch} className="hidden max-w-xl flex-1 md:block">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6D8196]" />
+                  <input
+                    className="h-9 w-full rounded-lg border border-[#263244] bg-[#0b1020] pl-9 pr-3 text-xs font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#82C8E5]"
+                    placeholder="Universal search: order, branch, customer, machine, invoice..."
+                    value={globalSearch}
+                    onChange={(event) => setGlobalSearch(event.target.value)}
+                  />
+                </div>
+              </form>
               <Button variant="secondary" className="rounded-md px-2.5 py-1.5 text-xs" onClick={handleSignOut}>
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
