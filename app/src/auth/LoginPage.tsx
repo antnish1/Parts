@@ -9,14 +9,20 @@ import { roleHomePath } from './roleGuards';
 const inputClass = 'w-full rounded-lg border border-[#6D8196]/45 bg-white px-12 py-3.5 text-sm font-semibold text-[#000080] outline-none transition placeholder:text-[#6D8196] focus:border-[#0047AB]';
 const labelClass = 'mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6D8196]';
 
+function normalizeLoginIdentifier(value: string) {
+  const text = value.trim();
+  if (text.includes('@')) return text.toLowerCase();
+  return `${text.replace(/\s+/g, '').toLowerCase()}@portal.local`;
+}
+
 export function LoginPage() {
   const { isAuthenticated, role, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const canSubmit = useMemo(() => email.trim().length > 3 && password.length >= 6 && isSupabaseConfigured(), [email, password]);
+  const canSubmit = useMemo(() => loginId.trim().length > 0 && password.length >= 6 && isSupabaseConfigured(), [loginId, password]);
 
   if (!isLoading && isAuthenticated && role) return <Navigate to={roleHomePath[role]} replace />;
 
@@ -24,11 +30,12 @@ export function LoginPage() {
     event.preventDefault();
     setMessage('');
     if (!isSupabaseConfigured()) return setMessage('Supabase environment variables are missing.');
-    if (!email.trim() || !password) return setMessage('Enter email and password.');
+    if (!loginId.trim() || !password) return setMessage('Enter User ID and password.');
     setIsSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const authEmail = normalizeLoginIdentifier(loginId);
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
     setIsSubmitting(false);
-    if (error) return setMessage(error.message);
+    if (error) return setMessage('Invalid User ID or password.');
     setMessage('Signed in. Opening portal...');
   }
 
@@ -46,10 +53,10 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className={labelClass}>Email ID</label>
+            <label className={labelClass}>User ID / Email ID</label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0047AB]" />
-              <input className={inputClass} type="email" autoComplete="email" placeholder="name@company.com" value={email} onChange={(event) => setEmail(event.target.value)} />
+              <input className={inputClass} autoComplete="username" placeholder="DAMOH01 or name@company.com" value={loginId} onChange={(event) => setLoginId(event.target.value)} />
             </div>
           </div>
 
