@@ -4,6 +4,7 @@ import { LoginPage } from '../auth/LoginPage';
 import { RequireAuth } from '../auth/RequireAuth';
 import { useAuth } from '../auth/useAuth';
 import { roleHomePath } from '../auth/roleGuards';
+import { GlobalStatusEffects } from '../components/ui/GlobalStatusEffects';
 import { NewOrderPage } from '../features/orders/NewOrderPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { TrackOrdersPage } from '../features/tracking/TrackOrdersPage';
@@ -24,24 +25,27 @@ function RoleLanding() {
 
 export function AppRouter() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route element={<RequireAuth />}>
-        <Route element={<AppLayout />}>
-          <Route index element={<RoleLanding />} />
-          <Route path="/orders/new" element={<NewOrderPage />} />
-          <Route path="/orders/track" element={<TrackOrdersPage />} />
-          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-          <Route path="/approvals/:queue" element={<ApprovalsPage />} />
-          <Route path="/admin/:queue" element={<AdminPage />} />
-          <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
-          <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
-          <Route path="/inventory/upload" element={<InventoryUploadPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/docket-scanner" element={<DocketScannerPage />} />
+    <>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<RequireAuth />}>
+          <Route element={<AppLayout />}>
+            <Route index element={<RoleLanding />} />
+            <Route path="/orders/new" element={<NewOrderPage />} />
+            <Route path="/orders/track" element={<TrackOrdersPage />} />
+            <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+            <Route path="/approvals/:queue" element={<ApprovalsPage />} />
+            <Route path="/admin/:queue" element={<AdminPage />} />
+            <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
+            <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
+            <Route path="/inventory/upload" element={<InventoryUploadPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/docket-scanner" element={<DocketScannerPage />} />
+          </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <GlobalStatusEffects />
+    </>
   );
 }
