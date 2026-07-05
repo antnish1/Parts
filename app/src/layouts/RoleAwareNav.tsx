@@ -36,8 +36,8 @@ export function RoleAwareNav({ items, role, collapsed = false }: RoleAwareNavPro
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
             {!collapsed ? <span className="min-w-0 flex-1 truncate">{item.label}</span> : null}
-            {typeof item.badge === 'number' && !collapsed ? <span className="rounded-full bg-[#ef4444] px-1.5 py-0.5 text-[10px] font-black leading-none text-white">{item.badge}</span> : null}
-            {typeof item.badge === 'number' && collapsed ? <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#ef4444]" /> : null}
+            {typeof item.badge === 'number' && !collapsed ? <span className="rounded-full bg-[#dc2626] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#ffffff] shadow-sm">{item.badge}</span> : null}
+            {typeof item.badge === 'number' && collapsed ? <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#dc2626]" /> : null}
           </NavLink>
         );
       })}
