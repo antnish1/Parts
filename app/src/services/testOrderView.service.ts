@@ -35,6 +35,8 @@ export type TestOrderBillingChunk = {
   order_no: string;
   part_no: string;
   billed_qty: number | null;
+  received_qty: number | null;
+  received_at: string | null;
   billing_date: string | null;
   order_reg_date: string | null;
   delivery_no: string | null;
@@ -152,7 +154,7 @@ async function getBillingChunks(orderId: string, items: Array<{ id: string }>) {
 
   const { data, error } = await supabase
     .from('test_order_item_billings')
-    .select('id, item_id, order_id, order_no, part_no, billed_qty, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
+    .select('id, item_id, order_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
 
