@@ -3,7 +3,7 @@ import type { TestOrder } from './testData.service';
 import { getOrderStatusMap } from './orderStatusMap.service';
 import { getCurrentBranchScopeValues } from './branchScope.service';
 
-const ORDER_COLUMNS = 'id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at';
+const ORDER_COLUMNS = 'id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:test_profiles!test_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at';
 const PAGE_SIZE = 1000;
 
 export async function getOrderList(): Promise<TestOrder[]> {
@@ -24,7 +24,7 @@ export async function getOrderList(): Promise<TestOrder[]> {
     const { data, error } = await query;
 
     if (error) throw error;
-    const page = (data ?? []) as TestOrder[];
+    const page = (data ?? []) as unknown as TestOrder[];
     rows.push(...page);
     if (page.length < PAGE_SIZE) break;
   }
