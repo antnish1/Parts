@@ -139,6 +139,14 @@ serve(async (req) => {
   }
 
   if (!approverId) return fail('Approver is required', 'APPROVER_REQUIRED');
+  const { data: approver, error: approverError } = await adminClient
+    .from('test_profiles')
+    .select('id, full_name, role, is_active')
+    .eq('id', approverId)
+    .maybeSingle();
+  if (approverError) return fail(approverError.message, 'APPROVER_LOOKUP_FAILED');
+  if (!approver?.is_active || !['super', 'manager'].includes(approver.role)) return fail('Please select an active super or manager approver.', 'APPROVER_INVALID');
+
   if (orderType === 'VOR' && orderFor !== 'Customer') return fail('VOR order must be for Customer');
   if (orderFor === 'Customer' && (!machineNo || !customerName || !warrantyStatus)) return fail('Customer order requires machine, customer and machine type');
   if (items.length === 0) return fail('At least one item row is required');
@@ -158,6 +166,7 @@ serve(async (req) => {
 
   try {
     const machineMasterResult = orderFor === 'Customer' ? await saveMissingMachine(adminClient, machineNo, customerName) : null;
+    const initialStatus = approver.role === 'manager' ? 'pending_manager_approval' : 'pending_approval';
 
     const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
     const { data: order, error: orderError } = await adminClient.from('test_orders').insert({
@@ -171,8 +180,8 @@ serve(async (req) => {
       customer_name: orderFor === 'Stock' ? null : customerName,
       call_id: callId || null,
       warranty_status: orderFor === 'Stock' ? 'NA' : warrantyStatus,
-      status: 'pending_approval',
-      approval_status: 'pending_approval',
+      status: initialStatus,
+      approval_status: initialStatus,
     }).select('id,order_no').single();
     if (orderError) throw orderError;
 
@@ -184,13 +193,13 @@ serve(async (req) => {
       qty: item.qty,
       value: Number((item.dnp * item.qty).toFixed(2)),
       previous_30d_qty: item.previous30dQty,
-      row_status: 'pending_approval',
+      row_status: initialStatus,
     }));
     const { error: itemError } = await adminClient.from('test_order_items').insert(itemRows);
     if (itemError) throw itemError;
 
     const machineNote = machineMasterResult?.warning ? ` Machine master save skipped: ${machineMasterResult.warning}` : '';
-    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s).${machineNote}` });
+    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. ${itemRows.length} item row(s).${machineNote}` });
     return json({ ok: true, id: order.id, order_no: order.order_no, machine_master_warning: machineMasterResult?.warning ?? null });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
