@@ -14,6 +14,7 @@ const statusStyles: Record<string, string> = {
   RECEIVED: 'text-[#0f766e]',
   'PARTIALLY RECEIVED': 'text-[#0e7490]',
   'PARTIALLY DISPATCHED': 'text-[#6d28d9]',
+  'PARTIALLY REJECTED': 'text-[#be123c]',
   REJECTED: 'text-[#be123c]',
 };
 
