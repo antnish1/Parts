@@ -20,9 +20,13 @@ function normalizeLoginId(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
@@ -33,33 +37,51 @@ Deno.serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
   const { data: sessionData, error: sessionError } = await userClient.auth.getUser();
-  if (sessionError || !sessionData.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (sessionError || !sessionData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: callerProfile, error: profileError } = await adminClient
     .from('test_profiles')
     .select('role, is_active')
     .eq('auth_user_id', sessionData.user.id)
     .maybeSingle();
-  if (profileError) return new Response(JSON.stringify({ error: profileError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  if (callerProfile?.role !== 'developer' || callerProfile?.is_active !== true) return new Response(JSON.stringify({ error: 'Only active developer users can create portal users.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (profileError) return json({ error: profileError.message }, 500);
+  if (callerProfile?.role !== 'developer' || callerProfile?.is_active !== true) return json({ error: 'Only active developer users can create portal users.' }, 403);
 
   const body = await req.json() as Payload;
   const loginId = normalizeLoginId(String(body.loginId ?? ''));
   const email = loginId ? `${loginId.toLowerCase()}@portal.local` : String(body.email ?? '').trim().toLowerCase();
-  const password = String(body.password ?? '');
+  const password = String(body.password ?? '').trim();
   const fullName = String(body.fullName ?? '').trim();
   const branch = String(body.branch ?? '').trim();
   const role = String(body.role ?? '').trim();
 
-  if (!email || !password || !fullName || !branch || !role) return new Response(JSON.stringify({ error: 'User ID or email, password, name, branch and role are required.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  if (!roles.includes(role)) return new Response(JSON.stringify({ error: 'Invalid role.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  if (password.length < 8) return new Response(JSON.stringify({ error: 'Password must be at least 8 characters.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (!email || !password || !fullName || !branch || !role) return json({ error: 'User ID or email, password, name, branch and role are required.' }, 400);
+  if (!roles.includes(role)) return json({ error: 'Invalid role.' }, 400);
+  if (password.length < 8) return json({ error: 'Password must be at least 8 characters.' }, 400);
+
+  if (loginId) {
+    const { error: columnError } = await adminClient.from('test_profiles').select('login_id').limit(1);
+    if (columnError) return json({ error: 'Profile table is missing login_id. Run supabase db push, then deploy create-portal-user again.' }, 400);
+
+    const { data: existingLogin, error: loginError } = await adminClient
+      .from('test_profiles')
+      .select('id')
+      .ilike('login_id', loginId)
+      .limit(1);
+    if (loginError) return json({ error: loginError.message }, 400);
+    if (existingLogin?.length) return json({ error: 'This User ID is already assigned. Please use another User ID.' }, 400);
+  }
 
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({ email, password, email_confirm: true });
-  if (authError || !authData.user) return new Response(JSON.stringify({ error: authError?.message ?? 'User creation failed.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (authError || !authData.user) {
+    return json({ error: authError?.message ?? 'User creation failed. If this Auth user was already created without profile, delete it from Supabase Authentication and create it again.' }, 400);
+  }
 
   const { error: insertError } = await adminClient.from('test_profiles').insert({ auth_user_id: authData.user.id, full_name: fullName, branch, role, login_id: loginId || null, is_active: true });
-  if (insertError) return new Response(JSON.stringify({ error: insertError.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  if (insertError) {
+    await adminClient.auth.admin.deleteUser(authData.user.id);
+    return json({ error: `Profile creation failed, so Auth user was rolled back. ${insertError.message}` }, 400);
+  }
 
-  return new Response(JSON.stringify({ ok: true, userId: authData.user.id, loginId: loginId || null }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  return json({ ok: true, userId: authData.user.id, loginId: loginId || null });
 });
