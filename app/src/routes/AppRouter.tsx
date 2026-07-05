@@ -16,8 +16,10 @@ import { ReportsPage } from '../features/reports/ReportsPage';
 import { DocketScannerPage } from '../features/docket/DocketScannerPage';
 
 function RoleLanding() {
-  const { role } = useAuth();
-  return <Navigate to={role ? roleHomePath[role] : '/login'} replace />;
+  const { role, isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return null;
+  if (!isAuthenticated || !role) return <Navigate to="/login" replace />;
+  return <Navigate to={roleHomePath[role]} replace />;
 }
 
 export function AppRouter() {
