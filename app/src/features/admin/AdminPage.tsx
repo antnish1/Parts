@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { OrderTypeBadge } from '../../components/tables/OrderTypeBadge';
 import { getOrderList } from '../../services/orderList.service';
 import { getTestTrackingMeta } from '../../services/testTrackingMeta.service';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
@@ -120,7 +121,7 @@ export function AdminPage() {
               return (
                 <tr key={order.id} className={getStatusRowClasses(order.status)}>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{formatDate(order.created_at)}</td>
-                  <td className="px-2.5 py-2"><span className="rounded-full bg-[#dbeafe] px-2.5 py-1 font-black text-[#0f4c81]">{order.order_type}</span></td>
+                  <td className="px-2.5 py-2"><OrderTypeBadge type={order.order_type} /></td>
                   <td className="px-2.5 py-2 text-white">{order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock'}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
                   <td className="px-2.5 py-2 text-right font-black text-white">{meta.totalQty}</td>
