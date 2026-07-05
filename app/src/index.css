@@ -235,6 +235,19 @@ body {
   font-size: 12px !important;
 }
 
+[data-theme='light-pro'] section:has(datalist#parts-master-list) label[class*='cursor-pointer'] {
+  background: #101827 !important;
+  border: 1px solid #344054 !important;
+  color: #ffd84d !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12) !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) label[class*='cursor-pointer']:hover {
+  background: #1d2939 !important;
+  border-color: #f2b600 !important;
+  color: #ffffff !important;
+}
+
 @media print {
   body {
     background: #ffffff !important;
