@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
@@ -17,7 +17,8 @@ function formatMoney(value: number) {
 
 export function TrackOrdersPage() {
   const { profile, role } = useAuth();
-  const [search, setSearch] = useState('');
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') ?? '');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -27,6 +28,11 @@ export function TrackOrdersPage() {
   const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getOrderList });
   const metaQuery = useQuery({ queryKey: ['test-tracking-meta', profile?.id, role, profile?.branch, orders.map((order) => order.id).join('|')], queryFn: () => getTestTrackingMeta(orders.map((order) => order.id)), enabled: orders.length > 0 });
   const metaMap = metaQuery.data ?? {};
+
+  useEffect(() => {
+    setSearch(searchParams.get('q') ?? '');
+    setPage(1);
+  }, [searchParams]);
 
   const counts = useMemo(() => ({
     total: orders.length,
