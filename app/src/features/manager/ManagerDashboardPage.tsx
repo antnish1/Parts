@@ -56,11 +56,13 @@ export function ManagerDashboardPage() {
   const inventoryQuery = useQuery({
     queryKey: ['manager-inventory', inventorySearch, inventoryBranch, effectiveInventoryDate],
     queryFn: () => getManagerInventoryLookup(inventorySearch, inventoryBranch, effectiveInventoryDate),
+    enabled: hasInventorySearch,
   });
 
   const txnQuery = useQuery({
     queryKey: ['manager-inventory-txn', inventorySearch, inventoryBranch, effectiveInventoryDate],
     queryFn: () => getManagerInventoryTransactions(inventorySearch, inventoryBranch, effectiveInventoryDate),
+    enabled: hasInventorySearch,
   });
 
   const metaQuery = useQuery({
@@ -72,8 +74,8 @@ export function ManagerDashboardPage() {
   const metaMap = metaQuery.data ?? {};
   const orderBranches = useMemo(() => [...new Set(orders.map((order) => order.branch))].sort(), [orders]);
   const statuses = useMemo(() => [...new Set(orders.map((order) => order.status))].sort(), [orders]);
-  const inventoryRows = inventoryQuery.data ?? [];
-  const txnRows = txnQuery.data ?? [];
+  const inventoryRows = hasInventorySearch ? inventoryQuery.data ?? [] : [];
+  const txnRows = hasInventorySearch ? txnQuery.data ?? [] : [];
   const inventoryBranches = useMemo(() => [...new Set(inventoryRows.map((row) => row.branch_code))].sort(), [inventoryRows]);
 
   const filteredOrders = useMemo(() => orders.filter((order) => {
