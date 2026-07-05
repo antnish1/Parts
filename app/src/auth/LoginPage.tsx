@@ -1,10 +1,11 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { roleHomePath } from './roleGuards';
+import { brandLogoSrc } from '../assets/brandLogo';
 
 const inputClass = 'w-full rounded-lg border border-[#6D8196]/45 bg-white px-12 py-3.5 text-sm font-semibold text-[#000080] outline-none transition placeholder:text-[#6D8196] focus:border-[#0047AB]';
 const labelClass = 'mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6D8196]';
@@ -44,8 +45,8 @@ export function LoginPage() {
       <div className="absolute inset-0 bg-gradient-to-br from-[#0047AB] via-[#000080] to-[#82C8E5]" />
       <section className="relative w-full max-w-[430px] rounded-2xl border border-white/40 bg-white p-7 shadow-panel sm:p-8">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-[#82C8E5] text-[#000080]">
-            <ShieldCheck className="h-7 w-7" />
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-white p-1.5 shadow-md ring-1 ring-[#82C8E5]/45">
+            <img src={brandLogoSrc} alt="Brand" className="h-full w-full object-contain" />
           </div>
           <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect</p>
           <h1 className="mt-3 text-3xl font-black text-[#000080]">Sign in</h1>
