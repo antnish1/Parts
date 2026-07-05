@@ -116,6 +116,125 @@ body {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06) !important;
 }
 
+/* Compact professional layout for the New Order builder */
+[data-theme='light-pro'] section:has(datalist#parts-master-list) {
+  padding: 10px !important;
+  background: #f5f7fa !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) > p:first-child,
+[data-theme='light-pro'] section:has(datalist#parts-master-list) > p:nth-of-type(2) {
+  display: none !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) > h1 {
+  margin: 0 0 8px !important;
+  font-size: 14px !important;
+  line-height: 18px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) > div,
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form {
+  margin-top: 0 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form {
+  gap: 10px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > div:first-child {
+  gap: 12px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form section {
+  padding: 12px !important;
+  border-radius: 14px !important;
+  border-color: #c8d3e1 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > div:first-child > section:first-child {
+  background: #f8fbff !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > div:first-child > section:nth-child(2) {
+  background: #fffdf2 !important;
+  border-color: #e0c766 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > section {
+  margin-top: 12px !important;
+  background: #fffaf0 !important;
+  border-color: #d7bd5a !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form section > p:first-child {
+  margin-bottom: 8px !important;
+  color: #0f4c81 !important;
+  font-size: 10px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form section:nth-child(2) > p:first-child,
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > section > p:first-child {
+  color: #8a6500 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) label {
+  color: #526173 !important;
+  font-size: 9px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) input,
+[data-theme='light-pro'] section:has(datalist#parts-master-list) select {
+  height: 36px !important;
+  min-height: 36px !important;
+  margin-top: 4px !important;
+  border-radius: 9px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  border-color: #c8d3e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) table input {
+  height: 32px !important;
+  min-height: 32px !important;
+  margin-top: 0 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) table thead {
+  background: #eaf1fb !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) th {
+  padding: 8px 10px !important;
+  color: #0f172a !important;
+  font-size: 10px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) td {
+  padding: 6px 10px !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) form > section > div:last-child {
+  margin-top: 10px !important;
+  padding: 10px !important;
+  border-radius: 14px !important;
+  background: #fffdf7 !important;
+}
+
+[data-theme='light-pro'] section:has(datalist#parts-master-list) button,
+[data-theme='light-pro'] section:has(datalist#parts-master-list) label[class*='cursor-pointer'] {
+  min-height: 32px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+}
+
 @media print {
   body {
     background: #ffffff !important;
