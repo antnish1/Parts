@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Boxes, ClipboardCheck, FilePlus2, Home, LogOut, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { Boxes, ClipboardCheck, FilePlus2, Home, LogOut, Menu, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
@@ -28,6 +28,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const adminCounterQuery = useQuery({
     queryKey: ['admin-approved-orders-nav-counter'],
@@ -51,12 +52,17 @@ export function AppLayout() {
   return (
     <div data-theme="light-pro" className="min-h-screen bg-[#111827] text-pc-text">
       <div className="flex min-h-screen">
-        <aside className="hidden w-48 shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 xl:block">
-          <div className="rounded-lg border border-[#263244] bg-[#f8fafc] px-2.5 py-2 text-xs shadow-sm">
-            <p className="leading-4 font-black text-[#020617]">{profile?.fullName ?? 'User'}</p>
-            <p className="text-[11px] leading-4 text-[#475569]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
-          </div>
-          <RoleAwareNav items={roleNavItems} role={profile?.role} />
+        <aside className={`${isSidebarCollapsed ? 'w-14' : 'w-48'} hidden shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 transition-all duration-200 xl:block`}>
+          <button type="button" className="mb-2 flex h-8 w-full items-center justify-center rounded-md border border-[#263244] text-[#d8e3ee] hover:bg-[#263244] hover:text-white" onClick={() => setIsSidebarCollapsed((current) => !current)} title={isSidebarCollapsed ? 'Expand menu' : 'Collapse menu'}>
+            <Menu className="h-4 w-4" />
+          </button>
+          {!isSidebarCollapsed ? (
+            <div className="rounded-lg border border-[#263244] bg-[#f8fafc] px-2.5 py-2 text-xs shadow-sm">
+              <p className="leading-4 font-black text-[#020617]">{profile?.fullName ?? 'User'}</p>
+              <p className="text-[11px] leading-4 text-[#475569]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
+            </div>
+          ) : null}
+          <RoleAwareNav items={roleNavItems} role={profile?.role} collapsed={isSidebarCollapsed} />
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
