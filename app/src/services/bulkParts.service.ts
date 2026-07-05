@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { normalizePartNo } from '../lib/orderLogic';
-import type { TestPart } from './testPart.service';
+import { lookupTestPartsByNos, type TestPart } from './testPart.service';
 
 export type BulkPartResult = {
   rows: Array<{ partNo: string; qty: number; description: string; dnp: string; isUnknown?: boolean }>;
@@ -72,7 +72,7 @@ function getColumnIndexes(rawRows: Array<Array<string | number>>, hasHeader: boo
   return { partIndex: bestPartIndex, qtyIndex: bestQtyIndex, skipFirstRow: hasHeader };
 }
 
-export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts: TestPart[]): Promise<BulkPartResult> {
+export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts?: TestPart[]): Promise<BulkPartResult> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -92,14 +92,17 @@ export async function parseBulkPartsFile(file: File, hasHeader: boolean, parts: 
     merged.set(partNo, (merged.get(partNo) ?? 0) + qty);
   });
 
+  const masterParts = parts ?? await lookupTestPartsByNos([...merged.keys()]);
+  const masterByPartNo = new Map(masterParts.map((part) => [normalizePartNo(part.part_no), part]));
   const rows: BulkPartResult['rows'] = [];
   const unknownParts: string[] = [];
+
   merged.forEach((qty, partNo) => {
     if (!Number.isInteger(qty)) {
       failed += 1;
       return;
     }
-    const master = parts.find((part) => normalizePartNo(part.part_no) === partNo);
+    const master = masterByPartNo.get(partNo);
     if (!master) unknownParts.push(partNo);
     rows.push({
       partNo,
