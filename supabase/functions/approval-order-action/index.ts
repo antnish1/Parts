@@ -22,13 +22,16 @@ serve(async (req) => {
   const orderId = String(body.orderId ?? '');
   const { data: order, error: orderError } = await adminClient
     .from('test_orders')
-    .select('id,order_no,status,approver_id,approver:test_profiles!test_orders_approver_id_fkey(full_name,role)')
+    .select('id,order_no,status,approver_id')
     .eq('id', orderId)
     .like('order_no', 'TEST-%')
     .maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
   if (!order) return json({ error: 'Test order not found' }, 404);
-  const approver = Array.isArray(order.approver) ? order.approver[0] : order.approver;
+
+  const { data: approver } = order.approver_id
+    ? await adminClient.from('test_profiles').select('id,full_name,role').eq('id', order.approver_id).maybeSingle()
+    : { data: null };
   const now = new Date().toISOString();
 
   async function event(eventType: string, newStatus: string, notes: string) {
@@ -41,8 +44,8 @@ serve(async (req) => {
     if (error) throw error;
   }
 
-  async function updateItems(rowStatus: string, fromStatuses: string[]) {
-    const { error } = await adminClient.from('test_order_items').update({ row_status: rowStatus, updated_at: now }).eq('order_id', order.id).in('row_status', fromStatuses);
+  async function updateItems(rowStatus: string) {
+    const { error } = await adminClient.from('test_order_items').update({ row_status: rowStatus, updated_at: now }).eq('order_id', order.id);
     if (error) throw error;
   }
 
@@ -50,25 +53,28 @@ serve(async (req) => {
     return order.approver_id && order.approver_id === profile.id;
   }
 
+  async function approveByManager(eventType = 'MANAGER_APPROVED') {
+    if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can approve this order' }, 403);
+    await updateOrder('approved', 'approved');
+    await updateItems('approved');
+    await event(eventType, 'approved', `Manager approved order item rows. Original approver: ${approver?.full_name || '-'}.`);
+    return json({ ok: true });
+  }
+
   async function rejectByManager() {
-    if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can reject manager-pending order' }, 403);
+    if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can reject this order' }, 403);
     await updateOrder('rejected', 'rejected');
-    await updateItems('rejected', ['pending_approval', 'pending_manager_approval', 'approved']);
+    await updateItems('rejected');
     await event('MANAGER_REJECTED', 'rejected', `Manager rejected order item rows. Original approver: ${approver?.full_name || '-'}.`);
     return json({ ok: true });
   }
 
   try {
     if (action === 'approve') {
-      if (profile.role === 'manager') {
-        await updateOrder('approved', 'approved');
-        await updateItems('approved', ['pending_approval', 'pending_manager_approval']);
-        await event('MANAGER_DIRECT_APPROVED', 'approved', 'Manager directly approved order item rows.');
-        return json({ ok: true });
-      }
+      if (profile.role === 'manager') return await approveByManager('MANAGER_DIRECT_APPROVED');
       if (profile.role !== 'developer' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can approve this order.' }, 403);
       await updateOrder('pending_manager_approval', 'pending_manager_approval');
-      await updateItems('pending_manager_approval', ['pending_approval', 'approved']);
+      await updateItems('pending_manager_approval');
       await event('SUPER_APPROVED_PENDING_MANAGER', 'pending_manager_approval', `Approved by ${profile.full_name || 'super'}; pending manager approval.`);
       return json({ ok: true });
     }
@@ -76,7 +82,7 @@ serve(async (req) => {
       if (profile.role === 'manager' || profile.role === 'developer') return await rejectByManager();
       if (profile.role === 'super' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can reject this order.' }, 403);
       await updateOrder('rejected', 'rejected');
-      await updateItems('rejected', ['pending_approval', 'pending_manager_approval', 'approved']);
+      await updateItems('rejected');
       await event('ORDER_REJECTED', 'rejected', 'Order item rows rejected.');
       return json({ ok: true });
     }
@@ -84,16 +90,12 @@ serve(async (req) => {
       if (profile.role !== 'developer' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can forward this order to manager.' }, 403);
       const managerName = String(body.managerName ?? 'Manager').trim() || 'Manager';
       await updateOrder('pending_manager_approval', 'pending_manager_approval');
-      await updateItems('pending_manager_approval', ['pending_approval', 'approved']);
+      await updateItems('pending_manager_approval');
       await event('SUPER_FORWARDED_MANAGER', 'pending_manager_approval', `Forwarded to ${managerName}.`);
       return json({ ok: true });
     }
     if (action === 'manager_approve') {
-      if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can approve manager-pending order' }, 403);
-      await updateOrder('approved', 'approved');
-      await updateItems('approved', ['pending_approval', 'pending_manager_approval']);
-      await event('MANAGER_APPROVED', 'approved', `Manager approved order item rows. Original approver: ${approver?.full_name || '-'}.`);
-      return json({ ok: true });
+      return await approveByManager('MANAGER_APPROVED');
     }
     if (action === 'manager_reject') {
       return await rejectByManager();
