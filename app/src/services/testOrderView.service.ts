@@ -28,6 +28,28 @@ export type TestOrderView = {
   approver?: { full_name: string | null; role: string | null } | null;
 };
 
+export type TestOrderBillingChunk = {
+  id: string;
+  item_id: string;
+  order_id: string;
+  order_no: string;
+  part_no: string;
+  billed_qty: number | null;
+  billing_date: string | null;
+  order_reg_date: string | null;
+  delivery_no: string | null;
+  invoice_no: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
+  transport_mode: string | null;
+  packing_detail: string | null;
+  eway_bill_no: string | null;
+  gst_invoice_no: string | null;
+  raw_status: string | null;
+  source: string | null;
+  created_at: string;
+};
+
 export type TestOrderViewItem = {
   id: string;
   part_no: string;
@@ -46,6 +68,7 @@ export type TestOrderViewItem = {
   transport_name: string | null;
   received_date: string | null;
   row_status: string | null;
+  billing_chunks: TestOrderBillingChunk[];
 };
 
 export type TestOrderEvent = { id: string; event_type: string; old_status: string | null; new_status: string | null; notes: string | null; created_at: string; };
@@ -54,6 +77,7 @@ export type TestOrderComment = { id: string; comment_type: string; body: string 
 
 type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawComment = Omit<TestOrderComment, 'author' | 'attachments'> & { author?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
+type RawItem = Omit<TestOrderViewItem, 'billing_chunks'>;
 
 function normalizeOrderView(order: RawOrderView): TestOrderView {
   const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
@@ -122,6 +146,29 @@ async function getCommentAttachments(orderId: string, comments: Array<{ id: stri
   return map;
 }
 
+async function getBillingChunks(orderId: string, items: Array<{ id: string }>) {
+  const map = new Map<string, TestOrderBillingChunk[]>();
+  if (!items.length) return map;
+
+  const { data, error } = await supabase
+    .from('test_order_item_billings')
+    .select('id, item_id, order_id, order_no, part_no, billed_qty, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('Billing chunks are not available yet.', error.message);
+    return map;
+  }
+
+  for (const chunk of (data ?? []) as TestOrderBillingChunk[]) {
+    const list = map.get(chunk.item_id) ?? [];
+    list.push(chunk);
+    map.set(chunk.item_id, list);
+  }
+  return map;
+}
+
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
@@ -141,6 +188,10 @@ export async function getTestOrderView(orderId: string) {
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
   if (itemError) throw itemError;
+
+  const rawItems = (items ?? []) as RawItem[];
+  const billingChunkMap = await getBillingChunks(orderId, rawItems);
+  const itemsWithChunks = rawItems.map((item) => ({ ...item, billing_chunks: billingChunkMap.get(item.id) ?? [] }));
 
   const { data: events, error: eventError } = await supabase
     .from('test_order_events')
@@ -163,5 +214,5 @@ export async function getTestOrderView(orderId: string) {
   const attachmentMap = await getCommentAttachments(orderId, rawComments);
   const commentsWithAttachments = rawComments.map((comment) => normalizeComment(comment, attachmentMap.get(comment.id) ?? []));
 
-  return { order: normalizeOrderView(rawOrder), items: (items ?? []) as TestOrderViewItem[], events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
+  return { order: normalizeOrderView(rawOrder), items: itemsWithChunks, events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
 }
