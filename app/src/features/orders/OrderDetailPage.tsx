@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { useAuth } from '../../auth/useAuth';
 import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderRejected } from '../../services/testApproval.service';
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
@@ -53,6 +54,7 @@ export function OrderDetailPage() {
   const [busyAction, setBusyAction] = useState('');
   const [processReference, setProcessReference] = useState('');
   const [showLogs, setShowLogs] = useState(false);
+  const [showManagerOverride, setShowManagerOverride] = useState(false);
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
   const inventoryQuery = useQuery({
     queryKey: ['test-order-inventory', data?.order.branch, data?.items.map((item) => item.part_no).join('|')],
@@ -99,16 +101,18 @@ export function OrderDetailPage() {
     ['Approved By', order.approver?.full_name || '-', true],
   ] as const;
 
-  function confirmManagerOverride() {
-    if (role !== 'manager') return true;
-    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return true;
-    const approverName = order.approver?.full_name || 'The selected super approver';
-    return window.confirm(`${approverName} is been selected as approver of the order, are you sure you want to approve this order directly?`);
+  function needsManagerOverride() {
+    if (role !== 'manager') return false;
+    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
+    return true;
   }
 
-  async function runApprovalAction(action: 'approve' | 'reject') {
+  async function runApprovalAction(action: 'approve' | 'reject', confirmedOverride = false) {
     setActionMessage('');
-    if (action === 'approve' && !confirmManagerOverride()) return;
+    if (action === 'approve' && !confirmedOverride && needsManagerOverride()) {
+      setShowManagerOverride(true);
+      return;
+    }
     setBusyAction(action);
     try {
       if (action === 'approve') {
@@ -118,6 +122,7 @@ export function OrderDetailPage() {
         await setTestOrderRejected(order as unknown as TestOrder);
       }
       setActionMessage(`${order.order_no} ${action === 'approve' ? (role === 'manager' ? 'approved by manager' : 'sent to manager approval') : 'rejected'}.`);
+      setShowManagerOverride(false);
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
@@ -187,23 +192,7 @@ export function OrderDetailPage() {
   function downloadCsv() {
     const rows = [
       ['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Reg Dt', 'Bill No', 'Billing Dt', 'Transport', 'Docket', 'Inventory', 'Prev 30d'],
-      ...items.map((item) => [
-        item.part_no,
-        item.description || '',
-        getEffectiveQty(item),
-        getBilledQty(item),
-        getPendingQty(item),
-        getEffectiveValue(item),
-        item.row_status || status,
-        order.processed_date || '',
-        item.order_reg_date || orderRegDateLabel,
-        item.dbms_invoice_no || '',
-        item.dbms_invoice_date || '',
-        item.transport_name || '',
-        item.docket_no || '',
-        inventoryMap[normalizePartNo(item.part_no)] ?? 0,
-        item.previous_30d_qty ?? 0,
-      ]),
+      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), item.row_status || status, order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -262,15 +251,8 @@ export function OrderDetailPage() {
               <p className="font-semibold text-[#0f172a]">{comment.body || '-'}</p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-[#667085]">{comment.comment_type} • {formatDate(comment.created_at)}</p>
               <div className="no-print mt-2 flex flex-wrap items-center gap-3">
-                <label className="cursor-pointer text-[11px] font-black text-[#0f4c81] hover:underline">
-                  {attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}
-                  <input type="file" className="hidden" disabled={!!attachmentBusy} onChange={(event) => void handleAttachmentUpload(comment.id, event)} />
-                </label>
-                {comment.attachments.map((attachment) => (
-                  <button key={attachment.id} type="button" className="text-[11px] font-black text-[#0f4c81] hover:underline disabled:opacity-50" disabled={!!attachmentBusy} onClick={() => void handleAttachmentDownload(attachment.id)}>
-                    {attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}
-                  </button>
-                ))}
+                <label className="cursor-pointer text-[11px] font-black text-[#0f4c81] hover:underline">{attachmentBusy === comment.id ? 'Uploading...' : 'Attach file'}<input type="file" className="hidden" disabled={!!attachmentBusy} onChange={(event) => void handleAttachmentUpload(comment.id, event)} /></label>
+                {comment.attachments.map((attachment) => (<button key={attachment.id} type="button" className="text-[11px] font-black text-[#0f4c81] hover:underline disabled:opacity-50" disabled={!!attachmentBusy} onClick={() => void handleAttachmentDownload(attachment.id)}>{attachmentBusy === attachment.id ? 'Opening...' : `Download ${attachment.original_file_name} (${formatBytes(attachment.file_size_bytes)})`}</button>))}
               </div>
             </div>
           ))}
@@ -283,30 +265,12 @@ export function OrderDetailPage() {
         <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#0f4c81]">Part Details</p>
         <div className="overflow-hidden rounded-lg border border-[#d9dee7]">
           <table className="w-full min-w-[1450px] border-collapse text-left text-xs">
-            <thead className="bg-[#f3f6fb] text-[10px] uppercase tracking-[0.12em] text-[#344054]">
-              <tr><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th><th className="px-2 py-2 text-right">PrevQty 30d</th></tr>
-            </thead>
+            <thead className="bg-[#f3f6fb] text-[10px] uppercase tracking-[0.12em] text-[#344054]"><tr><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th><th className="px-2 py-2 text-right">PrevQty 30d</th></tr></thead>
             <tbody className="divide-y divide-[#e4e7ec] bg-white">
               {items.map((item) => {
                 const inventoryQty = inventoryMap[normalizePartNo(item.part_no)] ?? 0;
                 return (
-                  <tr key={item.id} className="hover:bg-[#f8fbff]">
-                    <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td>
-                    <td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td>
-                    <td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td>
-                    <td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td>
-                    <td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td>
-                    <td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td>
-                    <td className="px-2 py-2"><StatusBadge status={item.row_status || status} /></td>
-                    <td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td>
-                    <td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td>
-                    <td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || '-'}</td>
-                    <td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || '-'}</td>
-                    <td className="px-2 py-2 text-[#344054]">{item.transport_name || '-'}</td>
-                    <td className="px-2 py-2 text-[#344054]">{item.docket_no || '-'}</td>
-                    <td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td>
-                    <td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
-                  </tr>
+                  <tr key={item.id} className="hover:bg-[#f8fbff]"><td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={item.row_status || status} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td></tr>
                 );
               })}
             </tbody>
@@ -319,6 +283,8 @@ export function OrderDetailPage() {
           <div className="rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2"><span className="text-[#667085]">Value</span><p className="font-black text-[#0f172a]">{formatMoney(totalValue)}</p></div>
         </div>
       </section>
+
+      <ApprovalOverrideConfirm open={showManagerOverride} approverName={order.approver?.full_name || 'The selected super approver'} orderNo={order.order_no} busy={busyAction === 'approve'} onCancel={() => setShowManagerOverride(false)} onConfirm={() => void runApprovalAction('approve', true)} />
     </PageCard>
   );
 }
