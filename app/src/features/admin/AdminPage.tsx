@@ -92,7 +92,7 @@ export function AdminPage() {
   );
 
   return (
-    <PageCard eyebrow="Admin" title="Order Register" description="Approved orders ready for admin processing.">
+    <PageCard eyebrow="Admin" title="Approved Orders" description="Approved orders ready for admin processing.">
       <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <input className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5] lg:w-96" placeholder="Search order, branch, customer, machine" value={search} onChange={(event) => updateSearch(event.target.value)} />
         <p className="rounded-full border border-[#6b5b15] px-3 py-1 text-xs font-black text-white">Page {safePage} / {totalPages}</p>
@@ -142,7 +142,7 @@ export function AdminPage() {
         <div className="flex items-center gap-2">
           <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled:opacity-40" disabled={safePage <= 1} onClick={() => setPage((current) => current - 1)}>⬅ Prev</button>
           <span className="rounded-full border border-[#6b5b15] px-3 py-2 font-black text-white">Page {safePage} / {totalPages}</span>
-          <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled:opacity-40" disabled={safePage >= totalPages} onClick={() => setPage((current) => current + 1)}>Next ➡</button>
+          <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled={safePage >= totalPages} onClick={() => setPage((current) => current + 1)}>Next ➡</button>
         </div>
       </div>
     </PageCard>
