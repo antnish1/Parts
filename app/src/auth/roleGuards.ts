@@ -31,10 +31,15 @@ function isDocketWorkspace(path: string) {
   return path.startsWith('/docket-scanner');
 }
 
+function isUploadsWorkspace(path: string) {
+  return path.startsWith('/uploads');
+}
+
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
   if (role === 'hq') return false;
   if (path === '/orders/new') return role === 'branch';
+  if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');
