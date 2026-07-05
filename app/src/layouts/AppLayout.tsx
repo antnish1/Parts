@@ -72,7 +72,7 @@ export function AppLayout() {
                 <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect Portal</p>
               </div>
-              <Button variant="secondary" className="rounded-md border-[#b42318] bg-[#d92d20] px-3 py-1.5 text-xs font-black text-white shadow-sm hover:border-[#912018] hover:bg-[#b42318]" onClick={handleSignOut}>
+              <Button variant="secondary" className="rounded-md border-[#314158] bg-[#1e293b] px-3 py-1.5 text-xs font-black !text-[#f8fafc] shadow-sm hover:border-[#64748b] hover:bg-[#0f172a] [&_svg]:!text-[#f8fafc]" onClick={handleSignOut}>
                 <LogOut className="h-3.5 w-3.5" />
                 Sign Out
               </Button>
