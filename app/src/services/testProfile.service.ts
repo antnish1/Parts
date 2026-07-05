@@ -8,6 +8,7 @@ export type TestProfileOption = {
 };
 
 export type TestProfileRow = TestProfileOption & {
+  login_id: string | null;
   is_active: boolean;
   created_at: string;
 };
@@ -21,6 +22,7 @@ export type CreateTestProfileInput = {
 export type CreatePortalUserInput = CreateTestProfileInput & {
   email: string;
   password: string;
+  loginId?: string;
 };
 
 export type UpdateTestProfileInput = {
@@ -28,10 +30,12 @@ export type UpdateTestProfileInput = {
   branch: string;
   role: string;
   isActive: boolean;
+  loginId?: string;
 };
 
 function friendlyUserError(message: string) {
   const text = message.toLowerCase();
+  if (text.includes('user id') || text.includes('login_id')) return 'This User ID is already assigned. Please use another User ID.';
   if (text.includes('already') || text.includes('registered') || text.includes('duplicate')) return 'This email is already registered. Please use another email, or edit the existing user profile.';
   if (text.includes('password')) return 'Password is not valid. Please use at least 8 characters.';
   if (text.includes('unauthorized') || text.includes('jwt')) return 'Your login session expired. Please logout and login again as developer.';
@@ -73,7 +77,7 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
 export async function getTestProfiles(): Promise<TestProfileRow[]> {
   const { data, error } = await supabase
     .from('test_profiles')
-    .select('id, full_name, branch, role, is_active, created_at')
+    .select('id, full_name, branch, role, login_id, is_active, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -105,12 +109,13 @@ export async function updateTestProfile(profileId: string, input: UpdateTestProf
   const fullName = input.fullName.trim();
   const branch = input.branch.trim();
   const role = input.role.trim();
+  const loginId = input.loginId?.trim().replace(/\s+/g, '').toUpperCase() || null;
   if (!profileId) throw new Error('Profile id is required.');
   if (!fullName || !branch || !role) throw new Error('Name, branch and role are required.');
 
   const { error } = await supabase
     .from('test_profiles')
-    .update({ full_name: fullName, branch, role, is_active: input.isActive })
+    .update({ full_name: fullName, branch, role, login_id: loginId, is_active: input.isActive })
     .eq('id', profileId);
 
   if (error) throw error;
@@ -133,6 +138,7 @@ export async function createPortalUser(input: CreatePortalUserInput) {
       fullName: input.fullName.trim(),
       branch: input.branch.trim(),
       role: input.role.trim(),
+      loginId: input.loginId?.trim().replace(/\s+/g, '').toUpperCase() || '',
     },
   });
 
