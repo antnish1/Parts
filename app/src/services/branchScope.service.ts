@@ -1,16 +1,24 @@
 import { supabase } from '../lib/supabase';
 
-type ProfileRow = { role: string; branch: string | null; is_active: boolean | null };
+type ProfileRow = { role: string | null; branch: string | null; is_active: boolean | null };
 type BranchRow = { branch_name: string; branch_code: string };
 
 export function normalizeBranchKey(value: string | null | undefined) {
   return (value || '').trim().replace(/[\s_-]+/g, '').toUpperCase();
 }
 
-export async function getCurrentBranchScopeValues() {
+function normalizeRole(value: string | null | undefined) {
+  return (value || '').trim().toLowerCase();
+}
+
+function toList(values: Set<string>) {
+  return [...values].map((value) => value.trim()).filter(Boolean);
+}
+
+export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData.session?.user?.id;
-  if (!userId) return null;
+  if (!userId) return [];
 
   const { data: profile, error: profileError } = await supabase
     .from('test_profiles')
@@ -20,15 +28,17 @@ export async function getCurrentBranchScopeValues() {
 
   if (profileError) {
     console.warn('Branch scope profile lookup failed.', profileError.message);
-    return null;
+    return [];
   }
 
   const row = profile as ProfileRow | null;
-  if (!row?.is_active || row.role !== 'branch') return null;
+  if (!row?.is_active) return [];
+  if (normalizeRole(row.role) !== 'branch') return null;
 
   const values = new Set<string>();
   if (row.branch) values.add(row.branch);
   const branchKey = normalizeBranchKey(row.branch);
+  if (!branchKey) return [];
 
   const { data: branches, error: branchError } = await supabase
     .from('test_branch_mapping')
@@ -37,7 +47,7 @@ export async function getCurrentBranchScopeValues() {
 
   if (branchError) {
     console.warn('Branch scope mapping lookup failed.', branchError.message);
-    return [...values].filter(Boolean);
+    return toList(values);
   }
 
   ((branches ?? []) as BranchRow[]).forEach((branch) => {
@@ -47,12 +57,13 @@ export async function getCurrentBranchScopeValues() {
     }
   });
 
-  return [...values].filter(Boolean);
+  return toList(values);
 }
 
 export async function currentBranchScopeIncludes(orderBranch: string | null | undefined) {
   const values = await getCurrentBranchScopeValues();
   if (values === null) return true;
+  if (values.length === 0) return false;
   const orderKey = normalizeBranchKey(orderBranch);
   return values.some((value) => normalizeBranchKey(value) === orderKey);
 }
