@@ -46,9 +46,9 @@ export function LoginPage() {
       <section className="relative w-full max-w-[430px] rounded-2xl border border-white/40 bg-white p-7 shadow-panel sm:p-8">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-white p-1.5 shadow-md ring-1 ring-[#82C8E5]/45">
-            <img src={brandLogoSrc} alt="Brand" className="h-full w-full object-contain" />
+            <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-full w-full object-contain" />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect</p>
+          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect Portal</p>
           <h1 className="mt-3 text-3xl font-black text-[#000080]">Sign in</h1>
         </div>
 
