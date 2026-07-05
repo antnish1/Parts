@@ -1,5 +1,4 @@
 import { AlertTriangle, CheckCircle2, Info, Loader2, X } from 'lucide-react';
-import { Button } from './Button';
 
 type FeedbackVariant = 'success' | 'error' | 'info';
 type LoaderVariant = 'orbit' | 'scanner' | 'comet' | 'matrix' | 'pulse';
@@ -80,26 +79,49 @@ export function FeedbackModal({ message, variant, onClose }: { message: string; 
   const isError = tone === 'error';
   const Icon = isSuccess ? CheckCircle2 : isError ? AlertTriangle : Info;
   const toneClass = isSuccess
-    ? { icon: 'text-[#047857]', bg: 'bg-[#ecfdf3]', border: 'border-[#bbf7d0]', button: 'bg-[#047857] text-white hover:bg-[#065f46]' }
+    ? {
+        icon: 'text-[#047857]',
+        iconBox: 'bg-[#ecfdf3] border-[#bbf7d0]',
+        accent: 'bg-[#047857]',
+        glow: 'shadow-[0_14px_45px_rgba(4,120,87,0.16)]',
+        button: 'bg-[#047857] hover:bg-[#065f46]',
+      }
     : isError
-      ? { icon: 'text-[#be123c]', bg: 'bg-[#fff1f3]', border: 'border-[#fecdd3]', button: 'bg-[#be123c] text-white hover:bg-[#9f1239]' }
-      : { icon: 'text-[#1677ff]', bg: 'bg-[#e6f4ff]', border: 'border-[#bfdbfe]', button: 'bg-[#1677ff] text-white hover:bg-[#0f5ed7]' };
+      ? {
+          icon: 'text-[#be123c]',
+          iconBox: 'bg-[#fff1f3] border-[#fecdd3]',
+          accent: 'bg-[#be123c]',
+          glow: 'shadow-[0_14px_45px_rgba(190,18,60,0.16)]',
+          button: 'bg-[#be123c] hover:bg-[#9f1239]',
+        }
+      : {
+          icon: 'text-[#1677ff]',
+          iconBox: 'bg-[#e6f4ff] border-[#bfdbfe]',
+          accent: 'bg-[#1677ff]',
+          glow: 'shadow-[0_14px_45px_rgba(22,119,255,0.16)]',
+          button: 'bg-[#1677ff] hover:bg-[#0f5ed7]',
+        };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]/55 px-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-[#d9dee7] bg-white shadow-[0_18px_70px_rgba(16,24,40,0.22)]">
-        <button type="button" className="absolute right-3 top-3 rounded-full border border-[#d9dee7] bg-white p-1 text-[#667085] hover:bg-[#f2f4f7]" onClick={onClose} aria-label="Close message">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#020617]/58 px-4 backdrop-blur-sm">
+      <div className={`relative w-full max-w-md overflow-hidden rounded-[1.4rem] border border-[#d9dee7] bg-white ${toneClass.glow}`}>
+        <div className={`h-1.5 w-full ${toneClass.accent}`} />
+        <button type="button" className="absolute right-3 top-3 rounded-full border border-[#d9dee7] bg-white p-1.5 text-[#667085] transition hover:bg-[#f2f4f7] hover:text-[#101827]" onClick={onClose} aria-label="Close message">
           <X className="h-4 w-4" />
         </button>
-        <div className="p-4 pr-11">
-          <div className="flex items-start gap-3">
-            <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border ${toneClass.border} ${toneClass.bg}`}>
-              <Icon className={`h-5 w-5 ${toneClass.icon}`} />
+
+        <div className="p-5 pt-6">
+          <div className="flex items-start gap-4 pr-8">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${toneClass.iconBox}`}>
+              <Icon className={`h-6 w-6 ${toneClass.icon}`} />
             </div>
-            <p className="min-h-9 whitespace-pre-wrap pt-1 text-sm font-black leading-5 text-[#101827]">{message}</p>
+            <div className="min-w-0 flex-1">
+              <p className="whitespace-pre-wrap text-base font-black leading-6 text-[#101827]">{message}</p>
+            </div>
           </div>
-          <div className="mt-4 flex justify-end">
-            <Button type="button" className={`rounded-lg px-4 py-2 text-xs ${toneClass.button}`} onClick={onClose}>OK</Button>
+
+          <div className="mt-5 flex justify-end border-t border-[#eef2f6] pt-4">
+            <button type="button" className={`rounded-xl px-5 py-2.5 text-sm font-black text-white transition ${toneClass.button}`} onClick={onClose}>OK</button>
           </div>
         </div>
       </div>
