@@ -37,7 +37,7 @@ function readNumber(row: RawRow, aliases: string[]) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function mapLivePart(row: RawRow): TestPart | null {
+function mapPartMasterRow(row: RawRow): TestPart | null {
   const partNo = normalizePartNo(readText(row, ['part_no', 'partno', 'part number', 'part_number', 'item_code', 'itemcode', 'material', 'material no', 'material_no', 'material number', 'materialnumber', 'Material', 'Material No', 'Material No.']));
   if (!partNo) return null;
 
@@ -50,16 +50,17 @@ function mapLivePart(row: RawRow): TestPart | null {
   };
 }
 
-async function getRowsFromTable(tableName: 'test_part_master' | 'part_master') {
+async function getPartMasterRows() {
   const rows: RawRow[] = [];
 
   for (let start = 0; ; start += PAGE_SIZE) {
-    let query = supabase.from(tableName).select('*').range(start, start + PAGE_SIZE - 1);
-    if (tableName === 'test_part_master') query = query.eq('is_active', true);
+    const { data, error } = await supabase
+      .from('part_master')
+      .select('*')
+      .range(start, start + PAGE_SIZE - 1);
 
-    const { data, error } = await query;
     if (error) {
-      console.warn(`Failed to load ${tableName}`, error.message);
+      console.warn('Failed to load part_master', error.message);
       return rows;
     }
 
@@ -73,11 +74,10 @@ async function getRowsFromTable(tableName: 'test_part_master' | 'part_master') {
 
 export async function getTestParts(): Promise<TestPart[]> {
   const merged = new Map<string, TestPart>();
-  const testRows = await getRowsFromTable('test_part_master');
-  const liveRows = await getRowsFromTable('part_master');
+  const liveRows = await getPartMasterRows();
 
-  [...liveRows, ...testRows].forEach((row) => {
-    const mapped = mapLivePart(row);
+  liveRows.forEach((row) => {
+    const mapped = mapPartMasterRow(row);
     if (mapped) merged.set(mapped.part_no, mapped);
   });
 
