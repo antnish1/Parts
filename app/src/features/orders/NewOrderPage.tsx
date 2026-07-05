@@ -64,19 +64,6 @@ export function NewOrderPage() {
   }, [branches, profile?.branch, role]);
 
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
-  const isOrderSubmitting = submitStarted || mutationIsPending();
-  const isFormBusy = isOrderSubmitting || machineLookupLoading;
-
-  function mutationIsPending() {
-    return mutation.isPending;
-  }
-
-  useEffect(() => {
-    if (role !== 'branch' || !profile?.branch) return;
-    const nextBranch = resolveBranchName(branchOptions, profile.branch);
-    if (!nextBranch) return;
-    setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch }));
-  }, [branchOptions, profile?.branch, role]);
 
   const mutation = useMutation({
     mutationFn: createTestOrder,
@@ -94,6 +81,16 @@ export function NewOrderPage() {
       setMessage(error instanceof Error ? error.message : 'Order creation failed. Check write policies.');
     },
   });
+
+  const isOrderSubmitting = submitStarted || mutation.isPending;
+  const isFormBusy = isOrderSubmitting || machineLookupLoading;
+
+  useEffect(() => {
+    if (role !== 'branch' || !profile?.branch) return;
+    const nextBranch = resolveBranchName(branchOptions, profile.branch);
+    if (!nextBranch) return;
+    setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch }));
+  }, [branchOptions, profile?.branch, role]);
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -238,7 +235,7 @@ export function NewOrderPage() {
     if (!form.approverId) return stopWithMessage('Please select approver.');
     if (form.orderType === 'VOR' && form.orderFor !== 'Customer') return stopWithMessage('VOR order must be for Customer.');
     if (form.orderFor === 'Customer' && (!form.machineNo || !form.customerName || !form.warrantyStatus)) return stopWithMessage('Customer order requires machine number, customer name, and machine type.');
-    if (partLookupLineId) return stopWithMessage('Please wait for part lookup to finish.');
+    if (partLookupLineId !== null) return stopWithMessage('Please wait for part lookup to finish.');
     if (duplicatePart) return stopWithMessage(`Duplicate item not allowed: ${duplicatePart.partNo}`);
     if (invalidItem) return stopWithMessage('Each item must have valid master part, Qty, Description, and DNP. Qty must be a whole number above zero.');
     const payload = { branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems };
