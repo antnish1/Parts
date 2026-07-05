@@ -33,11 +33,9 @@ export function AppLayout() {
     <div data-theme="light-pro" className="min-h-screen bg-[#111827] text-pc-text">
       <div className="flex min-h-screen">
         <aside className="hidden w-48 shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 xl:block">
-          <div className="rounded-lg border border-[#263244] bg-[#111827] p-2.5">
-            <div className="flex items-center gap-2">
-              <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect Portal</p>
-            </div>
+          <div className="rounded-lg border border-[#263244] bg-[#f8fafc] px-2.5 py-2 text-xs shadow-sm">
+            <p className="leading-4 font-black text-[#020617]">{profile?.fullName ?? 'User'}</p>
+            <p className="text-[11px] leading-4 text-[#475569]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
           </div>
           <RoleAwareNav items={navItems} role={profile?.role} />
         </aside>
@@ -45,21 +43,14 @@ export function AppLayout() {
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-3 py-2 backdrop-blur lg:px-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 xl:hidden">
+              <div className="flex items-center gap-2">
                 <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect Portal</p>
               </div>
-              <div className="hidden xl:block" />
-              <div className="flex items-center gap-2">
-                <div className="rounded-lg border border-[#263244] bg-[#0b1020] px-2.5 py-1 text-xs">
-                  <p className="leading-4 font-black text-white">{profile?.fullName ?? 'User'}</p>
-                  <p className="text-[10px] text-[#c7d2df]">{profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
-                </div>
-                <Button variant="secondary" className="rounded-md px-2.5 py-1.5 text-xs" onClick={handleSignOut}>
-                  <LogOut className="h-3.5 w-3.5" />
-                  Sign Out
-                </Button>
-              </div>
+              <Button variant="secondary" className="rounded-md px-2.5 py-1.5 text-xs" onClick={handleSignOut}>
+                <LogOut className="h-3.5 w-3.5" />
+                Sign Out
+              </Button>
             </div>
           </header>
           <MobileRoleNav items={navItems} role={profile?.role} />
