@@ -14,7 +14,7 @@ serve(async (req) => {
   const admin = createClient(url, service);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await admin.from('test_profiles').select('role,is_active,full_name').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await admin.from('test_profiles').select('id,role,is_active,full_name').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approvers can perform review actions' }, 403);
 
   const body = await req.json().catch(() => ({}));
@@ -29,32 +29,35 @@ serve(async (req) => {
       const { data: item, error: itemError } = await admin.from('test_order_items').select('id,order_id,part_no').eq('id', itemId).maybeSingle();
       if (itemError) throw itemError;
       if (!item) return json({ error: 'Item row not found' }, 404);
-      const { data: order, error: orderError } = await admin.from('test_orders').select('id,order_no,status').eq('id', item.order_id).like('order_no', 'TEST-%').maybeSingle();
+      const { data: order, error: orderError } = await admin.from('test_orders').select('id,order_no,status,approver_id').eq('id', item.order_id).like('order_no', 'TEST-%').maybeSingle();
       if (orderError) throw orderError;
       if (!order) return json({ error: 'Test order not found' }, 404);
+      if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Only the selected super approver can edit this order.' }, 403);
       const { error } = await admin.from('test_order_items').update({ edited_qty: 0, edited_value: 0, updated_at: now }).eq('id', item.id);
       if (error) throw error;
-      await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'REVIEW_QTY_ZEROED', old_status: order.status, new_status: order.status, notes: `${profile.full_name || profile.role} set ${item.part_no} review quantity to 0.` });
+      await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'REVIEW_QTY_ZEROED', old_status: order.status, new_status: order.status, actor_id: profile.id, notes: `${profile.full_name || profile.role} set ${item.part_no} review quantity to 0.` });
       return json({ ok: true });
     }
 
     if (!orderId) return json({ error: 'Order id is required' }, 400);
-    const { data: order, error: orderError } = await admin.from('test_orders').select('id,order_no,status').eq('id', orderId).like('order_no', 'TEST-%').maybeSingle();
+    const { data: order, error: orderError } = await admin.from('test_orders').select('id,order_no,status,approver_id').eq('id', orderId).like('order_no', 'TEST-%').maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: 'Test order not found' }, 404);
+    if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Only the selected super approver can review this order.' }, 403);
 
     if (action === 'accept_edits') {
-      await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'REVIEW_EDITS_ACCEPTED', old_status: order.status, new_status: order.status, notes: `${profile.full_name || profile.role} accepted saved review quantities.` });
+      await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'REVIEW_EDITS_ACCEPTED', old_status: order.status, new_status: order.status, actor_id: profile.id, notes: `${profile.full_name || profile.role} accepted saved review quantities.` });
       return json({ ok: true });
     }
 
     if (action === 'approve_original') {
-      const { error: itemError } = await admin.from('test_order_items').update({ edited_qty: null, edited_value: null, row_status: 'approved', updated_at: now }).eq('order_id', order.id);
+      const nextStatus = profile.role === 'manager' ? 'approved' : 'pending_manager_approval';
+      const { error: itemError } = await admin.from('test_order_items').update({ edited_qty: null, edited_value: null, row_status: nextStatus, updated_at: now }).eq('order_id', order.id);
       if (itemError) throw itemError;
-      const { error: orderUpdateError } = await admin.from('test_orders').update({ status: 'approved', approval_status: 'approved', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+      const { error: orderUpdateError } = await admin.from('test_orders').update({ status: nextStatus, approval_status: nextStatus, updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
       if (orderUpdateError) throw orderUpdateError;
-      await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'REVIEW_ORIGINAL_APPROVED', old_status: order.status, new_status: 'approved', notes: `${profile.full_name || profile.role} approved with original quantities.` });
-      return json({ ok: true, status: 'approved' });
+      await admin.from('test_order_events').insert({ order_id: order.id, event_type: profile.role === 'manager' ? 'REVIEW_ORIGINAL_MANAGER_APPROVED' : 'REVIEW_ORIGINAL_PENDING_MANAGER', old_status: order.status, new_status: nextStatus, actor_id: profile.id, notes: profile.role === 'manager' ? `${profile.full_name || profile.role} approved with original quantities.` : `${profile.full_name || profile.role} approved with original quantities; pending manager approval.` });
+      return json({ ok: true, status: nextStatus });
     }
 
     return json({ error: 'Unknown review action' }, 400);
