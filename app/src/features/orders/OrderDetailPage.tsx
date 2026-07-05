@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
@@ -69,13 +69,13 @@ export function OrderDetailPage() {
     onError: (commentError) => setCommentMessage(commentError instanceof Error ? commentError.message : 'Comment failed.'),
   });
 
-  const order = data?.order;
-  const items = data?.items ?? [];
-  const comments = data?.comments ?? [];
-  const events = data?.events ?? [];
+  if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#667085]">Loading...</p></PageCard>;
+  if (error || !data) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
+
+  const { order, items, events, comments } = data;
   const inventoryMap = inventoryQuery.data ?? {};
-  const status = data ? getOrderStatusLabel({ ...data.order, items }) : '';
-  const rawStatus = order?.status.toLowerCase() ?? '';
+  const status = getOrderStatusLabel({ ...order, items });
+  const rawStatus = order.status.toLowerCase();
   const canApprove = (role === 'developer' || role === 'super' || role === 'manager') && rawStatus.includes('pending');
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = canAdmin && rawStatus === 'approved';
@@ -83,21 +83,13 @@ export function OrderDetailPage() {
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
   const totalPending = items.reduce((sum, item) => sum + getPendingQty(item), 0);
   const totalValue = items.reduce((sum, item) => sum + getEffectiveValue(item), 0);
-
-  const orderRegDateLabel = useMemo(() => compactUniqueLabel(items.map((item) => item.order_reg_date), order?.order_reg_date), [items, order?.order_reg_date]);
-  const invoiceLabel = useMemo(() => compactUniqueLabel(items.map((item) => item.dbms_invoice_no), order?.dbms_invoice_no), [items, order?.dbms_invoice_no]);
-  const invoiceDateLabel = useMemo(() => compactUniqueLabel(items.map((item) => item.dbms_invoice_date), order?.dbms_invoice_date), [items, order?.dbms_invoice_date]);
-  const docketLabel = useMemo(() => compactUniqueLabel(items.map((item) => item.docket_no), order?.docket_no), [items, order?.docket_no]);
-  const transportLabel = useMemo(() => compactUniqueLabel(items.map((item) => item.transport_name), order?.transport_name), [items, order?.transport_name]);
-
-  if (isLoading) return <PageCard eyebrow="Orders" title="Order Detail" description="Loading order detail..."><p className="text-xs text-[#667085]">Loading...</p></PageCard>;
-  if (error || !data || !order) return <PageCard eyebrow="Orders" title="Order Detail" description="Unable to load order detail."><p className="text-xs text-[#ef6f7b]">Order detail not found.</p></PageCard>;
+  const orderRegDateLabel = compactUniqueLabel(items.map((item) => item.order_reg_date), order.order_reg_date);
 
   const summaryRows = [
     ['Order Type', order.order_type, false],
     ['Order For', order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock', true],
     ['Branch', order.branch, true],
-    ['Employee Name', order.created_by?.full_name || '-', false],
+    ['Employee Name', '-', false],
     ['Call ID', order.call_id || '-', false],
     ['Status', status, true],
     ['Machine No', order.machine_no || '-', true],
@@ -190,7 +182,7 @@ export function OrderDetailPage() {
         getPendingQty(item),
         getEffectiveValue(item),
         item.row_status || status,
-        item.processed_date || order.processed_date || '',
+        order.processed_date || '',
         item.order_reg_date || orderRegDateLabel,
         item.dbms_invoice_no || '',
         item.dbms_invoice_date || '',
@@ -293,7 +285,7 @@ export function OrderDetailPage() {
                     <td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td>
                     <td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td>
                     <td className="px-2 py-2"><StatusBadge status={item.row_status || status} /></td>
-                    <td className="px-2 py-2 text-[#344054]">{item.processed_date || order.processed_date || '-'}</td>
+                    <td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td>
                     <td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td>
                     <td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || '-'}</td>
                     <td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || '-'}</td>
