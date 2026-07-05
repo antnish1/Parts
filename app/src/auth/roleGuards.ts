@@ -40,12 +40,13 @@ export function canAccessRoute(role: UserRole, path: string) {
   if (role === 'hq') return false;
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);
+  if (isInventoryWorkspace(path)) return role === 'developer';
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');
   if (role === 'branch') return path.startsWith('/orders') || isDocketWorkspace(path);
-  if (role === 'admin') return path.startsWith('/admin') || isOrderWorkspace(path) || isInventoryWorkspace(path) || isDocketWorkspace(path) || path.startsWith('/reports');
+  if (role === 'admin') return path.startsWith('/admin') || isOrderWorkspace(path) || isDocketWorkspace(path) || path.startsWith('/reports');
   if (role === 'super') return path.startsWith('/approvals') || isOrderWorkspace(path) || isDocketWorkspace(path) || path.startsWith('/reports');
-  if (role === 'manager') return path.startsWith('/manager') || path.startsWith('/approvals') || isOrderWorkspace(path) || isInventoryWorkspace(path) || isDocketWorkspace(path) || path.startsWith('/reports');
+  if (role === 'manager') return path.startsWith('/manager') || path.startsWith('/approvals') || isOrderWorkspace(path) || isDocketWorkspace(path) || path.startsWith('/reports');
   return false;
 }
