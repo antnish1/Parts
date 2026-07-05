@@ -16,6 +16,25 @@ function findBranchMapping(branches: BranchMapping[], value: string) {
   return branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key) ?? null;
 }
 
+async function saveMissingMachine(adminClient: ReturnType<typeof createClient>, machineNo: string, customerName: string) {
+  if (!machineNo || !customerName) return;
+
+  const { data: existing, error: findError } = await adminClient
+    .from('machine_master')
+    .select('id')
+    .eq('machine_no', machineNo)
+    .limit(1);
+
+  if (findError) throw findError;
+  if (existing?.length) return;
+
+  const { error: insertError } = await adminClient
+    .from('machine_master')
+    .insert({ machine_no: machineNo, customer_name: customerName });
+
+  if (insertError) throw insertError;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ ok: false, error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405);
@@ -89,6 +108,8 @@ serve(async (req) => {
   if (duplicate) return fail(`Duplicate item not allowed: ${duplicate.partNo}`, 'DUPLICATE_ITEM');
 
   try {
+    if (orderFor === 'Customer') await saveMissingMachine(adminClient, machineNo, customerName);
+
     const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
     const { data: order, error: orderError } = await adminClient.from('test_orders').insert({
       order_no: orderNo,
