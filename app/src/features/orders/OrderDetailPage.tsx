@@ -106,7 +106,7 @@ export function OrderDetailPage() {
 
     function needsManagerOverride() {
       if (role !== 'manager') return false;
-      if (rawStatus === 'pending_manager_approval') return false;
+      if (rawStatus.replace(/[^a-z]/g, '').includes('pendingmanagerapproval')) return false;
       if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
       return true;
     }
