@@ -49,7 +49,7 @@ export function ApprovalsPage() {
 
   function needsManagerOverride(order: OrderRow, action: 'approve' | 'reject' | 'managerApprove' | 'managerReject') {
     if (role !== 'manager') return false;
-    if (order.status === 'pending_manager_approval') return false;
+    if (order.status.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')) return false;
     if (action !== 'managerApprove') return false;
     if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
     return true;
