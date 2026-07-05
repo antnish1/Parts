@@ -35,3 +35,13 @@ alter table public.test_inventory_uploads
     foreign key (uploaded_by)
     references public.test_profiles(id)
     on delete set null;
+
+alter table public.test_order_comment_attachments
+  alter column uploaded_by drop not null;
+
+alter table public.test_order_comment_attachments
+  drop constraint if exists test_order_comment_attachments_uploaded_by_fkey,
+  add constraint test_order_comment_attachments_uploaded_by_fkey
+    foreign key (uploaded_by)
+    references public.test_profiles(id)
+    on delete set null;
