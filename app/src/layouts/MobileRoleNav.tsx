@@ -9,6 +9,7 @@ type MobileRoleNavProps = {
 
 function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label: string }) {
   if (role === 'admin' && item.to.startsWith('/admin')) return false;
+  if (role === 'super' && item.to.startsWith('/approvals')) return false;
   return role ? canAccessRoute(role, item.to) : true;
 }
 
