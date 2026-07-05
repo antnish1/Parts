@@ -12,7 +12,7 @@ import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
 import { getCommentAttachmentSignedUrl, uploadCommentAttachment } from '../../services/commentAttachment.service';
-import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, normalizePartNo } from '../../lib/orderLogic';
+import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, getResolvedRowStatus, normalizePartNo } from '../../lib/orderLogic';
 import type { TestOrder } from '../../services/testData.service';
 import { OrderActivityPanel } from './OrderActivityPanel';
 
@@ -96,7 +96,7 @@ export function OrderDetailPage() {
   const inventoryMap = inventoryQuery.data ?? {};
   const status = getOrderStatusLabel({ ...order, items });
   const rawStatus = (order.status || '').toLowerCase();
-  const workflowStatusKey = normalizeWorkflowStatus(`${order.status ?? ''} ${order.approval_status ?? ''} ${status ?? ''} ${items.map((item) => item.row_status ?? '').join(' ')}`);
+  const workflowStatusKey = normalizeWorkflowStatus(`${order.status ?? ''} ${order.approval_status ?? ''} ${status ?? ''} ${items.map((item) => getResolvedRowStatus(item)).join(' ')}`);
   const isManagerApprovalWorkflow = workflowStatusKey.includes('pendingmanagerapproval');
   const displayStatus = isManagerApprovalWorkflow ? 'PENDING MANAGER APPROVAL' : status;
   const isPendingWorkflow = workflowStatusKey.includes('pending');
@@ -212,7 +212,7 @@ export function OrderDetailPage() {
   function downloadCsv() {
     const rows = [
       ['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Reg Dt', 'Bill No', 'Billing Dt', 'Transport', 'Docket', 'Chunks', 'Inventory', 'Prev 30d'],
-      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), item.row_status || displayStatus, order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', item.billing_chunks.length, inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
+      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), getResolvedRowStatus(item), order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', item.billing_chunks.length, inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
@@ -323,6 +323,7 @@ export function OrderDetailPage() {
                 const inventoryQty = inventoryMap[normalizePartNo(item.part_no)] ?? 0;
                 const isExpanded = !!expandedItems[item.id];
                 const chunkCount = item.billing_chunks.length;
+                const rowDisplayStatus = getResolvedRowStatus(item);
                 return (
                   <Fragment key={item.id}>
                     <tr className="hover:bg-[#f8fbff]">
@@ -334,7 +335,7 @@ export function OrderDetailPage() {
                           </button>
                         ) : <span className="text-[#94a3b8]">-</span>}
                       </td>
-                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={item.row_status || displayStatus} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
+                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
                     </tr>
                     {isExpanded ? (
                       <tr>
