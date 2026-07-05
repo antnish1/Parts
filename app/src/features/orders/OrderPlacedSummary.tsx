@@ -11,7 +11,16 @@ type OrderPlacedSummaryProps = {
 };
 
 export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, customerName, approverName, totalItems, totalValue, onClose }: OrderPlacedSummaryProps) {
+  const orderDate = new Intl.DateTimeFormat('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date());
+
   const rows = [
+    ['Order Date', orderDate],
     ['Branch', branch],
     ['Order Type', orderType],
     ['Order For', orderFor === 'Customer' ? customerName || 'Customer' : 'Stock'],
@@ -53,7 +62,6 @@ export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, custo
 
           <div className="mt-4 rounded-2xl border border-[#e5edf5] bg-[#f8fafc] px-4 py-3 text-center">
             <p className="text-[11px] font-bold text-[#475569]">Frontier Commercial Vehicle Pvt. Ltd.</p>
-            <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#94a3b8]">Ready for WhatsApp sharing</p>
           </div>
         </div>
 
