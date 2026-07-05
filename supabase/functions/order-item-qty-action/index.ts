@@ -14,7 +14,7 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('test_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await adminClient.from('test_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approver can edit quantities' }, 403);
 
   const body = await req.json().catch(() => ({}));
@@ -25,9 +25,10 @@ serve(async (req) => {
   const { data: item, error: itemError } = await adminClient.from('test_order_items').select('id,order_id,dnp').eq('id', itemId).maybeSingle();
   if (itemError) return json({ error: itemError.message }, 400);
   if (!item) return json({ error: 'Item not found' }, 404);
-  const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status').eq('id', item.order_id).maybeSingle();
+  const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status,approver_id').eq('id', item.order_id).maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
   if (!order?.order_no?.startsWith('TEST-')) return json({ error: 'Only test order items can be edited here' }, 400);
+  if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Only the selected super approver can edit this order.' }, 403);
 
   try {
     if (action === 'set') {
