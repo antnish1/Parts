@@ -104,11 +104,12 @@ export function OrderDetailPage() {
     ['Approved By', order.approver?.full_name || '-', true],
   ] as const;
 
-  function needsManagerOverride() {
-    if (role !== 'manager') return false;
-    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
-    return true;
-  }
+    function needsManagerOverride() {
+      if (role !== 'manager') return false;
+      if (rawStatus === 'pending_manager_approval') return false;
+      if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
+      return true;
+    }
 
   async function runApprovalAction(action: 'approve' | 'reject', confirmedOverride = false) {
     setActionMessage('');
