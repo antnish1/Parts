@@ -142,7 +142,7 @@ export function AdminPage() {
         <div className="flex items-center gap-2">
           <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled:opacity-40" disabled={safePage <= 1} onClick={() => setPage((current) => current - 1)}>⬅ Prev</button>
           <span className="rounded-full border border-[#6b5b15] px-3 py-2 font-black text-white">Page {safePage} / {totalPages}</span>
-          <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled={safePage >= totalPages} onClick={() => setPage((current) => current + 1)}>Next ➡</button>
+          <button className="rounded-md border border-[#263244] px-4 py-2 font-black text-[#82C8E5] disabled:opacity-40" disabled={safePage >= totalPages} onClick={() => setPage((current) => current + 1)}>Next ➡</button>
         </div>
       </div>
     </PageCard>
