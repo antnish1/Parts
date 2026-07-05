@@ -46,10 +46,22 @@ export function AdminPage() {
     return [...filtered].sort((a, b) => {
       const aMeta = metaMap[a.id] ?? { totalQty: 0, totalValue: 0, commentCount: 0 };
       const bMeta = metaMap[b.id] ?? { totalQty: 0, totalValue: 0, commentCount: 0 };
-      const av = sortKey === 'qty' ? aMeta.totalQty : sortKey === 'value' ? aMeta.totalValue : String(a[sortKey] ?? '').toLowerCase();
-      const bv = sortKey === 'qty' ? bMeta.totalQty : sortKey === 'value' ? bMeta.totalValue : String(b[sortKey] ?? '').toLowerCase();
-      if (av < bv) return sortDir === 'asc' ? -1 : 1;
-      if (av > bv) return sortDir === 'asc' ? 1 : -1;
+      const getValue = (order: typeof a, meta: typeof aMeta): string | number => {
+        if (sortKey === 'qty') return meta.totalQty;
+        if (sortKey === 'value') return meta.totalValue;
+        if (sortKey === 'created_at') return order.created_at ?? '';
+        if (sortKey === 'order_type') return order.order_type ?? '';
+        if (sortKey === 'order_for') return order.order_for ?? '';
+        if (sortKey === 'branch') return order.branch ?? '';
+        if (sortKey === 'order_no') return order.final_order_no || order.order_no || '';
+        return order.status ?? '';
+      };
+      const av = getValue(a, aMeta);
+      const bv = getValue(b, bMeta);
+      const left = typeof av === 'number' ? av : av.toLowerCase();
+      const right = typeof bv === 'number' ? bv : bv.toLowerCase();
+      if (left < right) return sortDir === 'asc' ? -1 : 1;
+      if (left > right) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
   }, [orders, search, sortKey, sortDir, metaMap]);
