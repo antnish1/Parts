@@ -17,6 +17,7 @@ export type LegacyLikeOrderItem = {
   Status?: string | null;
   approval_status?: string | null;
   ApprovalStatus?: string | null;
+  billing_chunks?: Array<{ billed_qty?: number | string | null; received_qty?: number | string | null; received_at?: string | null }>;
 };
 
 export type LegacyLikeOrder = LegacyLikeOrderItem & {
@@ -51,11 +52,21 @@ export function getEffectiveValue(row: LegacyLikeOrderItem) {
 }
 
 export function getBilledQty(row: LegacyLikeOrderItem) {
+  if (row.billing_chunks?.length) return row.billing_chunks.reduce((sum, chunk) => sum + Math.max(0, toNumber(chunk.billed_qty)), 0);
   return Math.max(0, toNumber(row.billed_qty ?? row.BilledQty));
+}
+
+export function getReceivedQty(row: LegacyLikeOrderItem) {
+  if (!row.billing_chunks?.length) return 0;
+  return row.billing_chunks.reduce((sum, chunk) => sum + Math.max(0, toNumber(chunk.received_qty)), 0);
 }
 
 export function getPendingQty(row: LegacyLikeOrderItem) {
   return Math.max(0, getEffectiveQty(row) - getBilledQty(row));
+}
+
+export function getPendingReceiveQty(row: LegacyLikeOrderItem) {
+  return Math.max(0, getBilledQty(row) - getReceivedQty(row));
 }
 
 export function normalizeStatus(status: string | null | undefined) {
@@ -71,10 +82,15 @@ export function normalizeStatus(status: string | null | undefined) {
 
 function getBillingDrivenStatus(row: LegacyLikeOrderItem) {
   const rawBilled = row.billed_qty ?? row.BilledQty;
-  if (!hasValue(rawBilled)) return '';
+  if (!hasValue(rawBilled) && !row.billing_chunks?.length) return '';
 
   const billed = getBilledQty(row);
+  const received = getReceivedQty(row);
   const qty = getEffectiveQty(row);
+  if (received > 0) {
+    if (qty <= 0 || received >= qty) return 'RECEIVED';
+    return 'PARTIALLY RECEIVED';
+  }
   if (billed <= 0) return 'PROCESSED';
   if (qty <= 0) return 'DISPATCHED';
   if (billed >= qty) return 'DISPATCHED';
@@ -91,13 +107,13 @@ export function getResolvedRowStatus(row: LegacyLikeOrderItem) {
   const approval = normalizeStatus(row.approval_status ?? row.ApprovalStatus ?? '');
   const status = normalizeStatus(row.status ?? row.Status ?? '');
 
-  if (rowStatus === 'RECEIVED' || status === 'RECEIVED') return 'RECEIVED';
   if (rowStatus === 'REJECTED' || approval === 'REJECTED' || status === 'REJECTED') return 'REJECTED';
 
   const billingDriven = getBillingDrivenStatus(row);
-  if (billingDriven && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED'].includes(rowStatus || status)) return billingDriven;
-  if (billingDriven && rowStatus === 'NA' && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED', 'NA'].includes(status)) return billingDriven;
+  if (billingDriven && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED', 'PARTIALLY RECEIVED', 'RECEIVED'].includes(rowStatus || status)) return billingDriven;
+  if (billingDriven && rowStatus === 'NA' && ['PROCESSED', 'ISSUED', 'DISPATCHED', 'PARTIALLY DISPATCHED', 'PARTIALLY RECEIVED', 'RECEIVED', 'NA'].includes(status)) return billingDriven;
 
+  if (rowStatus === 'RECEIVED' || status === 'RECEIVED') return 'RECEIVED';
   if (rowStatus !== 'NA') return rowStatus;
   if (approval === 'PENDING MANAGER APPROVAL') return 'PENDING MANAGER APPROVAL';
   if (approval === 'PENDING APPROVAL') return 'PENDING APPROVAL';
