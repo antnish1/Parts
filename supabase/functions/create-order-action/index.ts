@@ -9,30 +9,79 @@ const normalizePart = (value: unknown) => clean(value).replace(/\s+/g, '').toUpp
 const normalizeMachine = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
 const normalizeBranchKey = (value: unknown) => clean(value).replace(/[\s_-]+/g, '').toUpperCase();
 
+const MACHINE_COLUMN_CANDIDATES = ['machine_no', 'machine_number', 'machine', 'machine no', 'machine no.', 'machine number', 'Machine No', 'Machine No.', 'Machine Number', 'MACHINE_NO'];
+const CUSTOMER_COLUMN_CANDIDATES = ['customer_name', 'customername', 'customer', 'customer name', 'Customer Name', 'Customer', 'party_name', 'partyname', 'name'];
+const INSERT_MACHINE_COLUMNS = ['machine_no', 'machine_number', 'Machine No', 'Machine No.', 'Machine Number'];
+const INSERT_CUSTOMER_COLUMNS = ['customer_name', 'customername', 'customer', 'Customer Name', 'party_name', 'name'];
+
 type BranchMapping = { branch_name: string; branch_code: string };
+type MachineMasterSaveResult = { saved: boolean; warning?: string };
 
 function findBranchMapping(branches: BranchMapping[], value: string) {
   const key = normalizeBranchKey(value);
   return branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key) ?? null;
 }
 
-async function saveMissingMachine(adminClient: ReturnType<typeof createClient>, machineNo: string, customerName: string) {
-  if (!machineNo || !customerName) return;
+function errorMessage(error: unknown) {
+  if (!error) return '';
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && 'message' in error) return String((error as { message?: unknown }).message ?? '');
+  return String(error);
+}
 
-  const { data: existing, error: findError } = await adminClient
-    .from('machine_master')
-    .select('id')
-    .eq('machine_no', machineNo)
-    .limit(1);
+function uniqueInsertPayloads(machineNo: string, customerName: string) {
+  const seen = new Set<string>();
+  const payloads: Record<string, string>[] = [];
 
-  if (findError) throw findError;
-  if (existing?.length) return;
+  for (const machineColumn of INSERT_MACHINE_COLUMNS) {
+    for (const customerColumn of INSERT_CUSTOMER_COLUMNS) {
+      const payload = { [machineColumn]: machineNo, [customerColumn]: customerName };
+      const key = JSON.stringify(payload);
+      if (!seen.has(key)) {
+        seen.add(key);
+        payloads.push(payload);
+      }
+    }
+  }
 
-  const { error: insertError } = await adminClient
-    .from('machine_master')
-    .insert({ machine_no: machineNo, customer_name: customerName });
+  return payloads;
+}
 
-  if (insertError) throw insertError;
+async function machineExists(adminClient: ReturnType<typeof createClient>, machineNo: string) {
+  for (const column of MACHINE_COLUMN_CANDIDATES) {
+    const { data, error } = await adminClient
+      .from('machine_master')
+      .select(column)
+      .eq(column, machineNo)
+      .limit(1);
+
+    if (!error && data?.length) return true;
+  }
+
+  return false;
+}
+
+async function saveMissingMachine(adminClient: ReturnType<typeof createClient>, machineNo: string, customerName: string): Promise<MachineMasterSaveResult> {
+  if (!machineNo || !customerName) return { saved: false };
+
+  try {
+    if (await machineExists(adminClient, machineNo)) return { saved: false };
+  } catch (error) {
+    console.warn('machine_master lookup skipped before order creation:', errorMessage(error));
+  }
+
+  const insertErrors: string[] = [];
+  for (const payload of uniqueInsertPayloads(machineNo, customerName)) {
+    const { error } = await adminClient.from('machine_master').insert(payload);
+    if (!error) return { saved: true };
+
+    const message = errorMessage(error);
+    if (message) insertErrors.push(message);
+  }
+
+  const warning = insertErrors[0] || 'machine_master insert was skipped because no compatible column mapping worked.';
+  console.warn('Order will be created, but missing machine was not saved to machine_master:', warning);
+  return { saved: false, warning };
 }
 
 serve(async (req) => {
@@ -108,7 +157,7 @@ serve(async (req) => {
   if (duplicate) return fail(`Duplicate item not allowed: ${duplicate.partNo}`, 'DUPLICATE_ITEM');
 
   try {
-    if (orderFor === 'Customer') await saveMissingMachine(adminClient, machineNo, customerName);
+    const machineMasterResult = orderFor === 'Customer' ? await saveMissingMachine(adminClient, machineNo, customerName) : null;
 
     const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
     const { data: order, error: orderError } = await adminClient.from('test_orders').insert({
@@ -140,8 +189,9 @@ serve(async (req) => {
     const { error: itemError } = await adminClient.from('test_order_items').insert(itemRows);
     if (itemError) throw itemError;
 
-    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s)` });
-    return json({ ok: true, id: order.id, order_no: order.order_no });
+    const machineNote = machineMasterResult?.warning ? ` Machine master save skipped: ${machineMasterResult.warning}` : '';
+    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: 'pending_approval', actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role} with ${itemRows.length} item row(s).${machineNote}` });
+    return json({ ok: true, id: order.id, order_no: order.order_no, machine_master_warning: machineMasterResult?.warning ?? null });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
   }
