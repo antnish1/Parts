@@ -14,14 +14,25 @@ import { parseBulkPartsFile } from '../../services/bulkParts.service';
 import { normalizePartNo } from '../../lib/orderLogic';
 import { OrderPlacedSummary } from './OrderPlacedSummary';
 
-const inputClass = 'mt-2 h-12 w-full rounded-xl border border-[#263244] bg-[#0b1020] px-4 text-sm font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/25 disabled:cursor-not-allowed disabled:opacity-55';
-const tableInputClass = 'h-11 w-full rounded-xl border border-[#263244] bg-[#0b1020] px-3 text-sm font-semibold text-white outline-none transition focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/25 disabled:cursor-not-allowed disabled:opacity-55';
-const labelClass = 'text-[10px] font-black uppercase tracking-[0.12em] text-[#c7d2df]';
-const sectionTitleClass = 'mb-4 text-xs font-black uppercase tracking-[0.16em] text-[#fff176]';
+const inputClass = 'mt-1 h-9 w-full rounded-lg border border-[#263244] bg-[#0b1020] px-3 text-xs font-semibold text-white outline-none transition placeholder:text-[#6D8196] focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/20 disabled:cursor-not-allowed disabled:opacity-55';
+const tableInputClass = 'h-8 w-full rounded-lg border border-[#263244] bg-[#0b1020] px-2 text-xs font-semibold text-white outline-none transition focus:border-[#38bdf8] focus:ring-2 focus:ring-[#38bdf8]/20 disabled:cursor-not-allowed disabled:opacity-55';
+const labelClass = 'text-[9px] font-black uppercase tracking-[0.12em] text-[#c7d2df]';
+const sectionTitleClass = 'mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#fff176]';
 
 type ItemLine = { lineId: number; partNo: string; description: string; dnp: string; qty: string; previous30dQty: number };
 type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number };
 type BranchOption = { id: string; branch_name: string; branch_code: string };
+
+type OrderFormState = {
+  branch: string;
+  orderType: string;
+  orderFor: string;
+  approverId: string;
+  machineNo: string;
+  customerName: string;
+  callId: string;
+  warrantyStatus: string;
+};
 
 const defaultItem: ItemLine = { lineId: 1, partNo: '', description: '', dnp: '', qty: '', previous30dQty: 0 };
 const fallbackBranches: BranchOption[] = [{ branch_name: 'Jabalpur BHL', branch_code: 'JBP_BHL', id: 'fallback' }];
@@ -35,6 +46,14 @@ function resolveBranchName(branches: BranchOption[], value: string | null | unde
   if (!key) return '';
   const match = branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key);
   return match?.branch_name ?? value?.trim() ?? '';
+}
+
+function createDefaultItem(): ItemLine {
+  return { ...defaultItem, lineId: Date.now() };
+}
+
+function buildInitialForm(branch: string): OrderFormState {
+  return { branch, orderType: '', orderFor: '', approverId: '', machineNo: '', customerName: '', callId: '', warrantyStatus: '' };
 }
 
 export function NewOrderPage() {
@@ -51,7 +70,7 @@ export function NewOrderPage() {
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [partLookupLineId, setPartLookupLineId] = useState<number | null>(null);
   const [partCache, setPartCache] = useState<Record<string, TestPart>>({});
-  const [form, setForm] = useState({ branch: 'Jabalpur BHL', orderType: '', orderFor: '', approverId: '', machineNo: '', customerName: '', callId: '', warrantyStatus: '' });
+  const [form, setForm] = useState<OrderFormState>(() => buildInitialForm('Jabalpur BHL'));
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
 
   const branchOptions = useMemo(() => {
@@ -63,6 +82,11 @@ export function NewOrderPage() {
     return exists ? list : [{ id: 'profile-branch', branch_name: profileBranchName, branch_code: profileBranchName }, ...list];
   }, [branches, profile?.branch, role]);
 
+  const resetBranch = useMemo(() => {
+    if (role === 'branch' && profile?.branch) return resolveBranchName(branchOptions, profile.branch) || 'Jabalpur BHL';
+    return 'Jabalpur BHL';
+  }, [branchOptions, profile?.branch, role]);
+
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
 
   const mutation = useMutation({
@@ -72,6 +96,12 @@ export function NewOrderPage() {
       setSubmitStarted(false);
       setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue });
       setMessage('');
+      setMachineStatus('');
+      setManualCustomerPrompt({ open: false, machineNo: '', customerName: '' });
+      setPartLookupLineId(null);
+      setPartCache({});
+      setForm(buildInitialForm(resetBranch));
+      setItems([createDefaultItem()]);
       queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] });
       queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
@@ -92,7 +122,7 @@ export function NewOrderPage() {
     setForm((current) => (current.branch === nextBranch ? current : { ...current, branch: nextBranch }));
   }, [branchOptions, profile?.branch, role]);
 
-  function updateField(field: keyof typeof form, value: string) {
+  function updateField(field: keyof OrderFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -166,6 +196,7 @@ export function NewOrderPage() {
 
     setPartLookupLineId(lineId);
     setMessage('');
+    setItems((current) => current.map((item) => (item.lineId === lineId && normalizePartNo(item.partNo) === normalized ? { ...item, description: 'Searching part...', dnp: '', previous30dQty: 0 } : item)));
     try {
       const part = await lookupTestPartByNo(normalized);
       if (!part) {
@@ -178,6 +209,7 @@ export function NewOrderPage() {
       setItems((current) => current.map((item) => (item.lineId === lineId && normalizePartNo(item.partNo) === normalized ? { ...item, description: part.description ?? '', dnp: part.dnp != null ? String(part.dnp) : '' } : item)));
       void refreshPreviousQty(lineId, normalized);
     } catch (error) {
+      setItems((current) => current.map((item) => (item.lineId === lineId && normalizePartNo(item.partNo) === normalized ? { ...item, description: '', dnp: '', previous30dQty: 0 } : item)));
       setMessage(error instanceof Error ? error.message : 'Part lookup failed.');
     } finally {
       setPartLookupLineId(null);
@@ -211,7 +243,7 @@ export function NewOrderPage() {
   }
 
   function addItem() {
-    setItems((current) => [...current, { ...defaultItem, lineId: Date.now() }]);
+    setItems((current) => [...current, createDefaultItem()]);
   }
 
   function removeItem(lineId: number) {
@@ -230,7 +262,7 @@ export function NewOrderPage() {
     setOrderSummary(null);
     const parsedItems = items.map((item) => ({ partNo: normalizePartNo(item.partNo), description: item.description.trim(), dnp: Number(item.dnp), qty: Number(item.qty), previous30dQty: item.previous30dQty || 0 }));
     const duplicatePart = parsedItems.find((item, index) => parsedItems.findIndex((candidate) => candidate.partNo === item.partNo) !== index);
-    const invalidItem = parsedItems.find((item) => !item.partNo || !item.description || !Number.isFinite(item.dnp) || !Number.isFinite(item.qty) || item.dnp < 0 || item.qty <= 0 || !Number.isInteger(item.qty));
+    const invalidItem = parsedItems.find((item) => !item.partNo || item.description === 'Searching part...' || !item.description || !Number.isFinite(item.dnp) || !Number.isFinite(item.qty) || item.dnp < 0 || item.qty <= 0 || !Number.isInteger(item.qty));
     if (!form.branch || !form.orderType || !form.orderFor) return stopWithMessage('Please fill Order Type and Order For.');
     if (!form.approverId) return stopWithMessage('Please select approver.');
     if (form.orderType === 'VOR' && form.orderFor !== 'Customer') return stopWithMessage('VOR order must be for Customer.');
@@ -244,11 +276,11 @@ export function NewOrderPage() {
 
   return (
     <PageCard eyebrow="Orders" title="New Order" description="Create branch order.">
-      <form onSubmit={handleSubmit} className="space-y-5" aria-busy={isFormBusy}>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <section className="rounded-2xl border border-[#334155] bg-[#0b1020] p-5">
+      <form onSubmit={handleSubmit} className="space-y-3" aria-busy={isFormBusy}>
+        <div className="grid gap-3 xl:grid-cols-2">
+          <section className="rounded-xl border border-[#334155] bg-[#0b1020] p-3 shadow-sm shadow-black/10">
             <p className={sectionTitleClass}>Order Setup</p>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-2">
               <div>
                 <label className={labelClass}>Order Type</label>
                 <select className={inputClass} value={form.orderType} onChange={(e) => { const value = e.target.value; updateField('orderType', value); if (value === 'VOR') updateField('orderFor', 'Customer'); }} disabled={isFormBusy}>
@@ -282,21 +314,21 @@ export function NewOrderPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-[#334155] bg-[#0b1020] p-5">
+          <section className="rounded-xl border border-[#334155] bg-[#0b1020] p-3 shadow-sm shadow-black/10">
             <p className={sectionTitleClass}>Customer Details</p>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-2">
               <div>
                 <label className={labelClass}>Machine Number</label>
                 <input className={inputClass} value={form.machineNo} placeholder="Enter Machine No" onBlur={() => void lookupMachine()} onChange={(e) => { updateField('machineNo', e.target.value); updateField('customerName', ''); setMachineStatus(''); }} disabled={isFormBusy || form.orderFor === 'Stock'} />
               </div>
               <div>
                 <label className={labelClass}>Customer Name</label>
-                <input className={inputClass} value={form.customerName} placeholder="Auto-fetched from machine_master" readOnly disabled={form.orderFor === 'Stock'} />
+                <input className={inputClass} value={form.customerName} placeholder="Auto-fetched" readOnly disabled={form.orderFor === 'Stock'} />
               </div>
               <div>
                 <label className={labelClass}>Machine Type</label>
                 <select className={inputClass} value={form.warrantyStatus} onChange={(e) => updateField('warrantyStatus', e.target.value)} disabled={isFormBusy || form.orderFor === 'Stock'}>
-                  <option value="">Select U/W or B/W</option>
+                  <option value="">U/W or B/W</option>
                   <option value="U/W">U/W</option>
                   <option value="B/W">B/W</option>
                 </select>
@@ -306,24 +338,27 @@ export function NewOrderPage() {
                 <input className={inputClass} value={form.callId} placeholder="Enter Call ID" onChange={(e) => updateField('callId', e.target.value)} disabled={isFormBusy} />
               </div>
             </div>
-            {machineStatus ? <p className="mt-3 text-xs text-[#c7d2df]">{machineStatus}</p> : null}
+            {machineStatus ? <p className="mt-2 truncate rounded-lg border border-[#263244] bg-[#111827] px-2 py-1 text-[11px] font-semibold text-[#c7d2df]">{machineStatus}</p> : null}
           </section>
         </div>
 
-        <section className="rounded-2xl border border-[#6b5b15] bg-[#0b1020] p-5">
-          <p className={sectionTitleClass}>Parts Builder</p>
-          <div className="overflow-hidden rounded-2xl border border-[#334155] bg-[#111827]">
-            <table className="w-full min-w-[1120px] border-collapse text-sm">
-              <thead className="bg-[#17202d] text-xs uppercase tracking-[0.08em] text-white">
+        <section className="rounded-xl border border-[#6b5b15] bg-[#0b1020] p-3 shadow-sm shadow-black/10">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <p className={sectionTitleClass}>Parts Builder</p>
+            <p className="text-[10px] font-bold text-[#6D8196]">Enter part no. and press Tab</p>
+          </div>
+          <div className="overflow-hidden rounded-xl border border-[#334155] bg-[#111827]">
+            <table className="w-full min-w-[1040px] border-collapse text-xs">
+              <thead className="bg-[#17202d] text-[10px] uppercase tracking-[0.08em] text-white">
                 <tr>
-                  <th className="px-3 py-3 text-left">Part</th>
-                  <th className="px-3 py-3 text-left">Qty</th>
-                  <th className="px-3 py-3 text-center">30D Qty</th>
-                  <th className="px-3 py-3 text-left">Description</th>
-                  <th className="px-3 py-3 text-left">DNP</th>
-                  <th className="px-3 py-3 text-left">Category</th>
-                  <th className="px-3 py-3 text-left">Value</th>
-                  <th className="px-3 py-3 text-center"> </th>
+                  <th className="px-2 py-2 text-left">Part</th>
+                  <th className="px-2 py-2 text-left">Qty</th>
+                  <th className="px-2 py-2 text-center">30D</th>
+                  <th className="px-2 py-2 text-left">Description</th>
+                  <th className="px-2 py-2 text-left">DNP</th>
+                  <th className="px-2 py-2 text-left">Category</th>
+                  <th className="px-2 py-2 text-left">Value</th>
+                  <th className="px-2 py-2 text-center"> </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#263244]">
@@ -331,34 +366,31 @@ export function NewOrderPage() {
                   const lineValue = Number(item.dnp || 0) * Number(item.qty || 0);
                   const isPartLoading = partLookupLineId === item.lineId;
                   return (
-                    <tr key={item.lineId}>
-                      <td className="px-3 py-2">
-                        <input className={tableInputClass} value={item.partNo} onBlur={() => void handlePartLookup(item.lineId, item.partNo)} onChange={(e) => handlePartChange(item.lineId, e.target.value)} disabled={isFormBusy || isPartLoading} placeholder="Enter part no, press Tab" />
-                        {isPartLoading ? <p className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#82C8E5]">Searching part...</p> : null}
-                      </td>
-                      <td className="px-3 py-2"><input className={tableInputClass} value={item.qty} onChange={(e) => updateItem(item.lineId, 'qty', e.target.value)} disabled={isFormBusy} /></td>
-                      <td className="px-3 py-2 text-center font-black text-white">{item.previous30dQty}</td>
-                      <td className="px-3 py-2"><input className={tableInputClass} value={item.description} placeholder="Auto-fetched after Tab" readOnly /></td>
-                      <td className="px-3 py-2"><input className={tableInputClass} value={item.dnp} onChange={(e) => updateItem(item.lineId, 'dnp', e.target.value)} disabled={isFormBusy} /></td>
-                      <td className="px-3 py-2 text-[#d8e3ee]">{partCategory(item.partNo)}</td>
-                      <td className="px-3 py-2 font-black text-white">₹{lineValue.toFixed(2)}</td>
-                      <td className="px-3 py-2 text-center"><button type="button" className="text-xl font-black text-[#ff5c5c]" onClick={() => removeItem(item.lineId)} disabled={isFormBusy}>×</button></td>
+                    <tr key={item.lineId} className="align-middle">
+                      <td className="px-2 py-1.5"><input className={tableInputClass} value={item.partNo} onBlur={() => void handlePartLookup(item.lineId, item.partNo)} onChange={(e) => handlePartChange(item.lineId, e.target.value)} disabled={isFormBusy || isPartLoading} placeholder="Part No + Tab" /></td>
+                      <td className="px-2 py-1.5"><input className={tableInputClass} value={item.qty} onChange={(e) => updateItem(item.lineId, 'qty', e.target.value)} disabled={isFormBusy} /></td>
+                      <td className="px-2 py-1.5 text-center font-black text-white">{item.previous30dQty}</td>
+                      <td className="px-2 py-1.5"><input className={tableInputClass} value={item.description} placeholder="Auto-fetched after Tab" readOnly /></td>
+                      <td className="px-2 py-1.5"><input className={tableInputClass} value={item.dnp} placeholder="Auto" readOnly /></td>
+                      <td className="px-2 py-1.5 text-[#d8e3ee]">{partCategory(item.partNo)}</td>
+                      <td className="px-2 py-1.5 font-black text-white">₹{lineValue.toFixed(2)}</td>
+                      <td className="px-2 py-1.5 text-center"><button type="button" className="text-lg font-black leading-none text-[#ff5c5c]" onClick={() => removeItem(item.lineId)} disabled={isFormBusy}>×</button></td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
-          <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#6b5b15] bg-[#111827] p-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <Button type="button" className="rounded-xl bg-[#ffd94a] px-4 py-2 text-sm text-[#0b1020] hover:bg-[#ffe177]" onClick={addItem} disabled={isFormBusy}>⊕ Add Item</Button>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#6b5b15] bg-[#17202d] px-4 py-2 text-sm font-black text-[#ffe177] hover:border-[#ffd94a]">
+          <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#6b5b15] bg-[#111827] p-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="button" className="rounded-lg bg-[#ffd94a] px-3 py-1.5 text-xs text-[#0b1020] hover:bg-[#ffe177]" onClick={addItem} disabled={isFormBusy}>⊕ Add Item</Button>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#6b5b15] bg-[#17202d] px-3 py-1.5 text-xs font-black text-[#ffe177] hover:border-[#ffd94a]">
                 ⇧ Bulk Parts Upload
                 <input className="hidden" type="file" accept=".xlsx,.xls" onChange={handleBulkUpload} disabled={isFormBusy} />
               </label>
             </div>
-            {isOrderSubmitting ? <ActionLoader variant="matrix" label="Creating order" /> : <p className="text-lg font-black text-white">Total: ₹ <span className="text-2xl text-[#ffd400]">{totalValue.toFixed(2)}</span></p>}
-            <Button type="submit" disabled={isFormBusy || partLookupLineId !== null} className="rounded-xl bg-[#e6a400] px-5 py-2.5 text-sm text-[#0b1020] shadow-lg shadow-[#e6a400]/20 hover:bg-[#ffbd00]">{isOrderSubmitting ? <><ButtonLoader /> Creating...</> : '⌁ Submit Order'}</Button>
+            {isOrderSubmitting ? <ActionLoader variant="matrix" label="Creating order" /> : <p className="text-sm font-black text-white">Total: ₹ <span className="text-xl text-[#ffd400]">{totalValue.toFixed(2)}</span></p>}
+            <Button type="submit" disabled={isFormBusy || partLookupLineId !== null} className="rounded-lg bg-[#e6a400] px-4 py-2 text-xs text-[#0b1020] shadow-lg shadow-[#e6a400]/20 hover:bg-[#ffbd00]">{isOrderSubmitting ? <><ButtonLoader /> Creating...</> : '⌁ Submit Order'}</Button>
           </div>
         </section>
       </form>
@@ -374,11 +406,11 @@ export function NewOrderPage() {
 
       {manualCustomerPrompt.open ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#020617]/75 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-[#263244] bg-[#111827] p-5 shadow-[0_0_60px_rgba(56,189,248,0.22)]">
+          <div className="w-full max-w-md rounded-2xl border border-[#263244] bg-[#111827] p-4 shadow-[0_0_60px_rgba(56,189,248,0.22)]">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Machine not found</p>
             <h2 className="mt-2 text-xl font-black text-white">Enter Customer Name</h2>
             <p className="mt-2 text-xs leading-5 text-[#c7d2df]">Machine No. <span className="font-black text-white">{manualCustomerPrompt.machineNo}</span> is not available in machine_master. Enter customer name manually. It will be saved to machine_master when the order is submitted.</p>
-            <input className="mt-4 h-11 w-full rounded-xl border border-[#263244] bg-[#0b1020] px-3 text-sm font-semibold text-white outline-none focus:border-[#38bdf8]" value={manualCustomerPrompt.customerName} placeholder="Enter Customer Name" autoFocus onChange={(e) => setManualCustomerPrompt((current) => ({ ...current, customerName: e.target.value }))} />
+            <input className="mt-3 h-10 w-full rounded-xl border border-[#263244] bg-[#0b1020] px-3 text-sm font-semibold text-white outline-none focus:border-[#38bdf8]" value={manualCustomerPrompt.customerName} placeholder="Enter Customer Name" autoFocus onChange={(e) => setManualCustomerPrompt((current) => ({ ...current, customerName: e.target.value }))} />
             <div className="mt-4 flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setManualCustomerPrompt({ open: false, machineNo: '', customerName: '' })}>Cancel</Button>
               <Button type="button" onClick={applyManualCustomerName}>Use Customer Name</Button>
