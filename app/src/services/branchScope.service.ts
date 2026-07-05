@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-type ProfileRow = { role: string | null; branch: string | null; is_active: boolean | null };
+type ProfileRow = { id?: string | null; role: string | null; branch: string | null; is_active: boolean | null };
 type BranchRow = { branch_name: string; branch_code: string };
 
 export function normalizeBranchKey(value: string | null | undefined) {
@@ -15,23 +15,27 @@ function toList(values: Set<string>) {
   return [...values].map((value) => value.trim()).filter(Boolean);
 }
 
-export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
+export async function getCurrentPortalProfile(): Promise<ProfileRow | null> {
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData.session?.user?.id;
-  if (!userId) return [];
+  if (!userId) return null;
 
   const { data: profile, error: profileError } = await supabase
     .from('test_profiles')
-    .select('role, branch, is_active')
+    .select('id, role, branch, is_active')
     .eq('auth_user_id', userId)
     .maybeSingle();
 
   if (profileError) {
-    console.warn('Branch scope profile lookup failed.', profileError.message);
-    return [];
+    console.warn('Portal profile lookup failed.', profileError.message);
+    return null;
   }
 
-  const row = profile as ProfileRow | null;
+  return (profile as ProfileRow | null) ?? null;
+}
+
+export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
+  const row = await getCurrentPortalProfile();
   if (!row?.is_active) return [];
   if (normalizeRole(row.role) !== 'branch') return null;
 
