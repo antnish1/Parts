@@ -13,7 +13,12 @@ type Payload = {
   fullName?: string;
   branch?: string;
   role?: string;
+  loginId?: string;
 };
+
+function normalizeLoginId(value: string) {
+  return value.trim().replace(/\s+/g, '').toUpperCase();
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -39,7 +44,8 @@ Deno.serve(async (req) => {
   if (callerProfile?.role !== 'developer' || callerProfile?.is_active !== true) return new Response(JSON.stringify({ error: 'Only active developer users can create portal users.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   const body = await req.json() as Payload;
-  const email = String(body.email ?? '').trim().toLowerCase();
+  const loginId = normalizeLoginId(String(body.loginId ?? ''));
+  const email = String(body.email ?? '').trim().toLowerCase() || (loginId ? `${loginId.toLowerCase()}@portal.local` : '');
   const password = String(body.password ?? '');
   const fullName = String(body.fullName ?? '').trim();
   const branch = String(body.branch ?? '').trim();
@@ -52,8 +58,8 @@ Deno.serve(async (req) => {
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({ email, password, email_confirm: true });
   if (authError || !authData.user) return new Response(JSON.stringify({ error: authError?.message ?? 'User creation failed.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-  const { error: insertError } = await adminClient.from('test_profiles').insert({ auth_user_id: authData.user.id, full_name: fullName, branch, role, is_active: true });
+  const { error: insertError } = await adminClient.from('test_profiles').insert({ auth_user_id: authData.user.id, full_name: fullName, branch, role, login_id: loginId || null, is_active: true });
   if (insertError) return new Response(JSON.stringify({ error: insertError.message }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-  return new Response(JSON.stringify({ ok: true, userId: authData.user.id }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ ok: true, userId: authData.user.id, loginId: loginId || null }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
