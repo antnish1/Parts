@@ -9,8 +9,14 @@ type ApprovalOverrideConfirmProps = {
   onConfirm: () => void;
 };
 
+function managerApprovalStageVisible() {
+  if (typeof document === 'undefined') return false;
+  const pageText = document.body?.innerText?.toLowerCase().replace(/[^a-z]/g, '') ?? '';
+  return pageText.includes('pendingmanagerapproval');
+}
+
 export function ApprovalOverrideConfirm({ open, approverName, orderNo, busy = false, onCancel, onConfirm }: ApprovalOverrideConfirmProps) {
-  if (!open) return null;
+  if (!open || managerApprovalStageVisible()) return null;
 
   return (
     <div className="fixed inset-0 z-[160] flex items-center justify-center bg-[#020617]/62 px-4 backdrop-blur-sm">
