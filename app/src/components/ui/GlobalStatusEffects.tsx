@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { ActionLoader, FeedbackModal } from './FeedbackModal';
+import { useEffect, useState } from 'react';
+import { ActionLoader } from './FeedbackModal';
 
 type LoaderVariant = 'orbit' | 'scanner' | 'comet' | 'matrix' | 'pulse';
 
-const successWords = ['success', 'created', 'updated', 'complete', 'saved', 'signed in', 'activated', 'deactivated'];
-const errorWords = ['failed', 'error', 'invalid', 'required', 'not found', 'duplicate', 'cannot', 'unauthorized', 'missing', 'expired'];
 const loadingWords = ['loading', 'verifying', 'checking', 'creating', 'saving', 'activating', 'deactivating', 'processing', 'uploading'];
 
 function clean(value: string) { return value.replace(/\s+/g, ' ').trim(); }
@@ -33,45 +31,36 @@ function fixMachineTypeDropdown() {
   }
 }
 
-function visibleTextFromStatusElements() {
+function visibleBusyText() {
   const elements = Array.from(document.querySelectorAll('p,span,button'));
-  const statusTexts: string[] = [];
-  const busyTexts: string[] = [];
   for (const element of elements) {
     if (element.closest('[data-status-effects]')) continue;
     const rect = element.getBoundingClientRect();
     if (!rect.width || !rect.height) continue;
     const text = clean(element.textContent || '');
-    if (!text || text.length < 4 || text.length > 240) continue;
-    if (includesAny(text, [...successWords, ...errorWords])) statusTexts.push(text);
-    if (loaderFor(text)) busyTexts.push(text);
+    if (!text || text.length < 4 || text.length > 160) continue;
+    if (loaderFor(text)) return text;
   }
-  return { statusTexts, busyTexts };
+  return '';
 }
 
 export function GlobalStatusEffects() {
-  const [message, setMessage] = useState('');
   const [busyText, setBusyText] = useState('');
-  const closedRef = useRef(new Set<string>());
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       fixMachineTypeDropdown();
-      const { statusTexts, busyTexts } = visibleTextFromStatusElements();
-      const nextMessage = statusTexts.find((text) => !closedRef.current.has(text));
-      setBusyText(busyTexts[0] ?? '');
-      if (nextMessage && nextMessage !== message) setMessage(nextMessage);
+      setBusyText(visibleBusyText());
     }, 700);
     fixMachineTypeDropdown();
     return () => window.clearInterval(timer);
-  }, [message]);
+  }, []);
 
   const loader = loaderFor(busyText);
 
   return (
     <div data-status-effects>
-      <FeedbackModal message={message} onClose={() => { if (message) closedRef.current.add(message); setMessage(''); }} />
-      {loader && !message ? <div className="fixed bottom-5 right-5 z-[90] rounded-2xl border border-[#263244] bg-[#020617]/90 p-4 shadow-[0_0_40px_rgba(56,189,248,0.18)] backdrop-blur-md"><ActionLoader variant={loader.variant} label={loader.label} /></div> : null}
+      {loader ? <div className="fixed bottom-5 right-5 z-[90] rounded-2xl border border-[#263244] bg-[#020617]/90 p-4 shadow-[0_0_40px_rgba(56,189,248,0.18)] backdrop-blur-md"><ActionLoader variant={loader.variant} label={loader.label} /></div> : null}
     </div>
   );
 }
