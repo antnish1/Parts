@@ -125,11 +125,22 @@ export async function updateTestProfile(profileId: string, input: UpdateTestProf
 
 export async function setTestProfileActive(profileId: string, isActive: boolean) {
   if (!profileId) throw new Error('Profile id is required.');
-  const { error } = await supabase
+
+  const { data: profile, error: loadError } = await supabase
     .from('test_profiles')
-    .update({ is_active: isActive })
-    .eq('id', profileId);
-  if (error) throw error;
+    .select('id, full_name, branch, role, login_id')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (loadError) throw loadError;
+  if (!profile) throw new Error('Profile was not found.');
+
+  return updateTestProfile(profile.id, {
+    fullName: profile.full_name,
+    branch: profile.branch,
+    role: profile.role,
+    loginId: profile.login_id ?? '',
+    isActive,
+  });
 }
 
 export async function createPortalUser(input: CreatePortalUserInput) {
