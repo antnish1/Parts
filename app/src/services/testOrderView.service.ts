@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
 import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
 
 export type TestOrderView = {
@@ -63,6 +64,7 @@ export type TestOrderViewItem = {
   value: number | null;
   edited_value: number | null;
   previous_30d_qty: number | null;
+  in_transit_qty: number;
   order_reg_date: string | null;
   dbms_invoice_no: string | null;
   dbms_invoice_date: string | null;
@@ -79,7 +81,10 @@ export type TestOrderComment = { id: string; comment_type: string; body: string 
 
 type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawComment = Omit<TestOrderComment, 'author' | 'attachments'> & { author?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
-type RawItem = Omit<TestOrderViewItem, 'billing_chunks'>;
+type RawItem = Omit<TestOrderViewItem, 'billing_chunks' | 'in_transit_qty'>;
+type TransitCandidate = RawItem & { order_id: string; billing_chunks?: TestOrderBillingChunk[]; test_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null };
+
+const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'ISSUED', 'PARTIALLY RECEIVED']);
 
 function normalizeOrderView(order: RawOrderView): TestOrderView {
   const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
@@ -93,6 +98,17 @@ function normalizeComment(comment: RawComment, attachments: TestOrderCommentAtta
 
 function normalizeCommentText(value: string) {
   return value.trim().replace(/\s+/g, ' ');
+}
+
+function isTransitCandidate(row: TransitCandidate) {
+  const resolvedStatus = getResolvedRowStatus(row);
+  if (!OPEN_TRANSIT_STATUSES.has(resolvedStatus)) return false;
+  const headerStatus = String(row.test_orders?.status ?? '').toLowerCase();
+  const approvalStatus = String(row.test_orders?.approval_status ?? '').toLowerCase();
+  if (headerStatus.includes('pending') || approvalStatus.includes('pending')) return false;
+  if (headerStatus.includes('reject') || approvalStatus.includes('reject')) return false;
+  if (headerStatus === 'received' || approvalStatus === 'received') return false;
+  return true;
 }
 
 export async function addTestOrderComment(orderId: string, body: string) {
@@ -171,6 +187,59 @@ async function getBillingChunks(orderId: string, items: Array<{ id: string }>) {
   return map;
 }
 
+async function getBillingChunksForItems(itemIds: string[]) {
+  const map = new Map<string, TestOrderBillingChunk[]>();
+  if (!itemIds.length) return map;
+
+  const { data, error } = await supabase
+    .from('test_order_item_billings')
+    .select('id, item_id, order_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
+    .in('item_id', itemIds);
+
+  if (error) {
+    console.warn('In transit chunk lookup failed.', error.message);
+    return map;
+  }
+
+  for (const chunk of (data ?? []) as TestOrderBillingChunk[]) {
+    const list = map.get(chunk.item_id) ?? [];
+    list.push(chunk);
+    map.set(chunk.item_id, list);
+  }
+  return map;
+}
+
+async function getInTransitQtyByPart(branch: string, partNos: string[]) {
+  const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
+  const result: Record<string, number> = {};
+  if (!branch || normalizedParts.length === 0) return result;
+
+  const { data, error } = await supabase
+    .from('test_order_items')
+    .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status, test_orders!inner(branch, status, approval_status)')
+    .in('part_no', normalizedParts)
+    .eq('test_orders.branch', branch)
+    .neq('test_orders.status', 'received')
+    .neq('test_orders.status', 'rejected')
+    .neq('test_orders.approval_status', 'rejected');
+
+  if (error) {
+    console.warn('In transit lookup failed.', error.message);
+    return result;
+  }
+
+  const rows = (data ?? []) as unknown as TransitCandidate[];
+  const chunkMap = await getBillingChunksForItems(rows.map((row) => row.id));
+  for (const row of rows) {
+    const withChunks = { ...row, billing_chunks: chunkMap.get(row.id) ?? [] };
+    if (!isTransitCandidate(withChunks)) continue;
+    const part = normalizePartNo(row.part_no);
+    result[part] = (result[part] ?? 0) + Math.max(0, getEffectiveQty(withChunks) - getReceivedQty(withChunks));
+  }
+
+  return result;
+}
+
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('test_orders')
@@ -193,7 +262,8 @@ export async function getTestOrderView(orderId: string) {
 
   const rawItems = (items ?? []) as RawItem[];
   const billingChunkMap = await getBillingChunks(orderId, rawItems);
-  const itemsWithChunks = rawItems.map((item) => ({ ...item, billing_chunks: billingChunkMap.get(item.id) ?? [] }));
+  const inTransitMap = await getInTransitQtyByPart(rawOrder.branch, rawItems.map((item) => item.part_no));
+  const itemsWithChunks = rawItems.map((item) => ({ ...item, billing_chunks: billingChunkMap.get(item.id) ?? [], in_transit_qty: inTransitMap[normalizePartNo(item.part_no)] ?? 0 }));
 
   const { data: events, error: eventError } = await supabase
     .from('test_order_events')
