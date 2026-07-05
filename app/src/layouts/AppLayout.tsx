@@ -3,6 +3,7 @@ import { Boxes, ClipboardCheck, FilePlus2, Home, LayoutDashboard, LogOut, Packag
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
+import { brandLogoSrc } from '../assets/brandLogo';
 import { RoleAwareNav } from './RoleAwareNav';
 import { MobileRoleNav } from './MobileRoleNav';
 
@@ -33,8 +34,13 @@ export function AppLayout() {
       <div className="flex min-h-screen">
         <aside className="hidden w-48 shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 xl:block">
           <div className="rounded-lg border border-[#263244] bg-[#111827] p-2.5">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect</p>
-            <h1 className="mt-1 text-sm font-black text-white">New Portal</h1>
+            <div className="flex items-center gap-2">
+              <img src={brandLogoSrc} alt="Brand" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect</p>
+                <h1 className="mt-1 text-sm font-black text-white">New Portal</h1>
+              </div>
+            </div>
           </div>
           <RoleAwareNav items={navItems} role={profile?.role} />
         </aside>
@@ -42,9 +48,12 @@ export function AppLayout() {
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-3 py-2 backdrop-blur lg:px-4">
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Secure Workspace</p>
-                <h2 className="text-sm font-black text-white">Parts Connect Portal</h2>
+              <div className="flex items-center gap-2">
+                <img src={brandLogoSrc} alt="Brand" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
+                <div>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Secure Workspace</p>
+                  <h2 className="text-sm font-black text-white">Parts Connect Portal</h2>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="rounded-lg border border-[#263244] bg-[#0b1020] px-2.5 py-1 text-xs">
