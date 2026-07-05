@@ -11,11 +11,12 @@ const num = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const finalRowStatuses = new Set(['received', 'rejected']);
+const closedRowStatuses = new Set(['received', 'rejected']);
 
 type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
 type HeaderCandidate = { orderRegDate: string | null; value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 type ItemRow = { id: string; order_id: string; part_no: string; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
+type ChunkRow = { billed_qty: number | string | null; received_qty?: number | string | null; order_reg_date: string | null; invoice_no: string | null; billing_date: string | null; docket_no: string | null; transport_name: string | null };
 
 function normalizeStatus(value: unknown) {
   const status = clean(value).toLowerCase().replace(/[\s-]+/g, '_');
@@ -38,11 +39,15 @@ function effectiveQty(row: ItemRow) {
   return Math.max(0, num(row.qty));
 }
 
-function resolveItemStatus(item: ItemRow, billedTotal: number) {
+function resolveItemStatus(item: ItemRow, billedTotal: number, receivedTotal: number) {
   const current = normalizeStatus(item.row_status);
-  if (current === 'received') return 'received';
   if (current === 'rejected') return 'rejected';
   const qty = effectiveQty(item);
+  if (receivedTotal > 0) {
+    if (qty <= 0 || receivedTotal >= qty) return 'received';
+    return 'partially_received';
+  }
+  if (current === 'received') return 'received';
   if (billedTotal <= 0) return 'processed';
   if (qty <= 0) return 'dispatched';
   if (billedTotal >= qty) return 'dispatched';
@@ -130,8 +135,8 @@ serve(async (req) => {
       if (currentError) throw currentError;
       if (!currentItems?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item row not found`); continue; }
 
-      const activeItem = (currentItems as ItemRow[]).find((item) => !finalRowStatuses.has(normalizeStatus(item.row_status))) ?? null;
-      if (!activeItem) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item already final received/rejected`); continue; }
+      const activeItem = (currentItems as ItemRow[]).find((item) => !closedRowStatuses.has(normalizeStatus(item.row_status))) ?? null;
+      if (!activeItem) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item is fully received or rejected`); continue; }
 
       const billingPayload = {
         order_id: order.id,
@@ -164,15 +169,17 @@ serve(async (req) => {
 
       const { data: chunks, error: chunkReadError } = await adminClient
         .from('test_order_item_billings')
-        .select('billed_qty, order_reg_date, invoice_no, billing_date, docket_no, transport_name')
+        .select('billed_qty, received_qty, order_reg_date, invoice_no, billing_date, docket_no, transport_name')
         .eq('item_id', activeItem.id);
       if (chunkReadError) throw chunkReadError;
 
-      const chunkRows = chunks ?? [];
+      const chunkRows = (chunks ?? []) as ChunkRow[];
       const billedTotal = chunkRows.reduce((sum, row) => sum + num(row.billed_qty), 0);
-      const nextRowStatus = resolveItemStatus(activeItem, billedTotal);
+      const receivedTotal = chunkRows.reduce((sum, row) => sum + num(row.received_qty), 0);
+      const nextRowStatus = resolveItemStatus(activeItem, billedTotal, receivedTotal);
       const itemUpdate = {
         billed_qty: billedTotal,
+        received_date: receivedTotal > 0 ? now : null,
         order_reg_date: singleOrNull(chunkRows.map((row) => row.order_reg_date)),
         dbms_invoice_no: singleOrNull(chunkRows.map((row) => row.invoice_no)),
         dbms_invoice_date: singleOrNull(chunkRows.map((row) => row.billing_date)),
@@ -196,8 +203,8 @@ serve(async (req) => {
         old_status: order.status,
         new_status: nextRowStatus,
         actor_id: profile.id,
-        notes: `Status upload added billing chunk for ${partNo}. Total billed ${billedTotal}.`,
-        metadata: { part_no: partNo, chunk: billingPayload, billed_qty_total: billedTotal, row_status: nextRowStatus },
+        notes: `Status upload added billing chunk for ${partNo}. Total billed ${billedTotal}, total received ${receivedTotal}.`,
+        metadata: { part_no: partNo, chunk: billingPayload, billed_qty_total: billedTotal, received_qty_total: receivedTotal, row_status: nextRowStatus },
       });
       result.updated += 1;
     } catch (error) {
