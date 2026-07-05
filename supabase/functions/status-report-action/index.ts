@@ -22,8 +22,9 @@ function normalizeStatus(value: unknown) {
   if (!status) return '';
   if (status.includes('receiv')) return status.includes('partial') ? 'partially_received' : 'received';
   if (status.includes('reject')) return 'rejected';
-  if (status.includes('partial') && (status.includes('dispatch') || status.includes('despatch') || status.includes('issued'))) return 'partially_dispatched';
-  if (status.includes('dispatch') || status.includes('despatch') || status.includes('issued')) return 'issued';
+  if (status.includes('partial') && (status.includes('dispatch') || status.includes('despatch'))) return 'partially_dispatched';
+  if (status.includes('dispatch') || status.includes('despatch')) return 'dispatched';
+  if (status.includes('issued')) return 'issued';
   if (status.includes('process')) return 'processed';
   if (status.includes('pending') && status.includes('manager')) return 'pending_manager_approval';
   if (status.includes('pending')) return 'pending_approval';
@@ -43,8 +44,8 @@ function resolveItemStatus(item: ItemRow, billedTotal: number) {
   if (current === 'rejected') return 'rejected';
   const qty = effectiveQty(item);
   if (billedTotal <= 0) return 'processed';
-  if (qty <= 0) return 'issued';
-  if (billedTotal >= qty) return 'issued';
+  if (qty <= 0) return 'dispatched';
+  if (billedTotal >= qty) return 'dispatched';
   return 'partially_dispatched';
 }
 
@@ -52,12 +53,14 @@ function deriveOrderStatus(rows: Array<{ row_status: string | null }>) {
   if (!rows.length) return 'processed';
   const statuses = rows.map((row) => normalizeStatus(row.row_status)).filter(Boolean);
   if (!statuses.length) return 'processed';
-  const hasFulfillment = statuses.some((status) => ['processed', 'partially_dispatched', 'issued', 'partially_received', 'received'].includes(status));
+  const hasFulfillment = statuses.some((status) => ['processed', 'partially_dispatched', 'dispatched', 'issued', 'partially_received', 'received'].includes(status));
   if (hasFulfillment) {
     if (statuses.every((status) => status === 'received')) return 'received';
     if (statuses.some((status) => status === 'received' || status === 'partially_received')) return 'partially_received';
+    if (statuses.every((status) => status === 'dispatched')) return 'dispatched';
+    if (statuses.some((status) => status === 'dispatched' || status === 'partially_dispatched')) return 'partially_dispatched';
     if (statuses.every((status) => status === 'issued')) return 'issued';
-    if (statuses.some((status) => status === 'issued' || status === 'partially_dispatched')) return 'partially_dispatched';
+    if (statuses.some((status) => status === 'issued')) return 'issued';
     if (statuses.every((status) => status === 'processed')) return 'processed';
     return 'processed';
   }
