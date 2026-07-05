@@ -1,29 +1,74 @@
 import { supabase } from '../lib/supabase';
-import { getEffectiveQty, normalizePartNo } from '../lib/orderLogic';
+import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
 
 type TestUsageRow = {
+  id: string;
   part_no: string | null;
   qty: number | null;
   edited_qty: number | null;
+  billed_qty: number | null;
+  row_status: string | null;
+  billing_chunks?: Array<{ billed_qty: number | null; received_qty: number | null }>;
+  test_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null;
 };
 
-export async function getTestLast30QtyByBranchPart(branch: string, partNo: string, days = 30) {
+type BillingChunkRow = { item_id: string; billed_qty: number | null; received_qty: number | null };
+
+const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'ISSUED', 'PARTIALLY RECEIVED']);
+
+function isEligibleForTransit(row: TestUsageRow) {
+  const status = getResolvedRowStatus(row);
+  if (!OPEN_TRANSIT_STATUSES.has(status)) return false;
+  const headerStatus = String(row.test_orders?.status ?? '').toLowerCase();
+  const approvalStatus = String(row.test_orders?.approval_status ?? '').toLowerCase();
+  if (headerStatus.includes('pending') || approvalStatus.includes('pending')) return false;
+  if (headerStatus.includes('reject') || approvalStatus.includes('reject')) return false;
+  if (headerStatus === 'received' || approvalStatus === 'received') return false;
+  return true;
+}
+
+async function attachBillingChunks(rows: TestUsageRow[]) {
+  const itemIds = rows.map((row) => row.id).filter(Boolean);
+  if (!itemIds.length) return rows;
+
+  const { data, error } = await supabase
+    .from('test_order_item_billings')
+    .select('item_id, billed_qty, received_qty')
+    .in('item_id', itemIds);
+
+  if (error) {
+    console.warn('In transit billing chunks unavailable.', error.message);
+    return rows;
+  }
+
+  const map = new Map<string, BillingChunkRow[]>();
+  for (const chunk of (data ?? []) as BillingChunkRow[]) {
+    const list = map.get(chunk.item_id) ?? [];
+    list.push(chunk);
+    map.set(chunk.item_id, list);
+  }
+
+  return rows.map((row) => ({ ...row, billing_chunks: map.get(row.id) ?? [] }));
+}
+
+export async function getTestLast30QtyByBranchPart(branch: string, partNo: string) {
   const normalizedPartNo = normalizePartNo(partNo);
   if (!branch || !normalizedPartNo) return 0;
 
-  const since = new Date();
-  since.setDate(since.getDate() - days);
-
   const { data, error } = await supabase
     .from('test_order_items')
-    .select('part_no, qty, edited_qty, test_orders!inner(branch, status, approval_status, created_at)')
+    .select('id, part_no, qty, edited_qty, billed_qty, row_status, test_orders!inner(branch, status, approval_status)')
     .eq('part_no', normalizedPartNo)
     .eq('test_orders.branch', branch)
+    .neq('test_orders.status', 'received')
     .neq('test_orders.status', 'rejected')
-    .neq('test_orders.approval_status', 'rejected')
-    .gte('test_orders.created_at', since.toISOString());
+    .neq('test_orders.approval_status', 'rejected');
 
   if (error) throw error;
 
-  return (data as unknown as TestUsageRow[] || []).reduce((sum, row) => sum + getEffectiveQty(row), 0);
+  const rows = await attachBillingChunks((data ?? []) as unknown as TestUsageRow[]);
+  return rows.reduce((sum, row) => {
+    if (!isEligibleForTransit(row)) return sum;
+    return sum + Math.max(0, getEffectiveQty(row) - getReceivedQty(row));
+  }, 0);
 }
