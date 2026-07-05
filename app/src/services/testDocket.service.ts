@@ -31,16 +31,27 @@ export async function lookupTestDocketOrders(value: string): Promise<TestDocketO
   if (!docket) return [];
   const branchValues = await getCurrentBranchScopeValues();
 
+  const itemOrderIds = new Set<string>();
+
   const { data: matchingItems, error: itemError } = await supabase
     .from('test_order_items')
     .select('order_id')
     .or(`docket_no.eq.${docket},dbms_invoice_no.eq.${docket}`)
     .limit(50);
   if (itemError) throw itemError;
+  (matchingItems ?? []).forEach((row) => { if (row.order_id) itemOrderIds.add(row.order_id); });
 
-  const itemOrderIds = [...new Set((matchingItems ?? []).map((row) => row.order_id).filter(Boolean))];
+  const { data: matchingChunks, error: chunkError } = await supabase
+    .from('test_order_item_billings')
+    .select('order_id')
+    .or(`docket_no.eq.${docket},invoice_no.eq.${docket}`)
+    .limit(50);
+  if (!chunkError) {
+    (matchingChunks ?? []).forEach((row) => { if (row.order_id) itemOrderIds.add(row.order_id); });
+  }
+
   const orderFilters = [`final_order_no.eq.${docket}`, `processing_reference.eq.${docket}`, `order_no.eq.${docket}`, `machine_no.ilike.%${docket}%`];
-  if (itemOrderIds.length > 0) orderFilters.push(`id.in.(${itemOrderIds.join(',')})`);
+  if (itemOrderIds.size > 0) orderFilters.push(`id.in.(${[...itemOrderIds].join(',')})`);
 
   let query = supabase
     .from('test_orders')
