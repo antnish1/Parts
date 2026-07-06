@@ -14,3 +14,6 @@ content = content.replace(
 );
 
 fs.writeFileSync(filePath, content, 'utf8');
+
+const inventoryPatch = path.join(__dirname, 'apply-central-branch-inventory-patch.cjs');
+if (fs.existsSync(inventoryPatch)) require(inventoryPatch);
