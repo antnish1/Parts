@@ -6,6 +6,7 @@ import { App } from './App';
 import { queryClient } from './lib/queryClient';
 import './index.css';
 import './order-detail-compact.css';
+import './premium-portal.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
