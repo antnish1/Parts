@@ -21,7 +21,7 @@ export async function getCurrentPortalProfile(): Promise<ProfileRow | null> {
   if (!userId) return null;
 
   const { data: profile, error: profileError } = await supabase
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, role, branch, is_active')
     .eq('auth_user_id', userId)
     .maybeSingle();
@@ -45,7 +45,7 @@ export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
   if (!branchKey) return [];
 
   const { data: branches, error: branchError } = await supabase
-    .from('test_branch_mapping')
+    .from('branch_mapping')
     .select('branch_name, branch_code')
     .eq('is_active', true);
 
