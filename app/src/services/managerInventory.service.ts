@@ -30,13 +30,18 @@ export type ManagerInventoryTxnRow = {
   closing_value: number | null;
 };
 
+type PortalInventoryTxnRow = Omit<ManagerInventoryTxnRow, 'received' | 'issued'> & {
+  received_qty: number | null;
+  issued_qty: number | null;
+};
+
 function cleanPartSearch(search: string) {
   return search.trim().replace(/\s+/g, '').toUpperCase();
 }
 
 export async function getLatestInventoryReportDate() {
   const { data, error } = await supabase
-    .from('test_inventory_staging')
+    .from('portal_inventory_staging')
     .select('report_date')
     .order('report_date', { ascending: false })
     .limit(1)
@@ -51,7 +56,7 @@ export async function getManagerInventoryLookup(search = '', branch = 'all', rep
 
   const latestDate = reportDate || await getLatestInventoryReportDate();
   let query = supabase
-    .from('test_inventory_staging')
+    .from('portal_inventory_staging')
     .select('id, report_date, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, closing_balance, closing_value')
     .order('branch_code', { ascending: true })
     .order('item_code', { ascending: true })
@@ -84,8 +89,8 @@ export async function getManagerInventoryTransactions(search = '', branch = 'all
 
   const latestDate = reportDate || await getLatestInventoryReportDate();
   let query = supabase
-    .from('test_inventory_staging')
-    .select('id, report_date, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, received, issued, closing_balance, closing_value')
+    .from('portal_inventory_staging')
+    .select('id, report_date, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, received_qty, issued_qty, closing_balance, closing_value')
     .order('branch_code', { ascending: true })
     .order('item_code', { ascending: true })
     .limit(100);
@@ -93,9 +98,13 @@ export async function getManagerInventoryTransactions(search = '', branch = 'all
   if (latestDate) query = query.eq('report_date', latestDate);
   if (branch !== 'all') query = query.eq('branch_code', branch);
   query = query.ilike('item_code', `%${term}%`);
-  query = query.or('received.neq.0,issued.neq.0');
+  query = query.or('received_qty.neq.0,issued_qty.neq.0');
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as ManagerInventoryTxnRow[];
+  return ((data ?? []) as PortalInventoryTxnRow[]).map((row) => ({
+    ...row,
+    received: row.received_qty,
+    issued: row.issued_qty,
+  }));
 }
