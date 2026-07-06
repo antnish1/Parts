@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
 import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
 import { getBranchCalculationScope } from './branchCalculation.service';
+import { withCentralOrderValues } from './centralBranchGroup.service';
 
 export type TestOrderView = {
   id: string;
@@ -212,7 +213,7 @@ async function getBillingChunksForItems(itemIds: string[]) {
 async function getInTransitQtyByPart(branch: string, partNos: string[]) {
   const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
   const result: Record<string, number> = {};
-  const branchScope = await getBranchCalculationScope(branch);
+  const branchScope = withCentralOrderValues(await getBranchCalculationScope(branch));
   if (!branchScope.length || normalizedParts.length === 0) return result;
 
   const { data, error } = await supabase
