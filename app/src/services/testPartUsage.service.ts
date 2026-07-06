@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
 import { getBranchCalculationScope } from './branchCalculation.service';
+import { withCentralOrderValues } from './centralBranchGroup.service';
 
 type TestUsageRow = {
   id: string;
@@ -54,7 +55,7 @@ async function attachBillingChunks(rows: TestUsageRow[]) {
 
 export async function getTestLast30QtyByBranchPart(branch: string, partNo: string, _days = 30) {
   const normalizedPartNo = normalizePartNo(partNo);
-  const branchScope = await getBranchCalculationScope(branch);
+  const branchScope = withCentralOrderValues(await getBranchCalculationScope(branch));
   if (!branchScope.length || !normalizedPartNo) return 0;
 
   const { data, error } = await supabase
