@@ -14,38 +14,31 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('test_profiles').select('id,full_name,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await adminClient.from('portal_profiles').select('id,full_name,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approver can perform this action' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
   const orderId = String(body.orderId ?? '');
-  const { data: order, error: orderError } = await adminClient
-    .from('test_orders')
-    .select('id,order_no,status,approver_id')
-    .eq('id', orderId)
-    .like('order_no', 'TEST-%')
-    .maybeSingle();
+  const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status,approver_id').eq('id', orderId).maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
-  if (!order) return json({ error: 'Test order not found' }, 404);
+  if (!order) return json({ error: 'Order not found' }, 404);
 
-  const { data: approver } = order.approver_id
-    ? await adminClient.from('test_profiles').select('id,full_name,role').eq('id', order.approver_id).maybeSingle()
-    : { data: null };
+  const { data: approver } = order.approver_id ? await adminClient.from('portal_profiles').select('id,full_name,role').eq('id', order.approver_id).maybeSingle() : { data: null };
   const now = new Date().toISOString();
 
   async function event(eventType: string, newStatus: string, notes: string) {
-    const { error } = await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: eventType, old_status: order.status, new_status: newStatus, actor_id: profile.id, notes });
+    const { error } = await adminClient.from('portal_order_events').insert({ order_id: order.id, event_type: eventType, old_status: order.status, new_status: newStatus, actor_id: profile.id, notes });
     if (error) throw error;
   }
 
   async function updateOrder(status: string, approvalStatus: string) {
-    const { error } = await adminClient.from('test_orders').update({ status, approval_status: approvalStatus, updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+    const { error } = await adminClient.from('portal_orders').update({ status, approval_status: approvalStatus, updated_at: now }).eq('id', order.id);
     if (error) throw error;
   }
 
   async function updateItems(rowStatus: string) {
-    const { error } = await adminClient.from('test_order_items').update({ row_status: rowStatus, updated_at: now }).eq('order_id', order.id);
+    const { error } = await adminClient.from('portal_order_items').update({ row_status: rowStatus, updated_at: now }).eq('order_id', order.id);
     if (error) throw error;
   }
 
@@ -94,12 +87,8 @@ serve(async (req) => {
       await event('SUPER_FORWARDED_MANAGER', 'pending_manager_approval', `Forwarded to ${managerName}.`);
       return json({ ok: true });
     }
-    if (action === 'manager_approve') {
-      return await approveByManager('MANAGER_APPROVED');
-    }
-    if (action === 'manager_reject') {
-      return await rejectByManager();
-    }
+    if (action === 'manager_approve') return await approveByManager('MANAGER_APPROVED');
+    if (action === 'manager_reject') return await rejectByManager();
     return json({ error: 'Unknown action' }, 400);
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Approval action failed' }, 400);
