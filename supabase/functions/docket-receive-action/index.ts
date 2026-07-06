@@ -75,7 +75,7 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('test_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await adminClient.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can receive dockets' }, 403);
 
   const body = await req.json().catch(() => ({}));
@@ -90,7 +90,7 @@ serve(async (req) => {
 
     if (billingId) {
       const { data: chunk, error: chunkError } = await adminClient
-        .from('test_order_item_billings')
+        .from('portal_order_item_billings')
         .select('id, order_id, item_id, docket_no, invoice_no, billed_qty, received_qty')
         .eq('id', billingId)
         .maybeSingle();
@@ -99,7 +99,7 @@ serve(async (req) => {
       chunkRows = [chunk as ChunkRow];
     } else if (itemId) {
       const { data: item, error: itemError } = await adminClient
-        .from('test_order_items')
+        .from('portal_order_items')
         .select('id, order_id, part_no, qty, edited_qty, billed_qty, row_status, docket_no, dbms_invoice_no, dbms_invoice_date, transport_name')
         .eq('id', itemId)
         .maybeSingle();
@@ -108,7 +108,7 @@ serve(async (req) => {
 
       const itemRow = item as ItemRow;
       const { data: orderForItem, error: orderForItemError } = await adminClient
-        .from('test_orders')
+        .from('portal_orders')
         .select('id, order_no, status')
         .eq('id', itemRow.order_id)
         .maybeSingle();
@@ -119,7 +119,7 @@ serve(async (req) => {
       const docketNo = normalize(String(docket || itemRow.docket_no || ''));
       const idempotencyKey = ['docket_item_receive_backfill', itemRow.id, docketNo, billedQty].join('|');
       const { data: insertedChunk, error: insertChunkError } = await adminClient
-        .from('test_order_item_billings')
+        .from('portal_order_item_billings')
         .upsert({
           order_id: itemRow.order_id,
           item_id: itemRow.id,
@@ -146,9 +146,9 @@ serve(async (req) => {
       chunkRows = [insertedChunk as ChunkRow];
     } else {
       if (!orderId) return json({ error: 'Order id or billing row id is required' }, 400);
-      if (!docket) return json({ error: 'Docket number is required' }, 400);
+      if (!docket || docket === '0') return json({ error: 'Valid docket number is required' }, 400);
       const { data: chunks, error: chunkError } = await adminClient
-        .from('test_order_item_billings')
+        .from('portal_order_item_billings')
         .select('id, order_id, item_id, docket_no, invoice_no, billed_qty, received_qty')
         .eq('order_id', orderId)
         .eq('docket_no', docket);
@@ -157,19 +157,18 @@ serve(async (req) => {
     }
 
     if (!chunkRows.length) return json({ error: 'No billing row found for this docket' }, 404);
-
     const orderIds = [...new Set(chunkRows.map((chunk) => chunk.order_id))];
-    if (orderIds.length !== 1) return json({ error: 'Receive one order at a time.' }, 400);
+    if (orderIds.length !== 1) return json({ error: 'Receive one row/order at a time.' }, 400);
     const activeOrderId = orderIds[0];
 
-    const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status').eq('id', activeOrderId).maybeSingle();
+    const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status').eq('id', activeOrderId).maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: 'Order not found' }, 404);
 
     for (const chunk of chunkRows) {
       if (num(chunk.received_qty) >= num(chunk.billed_qty) && num(chunk.billed_qty) > 0) continue;
       const { error: updateChunkError } = await adminClient
-        .from('test_order_item_billings')
+        .from('portal_order_item_billings')
         .update({ received_qty: num(chunk.billed_qty), received_at: receivedAt, received_by: profile.id, updated_at: receivedAt })
         .eq('id', chunk.id);
       if (updateChunkError) throw updateChunkError;
@@ -177,7 +176,7 @@ serve(async (req) => {
 
     const itemIds = [...new Set(chunkRows.map((chunk) => chunk.item_id))];
     const { data: targetItems, error: targetError } = await adminClient
-      .from('test_order_items')
+      .from('portal_order_items')
       .select('id, order_id, qty, edited_qty, billed_qty, row_status')
       .eq('order_id', activeOrderId)
       .in('id', itemIds);
@@ -185,7 +184,7 @@ serve(async (req) => {
 
     for (const item of (targetItems ?? []) as ItemRow[]) {
       const { data: itemChunks, error: itemChunkError } = await adminClient
-        .from('test_order_item_billings')
+        .from('portal_order_item_billings')
         .select('billed_qty, received_qty')
         .eq('item_id', item.id);
       if (itemChunkError) throw itemChunkError;
@@ -193,19 +192,19 @@ serve(async (req) => {
       const receivedTotal = (itemChunks ?? []).reduce((sum, row) => sum + num(row.received_qty), 0);
       const nextItemStatus = itemStatus(item, billedTotal, receivedTotal);
       const { error: itemUpdateError } = await adminClient
-        .from('test_order_items')
+        .from('portal_order_items')
         .update({ billed_qty: billedTotal, row_status: nextItemStatus, received_date: receivedTotal > 0 ? receivedAt : null, updated_at: receivedAt })
         .eq('id', item.id);
       if (itemUpdateError) throw itemUpdateError;
     }
 
-    const { data: allRows, error: rowsError } = await adminClient.from('test_order_items').select('row_status').eq('order_id', activeOrderId);
+    const { data: allRows, error: rowsError } = await adminClient.from('portal_order_items').select('row_status').eq('order_id', activeOrderId);
     if (rowsError) throw rowsError;
     const nextOrderStatus = orderStatus(allRows ?? []);
 
-    const { error: statusError } = await adminClient.from('test_orders').update({ status: nextOrderStatus, received_date: nextOrderStatus === 'received' ? receivedAt : null, updated_at: receivedAt }).eq('id', activeOrderId);
+    const { error: statusError } = await adminClient.from('portal_orders').update({ status: nextOrderStatus, received_date: nextOrderStatus === 'received' ? receivedAt : null, updated_at: receivedAt }).eq('id', activeOrderId);
     if (statusError) throw statusError;
-    await adminClient.from('test_order_events').insert({ order_id: activeOrderId, event_type: 'STATUS_UPDATED', old_status: order.status, new_status: nextOrderStatus, actor_id: profile.id, notes: `Received ${chunkRows.length} docket row(s).`, metadata: { billing_ids: chunkRows.map((chunk) => chunk.id), chunk_count: chunkRows.length, item_count: itemIds.length } });
+    await adminClient.from('portal_order_events').insert({ order_id: activeOrderId, event_type: 'STATUS_UPDATED', old_status: order.status, new_status: nextOrderStatus, actor_id: profile.id, notes: `Received ${chunkRows.length} docket row(s).`, metadata: { billing_ids: chunkRows.map((chunk) => chunk.id), chunk_count: chunkRows.length, item_count: itemIds.length } });
     return json({ ok: true, status: nextOrderStatus, itemCount: itemIds.length, chunkCount: chunkRows.length });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Docket receive failed' }, 400);
