@@ -11,20 +11,37 @@ type ProfileRow = {
   is_active: boolean | null;
 };
 
+function loginIdFromSession(session: Session | null) {
+  const email = session?.user?.email ?? '';
+  return email.includes('@portal.local') ? email.split('@')[0].trim().toUpperCase() : '';
+}
+
 async function loadProfile(session: Session | null): Promise<UserProfile | null> {
   if (!session?.user?.id) return null;
 
   const { data, error } = await supabase
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, full_name, branch, role, is_active')
     .eq('auth_user_id', session.user.id)
     .maybeSingle<ProfileRow>();
 
-  if (error) {
-    console.error('Failed to load auth profile', error);
+  if (error) console.error('Failed to load auth profile', error);
+
+  let profile = data;
+  const loginId = loginIdFromSession(session);
+
+  if (!profile && loginId) {
+    const { data: loginProfile, error: loginProfileError } = await supabase
+      .from('portal_profiles')
+      .select('id, full_name, branch, role, is_active')
+      .ilike('legacy_user_id', loginId)
+      .maybeSingle<ProfileRow>();
+
+    if (loginProfileError) console.error('Failed to load auth profile by login id', loginProfileError);
+    profile = loginProfile ?? null;
   }
 
-  if (!data) {
+  if (!profile) {
     return {
       id: session.user.id,
       fullName: session.user.email ?? 'Authenticated User',
@@ -35,11 +52,11 @@ async function loadProfile(session: Session | null): Promise<UserProfile | null>
   }
 
   return {
-    id: data.id,
-    fullName: data.full_name ?? session.user.email ?? 'Authenticated User',
-    branch: data.branch ?? 'Unassigned',
-    role: data.role ?? 'viewer',
-    isActive: data.is_active ?? false,
+    id: profile.id,
+    fullName: profile.full_name ?? session.user.email ?? 'Authenticated User',
+    branch: profile.branch ?? 'Unassigned',
+    role: profile.role ?? 'viewer',
+    isActive: profile.is_active ?? false,
   };
 }
 
