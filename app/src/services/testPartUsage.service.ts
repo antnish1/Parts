@@ -9,21 +9,21 @@ type TestUsageRow = {
   billed_qty: number | null;
   row_status: string | null;
   billing_chunks?: Array<{ billed_qty: number | null; received_qty: number | null }>;
-  test_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null;
+  portal_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null;
 };
 
 type BillingChunkRow = { item_id: string; billed_qty: number | null; received_qty: number | null };
 
-const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'ISSUED', 'PARTIALLY RECEIVED']);
+const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'PARTIALLY RECEIVED']);
 
 function isEligibleForTransit(row: TestUsageRow) {
   const status = getResolvedRowStatus(row);
   if (!OPEN_TRANSIT_STATUSES.has(status)) return false;
-  const headerStatus = String(row.test_orders?.status ?? '').toLowerCase();
-  const approvalStatus = String(row.test_orders?.approval_status ?? '').toLowerCase();
+  const headerStatus = String(row.portal_orders?.status ?? '').toLowerCase();
+  const approvalStatus = String(row.portal_orders?.approval_status ?? '').toLowerCase();
   if (headerStatus.includes('pending') || approvalStatus.includes('pending')) return false;
   if (headerStatus.includes('reject') || approvalStatus.includes('reject')) return false;
-  if (headerStatus === 'received' || approvalStatus === 'received') return false;
+  if (headerStatus === 'received' || headerStatus === 'issued' || approvalStatus === 'received' || approvalStatus === 'issued') return false;
   return true;
 }
 
@@ -32,7 +32,7 @@ async function attachBillingChunks(rows: TestUsageRow[]) {
   if (!itemIds.length) return rows;
 
   const { data, error } = await supabase
-    .from('test_order_item_billings')
+    .from('portal_order_item_billings')
     .select('item_id, billed_qty, received_qty')
     .in('item_id', itemIds);
 
@@ -56,13 +56,14 @@ export async function getTestLast30QtyByBranchPart(branch: string, partNo: strin
   if (!branch || !normalizedPartNo) return 0;
 
   const { data, error } = await supabase
-    .from('test_order_items')
-    .select('id, part_no, qty, edited_qty, billed_qty, row_status, test_orders!inner(branch, status, approval_status)')
+    .from('portal_order_items')
+    .select('id, part_no, qty, edited_qty, billed_qty, row_status, portal_orders!inner(branch, status, approval_status)')
     .eq('part_no', normalizedPartNo)
-    .eq('test_orders.branch', branch)
-    .neq('test_orders.status', 'received')
-    .neq('test_orders.status', 'rejected')
-    .neq('test_orders.approval_status', 'rejected');
+    .eq('portal_orders.branch', branch)
+    .neq('portal_orders.status', 'received')
+    .neq('portal_orders.status', 'issued')
+    .neq('portal_orders.status', 'rejected')
+    .neq('portal_orders.approval_status', 'rejected');
 
   if (error) throw error;
 
