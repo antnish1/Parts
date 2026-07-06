@@ -82,9 +82,9 @@ export type TestOrderComment = { id: string; comment_type: string; body: string 
 type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawComment = Omit<TestOrderComment, 'author' | 'attachments'> & { author?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawItem = Omit<TestOrderViewItem, 'billing_chunks' | 'in_transit_qty'>;
-type TransitCandidate = RawItem & { order_id: string; billing_chunks?: TestOrderBillingChunk[]; test_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null };
+type TransitCandidate = RawItem & { order_id: string; billing_chunks?: TestOrderBillingChunk[]; portal_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null };
 
-const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'ISSUED', 'PARTIALLY RECEIVED']);
+const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'PARTIALLY RECEIVED']);
 
 function normalizeOrderView(order: RawOrderView): TestOrderView {
   const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
@@ -103,11 +103,11 @@ function normalizeCommentText(value: string) {
 function isTransitCandidate(row: TransitCandidate) {
   const resolvedStatus = getResolvedRowStatus(row);
   if (!OPEN_TRANSIT_STATUSES.has(resolvedStatus)) return false;
-  const headerStatus = String(row.test_orders?.status ?? '').toLowerCase();
-  const approvalStatus = String(row.test_orders?.approval_status ?? '').toLowerCase();
+  const headerStatus = String(row.portal_orders?.status ?? '').toLowerCase();
+  const approvalStatus = String(row.portal_orders?.approval_status ?? '').toLowerCase();
   if (headerStatus.includes('pending') || approvalStatus.includes('pending')) return false;
   if (headerStatus.includes('reject') || approvalStatus.includes('reject')) return false;
-  if (headerStatus === 'received' || approvalStatus === 'received') return false;
+  if (headerStatus === 'received' || headerStatus === 'issued' || approvalStatus === 'received' || approvalStatus === 'issued') return false;
   return true;
 }
 
@@ -118,7 +118,7 @@ export async function addTestOrderComment(orderId: string, body: string) {
   const profile = await getCurrentPortalProfile();
 
   const { data: recent, error: recentError } = await supabase
-    .from('test_order_comments')
+    .from('portal_order_comments')
     .select('id, body, created_at')
     .eq('order_id', orderId)
     .eq('comment_type', 'user')
@@ -130,7 +130,7 @@ export async function addTestOrderComment(orderId: string, body: string) {
   if (duplicate) throw new Error('Duplicate comment already exists for this order.');
 
   const { data, error } = await supabase
-    .from('test_order_comments')
+    .from('portal_order_comments')
     .insert({ order_id: orderId, author_id: profile?.id ?? null, comment_type: 'user', body: text })
     .select('id')
     .single();
@@ -144,11 +144,10 @@ async function getCommentAttachments(orderId: string, comments: Array<{ id: stri
   const map = new Map<string, TestOrderCommentAttachment[]>();
   const commentIds = comments.map((comment) => comment.id);
   const { data, error } = await supabase
-    .from('test_order_comment_attachments')
-    .select('id, comment_id, original_file_name, mime_type, file_size_bytes, created_at')
+    .from('portal_order_comment_attachments')
+    .select('id, comment_id, original_file_name:original_filename, mime_type, file_size_bytes:size_bytes, created_at')
     .eq('order_id', orderId)
     .in('comment_id', commentIds)
-    .is('deleted_at', null)
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -169,7 +168,7 @@ async function getBillingChunks(orderId: string, items: Array<{ id: string }>) {
   if (!items.length) return map;
 
   const { data, error } = await supabase
-    .from('test_order_item_billings')
+    .from('portal_order_item_billings')
     .select('id, item_id, order_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
@@ -192,7 +191,7 @@ async function getBillingChunksForItems(itemIds: string[]) {
   if (!itemIds.length) return map;
 
   const { data, error } = await supabase
-    .from('test_order_item_billings')
+    .from('portal_order_item_billings')
     .select('id, item_id, order_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, order_reg_date, delivery_no, invoice_no, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no, raw_status, source, created_at')
     .in('item_id', itemIds);
 
@@ -215,13 +214,14 @@ async function getInTransitQtyByPart(branch: string, partNos: string[]) {
   if (!branch || normalizedParts.length === 0) return result;
 
   const { data, error } = await supabase
-    .from('test_order_items')
-    .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status, test_orders!inner(branch, status, approval_status)')
+    .from('portal_order_items')
+    .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status, portal_orders!inner(branch, status, approval_status)')
     .in('part_no', normalizedParts)
-    .eq('test_orders.branch', branch)
-    .neq('test_orders.status', 'received')
-    .neq('test_orders.status', 'rejected')
-    .neq('test_orders.approval_status', 'rejected');
+    .eq('portal_orders.branch', branch)
+    .neq('portal_orders.status', 'received')
+    .neq('portal_orders.status', 'issued')
+    .neq('portal_orders.status', 'rejected')
+    .neq('portal_orders.approval_status', 'rejected');
 
   if (error) {
     console.warn('In transit lookup failed.', error.message);
@@ -242,8 +242,8 @@ async function getInTransitQtyByPart(branch: string, partNos: string[]) {
 
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
-    .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:test_profiles!test_orders_approver_id_fkey(full_name, role)')
+    .from('portal_orders')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)')
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
@@ -254,7 +254,7 @@ export async function getTestOrderView(orderId: string) {
   if (profile?.role === 'super' && rawOrder.approver_id !== profile.id) throw new Error('This order is assigned to another approver.');
 
   const { data: items, error: itemError } = await supabase
-    .from('test_order_items')
+    .from('portal_order_items')
     .select('id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status')
     .eq('order_id', orderId)
     .order('created_at', { ascending: true });
@@ -266,7 +266,7 @@ export async function getTestOrderView(orderId: string) {
   const itemsWithChunks = rawItems.map((item) => ({ ...item, billing_chunks: billingChunkMap.get(item.id) ?? [], in_transit_qty: inTransitMap[normalizePartNo(item.part_no)] ?? 0 }));
 
   const { data: events, error: eventError } = await supabase
-    .from('test_order_events')
+    .from('portal_order_events')
     .select('id, event_type, old_status, new_status, notes, created_at')
     .eq('order_id', orderId)
     .order('created_at', { ascending: false })
@@ -274,8 +274,8 @@ export async function getTestOrderView(orderId: string) {
   if (eventError) throw eventError;
 
   const { data: comments, error: commentError } = await supabase
-    .from('test_order_comments')
-    .select('id, comment_type, body, attachment_path, created_at, author:test_profiles!test_order_comments_author_id_fkey(full_name, role)')
+    .from('portal_order_comments')
+    .select('id, comment_type, body, attachment_path, created_at, author:portal_profiles!portal_order_comments_author_id_fkey(full_name, role)')
     .eq('order_id', orderId)
     .eq('comment_type', 'user')
     .order('created_at', { ascending: false })
