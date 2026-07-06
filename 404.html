@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Redirecting to Parts Connect Portal</title>
+  <meta http-equiv="refresh" content="0; url=https://parts-3s6.pages.dev/" />
+  <script>
+    (function () {
+      var targetOrigin = 'https://parts-3s6.pages.dev';
+      var path = window.location.pathname || '/';
+      path = path.replace(/^\/Parts(?=\/|$)/, '') || '/';
+      if (path.charAt(0) !== '/') path = '/' + path;
+      window.location.replace(targetOrigin + path + window.location.search + window.location.hash);
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecting to Parts Connect Portal...</p>
+  <p><a href="https://parts-3s6.pages.dev/">Open the new portal</a></p>
+</body>
+</html>
