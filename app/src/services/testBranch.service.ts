@@ -8,13 +8,13 @@ export type TestBranch = {
 
 export async function getTestBranches(): Promise<TestBranch[]> {
   const { data, error } = await supabase
-    .from('test_branch_mapping')
+    .from('branch_mapping')
     .select('id, branch_name, branch_code')
     .eq('is_active', true)
     .order('branch_name', { ascending: true });
 
   if (error) {
-    console.error('Failed to load test branches', error);
+    console.error('Failed to load portal branches', error);
     return [];
   }
 
