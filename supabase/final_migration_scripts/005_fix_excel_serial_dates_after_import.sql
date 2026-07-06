@@ -1,10 +1,14 @@
 -- FINAL MIGRATION SCRIPT 005
--- Fix Excel serial-number legacy dates after importing old requests into portal_* tables.
+-- Fix legacy date formats after importing old requests into portal_* tables.
 --
 -- Why this exists:
--- Some legacy request date columns store Excel serial dates such as 46122 instead of text dates.
--- Script 002 imported the raw value correctly, but those numeric serials could not be parsed into dates.
--- This script converts those serial numbers into PostgreSQL dates.
+-- Some legacy request date columns store dates in mixed formats:
+-- - Excel serial dates such as 46122
+-- - Dot dates such as 12.05.2026
+-- - Slash dates such as 12/05/2026
+-- - Dash dates such as 12-05-2026
+-- Script 002 imported the raw value correctly, but some formats could not be parsed into real dates.
+-- This script converts supported raw values into PostgreSQL dates.
 --
 -- Safety:
 -- - This script only updates portal_* imported legacy rows where parsed date is currently NULL.
@@ -34,6 +38,7 @@ begin
   exception when others then
   end;
 
+  -- ISO/date-time style, for example 2026-05-12 or 2026-05-12T10:30:00.
   begin
     if v ~ '^\d{4}-\d{2}-\d{2}' then
       d := left(v, 10)::date;
@@ -42,6 +47,7 @@ begin
   exception when others then
   end;
 
+  -- Indian slash date, for example 12/05/2026.
   begin
     if v ~ '^\d{2}/\d{2}/\d{4}' then
       d := to_date(left(v, 10), 'DD/MM/YYYY');
@@ -50,9 +56,19 @@ begin
   exception when others then
   end;
 
+  -- Indian dash date, for example 12-05-2026.
   begin
     if v ~ '^\d{2}-\d{2}-\d{4}' then
       d := to_date(left(v, 10), 'DD-MM-YYYY');
+      return d;
+    end if;
+  exception when others then
+  end;
+
+  -- Indian dot date, for example 12.05.2026.
+  begin
+    if v ~ '^\d{2}\.\d{2}\.\d{4}' then
+      d := to_date(left(v, 10), 'DD.MM.YYYY');
       return d;
     end if;
   exception when others then
