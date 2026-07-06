@@ -26,9 +26,7 @@ function statusKey(label: string) {
 
 function headerApprovalKey(order: TestOrder) {
   const header = normalizeStatus(order.approval_status || order.status);
-
   if (header === 'PENDING MANAGER APPROVAL') return 'pending_manager_approval';
-
   return '';
 }
 
@@ -39,7 +37,7 @@ async function getBillingChunksByItem(itemIds: string[]) {
   for (let index = 0; index < itemIds.length; index += CHUNK_SIZE) {
     const chunk = itemIds.slice(index, index + CHUNK_SIZE);
     const { data, error } = await supabase
-      .from('test_order_item_billings')
+      .from('portal_order_item_billings')
       .select('item_id, billed_qty, received_qty')
       .in('item_id', chunk);
 
@@ -66,9 +64,8 @@ export async function getOrderStatusMap(orders: TestOrder[]) {
 
   for (let index = 0; index < ids.length; index += CHUNK_SIZE) {
     const chunk = ids.slice(index, index + CHUNK_SIZE);
-
     const { data, error } = await supabase
-      .from('test_order_items')
+      .from('portal_order_items')
       .select('id, order_id, row_status, qty, edited_qty, billed_qty')
       .in('order_id', chunk);
 
@@ -91,18 +88,13 @@ export async function getOrderStatusMap(orders: TestOrder[]) {
 
   return orders.reduce<Record<string, string>>((acc, order) => {
     const headerKey = headerApprovalKey(order);
-
     if (headerKey) {
       acc[order.id] = headerKey;
       return acc;
     }
 
     const items = byOrder[order.id] ?? [];
-
-    if (items.length) {
-      acc[order.id] = statusKey(getOrderStatusLabel({ ...order, items }));
-    }
-
+    if (items.length) acc[order.id] = statusKey(getOrderStatusLabel({ ...order, items }));
     return acc;
   }, {});
 }
