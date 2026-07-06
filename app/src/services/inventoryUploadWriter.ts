@@ -72,13 +72,13 @@ async function uploadInventoryDirect(rows: ParsedInventoryUploadRow[], reportDat
   }));
   const currentRows = rows.map((row) => currentRow(row, reportDate));
 
-  const { error: stageError } = await supabase.from('test_inventory_staging').insert(stagedRows);
+  const { error: stageError } = await supabase.from('portal_inventory_staging').insert(stagedRows);
   if (stageError) throw new Error(stageError.message);
 
-  const { error: upsertError } = await supabase.from('test_inventory_current').upsert(currentRows, { onConflict: 'branch_code,item_code' });
+  const { error: upsertError } = await supabase.from('portal_inventory_current').upsert(currentRows, { onConflict: 'branch_code,item_code' });
   if (upsertError) throw new Error(upsertError.message);
 
-  const { error: uploadError } = await supabase.from('test_inventory_uploads').insert({ report_date: reportDate, filename, total_rows: totalRows, valid_rows: currentRows.length, failed_rows: failedRows, status: 'completed' });
+  const { error: uploadError } = await supabase.from('portal_inventory_uploads').insert({ report_date: reportDate, filename, total_rows: totalRows, valid_rows: currentRows.length, failed_rows: failedRows, status: 'completed' });
   if (uploadError) throw new Error(uploadError.message);
 
   return { totalRows, validRows: currentRows.length, failedRows, changedRows: 0, stagedRows: stagedRows.length, batchId, mode: 'direct' };
@@ -110,7 +110,7 @@ export async function uploadInventoryExcel(file: File, reportDate: string): Prom
       mode: 'edge',
     };
   } catch (edgeError) {
-    console.warn('Inventory edge upload failed. Falling back to direct Supabase upload.', edgeError);
+    console.warn('Inventory edge upload failed. Falling back to direct portal Supabase upload.', edgeError);
     return uploadInventoryDirect(parsed.rows, reportDate, file.name, parsed.totalRows, parsed.failedRows);
   }
 }
