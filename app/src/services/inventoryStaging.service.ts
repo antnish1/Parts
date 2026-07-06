@@ -26,7 +26,7 @@ export async function stageInventoryRows(rows: InventoryStageRow[], reportDate: 
   if (rows.length === 0) return { batchId: '', stagedRows: 0 };
   const batchId = createBatchId();
   const stagedRows = rows.map((row) => ({ ...row, upload_batch_id: batchId, report_date: reportDate, source_filename: filename }));
-  const { error } = await supabase.from('test_inventory_staging').insert(stagedRows);
+  const { error } = await supabase.from('portal_inventory_staging').insert(stagedRows);
   if (error) throw error;
   return { batchId, stagedRows: stagedRows.length };
 }

@@ -28,7 +28,7 @@ serve(async (req) => {
   const admin = createClient(url, service);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await admin.from('test_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await admin.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can issue items' }, 403);
 
   const body = await req.json().catch(() => ({}));
@@ -44,23 +44,23 @@ serve(async (req) => {
   if (itemIds.length === 0) return json({ error: 'Select at least one item row to issue' }, 400);
 
   try {
-    const { data: order, error: orderError } = await admin.from('test_orders').select('id,order_no,status,order_for').eq('id', orderId).like('order_no', 'TEST-%').maybeSingle();
+    const { data: order, error: orderError } = await admin.from('portal_orders').select('id,order_no,status,order_for').eq('id', orderId).maybeSingle();
     if (orderError) throw orderError;
-    if (!order) return json({ error: 'Test order not found' }, 404);
+    if (!order) return json({ error: 'Portal order not found' }, 404);
     if (order.order_for !== 'Customer') return json({ error: 'Only customer orders can be marked issued' }, 400);
-    const { data: selected, error: selectedError } = await admin.from('test_order_items').select('id,row_status').eq('order_id', order.id).in('id', itemIds);
+    const { data: selected, error: selectedError } = await admin.from('portal_order_items').select('id,row_status').eq('order_id', order.id).in('id', itemIds);
     if (selectedError) throw selectedError;
-    const targetIds = (selected ?? []).filter((row) => row.row_status !== 'received').map((row) => row.id);
-    if (targetIds.length === 0) return json({ error: 'Selected item rows are already received or not found' }, 400);
+    const targetIds = (selected ?? []).filter((row) => row.row_status !== 'received' && row.row_status !== 'issued').map((row) => row.id);
+    if (targetIds.length === 0) return json({ error: 'Selected item rows are already received or issued, or were not found' }, 400);
     const now = new Date().toISOString();
-    const { error: issueError } = await admin.from('test_order_items').update({ dbms_invoice_no: invoiceNo, dbms_invoice_date: invoiceDate, docket_no: docketNo || null, transport_name: transportName || null, row_status: 'issued', updated_at: now }).in('id', targetIds);
+    const { error: issueError } = await admin.from('portal_order_items').update({ dbms_invoice_no: invoiceNo, dbms_invoice_date: invoiceDate, docket_no: docketNo || null, transport_name: transportName || null, row_status: 'issued', updated_at: now }).in('id', targetIds);
     if (issueError) throw issueError;
-    const { data: allRows, error: rowsError } = await admin.from('test_order_items').select('row_status').eq('order_id', order.id);
+    const { data: allRows, error: rowsError } = await admin.from('portal_order_items').select('row_status').eq('order_id', order.id);
     if (rowsError) throw rowsError;
     const status = nextStatus(allRows ?? []);
-    const { error: orderUpdateError } = await admin.from('test_orders').update({ status, updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+    const { error: orderUpdateError } = await admin.from('portal_orders').update({ status, updated_at: now }).eq('id', order.id);
     if (orderUpdateError) throw orderUpdateError;
-    await admin.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_ISSUED', old_status: order.status, new_status: status, notes: `Issued ${targetIds.length} selected item row(s) with invoice ${invoiceNo}.` });
+    await admin.from('portal_order_events').insert({ order_id: order.id, event_type: 'ORDER_ISSUED', old_status: order.status, new_status: status, actor_id: profile.id, notes: `Issued ${targetIds.length} selected item row(s) with invoice ${invoiceNo}.` });
     return json({ ok: true, status, itemCount: targetIds.length });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Selected item issue failed' }, 400);
