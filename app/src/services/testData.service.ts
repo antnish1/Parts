@@ -23,6 +23,9 @@ export type TestOrder = {
   received_date: string | null;
   docket_no: string | null;
   transport_name: string | null;
+  total_qty?: number | null;
+  total_value?: number | null;
+  comment_count?: number | null;
   created_at: string;
 };
 
@@ -97,7 +100,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
   const branchValues = await getCurrentBranchScopeValues();
   let query = supabase
     .from('portal_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, total_qty, total_value, comment_count, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
