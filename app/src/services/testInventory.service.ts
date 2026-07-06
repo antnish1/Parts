@@ -16,13 +16,13 @@ export type TestInventoryRow = {
 
 export async function getTestInventory(): Promise<TestInventoryRow[]> {
   const { data, error } = await supabase
-    .from('test_inventory_current')
+    .from('portal_inventory_current')
     .select('id, report_date, branch_code, item_code, item_name, item_group, uom, dnp, qty, inv_value, updated_at')
     .order('branch_code', { ascending: true })
     .limit(1000);
 
   if (error) {
-    console.error('Failed to load test inventory', error);
+    console.error('Failed to load portal inventory', error);
     return [];
   }
 
