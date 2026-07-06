@@ -227,16 +227,17 @@ function normalizeItemRow(row: RawItemDocketRow): TestDocketRow {
 }
 
 function matchesDocket(row: { docket_no: string | null | undefined }, needle: string) {
-  return docketKey(row.docket_no) === needle;
+  const key = docketKey(row.docket_no);
+  return key !== '' && key !== '0' && key === needle;
 }
 
 async function fetchBillingRows(docket: string, branchValues: string[] | null | undefined) {
   const targetKey = docketKey(docket);
-  if (!targetKey) return [];
+  if (!targetKey || targetKey === '0') return [];
 
   let query = supabase
-    .from('test_order_item_billings')
-    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, raw_status, created_at, order:test_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status), item:test_order_items!inner(id, part_no, description, qty, edited_qty, row_status)')
+    .from('portal_order_item_billings')
+    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, raw_status, created_at, order:portal_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status), item:portal_order_items!inner(id, part_no, description, qty, edited_qty, row_status)')
     .not('docket_no', 'is', null)
     .limit(3000);
 
@@ -249,11 +250,11 @@ async function fetchBillingRows(docket: string, branchValues: string[] | null | 
 
 async function fetchItemRows(docket: string, branchValues: string[] | null | undefined) {
   const targetKey = docketKey(docket);
-  if (!targetKey) return [];
+  if (!targetKey || targetKey === '0') return [];
 
   let query = supabase
-    .from('test_order_items')
-    .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, created_at, order:test_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status)')
+    .from('portal_order_items')
+    .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, created_at, order:portal_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status)')
     .not('docket_no', 'is', null)
     .limit(3000);
 
@@ -266,7 +267,7 @@ async function fetchItemRows(docket: string, branchValues: string[] | null | und
 
 export async function lookupTestDocketRows(value: string): Promise<TestDocketRow[]> {
   const docket = safeSearch(value);
-  if (!docket) return [];
+  if (!docket || docket === '0') return [];
   const branchValues = await getCurrentBranchScopeValues();
 
   const billingRows = await fetchBillingRows(docket, branchValues);
@@ -298,10 +299,3 @@ export async function receiveTestDocketRow(row: TestDocketRow) {
 
 export const lookupTestDocketOrders = lookupTestDocketRows;
 export const markTestDocketReceived = receiveTestDocketRow;
-
-export async function markTestOrderReceived(orderId: string, docketNo: string) {
-  const matches = await lookupTestDocketRows(docketNo);
-  const row = matches.find((item) => item.order_id === orderId);
-  if (!row) throw new Error('Docket row not found for this order.');
-  await receiveTestDocketRow(row);
-}
