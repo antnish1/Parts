@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { normalizePartNo } from '../lib/orderLogic';
 import { normalizeBranchKey } from './branchScope.service';
+import { getBranchCalculationScope } from './branchCalculation.service';
 
 export type InventoryLookupMap = Record<string, number>;
 
@@ -8,9 +9,9 @@ type InventoryRow = { item_code: string; qty: number | null; branch_key: string 
 
 export async function getInventoryQtyByBranchParts(branchName: string, partNos: string[]): Promise<InventoryLookupMap> {
   const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
-  const branchKey = branchName.trim().toUpperCase();
+  const branchScope = await getBranchCalculationScope(branchName);
   const normalizedBranchKey = normalizeBranchKey(branchName);
-  if (!normalizedBranchKey || normalizedParts.length === 0) return {};
+  if ((!branchScope.length && !normalizedBranchKey) || normalizedParts.length === 0) return {};
 
   const { data, error } = await supabase
     .from('portal_inventory_current')
@@ -18,10 +19,12 @@ export async function getInventoryQtyByBranchParts(branchName: string, partNos: 
     .in('item_code', normalizedParts);
   if (error) throw error;
 
+  const scopeSet = new Set(branchScope);
   return ((data ?? []) as InventoryRow[])
-    .filter((row) => row.branch_key === branchKey || normalizeBranchKey(row.branch_name) === normalizedBranchKey || normalizeBranchKey(row.branch_code) === normalizedBranchKey)
+    .filter((row) => (row.branch_key ? scopeSet.has(row.branch_key) : false) || normalizeBranchKey(row.branch_name) === normalizedBranchKey || normalizeBranchKey(row.branch_code) === normalizedBranchKey)
     .reduce<InventoryLookupMap>((acc, row) => {
-      acc[normalizePartNo(row.item_code)] = Number(row.qty ?? 0);
+      const key = normalizePartNo(row.item_code);
+      acc[key] = Number(acc[key] ?? 0) + Number(row.qty ?? 0);
       return acc;
     }, {});
 }
