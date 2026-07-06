@@ -57,7 +57,7 @@ serve(async (req) => {
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: profile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, role, branch, is_active')
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
@@ -78,7 +78,7 @@ serve(async (req) => {
   if (!ALLOWED_MIME_TYPES.has(file.type)) return json({ error: 'This attachment file type is not allowed.' }, 400);
 
   const { data: order, error: orderError } = await adminClient
-    .from('test_orders')
+    .from('portal_orders')
     .select('id, order_no, branch, approver_id')
     .eq('id', orderId)
     .maybeSingle();
@@ -87,7 +87,7 @@ serve(async (req) => {
   if (!canAccessOrder(profile as Profile, order as OrderRow)) return json({ error: 'You do not have access to this order.' }, 403);
 
   const { data: comment, error: commentError } = await adminClient
-    .from('test_order_comments')
+    .from('portal_order_comments')
     .select('id, order_id')
     .eq('id', commentId)
     .eq('order_id', orderId)
@@ -96,10 +96,9 @@ serve(async (req) => {
   if (!comment) return json({ error: 'Comment not found for this order.' }, 404);
 
   const { count, error: countError } = await adminClient
-    .from('test_order_comment_attachments')
+    .from('portal_order_comment_attachments')
     .select('id', { count: 'exact', head: true })
-    .eq('comment_id', commentId)
-    .is('deleted_at', null);
+    .eq('comment_id', commentId);
   if (countError) return json({ error: countError.message }, 400);
   if ((count ?? 0) >= MAX_FILES_PER_COMMENT) return json({ error: `Only ${MAX_FILES_PER_COMMENT} files are allowed per comment.` }, 400);
 
@@ -110,18 +109,18 @@ serve(async (req) => {
   if (uploadError) return json({ error: uploadError.message }, 400);
 
   const { data: attachment, error: insertError } = await adminClient
-    .from('test_order_comment_attachments')
+    .from('portal_order_comment_attachments')
     .insert({
       order_id: orderId,
       comment_id: commentId,
-      bucket_name: BUCKET,
-      object_path: objectPath,
-      original_file_name: file.name,
+      storage_bucket: BUCKET,
+      storage_path: objectPath,
+      original_filename: file.name,
       mime_type: file.type,
-      file_size_bytes: file.size,
+      size_bytes: file.size,
       uploaded_by: profile.id,
     })
-    .select('id, order_id, comment_id, original_file_name, mime_type, file_size_bytes, created_at')
+    .select('id, order_id, comment_id, original_file_name:original_filename, mime_type, file_size_bytes:size_bytes, created_at')
     .single();
 
   if (insertError) {
@@ -129,7 +128,7 @@ serve(async (req) => {
     return json({ error: insertError.message }, 400);
   }
 
-  await adminClient.from('test_order_events').insert({
+  await adminClient.from('portal_order_events').insert({
     order_id: orderId,
     event_type: 'COMMENT_ATTACHMENT_ADDED',
     actor_id: profile.id,
