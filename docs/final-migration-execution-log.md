@@ -1,0 +1,85 @@
+# Final Migration Execution Log
+
+This log records the safe production migration checkpoints from legacy `requests`/test workflow to the new `portal_` production workflow.
+
+## Step 001 - Portal production schema
+
+Status: completed by Nishant in Supabase SQL Editor.
+
+Created/confirmed tables:
+
+- `portal_inventory_changes`
+- `portal_inventory_current`
+- `portal_inventory_staging`
+- `portal_inventory_uploads`
+- `portal_order_comment_attachments`
+- `portal_order_comments`
+- `portal_order_events`
+- `portal_order_item_billings`
+- `portal_order_items`
+- `portal_orders`
+- `portal_profiles`
+
+## Step 000 - Backup before import
+
+Status: completed by Nishant in Supabase SQL Editor.
+
+Verified counts:
+
+| source_table | source_rows |
+| --- | ---: |
+| public.requests | 3567 |
+| backup.requests | 3567 |
+| public.part_master | 85150 |
+| backup.part_master | 85150 |
+| public.machine_master | 4305 |
+| backup.machine_master | 4305 |
+
+Result: backup successful. No manual copy required.
+
+## Step 002 - Legacy requests import
+
+Status: completed by Nishant in Supabase SQL Editor.
+
+Import metrics:
+
+| metric | value |
+| --- | ---: |
+| legacy_requests | 3567 |
+| portal_orders_imported | 622 |
+| portal_items_imported | 3567 |
+| portal_billing_chunks_imported | 1878 |
+
+Final go/no-go summary:
+
+| legacy_request_rows | imported_item_rows | legacy_order_count | imported_order_count | imported_billing_chunks |
+| ---: | ---: | ---: | ---: | ---: |
+| 3567 | 3567 | 622 | 622 | 1878 |
+
+Result: import count reconciliation passed.
+
+## Current status
+
+The database has passed the first critical migration checks:
+
+- Every legacy `requests` row was imported as one `portal_order_items` row.
+- Distinct legacy orders match imported `portal_orders`.
+- Billing chunks were imported into `portal_order_item_billings`.
+
+## Next required checks before app switch
+
+Before changing frontend/services/Edge Functions from `test_` tables to `portal_` tables, run the remaining read-only reconciliation checks from:
+
+`supabase/final_migration_scripts/003_post_migration_reconciliation_checks.sql`
+
+Especially verify:
+
+1. Missing rows after import returns zero rows.
+2. Imported items without matching legacy request returns zero rows.
+3. Portal item status distribution looks correct.
+4. Portal order status distribution looks correct.
+5. Billing chunks quantity totals look reasonable.
+6. Docket-wise sample looks correct for scanner testing.
+7. Date parse failures are acceptable or corrected.
+
+Only after these checks pass should the app code and Edge Functions be switched to `portal_` tables.
