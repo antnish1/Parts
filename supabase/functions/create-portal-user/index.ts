@@ -20,6 +20,10 @@ function normalizeLoginId(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
+function clean(value: unknown) {
+  return String(value ?? '').trim();
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
@@ -52,12 +56,17 @@ Deno.serve(async (req) => {
   const email = loginId ? `${loginId.toLowerCase()}@portal.local` : String(body.email ?? '').trim().toLowerCase();
   const password = String(body.password ?? '').trim();
   const fullName = String(body.fullName ?? '').trim();
-  const branch = String(body.branch ?? '').trim();
+  const rawBranch = String(body.branch ?? '').trim();
   const role = String(body.role ?? '').trim();
 
-  if (!email || !password || !fullName || !branch || !role) return json({ error: 'User ID or email, password, name, branch and role are required.' }, 400);
+  if (!email || !password || !fullName || !rawBranch || !role) return json({ error: 'User ID or email, password, name, branch and role are required.' }, 400);
   if (!roles.includes(role)) return json({ error: 'Invalid role.' }, 400);
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters.' }, 400);
+
+  const { data: branch, error: branchError } = await adminClient.rpc('resolve_portal_branch', { value: rawBranch });
+  if (branchError) return json({ error: branchError.message }, 400);
+  const branchKey = clean(branch);
+  if (!branchKey) return json({ error: `Branch is not mapped in portal_branches: ${rawBranch}` }, 400);
 
   if (loginId) {
     const { data: existingLogin, error: loginError } = await adminClient
@@ -77,7 +86,7 @@ Deno.serve(async (req) => {
   const { error: insertError } = await adminClient.from('portal_profiles').insert({
     auth_user_id: authData.user.id,
     full_name: fullName,
-    branch,
+    branch: branchKey,
     role,
     legacy_user_id: loginId || email,
     legacy_name: fullName,
@@ -88,5 +97,5 @@ Deno.serve(async (req) => {
     return json({ error: `Profile creation failed, so Auth user was rolled back. ${insertError.message}` }, 400);
   }
 
-  return json({ ok: true, userId: authData.user.id, loginId: loginId || null });
+  return json({ ok: true, userId: authData.user.id, loginId: loginId || null, branch: branchKey });
 });
