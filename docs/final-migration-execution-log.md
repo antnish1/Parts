@@ -58,6 +58,23 @@ Final go/no-go summary:
 
 Result: import count reconciliation passed.
 
+## Docket reconciliation sample
+
+Status: received from Nishant after script 003 docket sample query.
+
+Important observations:
+
+- Docket-wise import is working: one docket can contain many billing rows, which matches the real plant dispatch workflow.
+- Example: docket `501546374571` has 60 imported rows, billed qty 1326.00, received qty 737.00. This is a good test docket for partial receiving.
+- Example: docket `501546419821` has 31 imported rows, billed qty 410.00, received qty 410.00. This is a good test docket for fully received rows.
+- Example: docket `225051275` has 14 imported rows, billed qty 492.00, received qty 0.00. This is a good test docket for not-yet-received rows.
+- Docket value `0` appeared in the sample with 10 rows. This should be treated as invalid/placeholder unless Nishant confirms it is a real docket number.
+
+Recommendation before cutover:
+
+- Docket Scan should ignore blank docket numbers and placeholder docket `0`.
+- Legacy import data does not need to be deleted for docket `0`; the scanner/search UI can simply exclude it.
+
 ## Current status
 
 The database has passed the first critical migration checks:
@@ -65,6 +82,7 @@ The database has passed the first critical migration checks:
 - Every legacy `requests` row was imported as one `portal_order_items` row.
 - Distinct legacy orders match imported `portal_orders`.
 - Billing chunks were imported into `portal_order_item_billings`.
+- Docket-wise billing chunks are available for scanner verification.
 
 ## Next required checks before app switch
 
@@ -79,7 +97,6 @@ Especially verify:
 3. Portal item status distribution looks correct.
 4. Portal order status distribution looks correct.
 5. Billing chunks quantity totals look reasonable.
-6. Docket-wise sample looks correct for scanner testing.
-7. Date parse failures are acceptable or corrected.
+6. Date parse failures are acceptable or corrected.
 
 Only after these checks pass should the app code and Edge Functions be switched to `portal_` tables.
