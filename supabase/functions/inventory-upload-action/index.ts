@@ -32,7 +32,7 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('test_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  const { data: profile } = await adminClient.from('portal_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (!profile?.is_active || !['admin', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active admin, manager, or developer can upload inventory' }, 403);
 
   const body = await req.json().catch(() => ({}));
@@ -66,13 +66,13 @@ serve(async (req) => {
     }));
     const currentRows = rows.map((row) => currentRow(row, reportDate));
 
-    const { error: stageError } = await adminClient.from('test_inventory_staging').insert(stagedRows);
+    const { error: stageError } = await adminClient.from('portal_inventory_staging').insert(stagedRows);
     if (stageError) throw stageError;
 
     const keys = currentRows.map((row) => `${row.branch_code}::${row.item_code}`);
     const branchCodes = [...new Set(currentRows.map((row) => row.branch_code).filter(Boolean))];
     const itemCodes = [...new Set(currentRows.map((row) => row.item_code).filter(Boolean))];
-    const { data: existingRows, error: existingError } = await adminClient.from('test_inventory_current').select('branch_code,item_code,qty,inv_value').in('branch_code', branchCodes).in('item_code', itemCodes);
+    const { data: existingRows, error: existingError } = await adminClient.from('portal_inventory_current').select('branch_code,item_code,qty,inv_value').in('branch_code', branchCodes).in('item_code', itemCodes);
     if (existingError) throw existingError;
     const existing = new Map((existingRows ?? []).map((row) => [`${row.branch_code}::${row.item_code}`, row]));
 
@@ -89,13 +89,13 @@ serve(async (req) => {
       return [{ report_date: reportDate, branch_code: row.branch_code, item_code: row.item_code, old_qty: old ? oldQty : null, new_qty: newQty, old_value: old ? oldValue : null, new_value: newValue, change_type: old ? 'updated' : 'new', source_filename: filename }];
     });
     if (changes.length > 0) {
-      const { error: changeError } = await adminClient.from('test_inventory_changes').insert(changes);
+      const { error: changeError } = await adminClient.from('portal_inventory_changes').insert(changes);
       if (changeError) throw changeError;
     }
 
-    const { error: upsertError } = await adminClient.from('test_inventory_current').upsert(currentRows, { onConflict: 'branch_code,item_code' });
+    const { error: upsertError } = await adminClient.from('portal_inventory_current').upsert(currentRows, { onConflict: 'branch_code,item_code' });
     if (upsertError) throw upsertError;
-    const { error: uploadError } = await adminClient.from('test_inventory_uploads').insert({ report_date: reportDate, filename, total_rows: totalRows, valid_rows: currentRows.length, failed_rows: failedRows, status: 'completed' });
+    const { error: uploadError } = await adminClient.from('portal_inventory_uploads').insert({ report_date: reportDate, filename, total_rows: totalRows, valid_rows: currentRows.length, failed_rows: failedRows, status: 'completed' });
     if (uploadError) throw uploadError;
 
     return json({ ok: true, totalRows, validRows: currentRows.length, failedRows, changedRows: changes.length, stagedRows: stagedRows.length, batchId: uploadBatchId });
