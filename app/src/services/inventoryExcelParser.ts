@@ -23,6 +23,10 @@ function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+function normalizeBranchKey(value: string) {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '');
+}
+
 function clean(value: unknown) {
   return String(value ?? '').trim();
 }
@@ -67,8 +71,9 @@ export async function parseInventoryExcel(file: File, reportDate: string) {
     const issuedQty = toNumber(readColumn(row, ['Issued', 'Issue', 'Issued Qty', 'IssuedQty']));
     const closingBalance = toNumber(readColumn(row, ['Closing Balance', 'ClosingBalance', 'Closing Bal', 'Qty', 'Quantity']));
     const closingValue = toNumber(readColumn(row, ['Closing Inv Val', 'Closing Inv Value', 'Closing Value', 'Inventory Value', 'Inv Value', 'ClosingInvVal']));
+    const branchIdentity = normalizeBranchKey(branchName) || branchCode;
 
-    deduped.set(`${branchCode}|${itemCode}`, {
+    deduped.set(`${branchIdentity}|${branchCode}|${itemCode}`, {
       report_date: reportDate,
       branch_code: branchCode,
       branch_name: branchName || null,
