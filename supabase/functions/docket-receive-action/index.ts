@@ -10,7 +10,7 @@ const num = (value: unknown) => {
 };
 
 type ItemRow = { id: string; order_id: string; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
-type ChunkRow = { id: string; item_id: string; billed_qty: number | string | null; received_qty: number | string | null };
+type ChunkRow = { id: string; order_id: string; item_id: string; docket_no: string | null; invoice_no: string | null; billed_qty: number | string | null; received_qty: number | string | null };
 
 function effectiveQty(row: ItemRow) {
   const edited = row.edited_qty;
@@ -65,29 +65,48 @@ serve(async (req) => {
   if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can receive dockets' }, 403);
 
   const body = await req.json().catch(() => ({}));
+  const billingId = String(body.billingId ?? '');
   const orderId = String(body.orderId ?? '');
   const docket = normalize(String(body.docketNo ?? ''));
-  if (!orderId) return json({ error: 'Order id is required' }, 400);
-  if (!docket) return json({ error: 'Docket or invoice number is required' }, 400);
 
   try {
-    const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status').eq('id', orderId).like('order_no', 'TEST-%').maybeSingle();
+    let chunkRows: ChunkRow[] = [];
+
+    if (billingId) {
+      const { data: chunk, error: chunkError } = await adminClient
+        .from('test_order_item_billings')
+        .select('id, order_id, item_id, docket_no, invoice_no, billed_qty, received_qty')
+        .eq('id', billingId)
+        .maybeSingle();
+      if (chunkError) throw chunkError;
+      if (!chunk) return json({ error: 'Billing row not found' }, 404);
+      chunkRows = [chunk as ChunkRow];
+    } else {
+      if (!orderId) return json({ error: 'Order id is required' }, 400);
+      if (!docket) return json({ error: 'Docket number is required' }, 400);
+      const { data: chunks, error: chunkError } = await adminClient
+        .from('test_order_item_billings')
+        .select('id, order_id, item_id, docket_no, invoice_no, billed_qty, received_qty')
+        .eq('order_id', orderId)
+        .eq('docket_no', docket);
+      if (chunkError) throw chunkError;
+      chunkRows = (chunks ?? []) as ChunkRow[];
+    }
+
+    if (!chunkRows.length) return json({ error: 'No billing row found for this docket' }, 404);
+
+    const orderIds = [...new Set(chunkRows.map((chunk) => chunk.order_id))];
+    if (orderIds.length !== 1) return json({ error: 'Receive one order at a time.' }, 400);
+    const activeOrderId = orderIds[0];
+
+    const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status').eq('id', activeOrderId).like('order_no', 'TEST-%').maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: 'Test order not found' }, 404);
-    if (order.status === 'received') return json({ error: 'Order is already fully received' }, 400);
 
     const receivedAt = new Date().toISOString();
-    const { data: chunks, error: chunkError } = await adminClient
-      .from('test_order_item_billings')
-      .select('id, item_id, billed_qty, received_qty')
-      .eq('order_id', order.id)
-      .or(`docket_no.eq.${docket},invoice_no.eq.${docket}`);
-    if (chunkError) throw chunkError;
-
-    const chunkRows = (chunks ?? []) as ChunkRow[];
-    if (!chunkRows.length) return json({ error: 'No billing chunk found for this docket or invoice' }, 404);
 
     for (const chunk of chunkRows) {
+      if (num(chunk.received_qty) >= num(chunk.billed_qty) && num(chunk.billed_qty) > 0) continue;
       const { error: updateChunkError } = await adminClient
         .from('test_order_item_billings')
         .update({ received_qty: num(chunk.billed_qty), received_at: receivedAt, received_by: profile.id, updated_at: receivedAt })
@@ -99,7 +118,7 @@ serve(async (req) => {
     const { data: targetItems, error: targetError } = await adminClient
       .from('test_order_items')
       .select('id, order_id, qty, edited_qty, billed_qty, row_status')
-      .eq('order_id', order.id)
+      .eq('order_id', activeOrderId)
       .in('id', itemIds);
     if (targetError) throw targetError;
 
@@ -119,13 +138,13 @@ serve(async (req) => {
       if (itemUpdateError) throw itemUpdateError;
     }
 
-    const { data: allRows, error: rowsError } = await adminClient.from('test_order_items').select('row_status').eq('order_id', order.id);
+    const { data: allRows, error: rowsError } = await adminClient.from('test_order_items').select('row_status').eq('order_id', activeOrderId);
     if (rowsError) throw rowsError;
     const nextOrderStatus = orderStatus(allRows ?? []);
 
-    const { error: statusError } = await adminClient.from('test_orders').update({ status: nextOrderStatus, received_date: nextOrderStatus === 'received' ? receivedAt : null, updated_at: receivedAt }).eq('id', order.id).like('order_no', 'TEST-%');
+    const { error: statusError } = await adminClient.from('test_orders').update({ status: nextOrderStatus, received_date: nextOrderStatus === 'received' ? receivedAt : null, updated_at: receivedAt }).eq('id', activeOrderId).like('order_no', 'TEST-%');
     if (statusError) throw statusError;
-    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'STATUS_UPDATED', old_status: order.status, new_status: nextOrderStatus, actor_id: profile.id, notes: `Received ${chunkRows.length} billing chunk(s) for docket/invoice ${docket}.`, metadata: { docket_no: docket, chunk_count: chunkRows.length, item_count: itemIds.length } });
+    await adminClient.from('test_order_events').insert({ order_id: activeOrderId, event_type: 'STATUS_UPDATED', old_status: order.status, new_status: nextOrderStatus, actor_id: profile.id, notes: `Received ${chunkRows.length} billing row(s) by docket scan.`, metadata: { billing_ids: chunkRows.map((chunk) => chunk.id), chunk_count: chunkRows.length, item_count: itemIds.length } });
     return json({ ok: true, status: nextOrderStatus, itemCount: itemIds.length, chunkCount: chunkRows.length });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : 'Docket receive failed' }, 400);
