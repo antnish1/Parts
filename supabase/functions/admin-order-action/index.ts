@@ -10,6 +10,15 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 }
 
+function normalizeStatus(value: unknown) {
+  return String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function isClosedStatus(value: unknown) {
+  const status = normalizeStatus(value);
+  return status === 'received' || status === 'issued' || status === 'rejected';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -27,7 +36,7 @@ serve(async (req) => {
   if (userError || !userData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: profile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, role, is_active')
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
@@ -40,18 +49,25 @@ serve(async (req) => {
   if (!orderId) return json({ error: 'Order id is required' }, 400);
 
   const { data: order, error: orderError } = await adminClient
-    .from('test_orders')
-    .select('id, order_no, status, order_for')
+    .from('portal_orders')
+    .select('id, order_no, final_order_no, processing_reference, status, approval_status, order_for')
     .eq('id', orderId)
-    .like('order_no', 'TEST-%')
     .maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
-  if (!order) return json({ error: 'Test order not found' }, 404);
+  if (!order) return json({ error: 'Order not found' }, 404);
 
   const now = new Date().toISOString();
 
-  async function addEvent(eventType: string, oldStatus: string | null, newStatus: string | null, notes: string) {
-    const { error } = await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: eventType, old_status: oldStatus, new_status: newStatus, notes });
+  async function addEvent(eventType: string, oldStatus: string | null, newStatus: string | null, notes: string, metadata: Record<string, unknown> = {}) {
+    const { error } = await adminClient.from('portal_order_events').insert({
+      order_id: order.id,
+      event_type: eventType,
+      old_status: oldStatus,
+      new_status: newStatus,
+      actor_id: profile.id,
+      notes,
+      metadata,
+    });
     if (error) throw error;
   }
 
@@ -60,36 +76,53 @@ serve(async (req) => {
       const reference = String(body.processingReference ?? '').trim().toUpperCase();
       const notes = String(body.processedNotes ?? '').trim();
       if (!reference) return json({ error: 'Final order number is required' }, 400);
-      if (reference === order.order_no.toUpperCase()) return json({ error: 'Final order number cannot be same as temporary order number' }, 400);
-      const { data: duplicate, error: duplicateError } = await adminClient
-        .from('test_orders')
+      if (reference === String(order.order_no).toUpperCase()) return json({ error: 'Final order number cannot be same as temporary order number' }, 400);
+      if (normalizeStatus(order.status) !== 'approved' && normalizeStatus(order.approval_status) !== 'approved') return json({ error: 'Only approved orders can be processed.' }, 400);
+
+      const { data: duplicateRows, error: duplicateError } = await adminClient
+        .from('portal_orders')
         .select('id')
         .or(`final_order_no.eq.${reference},processing_reference.eq.${reference},order_no.eq.${reference}`)
         .neq('id', order.id)
-        .maybeSingle();
+        .limit(1);
       if (duplicateError) throw duplicateError;
-      if (duplicate) return json({ error: 'Final order number already exists' }, 409);
+      if (duplicateRows?.length) return json({ error: 'Final order number already exists' }, 409);
 
-      const { error } = await adminClient.from('test_orders').update({ status: 'processed', approval_status: 'approved', processing_reference: reference, final_order_no: reference, processed_notes: notes || null, processed_date: now.slice(0, 10), updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+      const { error } = await adminClient.from('portal_orders').update({
+        status: 'processed',
+        approval_status: 'approved',
+        processing_reference: reference,
+        final_order_no: reference,
+        processed_notes: notes || null,
+        processed_date: now.slice(0, 10),
+        updated_at: now,
+      }).eq('id', order.id);
       if (error) throw error;
-      const { error: itemError } = await adminClient.from('test_order_items').update({ row_status: 'processed', updated_at: now }).eq('order_id', order.id);
+
+      const { error: itemError } = await adminClient
+        .from('portal_order_items')
+        .update({ row_status: 'processed', updated_at: now })
+        .eq('order_id', order.id)
+        .not('row_status', 'in', '(received,issued,rejected)');
       if (itemError) throw itemError;
-      await addEvent('ADMIN_PROCESSED', order.status, 'processed', `Processed with final order number ${reference}.`);
-      return json({ ok: true, status: 'processed' });
+
+      await addEvent('ADMIN_PROCESSED', order.status, 'processed', `Processed with final order number ${reference}.`, { final_order_no: reference });
+      return json({ ok: true, status: 'processed', finalOrderNo: reference });
     }
 
     if (action === 'reject') {
+      if (isClosedStatus(order.status)) return json({ error: 'Closed order cannot be rejected.' }, 400);
       const reason = String(body.reason ?? '').trim();
-      const { error } = await adminClient.from('test_orders').update({ status: 'rejected', approval_status: 'rejected', processed_notes: reason || null, updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+      const { error } = await adminClient.from('portal_orders').update({ status: 'rejected', approval_status: 'rejected', processed_notes: reason || null, updated_at: now }).eq('id', order.id);
       if (error) throw error;
-      const { error: itemError } = await adminClient.from('test_order_items').update({ row_status: 'rejected', updated_at: now }).eq('order_id', order.id);
+      const { error: itemError } = await adminClient.from('portal_order_items').update({ row_status: 'rejected', updated_at: now }).eq('order_id', order.id).not('row_status', 'in', '(received,issued)');
       if (itemError) throw itemError;
       await addEvent('ADMIN_REJECTED', order.status, 'rejected', reason || 'Rejected by admin.');
       return json({ ok: true, status: 'rejected' });
     }
 
     if (action === 'issue') {
-      if (order.order_for !== 'Customer') return json({ error: 'Only customer orders can be marked issued' }, 400);
+      if (String(order.order_for ?? '').toLowerCase() !== 'customer') return json({ error: 'Only customer orders can be marked issued' }, 400);
       const invoiceNo = String(body.invoiceNo ?? '').trim().toUpperCase();
       const invoiceDate = String(body.invoiceDate ?? '').trim();
       const docketNo = String(body.docketNo ?? '').trim().toUpperCase();
@@ -97,11 +130,19 @@ serve(async (req) => {
       if (!invoiceNo) return json({ error: 'Invoice number is required' }, 400);
       if (!invoiceDate) return json({ error: 'Invoice date is required' }, 400);
 
-      const { error: itemError } = await adminClient.from('test_order_items').update({ dbms_invoice_no: invoiceNo, dbms_invoice_date: invoiceDate, docket_no: docketNo || null, transport_name: transportName || null, row_status: 'issued', updated_at: now }).eq('order_id', order.id).neq('row_status', 'received');
+      const { error: itemError } = await adminClient.from('portal_order_items').update({
+        dbms_invoice_no: invoiceNo,
+        dbms_invoice_date: invoiceDate,
+        docket_no: docketNo || null,
+        transport_name: transportName || null,
+        row_status: 'issued',
+        updated_at: now,
+      }).eq('order_id', order.id).neq('row_status', 'received');
       if (itemError) throw itemError;
-      const { error } = await adminClient.from('test_orders').update({ status: 'issued', updated_at: now }).eq('id', order.id).like('order_no', 'TEST-%');
+
+      const { error } = await adminClient.from('portal_orders').update({ status: 'issued', updated_at: now }).eq('id', order.id);
       if (error) throw error;
-      await addEvent('ORDER_ISSUED', order.status, 'issued', `Issued item rows with invoice ${invoiceNo}.`);
+      await addEvent('ORDER_ISSUED', order.status, 'issued', `Issued item rows with invoice ${invoiceNo}.`, { invoice_no: invoiceNo, invoice_date: invoiceDate, docket_no: docketNo || null, transport_name: transportName || null });
       return json({ ok: true, status: 'issued' });
     }
 
