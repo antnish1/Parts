@@ -1,21 +1,34 @@
 import { supabase } from '../lib/supabase';
 import { getCurrentBranchScopeValues } from './branchScope.service';
 
-export type TestDocketOrder = {
+export type TestDocketRow = {
   id: string;
+  order_id: string;
+  item_id: string;
   order_no: string;
   final_order_no: string | null;
   branch: string;
-  order_type: string;
-  order_for: string;
+  order_type: string | null;
+  order_for: string | null;
   customer_name: string | null;
   machine_no: string | null;
-  status: string;
+  order_status: string;
+  approval_status: string | null;
+  part_no: string;
+  description: string | null;
+  ordered_qty: number;
+  edited_qty: number | null;
+  item_status: string | null;
+  invoice_no: string | null;
+  billing_date: string | null;
   docket_no: string | null;
   transport_name: string | null;
-  received_date: string | null;
-  dbms_invoice_no: string | null;
-  dbms_invoice_date: string | null;
+  delivery_no: string | null;
+  billed_qty: number;
+  received_qty: number;
+  received_at: string | null;
+  raw_status: string | null;
+  created_at: string;
 };
 
 export function normalizeDocketNo(value: string) {
@@ -26,66 +39,144 @@ function safeSearch(value: string) {
   return normalizeDocketNo(value).replace(/[^A-Z0-9/_-]/g, '');
 }
 
-export async function lookupTestDocketOrders(value: string): Promise<TestDocketOrder[]> {
+function one<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
+function toNumber(value: unknown) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+type RawDocketChunk = {
+  id: string;
+  order_id: string;
+  item_id: string;
+  order_no: string;
+  part_no: string;
+  billed_qty: number | null;
+  received_qty: number | null;
+  received_at: string | null;
+  billing_date: string | null;
+  delivery_no: string | null;
+  invoice_no: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
+  raw_status: string | null;
+  created_at: string;
+  order?: {
+    id: string;
+    order_no: string;
+    final_order_no: string | null;
+    branch: string;
+    order_type: string | null;
+    order_for: string | null;
+    customer_name: string | null;
+    machine_no: string | null;
+    status: string;
+    approval_status: string | null;
+  } | Array<{
+    id: string;
+    order_no: string;
+    final_order_no: string | null;
+    branch: string;
+    order_type: string | null;
+    order_for: string | null;
+    customer_name: string | null;
+    machine_no: string | null;
+    status: string;
+    approval_status: string | null;
+  }> | null;
+  item?: {
+    id: string;
+    part_no: string;
+    description: string | null;
+    qty: number | null;
+    edited_qty: number | null;
+    row_status: string | null;
+  } | Array<{
+    id: string;
+    part_no: string;
+    description: string | null;
+    qty: number | null;
+    edited_qty: number | null;
+    row_status: string | null;
+  }> | null;
+};
+
+function normalizeRow(row: RawDocketChunk): TestDocketRow {
+  const order = one(row.order);
+  const item = one(row.item);
+  return {
+    id: row.id,
+    order_id: row.order_id,
+    item_id: row.item_id,
+    order_no: order?.order_no ?? row.order_no,
+    final_order_no: order?.final_order_no ?? null,
+    branch: order?.branch ?? '-',
+    order_type: order?.order_type ?? null,
+    order_for: order?.order_for ?? null,
+    customer_name: order?.customer_name ?? null,
+    machine_no: order?.machine_no ?? null,
+    order_status: order?.status ?? '-',
+    approval_status: order?.approval_status ?? null,
+    part_no: item?.part_no ?? row.part_no,
+    description: item?.description ?? null,
+    ordered_qty: toNumber(item?.qty),
+    edited_qty: item?.edited_qty ?? null,
+    item_status: item?.row_status ?? null,
+    invoice_no: row.invoice_no,
+    billing_date: row.billing_date,
+    docket_no: row.docket_no,
+    transport_name: row.transport_name,
+    delivery_no: row.delivery_no,
+    billed_qty: toNumber(row.billed_qty),
+    received_qty: toNumber(row.received_qty),
+    received_at: row.received_at,
+    raw_status: row.raw_status,
+    created_at: row.created_at,
+  };
+}
+
+export async function lookupTestDocketRows(value: string): Promise<TestDocketRow[]> {
   const docket = safeSearch(value);
   if (!docket) return [];
   const branchValues = await getCurrentBranchScopeValues();
 
-  const itemOrderIds = new Set<string>();
-
-  const { data: matchingItems, error: itemError } = await supabase
-    .from('test_order_items')
-    .select('order_id')
-    .or(`docket_no.eq.${docket},dbms_invoice_no.eq.${docket}`)
-    .limit(50);
-  if (itemError) throw itemError;
-  (matchingItems ?? []).forEach((row) => { if (row.order_id) itemOrderIds.add(row.order_id); });
-
-  const { data: matchingChunks, error: chunkError } = await supabase
-    .from('test_order_item_billings')
-    .select('order_id')
-    .or(`docket_no.eq.${docket},invoice_no.eq.${docket}`)
-    .limit(50);
-  if (!chunkError) {
-    (matchingChunks ?? []).forEach((row) => { if (row.order_id) itemOrderIds.add(row.order_id); });
-  }
-
-  const orderFilters = [`final_order_no.eq.${docket}`, `processing_reference.eq.${docket}`, `order_no.eq.${docket}`, `machine_no.ilike.%${docket}%`];
-  if (itemOrderIds.size > 0) orderFilters.push(`id.in.(${[...itemOrderIds].join(',')})`);
-
   let query = supabase
-    .from('test_orders')
-    .select('id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, docket_no, transport_name, received_date, dbms_invoice_no, dbms_invoice_date')
-    .or(orderFilters.join(','))
-    .order('created_at', { ascending: false })
-    .limit(20);
+    .from('test_order_item_billings')
+    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, raw_status, created_at, order:test_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status), item:test_order_items!inner(id, part_no, description, qty, edited_qty, row_status)')
+    .eq('docket_no', docket)
+    .order('order_no', { ascending: true })
+    .order('part_no', { ascending: true })
+    .limit(200);
 
-  if (branchValues?.length) query = query.in('branch', branchValues);
+  if (branchValues?.length) query = query.in('order.branch', branchValues);
 
   const { data, error } = await query;
-
   if (error) throw error;
-  return data ?? [];
+  return ((data ?? []) as unknown as RawDocketChunk[]).map(normalizeRow);
 }
 
-export async function markTestDocketReceived(order: TestDocketOrder, docketInput: string) {
-  const docket = safeSearch(docketInput || order.docket_no || order.final_order_no || order.order_no);
-  if (!docket) throw new Error('Docket number is required.');
-  if (order.status === 'received') throw new Error('Order is already fully received.');
+export async function receiveTestDocketRow(row: TestDocketRow) {
+  if (!row.id) throw new Error('Billing row id is required.');
+  if (row.received_qty >= row.billed_qty && row.billed_qty > 0) throw new Error('This row is already received.');
 
   const { data, error } = await supabase.functions.invoke('docket-receive-action', {
-    body: { orderId: order.id, docketNo: docket },
+    body: { billingId: row.id },
   });
   if (error) throw error;
   if (data?.error) throw new Error(String(data.error));
   return data;
 }
 
-export const searchTestOrderForDocket = lookupTestDocketOrders;
+export const lookupTestDocketOrders = lookupTestDocketRows;
+export const markTestDocketReceived = receiveTestDocketRow;
 
 export async function markTestOrderReceived(orderId: string, docketNo: string) {
-  const matches = await lookupTestDocketOrders(docketNo);
-  const order = matches.find((row) => row.id === orderId);
-  if (!order) throw new Error('Order not found for this docket.');
-  await markTestDocketReceived(order, docketNo);
+  const matches = await lookupTestDocketRows(docketNo);
+  const row = matches.find((item) => item.order_id === orderId);
+  if (!row) throw new Error('Docket row not found for this order.');
+  await receiveTestDocketRow(row);
 }
