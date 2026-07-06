@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   if (sessionError || !sessionData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: callerProfile, error: callerError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('role, is_active')
     .eq('auth_user_id', sessionData.user.id)
     .maybeSingle();
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
   if (!roles.includes(role)) return json({ error: 'Invalid role.' }, 400);
 
   const { data: existingProfile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, auth_user_id')
     .eq('id', profileId)
     .maybeSingle();
@@ -68,9 +68,9 @@ Deno.serve(async (req) => {
 
   if (loginId) {
     const { data: duplicateLogin, error: loginError } = await adminClient
-      .from('test_profiles')
+      .from('portal_profiles')
       .select('id')
-      .ilike('login_id', loginId)
+      .ilike('legacy_user_id', loginId)
       .neq('id', profileId)
       .limit(1);
     if (loginError) return json({ error: loginError.message }, 400);
@@ -78,17 +78,17 @@ Deno.serve(async (req) => {
   }
 
   const { data: updatedProfile, error: updateError } = await adminClient
-    .from('test_profiles')
-    .update({ full_name: fullName, branch, role, login_id: loginId || null, is_active: isActive })
+    .from('portal_profiles')
+    .update({ full_name: fullName, legacy_name: fullName, branch, role, legacy_user_id: loginId || null, is_active: isActive })
     .eq('id', profileId)
-    .select('id, auth_user_id, full_name, branch, role, login_id, is_active')
+    .select('id, auth_user_id, full_name, branch, role, login_id:legacy_user_id, is_active')
     .maybeSingle();
   if (updateError) return json({ error: updateError.message }, 400);
   if (!updatedProfile) return json({ error: 'Profile update did not affect any row.' }, 400);
 
   if (updatedProfile.auth_user_id) {
     const userUpdate: Record<string, unknown> = {
-      user_metadata: { full_name: fullName, branch, role, login_id: loginId || null },
+      user_metadata: { full_name: fullName, branch, role, login_id: loginId || null, legacy_user_id: loginId || null },
     };
     if (loginId) userUpdate.email = `${loginId.toLowerCase()}@portal.local`;
 
