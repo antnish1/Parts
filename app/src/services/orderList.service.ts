@@ -1,39 +1,49 @@
 import { supabase } from '../lib/supabase';
 import type { TestOrder } from './testData.service';
-import { getOrderStatusMap } from './orderStatusMap.service';
 import { getCurrentBranchScopeValues, getCurrentPortalProfile } from './branchScope.service';
 
 const ORDER_COLUMNS = 'id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at';
-const PAGE_SIZE = 1000;
+const DEFAULT_LIST_LIMIT = 200;
+const APPROVAL_LIST_LIMIT = 500;
+const PENDING_APPROVAL_STATUSES = ['pending_approval', 'pending_manager_approval'];
 
-export async function getOrderList(): Promise<TestOrder[]> {
-  const rows: TestOrder[] = [];
+type OrderListOptions = {
+  limit?: number;
+  pendingOnly?: boolean;
+};
+
+async function fetchPortalOrders(options: OrderListOptions = {}): Promise<TestOrder[]> {
   const profile = await getCurrentPortalProfile();
   const branchValues = await getCurrentBranchScopeValues();
+  const limit = options.limit ?? DEFAULT_LIST_LIMIT;
 
-  for (let start = 0; ; start += PAGE_SIZE) {
-    let query = supabase
-      .from('portal_orders')
-      .select(ORDER_COLUMNS)
-      .order('created_at', { ascending: false })
-      .range(start, start + PAGE_SIZE - 1);
+  let query = supabase
+    .from('portal_orders')
+    .select(ORDER_COLUMNS)
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-    if (branchValues !== null) {
-      query = query.in('branch', branchValues.length ? branchValues : ['__NO_BRANCH_SCOPE__']);
-    }
-
-    if (profile?.role === 'super') {
-      query = query.eq('approver_id', profile.id || '__NO_APPROVER__');
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    const page = (data ?? []) as unknown as TestOrder[];
-    rows.push(...page);
-    if (page.length < PAGE_SIZE) break;
+  if (options.pendingOnly) {
+    query = query.in('approval_status', PENDING_APPROVAL_STATUSES);
   }
 
-  const statusMap = await getOrderStatusMap(rows);
-  return rows.map((row) => ({ ...row, status: statusMap[row.id] ?? row.status }));
+  if (branchValues !== null) {
+    query = query.in('branch', branchValues.length ? branchValues : ['__NO_BRANCH_SCOPE__']);
+  }
+
+  if (profile?.role === 'super') {
+    query = query.eq('approver_id', profile.id || '__NO_APPROVER__');
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as TestOrder[];
+}
+
+export async function getOrderList(): Promise<TestOrder[]> {
+  return fetchPortalOrders({ limit: DEFAULT_LIST_LIMIT });
+}
+
+export async function getApprovalOrderList(): Promise<TestOrder[]> {
+  return fetchPortalOrders({ limit: APPROVAL_LIST_LIMIT, pendingOnly: true });
 }
