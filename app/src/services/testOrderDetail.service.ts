@@ -14,13 +14,13 @@ export type TestOrderItem = {
 
 export async function getTestOrderItems(orderId: string): Promise<TestOrderItem[]> {
   const { data, error } = await supabase
-    .from('test_order_items')
+    .from('portal_order_items')
     .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value')
     .eq('order_id', orderId)
     .limit(50);
 
   if (error) {
-    console.error('Failed to load test order items', error);
+    console.error('Failed to load portal order items', error);
     return [];
   }
 
