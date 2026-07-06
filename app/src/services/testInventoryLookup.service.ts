@@ -1,30 +1,26 @@
 import { supabase } from '../lib/supabase';
 import { normalizePartNo } from '../lib/orderLogic';
+import { normalizeBranchKey } from './branchScope.service';
 
 export type InventoryLookupMap = Record<string, number>;
 
+type InventoryRow = { item_code: string; qty: number | null; branch_code: string | null; branch_name: string | null };
+
 export async function getInventoryQtyByBranchParts(branchName: string, partNos: string[]): Promise<InventoryLookupMap> {
   const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
-  if (!branchName || normalizedParts.length === 0) return {};
-
-  const { data: branch, error: branchError } = await supabase
-    .from('branch_mapping')
-    .select('branch_code')
-    .eq('branch_name', branchName)
-    .eq('is_active', true)
-    .maybeSingle();
-  if (branchError) throw branchError;
-  if (!branch?.branch_code) return {};
+  const branchKey = normalizeBranchKey(branchName);
+  if (!branchKey || normalizedParts.length === 0) return {};
 
   const { data, error } = await supabase
     .from('portal_inventory_current')
-    .select('item_code, qty')
-    .eq('branch_code', branch.branch_code)
+    .select('item_code, qty, branch_code, branch_name')
     .in('item_code', normalizedParts);
   if (error) throw error;
 
-  return (data ?? []).reduce<InventoryLookupMap>((acc, row) => {
-    acc[normalizePartNo(row.item_code)] = Number(row.qty ?? 0);
-    return acc;
-  }, {});
+  return ((data ?? []) as InventoryRow[])
+    .filter((row) => normalizeBranchKey(row.branch_name) === branchKey || normalizeBranchKey(row.branch_code) === branchKey)
+    .reduce<InventoryLookupMap>((acc, row) => {
+      acc[normalizePartNo(row.item_code)] = Number(row.qty ?? 0);
+      return acc;
+    }, {});
 }
