@@ -14,33 +14,33 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('test_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
-  if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approver can edit quantities' }, 403);
+  const { data: profile } = await adminClient.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Access denied' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
   const itemId = String(body.itemId ?? '');
   if (!itemId) return json({ error: 'Item id is required' }, 400);
 
-  const { data: item, error: itemError } = await adminClient.from('test_order_items').select('id,order_id,dnp').eq('id', itemId).maybeSingle();
+  const { data: item, error: itemError } = await adminClient.from('portal_order_items').select('id,order_id,dnp').eq('id', itemId).maybeSingle();
   if (itemError) return json({ error: itemError.message }, 400);
   if (!item) return json({ error: 'Item not found' }, 404);
-  const { data: order, error: orderError } = await adminClient.from('test_orders').select('id,order_no,status,approver_id').eq('id', item.order_id).maybeSingle();
+  const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status,approver_id').eq('id', item.order_id).maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
-  if (!order?.order_no?.startsWith('TEST-')) return json({ error: 'Only test order items can be edited here' }, 400);
-  if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Only the selected super approver can edit this order.' }, 403);
+  if (!order) return json({ error: 'Order not found' }, 404);
+  if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Selected approver only.' }, 403);
 
   try {
     if (action === 'set') {
       const qty = Number(body.qty);
-      if (!Number.isInteger(qty) || qty < 0) return json({ error: 'Edited quantity must be a whole number' }, 400);
+      if (!Number.isInteger(qty) || qty < 0) return json({ error: 'Invalid quantity' }, 400);
       const editedValue = Number(item.dnp ?? 0) * qty;
-      const { error } = await adminClient.from('test_order_items').update({ edited_qty: qty, edited_value: editedValue }).eq('id', itemId);
+      const { error } = await adminClient.from('portal_order_items').update({ edited_qty: qty, edited_value: editedValue }).eq('id', itemId);
       if (error) throw error;
       return json({ ok: true });
     }
     if (action === 'reset') {
-      const { error } = await adminClient.from('test_order_items').update({ edited_qty: null, edited_value: null }).eq('id', itemId);
+      const { error } = await adminClient.from('portal_order_items').update({ edited_qty: null, edited_value: null }).eq('id', itemId);
       if (error) throw error;
       return json({ ok: true });
     }
