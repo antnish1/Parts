@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-portal-tables.cjs && node scripts/apply-approval-performance-patch.cjs",
+    "predev": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-portal-tables.cjs && node scripts/apply-approval-performance-patch.cjs && node scripts/apply-order-detail-performance-patch.cjs",
     "dev": "vite",
-    "prebuild": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-portal-tables.cjs && node scripts/apply-approval-performance-patch.cjs",
+    "prebuild": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-portal-tables.cjs && node scripts/apply-approval-performance-patch.cjs && node scripts/apply-order-detail-performance-patch.cjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
