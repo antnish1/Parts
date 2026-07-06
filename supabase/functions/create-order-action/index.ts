@@ -98,12 +98,12 @@ serve(async (req) => {
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return fail('Unauthorized. Please logout and login again.', 'UNAUTHORIZED');
   const { data: profile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id,full_name,branch,role,is_active')
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
   if (profileError) return fail(profileError.message, 'PROFILE_LOOKUP_FAILED');
-  if (!profile) return fail('No active profile is linked with this login. Please check test_profiles.auth_user_id.', 'PROFILE_NOT_LINKED');
+  if (!profile) return fail('No active profile is linked with this login. Please check portal_profiles.auth_user_id.', 'PROFILE_NOT_LINKED');
   if (!profile.is_active) return fail('Only active users can create orders. Please activate this profile in Developer Workspace.', 'PROFILE_INACTIVE');
   if (!['branch', 'admin', 'super', 'manager', 'developer'].includes(profile.role)) return fail('Role cannot create orders', 'ROLE_NOT_ALLOWED');
 
@@ -121,7 +121,7 @@ serve(async (req) => {
   if (!branch || !orderType || !orderFor) return fail('Branch, order type and order for are required');
 
   const { data: branchRows, error: branchError } = await adminClient
-    .from('test_branch_mapping')
+    .from('branch_mapping')
     .select('branch_name, branch_code')
     .eq('is_active', true);
   if (branchError) return fail(branchError.message, 'BRANCH_LOOKUP_FAILED');
@@ -140,7 +140,7 @@ serve(async (req) => {
 
   if (!approverId) return fail('Approver is required', 'APPROVER_REQUIRED');
   const { data: approver, error: approverError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, full_name, role, is_active')
     .eq('id', approverId)
     .maybeSingle();
@@ -168,8 +168,8 @@ serve(async (req) => {
     const machineMasterResult = orderFor === 'Customer' ? await saveMissingMachine(adminClient, machineNo, customerName) : null;
     const initialStatus = approver.role === 'manager' ? 'pending_manager_approval' : 'pending_approval';
 
-    const orderNo = `TEST-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
-    const { data: order, error: orderError } = await adminClient.from('test_orders').insert({
+    const orderNo = `PORTAL-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
+    const { data: order, error: orderError } = await adminClient.from('portal_orders').insert({
       order_no: orderNo,
       branch: canonicalBranch,
       order_type: orderType,
@@ -195,11 +195,11 @@ serve(async (req) => {
       previous_30d_qty: item.previous30dQty,
       row_status: initialStatus,
     }));
-    const { error: itemError } = await adminClient.from('test_order_items').insert(itemRows);
+    const { error: itemError } = await adminClient.from('portal_order_items').insert(itemRows);
     if (itemError) throw itemError;
 
     const machineNote = machineMasterResult?.warning ? ` Machine master save skipped: ${machineMasterResult.warning}` : '';
-    await adminClient.from('test_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. ${itemRows.length} item row(s).${machineNote}` });
+    await adminClient.from('portal_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. ${itemRows.length} item row(s).${machineNote}` });
     return json({ ok: true, id: order.id, order_no: order.order_no, machine_master_warning: machineMasterResult?.warning ?? null });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
