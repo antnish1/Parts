@@ -42,13 +42,6 @@ function cleanPartSearch(search: string) {
   return search.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-async function applyBranchScope<T extends { in: (column: string, values: string[]) => T; eq: (column: string, value: string) => T }>(query: T, branch: string) {
-  if (branch === 'all') return query;
-  const scope = await getBranchCalculationScope(branch);
-  if (scope.length) return query.in('branch_key', scope);
-  return query.eq('branch_key', branch);
-}
-
 export async function getLatestInventoryReportDate() {
   const { data, error } = await supabase
     .from('portal_inventory_staging')
@@ -65,7 +58,8 @@ export async function getManagerInventoryLookup(search = '', branch = 'all', rep
   if (!term) return [] as ManagerInventoryRow[];
 
   const latestDate = reportDate || await getLatestInventoryReportDate();
-  let query = supabase
+  const branchScope = branch === 'all' ? [] : await getBranchCalculationScope(branch);
+  let query: any = supabase
     .from('portal_inventory_staging')
     .select('id, report_date, branch_key, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, closing_balance, closing_value')
     .order('branch_key', { ascending: true })
@@ -73,12 +67,12 @@ export async function getManagerInventoryLookup(search = '', branch = 'all', rep
     .limit(300);
 
   if (latestDate) query = query.eq('report_date', latestDate);
-  query = await applyBranchScope(query, branch);
+  if (branch !== 'all') query = branchScope.length ? query.in('branch_key', branchScope) : query.eq('branch_key', branch);
   query = query.ilike('item_code', `%${term}%`);
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     branch_key: row.branch_key,
     branch_code: row.branch_code,
@@ -99,7 +93,8 @@ export async function getManagerInventoryTransactions(search = '', branch = 'all
   if (!term) return [] as ManagerInventoryTxnRow[];
 
   const latestDate = reportDate || await getLatestInventoryReportDate();
-  let query = supabase
+  const branchScope = branch === 'all' ? [] : await getBranchCalculationScope(branch);
+  let query: any = supabase
     .from('portal_inventory_staging')
     .select('id, report_date, branch_key, branch_code, branch_name, item_code, item_name, item_group, uom, dnp, received_qty, issued_qty, closing_balance, closing_value')
     .order('branch_key', { ascending: true })
@@ -107,7 +102,7 @@ export async function getManagerInventoryTransactions(search = '', branch = 'all
     .limit(300);
 
   if (latestDate) query = query.eq('report_date', latestDate);
-  query = await applyBranchScope(query, branch);
+  if (branch !== 'all') query = branchScope.length ? query.in('branch_key', branchScope) : query.eq('branch_key', branch);
   query = query.ilike('item_code', `%${term}%`);
   query = query.or('received_qty.neq.0,issued_qty.neq.0');
 
