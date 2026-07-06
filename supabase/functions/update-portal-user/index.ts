@@ -24,6 +24,10 @@ function normalizeLoginId(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
+function clean(value: unknown) {
+  return String(value ?? '').trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -50,13 +54,18 @@ Deno.serve(async (req) => {
   const body = await req.json() as Payload;
   const profileId = String(body.profileId ?? '').trim();
   const fullName = String(body.fullName ?? '').trim();
-  const branch = String(body.branch ?? '').trim();
+  const rawBranch = String(body.branch ?? '').trim();
   const role = String(body.role ?? '').trim();
   const loginId = normalizeLoginId(String(body.loginId ?? ''));
   const isActive = body.isActive !== false;
 
-  if (!profileId || !fullName || !branch || !role) return json({ error: 'Profile ID, name, branch and role are required.' }, 400);
+  if (!profileId || !fullName || !rawBranch || !role) return json({ error: 'Profile ID, name, branch and role are required.' }, 400);
   if (!roles.includes(role)) return json({ error: 'Invalid role.' }, 400);
+
+  const { data: branch, error: branchError } = await adminClient.rpc('resolve_portal_branch', { value: rawBranch });
+  if (branchError) return json({ error: branchError.message }, 400);
+  const branchKey = clean(branch);
+  if (!branchKey) return json({ error: `Branch is not mapped in portal_branches: ${rawBranch}` }, 400);
 
   const { data: existingProfile, error: profileError } = await adminClient
     .from('portal_profiles')
@@ -79,7 +88,7 @@ Deno.serve(async (req) => {
 
   const { data: updatedProfile, error: updateError } = await adminClient
     .from('portal_profiles')
-    .update({ full_name: fullName, legacy_name: fullName, branch, role, legacy_user_id: loginId || null, is_active: isActive })
+    .update({ full_name: fullName, legacy_name: fullName, branch: branchKey, role, legacy_user_id: loginId || null, is_active: isActive })
     .eq('id', profileId)
     .select('id, auth_user_id, full_name, branch, role, login_id:legacy_user_id, is_active')
     .maybeSingle();
@@ -88,7 +97,7 @@ Deno.serve(async (req) => {
 
   if (updatedProfile.auth_user_id) {
     const userUpdate: Record<string, unknown> = {
-      user_metadata: { full_name: fullName, branch, role, login_id: loginId || null, legacy_user_id: loginId || null },
+      user_metadata: { full_name: fullName, branch: branchKey, role, login_id: loginId || null, legacy_user_id: loginId || null },
     };
     if (loginId) userUpdate.email = `${loginId.toLowerCase()}@portal.local`;
 
