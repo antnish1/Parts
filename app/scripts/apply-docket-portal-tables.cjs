@@ -1,3 +1,5 @@
+require('./apply-portal-cutover-remaining.cjs');
+
 const fs = require('fs');
 const path = require('path');
 
