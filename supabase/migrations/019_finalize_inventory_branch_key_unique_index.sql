@@ -1,5 +1,22 @@
 -- Use a non-partial unique index so portal_upload_inventory can upsert on (branch_key, item_code).
--- Existing imports may have duplicates after branch alias resolution, so keep only the latest row.
+-- This script is safe to run after a partial/failed branch-master migration.
+-- It first ensures branch_key exists and is populated, then removes duplicate current-stock rows.
+
+alter table public.portal_inventory_current add column if not exists branch_key text;
+alter table public.portal_inventory_staging add column if not exists branch_key text;
+alter table public.portal_inventory_changes add column if not exists branch_key text;
+
+update public.portal_inventory_current
+set branch_key = coalesce(public.resolve_portal_branch(branch_name), public.resolve_portal_branch(branch_code))
+where branch_key is null;
+
+update public.portal_inventory_staging
+set branch_key = coalesce(public.resolve_portal_branch(branch_name), public.resolve_portal_branch(branch_code))
+where branch_key is null;
+
+update public.portal_inventory_changes
+set branch_key = coalesce(public.resolve_portal_branch(branch_name), public.resolve_portal_branch(branch_code))
+where branch_key is null;
 
 with ranked_inventory as (
   select
