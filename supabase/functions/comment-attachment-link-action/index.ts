@@ -31,7 +31,7 @@ serve(async (req) => {
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: profile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, role, branch, is_active')
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
@@ -43,15 +43,15 @@ serve(async (req) => {
   if (!attachmentId) return json({ error: 'Attachment is required.' }, 400);
 
   const { data: attachment, error: attachmentError } = await adminClient
-    .from('test_order_comment_attachments')
-    .select('id, order_id, bucket_name, object_path, original_file_name, deleted_at')
+    .from('portal_order_comment_attachments')
+    .select('id, order_id, storage_bucket, storage_path, original_filename')
     .eq('id', attachmentId)
     .maybeSingle();
   if (attachmentError) return json({ error: attachmentError.message }, 400);
-  if (!attachment || attachment.deleted_at) return json({ error: 'Attachment not found.' }, 404);
+  if (!attachment) return json({ error: 'Attachment not found.' }, 404);
 
   const { data: order, error: orderError } = await adminClient
-    .from('test_orders')
+    .from('portal_orders')
     .select('id, branch, approver_id')
     .eq('id', attachment.order_id)
     .maybeSingle();
@@ -60,9 +60,9 @@ serve(async (req) => {
   if (!canAccessOrder(profile as Profile, order as OrderRow)) return json({ error: 'You do not have access to this attachment.' }, 403);
 
   const { data: signed, error: signedError } = await adminClient.storage
-    .from(attachment.bucket_name)
-    .createSignedUrl(attachment.object_path, SIGNED_URL_SECONDS, { download: attachment.original_file_name });
+    .from(attachment.storage_bucket)
+    .createSignedUrl(attachment.storage_path, SIGNED_URL_SECONDS, { download: attachment.original_filename });
   if (signedError) return json({ error: signedError.message }, 400);
 
-  return json({ signedUrl: signed.signedUrl, expiresIn: SIGNED_URL_SECONDS, fileName: attachment.original_file_name });
+  return json({ signedUrl: signed.signedUrl, expiresIn: SIGNED_URL_SECONDS, fileName: attachment.original_filename });
 });
