@@ -11,61 +11,76 @@ const num = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const closedStatuses = new Set(['received', 'issued', 'rejected']);
+const closedRowStatuses = new Set(['received', 'issued', 'rejected']);
+
 type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
+type HeaderCandidate = { orderRegDate: string | null; value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 type ItemRow = { id: string; order_id: string; part_no: string; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
 type ChunkRow = { billed_qty: number | string | null; received_qty?: number | string | null; order_reg_date: string | null; invoice_no: string | null; billing_date: string | null; docket_no: string | null; transport_name: string | null };
 
-function status(value: unknown) {
-  const text = clean(value).toLowerCase().replace(/[\s-]+/g, '_');
-  if (text.includes('reject')) return 'rejected';
-  if (text.includes('issued')) return 'issued';
-  if (text.includes('receiv')) return text.includes('partial') ? 'partially_received' : 'received';
-  if (text.includes('partial') && text.includes('dispatch')) return 'partially_dispatched';
-  if (text.includes('dispatch')) return 'dispatched';
-  if (text.includes('process')) return 'processed';
-  if (text.includes('pending') && text.includes('manager')) return 'pending_manager_approval';
-  if (text.includes('pending')) return 'pending_approval';
-  if (text.includes('approved')) return 'approved';
-  return text;
+function normalizeStatus(value: unknown) {
+  const status = clean(value).toLowerCase().replace(/[\s-]+/g, '_');
+  if (!status) return '';
+  if (status.includes('receiv')) return status.includes('partial') ? 'partially_received' : 'received';
+  if (status.includes('reject')) return 'rejected';
+  if (status.includes('partial') && (status.includes('dispatch') || status.includes('despatch'))) return 'partially_dispatched';
+  if (status.includes('dispatch') || status.includes('despatch')) return 'dispatched';
+  if (status.includes('issued')) return 'issued';
+  if (status.includes('process')) return 'processed';
+  if (status.includes('pending') && status.includes('manager')) return 'pending_manager_approval';
+  if (status.includes('pending')) return 'pending_approval';
+  if (status.includes('approved')) return 'approved';
+  return status;
 }
 
 function effectiveQty(row: ItemRow) {
-  if (row.edited_qty !== null && row.edited_qty !== undefined && row.edited_qty !== '') return Math.max(0, num(row.edited_qty));
+  const edited = row.edited_qty;
+  if (edited !== null && edited !== undefined && edited !== '') return Math.max(0, num(edited));
   return Math.max(0, num(row.qty));
 }
 
-function nextItemStatus(item: ItemRow, billed: number, received: number) {
-  const current = status(item.row_status);
-  if (current === 'rejected' || current === 'issued') return current;
+function resolveItemStatus(item: ItemRow, billedTotal: number, receivedTotal: number) {
+  const current = normalizeStatus(item.row_status);
+  if (current === 'rejected') return 'rejected';
+  if (current === 'issued') return 'issued';
   const qty = effectiveQty(item);
-  if (received > 0) return qty <= 0 || received >= qty ? 'received' : 'partially_received';
+  if (receivedTotal > 0) {
+    if (qty <= 0 || receivedTotal >= qty) return 'received';
+    return 'partially_received';
+  }
   if (current === 'received') return 'received';
-  if (billed <= 0) return 'processed';
-  return qty <= 0 || billed >= qty ? 'dispatched' : 'partially_dispatched';
+  if (billedTotal <= 0) return 'processed';
+  if (qty <= 0) return 'dispatched';
+  if (billedTotal >= qty) return 'dispatched';
+  return 'partially_dispatched';
 }
 
-function nextOrderStatus(rows: Array<{ row_status: string | null }>) {
-  const list = rows.map((row) => status(row.row_status)).filter(Boolean);
-  if (!list.length) return 'processed';
-  if (list.every((s) => s === 'issued')) return 'issued';
-  if (list.every((s) => s === 'received' || s === 'issued')) return list.includes('issued') ? 'issued' : 'received';
-  if (list.some((s) => s === 'received' || s === 'issued' || s === 'partially_received')) return 'partially_received';
-  if (list.every((s) => s === 'dispatched')) return 'dispatched';
-  if (list.some((s) => s === 'dispatched' || s === 'partially_dispatched')) return 'partially_dispatched';
-  if (list.every((s) => s === 'rejected')) return 'rejected';
-  if (list.some((s) => s === 'pending_manager_approval')) return 'pending_manager_approval';
-  if (list.some((s) => s === 'pending_approval')) return 'pending_approval';
-  if (list.some((s) => s === 'approved')) return 'approved';
-  return list[0] || 'processed';
+function deriveOrderStatus(rows: Array<{ row_status: string | null }>) {
+  if (!rows.length) return 'processed';
+  const statuses = rows.map((row) => normalizeStatus(row.row_status)).filter(Boolean);
+  if (!statuses.length) return 'processed';
+
+  if (statuses.every((status) => status === 'issued')) return 'issued';
+  if (statuses.every((status) => status === 'received' || status === 'issued')) return statuses.includes('issued') ? 'issued' : 'received';
+  if (statuses.some((status) => status === 'received' || status === 'issued' || status === 'partially_received')) return 'partially_received';
+  if (statuses.every((status) => status === 'dispatched')) return 'dispatched';
+  if (statuses.some((status) => status === 'dispatched' || status === 'partially_dispatched')) return 'partially_dispatched';
+  if (statuses.every((status) => status === 'processed')) return 'processed';
+  if (statuses.some((status) => status === 'processed')) return 'processed';
+  if (statuses.every((status) => status === 'rejected')) return 'rejected';
+  if (statuses.some((status) => status === 'rejected')) return 'partially_rejected';
+  if (statuses.some((status) => status === 'pending_manager_approval')) return 'pending_manager_approval';
+  if (statuses.some((status) => status === 'pending_approval')) return 'pending_approval';
+  if (statuses.some((status) => status === 'approved')) return 'approved';
+  return statuses[0] || 'processed';
 }
 
-function single(values: unknown[]) {
+function singleOrNull(values: unknown[]) {
   const unique = [...new Set(values.map((value) => clean(value)).filter(Boolean))];
   return unique.length === 1 ? unique[0] : null;
 }
 
-function key(parts: unknown[]) {
+function idempotencyKey(parts: unknown[]) {
   return parts.map((part) => normNo(part)).join('|');
 }
 
@@ -78,89 +93,154 @@ serve(async (req) => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   const authHeader = req.headers.get('Authorization') ?? '';
   const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
-  const admin = createClient(supabaseUrl, serviceKey);
+  const adminClient = createClient(supabaseUrl, serviceKey);
+
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await admin.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
-  if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Access denied' }, 403);
+  const { data: profile, error: profileError } = await adminClient.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  if (profileError) return json({ error: profileError.message }, 400);
+  if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can apply status reports' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const rows = Array.isArray(body.rows) ? body.rows : [];
   const result: Result = { total: rows.length, updated: 0, inserted: 0, skipped: 0, failed: 0, errors: [] };
-  const touched = new Map<string, string>();
+  const touchedOrders = new Map<string, string>();
+  const headerCandidates = new Map<string, HeaderCandidate[]>();
   const now = new Date().toISOString();
 
-  for (const raw of rows) {
-    const orderNo = normNo(raw.finalOrderNo);
-    const partNo = normPart(raw.partNo);
+  for (const rawRow of rows) {
+    const finalOrderNo = normNo(rawRow.finalOrderNo);
+    const partNo = normPart(rawRow.partNo);
     try {
-      if (!orderNo || !partNo) { result.skipped += 1; continue; }
-      const { data: orders, error: orderError } = await admin.from('portal_orders').select('id,order_no,status').or(`final_order_no.eq.${orderNo},processing_reference.eq.${orderNo},order_no.eq.${orderNo}`).limit(2);
+      if (!finalOrderNo || !partNo) { result.skipped += 1; result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: missing order or part`); continue; }
+      const { data: orders, error: orderError } = await adminClient
+        .from('portal_orders')
+        .select('id,order_no,status,branch')
+        .or(`final_order_no.eq.${finalOrderNo},processing_reference.eq.${finalOrderNo},order_no.eq.${finalOrderNo}`)
+        .limit(2);
       if (orderError) throw orderError;
-      if (!orders?.length || orders.length > 1) { result.skipped += 1; result.errors.push(`${orderNo} / ${partNo}: order match issue`); continue; }
+      if (!orders?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: order not found`); continue; }
+      if (orders.length > 1) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: multiple orders matched`); continue; }
       const order = orders[0];
 
-      const { data: items, error: itemFindError } = await admin.from('portal_order_items').select('id, order_id, part_no, qty, edited_qty, billed_qty, row_status').eq('order_id', order.id).eq('part_no', partNo).order('created_at', { ascending: true });
-      if (itemFindError) throw itemFindError;
-      const item = ((items ?? []) as ItemRow[]).find((row) => !closedStatuses.has(status(row.row_status))) ?? null;
-      if (!item) { result.skipped += 1; result.errors.push(`${orderNo} / ${partNo}: item closed or missing`); continue; }
+      const { data: currentItems, error: currentError } = await adminClient
+        .from('portal_order_items')
+        .select('id, order_id, part_no, qty, edited_qty, billed_qty, row_status')
+        .eq('order_id', order.id)
+        .eq('part_no', partNo)
+        .order('created_at', { ascending: true });
+      if (currentError) throw currentError;
+      if (!currentItems?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item row not found`); continue; }
 
-      const payload = {
+      const activeItem = (currentItems as ItemRow[]).find((item) => !closedRowStatuses.has(normalizeStatus(item.row_status))) ?? null;
+      if (!activeItem) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item is fully received, issued, or rejected`); continue; }
+
+      const billingPayload = {
         order_id: order.id,
-        item_id: item.id,
+        item_id: activeItem.id,
         order_no: order.order_no,
         part_no: partNo,
-        billed_qty: num(raw.billedQty),
-        billing_date: clean(raw.invoiceDate) || null,
-        order_reg_date: clean(raw.orderRegDate) || null,
-        delivery_no: normNo(raw.deliveryNo) || null,
-        invoice_no: normNo(raw.invoiceNo) || null,
-        docket_no: normNo(raw.docketNo) || null,
-        transport_name: clean(raw.transportName) || null,
-        transport_mode: normNo(raw.transportMode) || null,
-        packing_detail: clean(raw.packingDetail) || null,
-        eway_bill_no: normNo(raw.ewayBillNo) || null,
-        gst_invoice_no: normNo(raw.gstInvoiceNo) || null,
-        raw_status: clean(raw.rawStatus) || null,
-        idempotency_key: key([item.id, orderNo, partNo, raw.billedQty, raw.invoiceDate, raw.deliveryNo, raw.invoiceNo, raw.docketNo]),
+        billed_qty: num(rawRow.billedQty),
+        billing_date: clean(rawRow.invoiceDate) || null,
+        order_reg_date: clean(rawRow.orderRegDate) || null,
+        delivery_no: normNo(rawRow.deliveryNo) || null,
+        invoice_no: normNo(rawRow.invoiceNo) || null,
+        docket_no: normNo(rawRow.docketNo) || null,
+        transport_name: clean(rawRow.transportName) || null,
+        transport_mode: normNo(rawRow.transportMode) || null,
+        packing_detail: clean(rawRow.packingDetail) || null,
+        eway_bill_no: normNo(rawRow.ewayBillNo) || null,
+        gst_invoice_no: normNo(rawRow.gstInvoiceNo) || null,
+        raw_status: clean(rawRow.rawStatus) || null,
+        idempotency_key: idempotencyKey([activeItem.id, finalOrderNo, partNo, rawRow.billedQty, rawRow.invoiceDate, rawRow.deliveryNo, rawRow.invoiceNo, rawRow.docketNo]),
         source: 'status_report_upload',
         created_by: profile.id,
         updated_at: now,
       };
 
-      const { error: billingError } = await admin.from('portal_order_item_billings').upsert([payload], { onConflict: 'idempotency_key' });
+      const { error: billingError } = await adminClient
+        .from('portal_order_item_billings')
+        .upsert([billingPayload], { onConflict: 'idempotency_key' });
       if (billingError) throw billingError;
       result.inserted += 1;
 
-      const { data: chunks, error: chunkError } = await admin.from('portal_order_item_billings').select('billed_qty, received_qty, order_reg_date, invoice_no, billing_date, docket_no, transport_name').eq('item_id', item.id);
-      if (chunkError) throw chunkError;
+      const { data: chunks, error: chunkReadError } = await adminClient
+        .from('portal_order_item_billings')
+        .select('billed_qty, received_qty, order_reg_date, invoice_no, billing_date, docket_no, transport_name')
+        .eq('item_id', activeItem.id);
+      if (chunkReadError) throw chunkReadError;
+
       const chunkRows = (chunks ?? []) as ChunkRow[];
       const billedTotal = chunkRows.reduce((sum, row) => sum + num(row.billed_qty), 0);
       const receivedTotal = chunkRows.reduce((sum, row) => sum + num(row.received_qty), 0);
-      const rowStatus = nextItemStatus(item, billedTotal, receivedTotal);
-      const itemUpdate = { billed_qty: billedTotal, received_date: receivedTotal > 0 ? now : null, order_reg_date: single(chunkRows.map((row) => row.order_reg_date)), dbms_invoice_no: single(chunkRows.map((row) => row.invoice_no)), dbms_invoice_date: single(chunkRows.map((row) => row.billing_date)), docket_no: single(chunkRows.map((row) => row.docket_no)), transport_name: single(chunkRows.map((row) => row.transport_name)), row_status: rowStatus, updated_at: now };
-      const { error: itemUpdateError } = await admin.from('portal_order_items').update(itemUpdate).eq('id', item.id);
-      if (itemUpdateError) throw itemUpdateError;
-      touched.set(order.id, order.order_no);
-      await admin.from('portal_order_events').insert({ order_id: order.id, event_type: 'STATUS_REPORT_UPDATED', old_status: order.status, new_status: rowStatus, actor_id: profile.id, notes: `Billing updated for ${partNo}.` });
+      const nextRowStatus = resolveItemStatus(activeItem, billedTotal, receivedTotal);
+      const itemUpdate = {
+        billed_qty: billedTotal,
+        received_date: receivedTotal > 0 ? now : null,
+        order_reg_date: singleOrNull(chunkRows.map((row) => row.order_reg_date)),
+        dbms_invoice_no: singleOrNull(chunkRows.map((row) => row.invoice_no)),
+        dbms_invoice_date: singleOrNull(chunkRows.map((row) => row.billing_date)),
+        docket_no: singleOrNull(chunkRows.map((row) => row.docket_no)),
+        transport_name: singleOrNull(chunkRows.map((row) => row.transport_name)),
+        row_status: nextRowStatus,
+        updated_at: now,
+      };
+
+      const { error: itemError } = await adminClient.from('portal_order_items').update(itemUpdate).eq('id', activeItem.id);
+      if (itemError) throw itemError;
+
+      touchedOrders.set(order.id, order.order_no);
+      const existingHeaders = headerCandidates.get(order.id) ?? [];
+      existingHeaders.push({ orderRegDate: itemUpdate.order_reg_date, value: itemUpdate.dbms_invoice_no, dateValue: itemUpdate.dbms_invoice_date, docket: itemUpdate.docket_no, transport: itemUpdate.transport_name });
+      headerCandidates.set(order.id, existingHeaders);
+
+      await adminClient.from('portal_order_events').insert({
+        order_id: order.id,
+        event_type: 'STATUS_REPORT_UPDATED',
+        old_status: order.status,
+        new_status: nextRowStatus,
+        actor_id: profile.id,
+        notes: `Status upload added billing chunk for ${partNo}. Total billed ${billedTotal}, total received ${receivedTotal}.`,
+        metadata: { part_no: partNo, chunk: billingPayload, billed_qty_total: billedTotal, received_qty_total: receivedTotal, row_status: nextRowStatus },
+      });
       result.updated += 1;
     } catch (error) {
       result.failed += 1;
-      result.errors.push(`${orderNo || '-'} / ${partNo || '-'}: ${error instanceof Error ? error.message : 'failed'}`);
+      result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${error instanceof Error ? error.message : 'failed'}`);
     }
   }
 
-  for (const [orderId, orderNo] of touched.entries()) {
+  for (const [orderId, orderNo] of touchedOrders.entries()) {
     try {
-      const { data: items, error } = await admin.from('portal_order_items').select('row_status, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name').eq('order_id', orderId);
-      if (error) throw error;
-      const orderStatus = nextOrderStatus(items ?? []);
-      const updatePayload = { status: orderStatus, order_reg_date: single((items ?? []).map((item) => item.order_reg_date)), dbms_invoice_no: single((items ?? []).map((item) => item.dbms_invoice_no)), dbms_invoice_date: single((items ?? []).map((item) => item.dbms_invoice_date)), docket_no: single((items ?? []).map((item) => item.docket_no)), transport_name: single((items ?? []).map((item) => item.transport_name)), updated_at: now };
-      const { error: updateError } = await admin.from('portal_orders').update(updatePayload).eq('id', orderId);
-      if (updateError) throw updateError;
-      await admin.from('portal_order_events').insert({ order_id: orderId, event_type: 'ORDER_STATUS_RECALCULATED', old_status: null, new_status: orderStatus, actor_id: profile.id, notes: `Order ${orderNo} recalculated.` });
+      const { data: items, error: itemError } = await adminClient
+        .from('portal_order_items')
+        .select('row_status, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name')
+        .eq('order_id', orderId);
+      if (itemError) throw itemError;
+      const itemRows = items ?? [];
+      const nextStatus = deriveOrderStatus(itemRows);
+      const updatePayload = {
+        status: nextStatus,
+        order_reg_date: singleOrNull(itemRows.map((item) => item.order_reg_date)),
+        dbms_invoice_no: singleOrNull(itemRows.map((item) => item.dbms_invoice_no)),
+        dbms_invoice_date: singleOrNull(itemRows.map((item) => item.dbms_invoice_date)),
+        docket_no: singleOrNull(itemRows.map((item) => item.docket_no)),
+        transport_name: singleOrNull(itemRows.map((item) => item.transport_name)),
+        updated_at: now,
+      };
+      const { error: statusError } = await adminClient.from('portal_orders').update(updatePayload).eq('id', orderId);
+      if (statusError) throw statusError;
+      await adminClient.from('portal_order_events').insert({
+        order_id: orderId,
+        event_type: 'ORDER_STATUS_RECALCULATED',
+        old_status: null,
+        new_status: nextStatus,
+        actor_id: profile.id,
+        notes: `Order ${orderNo} recalculated after status upload. Billing chunks are stored separately for docket-wise tracking.`,
+        metadata: { header_candidates: headerCandidates.get(orderId) ?? [], synced_header: updatePayload },
+      });
     } catch (error) {
-      result.errors.push(`${orderNo}: recalculation failed - ${error instanceof Error ? error.message : 'failed'}`);
+      result.errors.push(`${orderNo}: status recalculation failed - ${error instanceof Error ? error.message : 'failed'}`);
     }
   }
 
