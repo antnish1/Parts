@@ -3,7 +3,7 @@ import type { TestOrder } from './testData.service';
 import { getCurrentBranchScopeValues, getCurrentPortalProfile } from './branchScope.service';
 
 const ORDER_COLUMNS = 'id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at';
-const DEFAULT_LIST_LIMIT = 200;
+const DEFAULT_LIST_LIMIT = 1000;
 const APPROVAL_LIST_LIMIT = 500;
 const PENDING_APPROVAL_STATUSES = ['pending_approval', 'pending_manager_approval'];
 
