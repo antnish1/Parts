@@ -14,14 +14,14 @@ export type DeveloperCommentInboxRow = {
 
 export async function getDeveloperCommentsInbox() {
   const { data, error } = await supabase
-    .from('test_order_comments')
-    .select('id, order_id, comment, created_at, created_by, test_orders(order_no, final_order_no, branch, status)')
+    .from('portal_order_comments')
+    .select('id, order_id, comment:body, created_at, created_by:author_id, order:portal_orders(order_no, final_order_no, branch, status)')
     .order('created_at', { ascending: false })
     .limit(25);
   if (error) throw error;
 
   return (data ?? []).map((row) => {
-    const order = Array.isArray(row.test_orders) ? row.test_orders[0] : row.test_orders;
+    const order = Array.isArray(row.order) ? row.order[0] : row.order;
     return {
       id: row.id,
       order_id: row.order_id,
