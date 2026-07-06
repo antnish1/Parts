@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-legacy-fallback.cjs",
+    "predev": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs",
     "dev": "vite",
-    "prebuild": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs && node scripts/apply-docket-legacy-fallback.cjs",
+    "prebuild": "node scripts/apply-approval-review-page.cjs && node scripts/apply-order-detail-table-patch.cjs && node scripts/remove-order-totals.cjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
