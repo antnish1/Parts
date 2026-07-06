@@ -2,6 +2,55 @@
 
 This document is the safe cutover plan for making the React Parts Connect Portal the main workplace without losing legacy data or current workflow.
 
+## Approved migration decisions
+
+These decisions are now approved by Nishant:
+
+1. Migrate **all old `requests` history**, not only open/live orders.
+2. Use safer production workflow names with the `portal_` prefix.
+3. Create new `portal_inventory_*` tables instead of writing directly into existing inventory tables.
+4. Move all users fully to Supabase Auth email/password login.
+5. Keep the old portal **read-only** after cutover.
+6. Existing master tables remain the master source where compatible:
+   - `part_master`
+   - `machine_master`
+   - `branch_mapping`
+
+## Clarification: final closed status question
+
+The earlier question, "Which old `requests.Status` values should be considered final closed status?", means:
+
+When importing old history, we need to know which old status words mean the order should not be treated as active or pending in dashboards.
+
+Examples:
+
+- `RECEIVED` usually means fully closed.
+- `REJECTED` usually means closed/rejected.
+- `CANCELLED` or `CLOSED`, if present, should also be final.
+- `PENDING`, `APPROVED`, `PROCESSED`, `DISPATCHED`, `PARTIALLY DISPATCHED`, `PARTIALLY RECEIVED` are not final closed states.
+
+Because all old history will be migrated, this does not decide whether rows are imported. It decides how old rows will appear in status filters, active counts, in-transit calculation, and dashboards.
+
+Before final SQL, run this query and review the exact old status values:
+
+```sql
+select coalesce("Status", 'NULL') as status, count(*)
+from public.requests
+group by coalesce("Status", 'NULL')
+order by count(*) desc;
+```
+
+Also review approval status values:
+
+```sql
+select coalesce("ApprovalStatus", 'NULL') as approval_status, count(*)
+from public.requests
+group by coalesce("ApprovalStatus", 'NULL')
+order by count(*) desc;
+```
+
+After seeing the exact values, we will create a status mapping table for import.
+
 ## Current understanding
 
 The React portal is currently running mostly on staging/test tables:
@@ -33,28 +82,17 @@ The React portal is already using/depending on production master data for `part_
 
 ## Main migration principle
 
-Do not overwrite or rename existing live tables during the first cutover.
+Do not overwrite, rename, or delete existing live tables during the first cutover.
 
 The safest approach is to create a new clean production schema for the portal order workflow while continuing to use the existing master tables:
 
 - Keep existing `part_master` as the production part master.
 - Keep existing `machine_master` as the production machine/customer lookup.
 - Keep existing `branch_mapping` after checking column compatibility.
-- Keep existing inventory tables if their column structure matches the new portal inventory workflow.
-- Create new production portal tables for workflows that do not safely exist in the legacy project.
+- Create new `portal_inventory_*` tables.
+- Create new `portal_` workflow tables.
 
-Recommended naming:
-
-- `portal_profiles`
-- `portal_orders`
-- `portal_order_items`
-- `portal_order_events`
-- `portal_order_comments`
-- `portal_order_comment_attachments`
-- `portal_order_item_billings`
-- `portal_inventory_uploads` if existing `inventory_uploads` does not exist
-
-Reason: this avoids destroying or corrupting `requests`, and gives rollback safety.
+Reason: this avoids destroying or corrupting `requests`, gives rollback safety, and keeps the old portal available in read-only mode.
 
 ## Why not directly use `requests` for the new portal
 
@@ -81,17 +119,19 @@ Trying to force all of this into `requests` will create risk and hidden bugs. Th
 | `test_order_events` | `portal_order_events` | Audit log for status changes and system actions. |
 | `test_order_comments` | `portal_order_comments` | User comments only. |
 | `test_order_comment_attachments` | `portal_order_comment_attachments` | Comment attachment metadata. |
-| `test_inventory_current` | `inventory_current` or `portal_inventory_current` | Use existing if compatible. |
-| `test_inventory_staging` | `inventory_staging` or `portal_inventory_staging` | Use existing if compatible. |
-| `test_inventory_changes` | `inventory_changes` or `portal_inventory_changes` | Use existing if compatible. |
-| `test_inventory_uploads` | `portal_inventory_uploads` | Create if no production audit table exists. |
+| `test_inventory_current` | `portal_inventory_current` | New portal inventory snapshot table. |
+| `test_inventory_staging` | `portal_inventory_staging` | New portal inventory staging table. |
+| `test_inventory_changes` | `portal_inventory_changes` | New portal inventory change log. |
+| `test_inventory_uploads` | `portal_inventory_uploads` | New portal upload audit table. |
 | `test_part_master` | `part_master` | Use original production table. |
 | `test_machine_master` | `machine_master` | Use original production table. |
 | `test_branch_mapping` | `branch_mapping` | Use original if columns match. |
+| legacy `requests` | import source only | Keep as read-only legacy archive after cutover. |
+| legacy `users` | user import source only | Do not use for new login after cutover. |
 
 ## Required new production tables
 
-These are required because the legacy project likely does not have equivalent normalized tables:
+These are required because the legacy project does not safely have equivalent normalized tables:
 
 1. `portal_profiles`
 2. `portal_orders`
@@ -100,7 +140,10 @@ These are required because the legacy project likely does not have equivalent no
 5. `portal_order_events`
 6. `portal_order_comments`
 7. `portal_order_comment_attachments`
-8. `portal_inventory_uploads` if not already present
+8. `portal_inventory_current`
+9. `portal_inventory_staging`
+10. `portal_inventory_changes`
+11. `portal_inventory_uploads`
 
 ## Production order status rules to preserve
 
@@ -169,6 +212,15 @@ union all select 'branch_mapping', count(*) from public.branch_mapping
 union all select 'inventory_current', count(*) from public.inventory_current;
 ```
 
+Also export status values:
+
+```sql
+select coalesce("Status", 'NULL') as status, count(*)
+from public.requests
+group by coalesce("Status", 'NULL')
+order by count(*) desc;
+```
+
 ### Phase 2: Full backup before touching anything
 
 Export these to CSV/SQL backup:
@@ -202,7 +254,7 @@ This is an additive migration only. Existing legacy tables stay untouched.
 
 ### Phase 4: Migrate users/profile mapping
 
-- Do not migrate plain-text passwords from legacy `users`.
+- Do not use the old `users` table for new login.
 - Create Supabase Auth users for active portal users.
 - Create `portal_profiles` with:
   - auth user id
@@ -220,21 +272,9 @@ Need manual verification for role mapping:
 - developer
 - viewer if needed
 
-### Phase 5: Migrate open legacy orders only if needed
+### Phase 5: Migrate all legacy requests history
 
-Decision required: migrate all historical `requests` data, or only open/live orders?
-
-Recommended for first cutover:
-
-- migrate only non-final/open orders from `requests`
-- keep historical closed orders in legacy reports until after go-live
-
-Possible final statuses to exclude from first migration:
-
-- received
-- rejected
-- closed
-- cancelled
+Decision approved: migrate **all old `requests` history**.
 
 For each unique legacy `OrderNo`:
 
@@ -242,6 +282,14 @@ For each unique legacy `OrderNo`:
 - create multiple `portal_order_items` rows from legacy request rows
 - move legacy comments into `portal_order_comments` where possible
 - create status/audit seed event in `portal_order_events`
+- preserve original creation/processed dates where possible
+- preserve original order number, final order number, branch, order type, order for, customer, machine, call id and warranty status
+
+Important:
+
+- Closed historical orders will still be imported.
+- Closed historical orders should not be counted as active in-transit/workflow after import.
+- We must create a status mapping from old `requests.Status` and `requests.ApprovalStatus` before writing final import SQL.
 
 ### Phase 6: Migrate billing/docket history
 
@@ -272,9 +320,9 @@ export const TABLES = {
   partMaster: 'part_master',
   machineMaster: 'machine_master',
   branchMapping: 'branch_mapping',
-  inventoryCurrent: 'inventory_current',
-  inventoryStaging: 'inventory_staging',
-  inventoryChanges: 'inventory_changes',
+  inventoryCurrent: 'portal_inventory_current',
+  inventoryStaging: 'portal_inventory_staging',
+  inventoryChanges: 'portal_inventory_changes',
   inventoryUploads: 'portal_inventory_uploads',
 };
 ```
@@ -325,6 +373,7 @@ During the final cutover:
 7. Deploy Vercel production frontend.
 8. Run smoke test.
 9. Release users.
+10. Keep old portal read-only.
 
 ### Phase 11: Post-cutover monitoring
 
@@ -341,29 +390,23 @@ For first 3-7 days:
 If anything fails seriously:
 
 1. Roll Vercel back to previous deployment.
-2. Re-enable old portal writes if needed.
+2. Re-enable old portal writes only if absolutely required.
 3. Keep all new portal rows; do not delete.
 4. Export new portal rows written during failed cutover.
 5. Reconcile manually before next attempt.
 
-## Questions to answer before SQL writing
+## Decisions still needed before final SQL writing
 
-1. Do you want old historical `requests` orders imported into the new portal, or only open/live orders?
-2. Should the production order tables be named `orders/order_items` or safer `portal_orders/portal_order_items`?
-3. Should existing inventory tables be used directly, or should we create `portal_inventory_*` tables too?
-4. Are all current users ready to move to Supabase Auth email/password login?
-5. Which statuses in old `requests.Status` mean final closed orders?
-6. Do you want the old portal to become read-only after cutover, or fully disabled?
+1. Exact old `requests.Status` values and how each should map to new portal status.
+2. Exact old `requests.ApprovalStatus` values and how each should map to new approval status.
+3. Exact `requests` column names for invoice, docket, billing date, transport, billed qty, edited qty and comments.
+4. Whether legacy attachments exist and where they are stored.
+5. Final go-live date/time and freeze window.
 
-## Recommended decision
+## Recommended next action
 
-Use `portal_` production tables for all new workflow tables and keep existing master tables as-is:
+Run the read-only schema and status discovery SQL, then paste the results into ChatGPT. After that, write the final production migration SQL in three scripts:
 
-- use existing `part_master`
-- use existing `machine_master`
-- use existing `branch_mapping` if compatible
-- use existing inventory tables only after column check
-- keep `requests` untouched as legacy archive/source
-- create `portal_orders`, `portal_order_items`, `portal_order_item_billings`, comments and events for the new portal
-
-This gives the safest migration because no previous live data is deleted, overwritten, or renamed.
+1. `create_portal_production_schema.sql`
+2. `migrate_legacy_requests_to_portal.sql`
+3. `post_migration_reconciliation_checks.sql`
