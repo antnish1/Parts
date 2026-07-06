@@ -10,7 +10,7 @@ export async function getTestProcessingInfo(orderId: string): Promise<TestProces
   if (!orderId) return null;
 
   const { data, error } = await supabase
-    .from('test_orders')
+    .from('portal_orders')
     .select('processing_reference, processed_notes, processed_date')
     .eq('id', orderId)
     .maybeSingle();

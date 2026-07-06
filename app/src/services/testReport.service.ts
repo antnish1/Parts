@@ -62,7 +62,7 @@ export function downloadOrdersCsv(orders: TestOrder[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `test-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = `portal-orders-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }

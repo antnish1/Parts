@@ -8,7 +8,7 @@ export async function getInventoryQtyByBranchParts(branchName: string, partNos: 
   if (!branchName || normalizedParts.length === 0) return {};
 
   const { data: branch, error: branchError } = await supabase
-    .from('test_branch_mapping')
+    .from('branch_mapping')
     .select('branch_code')
     .eq('branch_name', branchName)
     .eq('is_active', true)
@@ -17,7 +17,7 @@ export async function getInventoryQtyByBranchParts(branchName: string, partNos: 
   if (!branch?.branch_code) return {};
 
   const { data, error } = await supabase
-    .from('test_inventory_current')
+    .from('portal_inventory_current')
     .select('item_code, qty')
     .eq('branch_code', branch.branch_code)
     .in('item_code', normalizedParts);
