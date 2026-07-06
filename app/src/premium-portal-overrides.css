@@ -1,0 +1,68 @@
+[data-theme='premium-ops'] [class*='bg-[#111827]'],
+[data-theme='premium-ops'] [class*='bg-[#0b1020]'],
+[data-theme='premium-ops'] [class*='bg-slate-950'],
+[data-theme='premium-ops'] [class*='bg-slate-900'] {
+  background-color: rgba(255, 255, 255, 0.86) !important;
+}
+
+[data-theme='premium-ops'] [class*='bg-[#17202d]'],
+[data-theme='premium-ops'] [class*='bg-[#1e293b]'] {
+  background-color: rgba(241, 245, 249, 0.92) !important;
+}
+
+[data-theme='premium-ops'] [class*='border-[#263244]'],
+[data-theme='premium-ops'] [class*='border-[#334155]'],
+[data-theme='premium-ops'] [class*='border-[#6b5b15]'],
+[data-theme='premium-ops'] [class*='border-slate-800'],
+[data-theme='premium-ops'] [class*='border-slate-700'] {
+  border-color: rgba(148, 163, 184, 0.34) !important;
+}
+
+[data-theme='premium-ops'] [class*='text-white'],
+[data-theme='premium-ops'] [class*='text-[#ffffff]'],
+[data-theme='premium-ops'] [class*='text-[#f8fafc]'] {
+  color: #111827 !important;
+}
+
+[data-theme='premium-ops'] [class*='text-[#d8e3ee]'],
+[data-theme='premium-ops'] [class*='text-[#c7d2df]'],
+[data-theme='premium-ops'] [class*='text-[#6D8196]'],
+[data-theme='premium-ops'] [class*='text-slate-300'],
+[data-theme='premium-ops'] [class*='text-slate-100'] {
+  color: #64748b !important;
+}
+
+[data-theme='premium-ops'] [class*='text-[#82C8E5]'],
+[data-theme='premium-ops'] [class*='text-[#0f4c81]'],
+[data-theme='premium-ops'] [class*='text-pc-gold'] {
+  color: #1677ff !important;
+}
+
+[data-theme='premium-ops'] [class*='bg-[#82C8E5]'] {
+  background: linear-gradient(135deg, #1677ff, #06b6d4) !important;
+  color: #ffffff !important;
+}
+
+[data-theme='premium-ops'] input::placeholder,
+[data-theme='premium-ops'] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme='premium-ops'] a {
+  color: #1677ff;
+}
+
+[data-theme='premium-ops'] .shadow-lg,
+[data-theme='premium-ops'] [class*='shadow-panel'] {
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme='premium-ops'] label:has(input[type='file']) {
+  background: linear-gradient(135deg, rgba(22,119,255,.10), rgba(6,182,212,.10)) !important;
+  border: 1px solid rgba(22,119,255,.25) !important;
+  color: #0f172a !important;
+}
+
+[data-theme='premium-ops'] label:has(input[type='file']) * {
+  color: #0f172a !important;
+}
