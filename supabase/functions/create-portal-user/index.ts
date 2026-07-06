@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   if (sessionError || !sessionData.user) return json({ error: 'Unauthorized' }, 401);
 
   const { data: callerProfile, error: profileError } = await adminClient
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('role, is_active')
     .eq('auth_user_id', sessionData.user.id)
     .maybeSingle();
@@ -60,13 +60,10 @@ Deno.serve(async (req) => {
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters.' }, 400);
 
   if (loginId) {
-    const { error: columnError } = await adminClient.from('test_profiles').select('login_id').limit(1);
-    if (columnError) return json({ error: 'Profile table is missing login_id. Run supabase db push, then deploy create-portal-user again.' }, 400);
-
     const { data: existingLogin, error: loginError } = await adminClient
-      .from('test_profiles')
+      .from('portal_profiles')
       .select('id')
-      .ilike('login_id', loginId)
+      .ilike('legacy_user_id', loginId)
       .limit(1);
     if (loginError) return json({ error: loginError.message }, 400);
     if (existingLogin?.length) return json({ error: 'This User ID is already assigned. Please use another User ID.' }, 400);
@@ -77,7 +74,15 @@ Deno.serve(async (req) => {
     return json({ error: authError?.message ?? 'User creation failed. If this Auth user was already created without profile, delete it from Supabase Authentication and create it again.' }, 400);
   }
 
-  const { error: insertError } = await adminClient.from('test_profiles').insert({ auth_user_id: authData.user.id, full_name: fullName, branch, role, login_id: loginId || null, is_active: true });
+  const { error: insertError } = await adminClient.from('portal_profiles').insert({
+    auth_user_id: authData.user.id,
+    full_name: fullName,
+    branch,
+    role,
+    legacy_user_id: loginId || email,
+    legacy_name: fullName,
+    is_active: true,
+  });
   if (insertError) {
     await adminClient.auth.admin.deleteUser(authData.user.id);
     return json({ error: `Profile creation failed, so Auth user was rolled back. ${insertError.message}` }, 400);
