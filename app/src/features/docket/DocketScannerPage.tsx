@@ -23,6 +23,14 @@ function effectiveQty(row: TestDocketRow) {
   return Number(row.edited_qty ?? row.ordered_qty ?? 0);
 }
 
+function statusKey(value: unknown) {
+  return String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function rowKey(row: TestDocketRow) {
+  return `${row.source_type}-${row.id}`;
+}
+
 export function DocketScannerPage() {
   const [docketNo, setDocketNo] = useState('');
   const [scannerStatus, setScannerStatus] = useState('Idle');
@@ -99,7 +107,8 @@ export function DocketScannerPage() {
   useEffect(() => () => stopScanner(), []);
 
   async function receiveRow(row: TestDocketRow) {
-    setBusyId(row.id);
+    const key = rowKey(row);
+    setBusyId(key);
     setScannerStatus(`Receiving ${row.part_no} from docket ${row.docket_no || docketNo}...`);
     try {
       await receiveTestDocketRow(row);
@@ -112,8 +121,8 @@ export function DocketScannerPage() {
     }
   }
 
-  function toggleRow(rowId: string) {
-    setExpandedRows((current) => ({ ...current, [rowId]: !current[rowId] }));
+  function toggleRow(id: string) {
+    setExpandedRows((current) => ({ ...current, [id]: !current[id] }));
   }
 
   return (
@@ -140,12 +149,14 @@ export function DocketScannerPage() {
               </thead>
               <tbody className="divide-y divide-[#263244] bg-[#111827]">
                 {rows.map((row) => {
-                  const isReceived = row.billed_qty > 0 && row.received_qty >= row.billed_qty;
-                  const isExpanded = !!expandedRows[row.id];
+                  const status = statusKey(row.item_status || row.order_status);
+                  const isReceived = (row.billed_qty > 0 && row.received_qty >= row.billed_qty) || status === 'received' || status === 'issued';
+                  const key = rowKey(row);
+                  const isExpanded = !!expandedRows[key];
                   return (
-                    <Fragment key={row.id}>
+                    <Fragment key={key}>
                       <tr className={getStatusRowClasses(row.item_status || row.order_status)}>
-                        <td className="px-2 py-2"><button className="inline-flex items-center gap-1 text-xs font-black text-[#82C8E5] hover:underline" onClick={() => toggleRow(row.id)}>{isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />} View</button></td>
+                        <td className="px-2 py-2"><button className="inline-flex items-center gap-1 text-xs font-black text-[#82C8E5] hover:underline" onClick={() => toggleRow(key)}>{isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />} View</button></td>
                         <td className="px-2 py-2 font-black text-white">{row.docket_no || '-'}</td>
                         <td className="px-2 py-2 text-[#d8e3ee]">{row.invoice_no || '-'}</td>
                         <td className="px-2 py-2 font-black text-[#82C8E5]">{row.part_no}</td>
@@ -155,7 +166,7 @@ export function DocketScannerPage() {
                         <td className="px-2 py-2 text-[#d8e3ee]">{row.final_order_no || row.order_no}</td>
                         <td className="px-2 py-2 text-[#d8e3ee]">{row.branch}</td>
                         <td className="px-2 py-2"><StatusBadge status={row.item_status || row.order_status} /></td>
-                        <td className="px-2 py-2 text-right"><button className="font-black text-[#82C8E5] hover:underline disabled:text-[#6D8196] disabled:no-underline" disabled={busyId === row.id || isReceived} onClick={() => void receiveRow(row)}>{busyId === row.id ? 'Saving' : isReceived ? 'Received' : 'Receive'}</button></td>
+                        <td className="px-2 py-2 text-right"><button className="font-black text-[#82C8E5] hover:underline disabled:text-[#6D8196] disabled:no-underline" disabled={busyId === key || isReceived} onClick={() => void receiveRow(row)}>{busyId === key ? 'Saving' : isReceived ? 'Received' : 'Receive'}</button></td>
                       </tr>
                       {isExpanded ? (
                         <tr>
