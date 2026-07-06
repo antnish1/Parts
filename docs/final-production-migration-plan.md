@@ -15,41 +15,89 @@ These decisions are now approved by Nishant:
    - `part_master`
    - `machine_master`
    - `branch_mapping`
+7. Legacy closed/completed statuses are:
+   - `RECEIVED`
+   - `Issued`
+8. Legacy closed/rejected statuses are:
+   - `Rejected`
+   - `REJECTED`
 
-## Clarification: final closed status question
+## Approved legacy status mapping
 
-The earlier question, "Which old `requests.Status` values should be considered final closed status?", means:
+The old `requests` table has 3,566 rows by status count. The approval-status count also totals 3,566 rows, so the status discovery is consistent.
 
-When importing old history, we need to know which old status words mean the order should not be treated as active or pending in dashboards.
+### Legacy `requests.Status` mapping
 
-Examples:
+All imports should trim whitespace and normalize case before mapping.
 
-- `RECEIVED` usually means fully closed.
-- `REJECTED` usually means closed/rejected.
-- `CANCELLED` or `CLOSED`, if present, should also be final.
-- `PENDING`, `APPROVED`, `PROCESSED`, `DISPATCHED`, `PARTIALLY DISPATCHED`, `PARTIALLY RECEIVED` are not final closed states.
+| Raw legacy status | Count | New portal status | Closed? | Import note |
+|---|---:|---|---|---|
+| `RECEIVED` | 1447 | `received` | Yes | Completed history. Do not count as active/in-transit. |
+| `PENDING APPROVAL` | 804 | `pending_approval` | No | Still approval workflow. |
+| `Rejected` | 453 | `rejected` | Yes | Rejected history. Do not count as active/in-transit. |
+| `Processed` | 413 | `processed` | No | Processed but not closed. |
+| `DISPATCHED` | 316 | `dispatched` | No | Dispatched but not confirmed received. |
+| `Issued` | 52 | `received` | Yes | Legacy issued is considered completed/closed by business rule. Preserve raw legacy status as `Issued`. |
+| `PARTIALLY DISPATCHED` | 48 | `partially_dispatched` | No | Active dispatch history. |
+| `PROCESSED` | 32 | `processed` | No | Same as `Processed`. |
+| `REJECTED` | 1 | `rejected` | Yes | Same as `Rejected`. |
 
-Because all old history will be migrated, this does not decide whether rows are imported. It decides how old rows will appear in status filters, active counts, in-transit calculation, and dashboards.
+Important rule for `Issued`:
 
-Before final SQL, run this query and review the exact old status values:
+- In the new portal workflow, `issued` and `dispatched` are separate stages.
+- But for old `requests` history, Nishant confirmed `Issued` means closed/completed.
+- Therefore, during historical import, old `Issued` should be imported as workflow status `received` so it does not remain active.
+- The original raw status should still be preserved in a legacy/audit field such as `legacy_status` or event metadata.
+
+### Legacy `requests.ApprovalStatus` mapping
+
+All imports should trim whitespace and normalize case before mapping. The raw value `Approved\n              ` must be treated as `Approved`.
+
+| Raw approval status | Count | New portal approval status | Import note |
+|---|---:|---|---|
+| `Approved` | 2311 | `approved` | Normal approved. |
+| `PendingApproval` | 800 | `pending` | Pending super/admin approval. |
+| `Rejected` | 448 | `rejected` | Rejected approval. |
+| `PendingManagerApproval` | 4 | `pending_manager_approval` | Manager approval pending. |
+| `REJECTED` | 1 | `rejected` | Same as `Rejected`. |
+| `Approved\n              ` | 1 | `approved` | Trim whitespace/newline. |
+| `APPROVED` | 1 | `approved` | Same as `Approved`. |
+
+### Import status normalization SQL idea
+
+Final migration SQL should use a status-normalization expression like this, then map values:
 
 ```sql
-select coalesce("Status", 'NULL') as status, count(*)
-from public.requests
-group by coalesce("Status", 'NULL')
-order by count(*) desc;
+upper(regexp_replace(trim(coalesce("Status", '')), '\s+', ' ', 'g'))
 ```
 
-Also review approval status values:
+Recommended raw status mapping expression:
 
 ```sql
-select coalesce("ApprovalStatus", 'NULL') as approval_status, count(*)
-from public.requests
-group by coalesce("ApprovalStatus", 'NULL')
-order by count(*) desc;
+case upper(regexp_replace(trim(coalesce("Status", '')), '\s+', ' ', 'g'))
+  when 'RECEIVED' then 'received'
+  when 'ISSUED' then 'received'
+  when 'REJECTED' then 'rejected'
+  when 'PENDING APPROVAL' then 'pending_approval'
+  when 'PROCESSED' then 'processed'
+  when 'DISPATCHED' then 'dispatched'
+  when 'PARTIALLY DISPATCHED' then 'partially_dispatched'
+  else 'pending_approval'
+end
 ```
 
-After seeing the exact values, we will create a status mapping table for import.
+Recommended approval-status mapping expression:
+
+```sql
+case upper(regexp_replace(trim(coalesce("ApprovalStatus", '')), '\s+', ' ', 'g'))
+  when 'APPROVED' then 'approved'
+  when 'PENDINGAPPROVAL' then 'pending'
+  when 'PENDING MANAGER APPROVAL' then 'pending_manager_approval'
+  when 'PENDINGMANAGERAPPROVAL' then 'pending_manager_approval'
+  when 'REJECTED' then 'rejected'
+  else 'pending'
+end
+```
 
 ## Current understanding
 
@@ -145,6 +193,33 @@ These are required because the legacy project does not safely have equivalent no
 10. `portal_inventory_changes`
 11. `portal_inventory_uploads`
 
+## Recommended legacy/audit fields for production tables
+
+Because all old history will be migrated, production portal tables should keep legacy source references:
+
+### `portal_orders`
+
+Recommended extra fields:
+
+- `legacy_source text default 'portal'`
+- `legacy_order_no text`
+- `legacy_status text`
+- `legacy_approval_status text`
+- `legacy_created_at timestamptz`
+- `legacy_request_count int default 0`
+- `imported_at timestamptz`
+
+### `portal_order_items`
+
+Recommended extra fields:
+
+- `legacy_request_id text`
+- `legacy_status text`
+- `legacy_approval_status text`
+- `imported_at timestamptz`
+
+These fields allow the new portal to use clean workflow status while preserving the original old-system wording for audit/reference.
+
 ## Production order status rules to preserve
 
 ### Row/item status
@@ -167,6 +242,7 @@ Important:
 - `partially_received` is not closed.
 - Future DBMS status uploads can add new billing chunks to the same item row.
 - Only exactly `received` and `rejected` are closed item states.
+- Historical legacy `Issued` is an exception during import only and maps to `received` because business confirmed it is closed/completed.
 
 ### Order status
 
@@ -247,6 +323,7 @@ Create `portal_` tables using the current tested `test_` schema, including all a
 - invoice and docket fields
 - billing chunk received fields
 - comments and attachment fields
+- legacy source/audit fields
 - indexes
 - RLS policies
 
@@ -284,12 +361,13 @@ For each unique legacy `OrderNo`:
 - create status/audit seed event in `portal_order_events`
 - preserve original creation/processed dates where possible
 - preserve original order number, final order number, branch, order type, order for, customer, machine, call id and warranty status
+- preserve raw `requests.Status` and `requests.ApprovalStatus` in legacy fields or event metadata
 
 Important:
 
 - Closed historical orders will still be imported.
 - Closed historical orders should not be counted as active in-transit/workflow after import.
-- We must create a status mapping from old `requests.Status` and `requests.ApprovalStatus` before writing final import SQL.
+- Use the approved mapping table above when writing final import SQL.
 
 ### Phase 6: Migrate billing/docket history
 
@@ -359,6 +437,7 @@ Before real cutover, use a small group of test production rows:
 - receive final chunk
 - confirm order becomes received
 - test inventory lookup and in-transit calculation
+- verify imported legacy `Issued` rows are not counted as active work
 
 ### Phase 10: Cutover window
 
@@ -397,15 +476,14 @@ If anything fails seriously:
 
 ## Decisions still needed before final SQL writing
 
-1. Exact old `requests.Status` values and how each should map to new portal status.
-2. Exact old `requests.ApprovalStatus` values and how each should map to new approval status.
-3. Exact `requests` column names for invoice, docket, billing date, transport, billed qty, edited qty and comments.
-4. Whether legacy attachments exist and where they are stored.
-5. Final go-live date/time and freeze window.
+1. Exact `requests` column names for invoice, docket, billing date, transport, billed qty, edited qty and comments.
+2. Whether legacy attachments exist and where they are stored.
+3. Final go-live date/time and freeze window.
+4. Final user list with email addresses for Supabase Auth creation.
 
 ## Recommended next action
 
-Run the read-only schema and status discovery SQL, then paste the results into ChatGPT. After that, write the final production migration SQL in three scripts:
+Run the read-only schema discovery SQL and paste the `requests` column list into ChatGPT. After that, write the final production migration SQL in three scripts:
 
 1. `create_portal_production_schema.sql`
 2. `migrate_legacy_requests_to_portal.sql`
