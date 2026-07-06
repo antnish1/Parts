@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
+import { getBranchCalculationScope } from './branchCalculation.service';
 
 type TestUsageRow = {
   id: string;
@@ -53,13 +54,14 @@ async function attachBillingChunks(rows: TestUsageRow[]) {
 
 export async function getTestLast30QtyByBranchPart(branch: string, partNo: string, _days = 30) {
   const normalizedPartNo = normalizePartNo(partNo);
-  if (!branch || !normalizedPartNo) return 0;
+  const branchScope = await getBranchCalculationScope(branch);
+  if (!branchScope.length || !normalizedPartNo) return 0;
 
   const { data, error } = await supabase
     .from('portal_order_items')
     .select('id, part_no, qty, edited_qty, billed_qty, row_status, portal_orders!inner(branch, status, approval_status)')
     .eq('part_no', normalizedPartNo)
-    .eq('portal_orders.branch', branch)
+    .in('portal_orders.branch', branchScope)
     .neq('portal_orders.status', 'received')
     .neq('portal_orders.status', 'issued')
     .neq('portal_orders.status', 'rejected')
