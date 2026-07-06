@@ -1,7 +1,6 @@
 import { supabase } from '../lib/supabase';
 
 type ProfileRow = { id?: string | null; role: string | null; branch: string | null; is_active: boolean | null };
-type BranchRow = { branch_name: string; branch_code: string };
 
 export function normalizeBranchKey(value: string | null | undefined) {
   return (value || '').trim().replace(/[\s_-]+/g, '').toUpperCase();
@@ -61,26 +60,6 @@ export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
 
   const values = new Set<string>();
   if (row.branch) values.add(row.branch);
-  const branchKey = normalizeBranchKey(row.branch);
-  if (!branchKey) return [];
-
-  const { data: branches, error: branchError } = await supabase
-    .from('branch_mapping')
-    .select('branch_name, branch_code')
-    .eq('is_active', true);
-
-  if (branchError) {
-    console.warn('Branch scope mapping lookup failed.', branchError.message);
-    return toList(values);
-  }
-
-  ((branches ?? []) as BranchRow[]).forEach((branch) => {
-    if (normalizeBranchKey(branch.branch_name) === branchKey || normalizeBranchKey(branch.branch_code) === branchKey) {
-      values.add(branch.branch_name);
-      values.add(branch.branch_code);
-    }
-  });
-
   return toList(values);
 }
 
