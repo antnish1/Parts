@@ -7,3 +7,5 @@ Track Orders fixes deployed.
 Order detail summary fields deployed.
 
 Track order totals deployed.
+
+Redeploy track order totals.
