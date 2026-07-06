@@ -199,6 +199,24 @@ update public.portal_inventory_changes
 set branch_key = coalesce(public.resolve_portal_branch(branch_name), public.resolve_portal_branch(branch_code))
 where branch_key is null;
 
+-- Existing imports can contain duplicate inventory rows after resolving branch aliases.
+-- Keep the latest row per canonical branch + item, then create the uniqueness guard.
+with ranked_inventory as (
+  select
+    id,
+    row_number() over (
+      partition by branch_key, item_code
+      order by report_date desc nulls last, updated_at desc nulls last, id desc
+    ) as rn
+  from public.portal_inventory_current
+  where branch_key is not null
+    and nullif(trim(item_code), '') is not null
+)
+delete from public.portal_inventory_current c
+using ranked_inventory r
+where c.id = r.id
+  and r.rn > 1;
+
 -- The old branch_code/item_code uniqueness cannot represent JABALPUR BHL vs HL vs PARTS because all use DFM003.
 do $$
 begin
@@ -211,9 +229,9 @@ begin
   end if;
 end $$;
 
+drop index if exists public.uq_portal_inventory_current_branch_key_item;
 create unique index if not exists uq_portal_inventory_current_branch_key_item
-on public.portal_inventory_current(branch_key, item_code)
-where branch_key is not null;
+on public.portal_inventory_current(branch_key, item_code);
 
 create index if not exists idx_portal_profiles_branch_key on public.portal_profiles(branch);
 create index if not exists idx_portal_orders_branch_key on public.portal_orders(branch);
