@@ -58,6 +58,20 @@ Final go/no-go summary:
 
 Result: import count reconciliation passed.
 
+## Billing reconciliation total
+
+Status: received from Nishant after script 003 billing total query.
+
+| billing_chunk_count | total_billed_qty | total_received_qty |
+| ---: | ---: | ---: |
+| 1878 | 30272.00 | 22651.00 |
+
+Observation:
+
+- Billing chunk count matches the import count of 1878.
+- Total billed quantity is greater than total received quantity, which is expected because not every dispatched/billed part has been received yet.
+- Difference between billed and received quantity: 7621.00.
+
 ## Docket reconciliation sample
 
 Status: received from Nishant after script 003 docket sample query.
@@ -75,6 +89,24 @@ Recommendation before cutover:
 - Docket Scan should ignore blank docket numbers and placeholder docket `0`.
 - Legacy import data does not need to be deleted for docket `0`; the scanner/search UI can simply exclude it.
 
+## Date reconciliation
+
+Status: completed by Nishant after running final date fix scripts.
+
+Results:
+
+| check | result |
+| --- | ---: |
+| remaining_dot_format_order_reg_dates | 0 |
+
+Final date failure verification returned no rows.
+
+Observation:
+
+- Excel serial dates such as `46122` were fixed.
+- Dot-format dates such as `12.05.2026` were fixed.
+- Legacy order registration date parsing is now clear for imported rows.
+
 ## Current status
 
 The database has passed the first critical migration checks:
@@ -82,7 +114,9 @@ The database has passed the first critical migration checks:
 - Every legacy `requests` row was imported as one `portal_order_items` row.
 - Distinct legacy orders match imported `portal_orders`.
 - Billing chunks were imported into `portal_order_item_billings`.
+- Billing totals were received and recorded.
 - Docket-wise billing chunks are available for scanner verification.
+- Date reconciliation is complete.
 
 ## Next required checks before app switch
 
@@ -96,7 +130,5 @@ Especially verify:
 2. Imported items without matching legacy request returns zero rows.
 3. Portal item status distribution looks correct.
 4. Portal order status distribution looks correct.
-5. Billing chunks quantity totals look reasonable.
-6. Date parse failures are acceptable or corrected.
 
 Only after these checks pass should the app code and Edge Functions be switched to `portal_` tables.
