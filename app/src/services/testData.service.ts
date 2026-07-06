@@ -69,8 +69,8 @@ export type CreateTestOrderInput = {
 function friendlyOrderError(message: string) {
   const text = message.toLowerCase();
   if (text.includes('branch user can create orders only for own branch')) return 'Your login is mapped to another branch. Please select your own branch or update the profile branch in Developer Workspace.';
-  if (text.includes('no active profile') || text.includes('profile') && text.includes('linked')) return 'No active profile is linked with this login. Please check test_profiles.auth_user_id in Developer Workspace.';
-  if (text.includes('active users') || text.includes('profile_inactive')) return 'Your user profile is inactive or not linked with this login. Please check test_profiles.auth_user_id.';
+  if (text.includes('no active profile') || text.includes('profile') && text.includes('linked')) return 'No active profile is linked with this login. Please check portal_profiles.auth_user_id in Developer Workspace.';
+  if (text.includes('active users') || text.includes('profile_inactive')) return 'Your user profile is inactive or not linked with this login. Please check portal_profiles.auth_user_id.';
   if (text.includes('role cannot create')) return 'This user role cannot create orders.';
   if (text.includes('approver')) return 'Please select an active approver before placing the order.';
   if (text.includes('duplicate item')) return message;
@@ -96,8 +96,8 @@ async function readFunctionError(error: unknown) {
 export async function getTestOrders(): Promise<TestOrder[]> {
   const branchValues = await getCurrentBranchScopeValues();
   let query = supabase
-    .from('test_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:test_profiles!test_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
+    .from('portal_orders')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -108,7 +108,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
   const { data, error } = await query;
 
   if (error) {
-    console.error('Failed to load test orders', error);
+    console.error('Failed to load portal orders', error);
     return [];
   }
 
@@ -117,7 +117,7 @@ export async function getTestOrders(): Promise<TestOrder[]> {
   if (ids.length === 0) return orders;
 
   const { data: itemRows, error: itemError } = await supabase
-    .from('test_order_items')
+    .from('portal_order_items')
     .select('order_id, row_status, qty, edited_qty, billed_qty')
     .in('order_id', ids);
 
