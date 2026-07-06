@@ -3,6 +3,7 @@ import { getCurrentBranchScopeValues } from './branchScope.service';
 
 export type TestDocketRow = {
   id: string;
+  source_type: 'billing' | 'item';
   order_id: string;
   item_id: string;
   order_no: string;
@@ -39,6 +40,10 @@ function safeSearch(value: string) {
   return normalizeDocketNo(value).replace(/[^A-Z0-9/_-]/g, '');
 }
 
+function docketKey(value: string | null | undefined) {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -47,6 +52,10 @@ function one<T>(value: T | T[] | null | undefined): T | null {
 function toNumber(value: unknown) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizedStatus(value: unknown) {
+  return String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
 
 type RawDocketChunk = {
@@ -105,11 +114,52 @@ type RawDocketChunk = {
   }> | null;
 };
 
-function normalizeRow(row: RawDocketChunk): TestDocketRow {
+type RawItemDocketRow = {
+  id: string;
+  order_id: string;
+  part_no: string;
+  description: string | null;
+  qty: number | null;
+  edited_qty: number | null;
+  billed_qty: number | null;
+  row_status: string | null;
+  dbms_invoice_no: string | null;
+  dbms_invoice_date: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
+  received_date: string | null;
+  created_at: string;
+  order?: {
+    id: string;
+    order_no: string;
+    final_order_no: string | null;
+    branch: string;
+    order_type: string | null;
+    order_for: string | null;
+    customer_name: string | null;
+    machine_no: string | null;
+    status: string;
+    approval_status: string | null;
+  } | Array<{
+    id: string;
+    order_no: string;
+    final_order_no: string | null;
+    branch: string;
+    order_type: string | null;
+    order_for: string | null;
+    customer_name: string | null;
+    machine_no: string | null;
+    status: string;
+    approval_status: string | null;
+  }> | null;
+};
+
+function normalizeChunkRow(row: RawDocketChunk): TestDocketRow {
   const order = one(row.order);
   const item = one(row.item);
   return {
     id: row.id,
+    source_type: 'billing',
     order_id: row.order_id,
     item_id: row.item_id,
     order_no: order?.order_no ?? row.order_no,
@@ -139,33 +189,108 @@ function normalizeRow(row: RawDocketChunk): TestDocketRow {
   };
 }
 
-export async function lookupTestDocketRows(value: string): Promise<TestDocketRow[]> {
-  const docket = safeSearch(value);
-  if (!docket) return [];
-  const branchValues = await getCurrentBranchScopeValues();
+function normalizeItemRow(row: RawItemDocketRow): TestDocketRow {
+  const order = one(row.order);
+  const status = normalizedStatus(row.row_status);
+  const billed = toNumber(row.billed_qty);
+  const received = ['received', 'issued'].includes(status) ? billed : 0;
+  return {
+    id: row.id,
+    source_type: 'item',
+    order_id: row.order_id,
+    item_id: row.id,
+    order_no: order?.order_no ?? '-',
+    final_order_no: order?.final_order_no ?? null,
+    branch: order?.branch ?? '-',
+    order_type: order?.order_type ?? null,
+    order_for: order?.order_for ?? null,
+    customer_name: order?.customer_name ?? null,
+    machine_no: order?.machine_no ?? null,
+    order_status: order?.status ?? '-',
+    approval_status: order?.approval_status ?? null,
+    part_no: row.part_no,
+    description: row.description,
+    ordered_qty: toNumber(row.qty),
+    edited_qty: row.edited_qty ?? null,
+    item_status: row.row_status,
+    invoice_no: row.dbms_invoice_no,
+    billing_date: row.dbms_invoice_date,
+    docket_no: row.docket_no,
+    transport_name: row.transport_name,
+    delivery_no: null,
+    billed_qty: billed,
+    received_qty: received,
+    received_at: row.received_date,
+    raw_status: row.row_status,
+    created_at: row.created_at,
+  };
+}
+
+function matchesDocket(row: { docket_no: string | null | undefined }, needle: string) {
+  return docketKey(row.docket_no) === needle;
+}
+
+async function fetchBillingRows(docket: string, branchValues: string[] | null | undefined) {
+  const targetKey = docketKey(docket);
+  if (!targetKey) return [];
 
   let query = supabase
     .from('test_order_item_billings')
     .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, raw_status, created_at, order:test_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status), item:test_order_items!inner(id, part_no, description, qty, edited_qty, row_status)')
-    .eq('docket_no', docket)
-    .order('order_no', { ascending: true })
-    .order('part_no', { ascending: true })
-    .limit(200);
+    .not('docket_no', 'is', null)
+    .limit(3000);
 
   if (branchValues?.length) query = query.in('order.branch', branchValues);
 
   const { data, error } = await query;
   if (error) throw error;
-  return ((data ?? []) as unknown as RawDocketChunk[]).map(normalizeRow);
+  return ((data ?? []) as unknown as RawDocketChunk[]).filter((row) => matchesDocket(row, targetKey)).map(normalizeChunkRow);
+}
+
+async function fetchItemRows(docket: string, branchValues: string[] | null | undefined) {
+  const targetKey = docketKey(docket);
+  if (!targetKey) return [];
+
+  let query = supabase
+    .from('test_order_items')
+    .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, created_at, order:test_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status)')
+    .not('docket_no', 'is', null)
+    .limit(3000);
+
+  if (branchValues?.length) query = query.in('order.branch', branchValues);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return ((data ?? []) as unknown as RawItemDocketRow[]).filter((row) => matchesDocket(row, targetKey)).map(normalizeItemRow);
+}
+
+export async function lookupTestDocketRows(value: string): Promise<TestDocketRow[]> {
+  const docket = safeSearch(value);
+  if (!docket) return [];
+  const branchValues = await getCurrentBranchScopeValues();
+
+  const billingRows = await fetchBillingRows(docket, branchValues);
+  const itemRows = await fetchItemRows(docket, branchValues);
+  const chunkItemIds = new Set(billingRows.map((row) => row.item_id));
+  const fallbackItemRows = itemRows.filter((row) => !chunkItemIds.has(row.item_id));
+
+  return [...billingRows, ...fallbackItemRows].sort((a, b) => {
+    const orderCompare = String(a.order_no).localeCompare(String(b.order_no));
+    if (orderCompare !== 0) return orderCompare;
+    return String(a.part_no).localeCompare(String(b.part_no));
+  }).slice(0, 200);
 }
 
 export async function receiveTestDocketRow(row: TestDocketRow) {
-  if (!row.id) throw new Error('Billing row id is required.');
-  if (row.received_qty >= row.billed_qty && row.billed_qty > 0) throw new Error('This row is already received.');
+  if (!row.id) throw new Error('Docket row id is required.');
+  const status = normalizedStatus(row.item_status || row.order_status);
+  if ((row.received_qty >= row.billed_qty && row.billed_qty > 0) || status === 'received' || status === 'issued') throw new Error('This row is already received.');
 
-  const { data, error } = await supabase.functions.invoke('docket-receive-action', {
-    body: { billingId: row.id },
-  });
+  const body = row.source_type === 'billing'
+    ? { billingId: row.id }
+    : { itemId: row.item_id, docketNo: row.docket_no };
+
+  const { data, error } = await supabase.functions.invoke('docket-receive-action', { body });
   if (error) throw error;
   if (data?.error) throw new Error(String(data.error));
   return data;
