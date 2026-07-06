@@ -14,13 +14,7 @@ const CUSTOMER_COLUMN_CANDIDATES = ['customer_name', 'customername', 'customer',
 const INSERT_MACHINE_COLUMNS = ['machine_no', 'machine_number', 'Machine No', 'Machine No.', 'Machine Number'];
 const INSERT_CUSTOMER_COLUMNS = ['customer_name', 'customername', 'customer', 'Customer Name', 'party_name', 'name'];
 
-type BranchMapping = { branch_name: string; branch_code: string };
 type MachineMasterSaveResult = { saved: boolean; warning?: string };
-
-function findBranchMapping(branches: BranchMapping[], value: string) {
-  const key = normalizeBranchKey(value);
-  return branches.find((branch) => normalizeBranchKey(branch.branch_name) === key || normalizeBranchKey(branch.branch_code) === key) ?? null;
-}
 
 function errorMessage(error: unknown) {
   if (!error) return '';
@@ -120,19 +114,11 @@ serve(async (req) => {
 
   if (!branch || !orderType || !orderFor) return fail('Branch, order type and order for are required');
 
-  const { data: branchRows, error: branchError } = await adminClient
-    .from('branch_mapping')
-    .select('branch_name, branch_code')
-    .eq('is_active', true);
-  if (branchError) return fail(branchError.message, 'BRANCH_LOOKUP_FAILED');
-  const branches = (branchRows ?? []) as BranchMapping[];
-  const submittedBranch = findBranchMapping(branches, branch);
-  const profileBranch = findBranchMapping(branches, profile.branch ?? '');
-  const canonicalBranch = submittedBranch?.branch_name ?? branch;
+  const canonicalBranch = branch;
 
   if (profile.role === 'branch') {
-    const submittedKey = normalizeBranchKey(submittedBranch?.branch_name ?? branch);
-    const profileKey = normalizeBranchKey(profileBranch?.branch_name ?? profile.branch ?? '');
+    const submittedKey = normalizeBranchKey(branch);
+    const profileKey = normalizeBranchKey(profile.branch ?? '');
     if (!submittedKey || !profileKey || submittedKey !== profileKey) {
       return fail(`Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}`, 'BRANCH_MISMATCH');
     }
