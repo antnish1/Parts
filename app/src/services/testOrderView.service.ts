@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
 import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
+import { getBranchCalculationScope } from './branchCalculation.service';
 
 export type TestOrderView = {
   id: string;
@@ -211,13 +212,14 @@ async function getBillingChunksForItems(itemIds: string[]) {
 async function getInTransitQtyByPart(branch: string, partNos: string[]) {
   const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
   const result: Record<string, number> = {};
-  if (!branch || normalizedParts.length === 0) return result;
+  const branchScope = await getBranchCalculationScope(branch);
+  if (!branchScope.length || normalizedParts.length === 0) return result;
 
   const { data, error } = await supabase
     .from('portal_order_items')
     .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status, portal_orders!inner(branch, status, approval_status)')
     .in('part_no', normalizedParts)
-    .eq('portal_orders.branch', branch)
+    .in('portal_orders.branch', branchScope)
     .neq('portal_orders.status', 'received')
     .neq('portal_orders.status', 'issued')
     .neq('portal_orders.status', 'rejected')

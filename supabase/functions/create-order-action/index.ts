@@ -7,7 +7,6 @@ const fail = (message: string, code = 'ORDER_CREATE_VALIDATION') => json({ ok: f
 const clean = (value: unknown) => String(value ?? '').trim();
 const normalizePart = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
 const normalizeMachine = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
-const normalizeBranchKey = (value: unknown) => clean(value).replace(/[\s_-]+/g, '').toUpperCase();
 
 const MACHINE_COLUMN_CANDIDATES = ['machine_no', 'machine_number', 'machine', 'machine no', 'machine no.', 'machine number', 'Machine No', 'Machine No.', 'Machine Number', 'MACHINE_NO'];
 const CUSTOMER_COLUMN_CANDIDATES = ['customer_name', 'customername', 'customer', 'customer name', 'Customer Name', 'Customer', 'party_name', 'partyname', 'name'];
@@ -21,6 +20,12 @@ function errorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && 'message' in error) return String((error as { message?: unknown }).message ?? '');
   return String(error);
+}
+
+async function resolveBranch(adminClient: ReturnType<typeof createClient>, value: string) {
+  const { data, error } = await adminClient.rpc('resolve_portal_branch', { value });
+  if (error) throw error;
+  return clean(data);
 }
 
 function uniqueInsertPayloads(machineNo: string, customerName: string) {
@@ -114,14 +119,18 @@ serve(async (req) => {
 
   if (!branch || !orderType || !orderFor) return fail('Branch, order type and order for are required');
 
-  const canonicalBranch = branch;
+  let canonicalBranch = '';
+  let profileBranch = '';
+  try {
+    canonicalBranch = await resolveBranch(adminClient, branch);
+    profileBranch = await resolveBranch(adminClient, profile.branch ?? '');
+  } catch (error) {
+    return fail(errorMessage(error) || 'Branch mapping lookup failed', 'BRANCH_MAPPING_FAILED');
+  }
 
-  if (profile.role === 'branch') {
-    const submittedKey = normalizeBranchKey(branch);
-    const profileKey = normalizeBranchKey(profile.branch ?? '');
-    if (!submittedKey || !profileKey || submittedKey !== profileKey) {
-      return fail(`Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}`, 'BRANCH_MISMATCH');
-    }
+  if (!canonicalBranch) return fail(`Selected branch is not mapped in portal_branches: ${branch}`, 'BRANCH_NOT_MAPPED');
+  if (profile.role === 'branch' && (!profileBranch || canonicalBranch !== profileBranch)) {
+    return fail(`Branch user can create orders only for own branch. Login branch: ${profile.branch || 'Unassigned'}, selected branch: ${branch}`, 'BRANCH_MISMATCH');
   }
 
   if (!approverId) return fail('Approver is required', 'APPROVER_REQUIRED');
@@ -185,8 +194,8 @@ serve(async (req) => {
     if (itemError) throw itemError;
 
     const machineNote = machineMasterResult?.warning ? ` Machine master save skipped: ${machineMasterResult.warning}` : '';
-    await adminClient.from('portal_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. ${itemRows.length} item row(s).${machineNote}` });
-    return json({ ok: true, id: order.id, order_no: order.order_no, machine_master_warning: machineMasterResult?.warning ?? null });
+    await adminClient.from('portal_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. Branch: ${canonicalBranch}. ${itemRows.length} item row(s).${machineNote}` });
+    return json({ ok: true, id: order.id, order_no: order.order_no, branch: canonicalBranch, machine_master_warning: machineMasterResult?.warning ?? null });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
   }

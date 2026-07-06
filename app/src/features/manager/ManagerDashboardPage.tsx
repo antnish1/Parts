@@ -52,21 +52,29 @@ export function ManagerDashboardPage() {
 
   const inventoryRows = hasInventorySearch ? inventoryQuery.data ?? [] : [];
   const txnRows = hasInventorySearch ? txnQuery.data ?? [] : [];
-  const inventoryBranches = useMemo(() => [...new Set(inventoryRows.map((row) => row.branch_code))].sort(), [inventoryRows]);
+  const inventoryBranches = useMemo(() => {
+    const map = new Map<string, string>();
+    inventoryRows.forEach((row) => {
+      const key = row.branch_key || row.branch_code;
+      if (!key) return;
+      map.set(key, row.branch_name ? `${row.branch_name} (${row.branch_code})` : key);
+    });
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [inventoryRows]);
 
   function exportInventory() {
     downloadCsv(
       `manager-inventory-${effectiveInventoryDate || 'latest'}.csv`,
-      ['Report Date', 'Branch Code', 'Branch Name', 'Part No', 'Item Name', 'Group', 'UOM', 'Qty', 'DNP', 'Value'],
-      inventoryRows.map((row) => [row.report_date, row.branch_code, row.branch_name, row.item_code, row.item_name, row.item_group, row.uom, row.qty, row.dnp, row.inv_value]),
+      ['Report Date', 'Branch Key', 'Branch Code', 'Branch Name', 'Part No', 'Item Name', 'Group', 'UOM', 'Qty', 'DNP', 'Value'],
+      inventoryRows.map((row) => [row.report_date, row.branch_key, row.branch_code, row.branch_name, row.item_code, row.item_name, row.item_group, row.uom, row.qty, row.dnp, row.inv_value]),
     );
   }
 
   function exportTransactions() {
     downloadCsv(
       `manager-inventory-transactions-${effectiveInventoryDate || 'latest'}.csv`,
-      ['Report Date', 'Branch Code', 'Branch Name', 'Part No', 'Item Name', 'Group', 'Received', 'Issued', 'Closing Balance', 'Value'],
-      txnRows.map((row) => [row.report_date, row.branch_code, row.branch_name, row.item_code, row.item_name, row.item_group, row.received, row.issued, row.closing_balance, row.closing_value]),
+      ['Report Date', 'Branch Key', 'Branch Code', 'Branch Name', 'Part No', 'Item Name', 'Group', 'Received', 'Issued', 'Closing Balance', 'Value'],
+      txnRows.map((row) => [row.report_date, row.branch_key, row.branch_code, row.branch_name, row.item_code, row.item_name, row.item_group, row.received, row.issued, row.closing_balance, row.closing_value]),
     );
   }
 
@@ -81,12 +89,12 @@ export function ManagerDashboardPage() {
           </div>
         </div>
 
-        <div className="mb-2 grid gap-2 lg:grid-cols-[1fr_150px_160px]">
+        <div className="mb-2 grid gap-2 lg:grid-cols-[1fr_150px_180px]">
           <input className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" placeholder="Enter part no to view inventory position" value={inventorySearch} onChange={(event) => setInventorySearch(event.target.value)} />
           <input type="date" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={inventoryDate} onChange={(event) => setInventoryDate(event.target.value)} />
           <select className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" value={inventoryBranch} onChange={(event) => setInventoryBranch(event.target.value)}>
-            <option value="all">All Branch Codes</option>
-            {inventoryBranches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+            <option value="all">All Branches</option>
+            {inventoryBranches.map(([branchKey, label]) => <option key={branchKey} value={branchKey}>{label}</option>)}
           </select>
         </div>
 
@@ -94,10 +102,11 @@ export function ManagerDashboardPage() {
 
         {hasInventorySearch ? (
           <div className="overflow-hidden rounded-md border border-[#263244]">
-            <table className="w-full min-w-[1040px] border-collapse text-left text-xs">
+            <table className="w-full min-w-[1100px] border-collapse text-left text-xs">
               <thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]">
                 <tr>
-                  <th className="px-2.5 py-2">Branch</th>
+                  <th className="px-2.5 py-2">Branch Key</th>
+                  <th className="px-2.5 py-2">Branch Code</th>
                   <th className="px-2.5 py-2">Branch Name</th>
                   <th className="px-2.5 py-2">Part No</th>
                   <th className="px-2.5 py-2">Item Name</th>
@@ -111,7 +120,8 @@ export function ManagerDashboardPage() {
               <tbody className="divide-y divide-[#263244]">
                 {inventoryRows.map((row) => (
                   <tr key={row.id} className="bg-[#111827]">
-                    <td className="px-2.5 py-2 font-black text-white">{row.branch_code}</td>
+                    <td className="px-2.5 py-2 font-black text-white">{row.branch_key ?? '-'}</td>
+                    <td className="px-2.5 py-2 text-[#d8e3ee]">{row.branch_code}</td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{row.branch_name ?? '-'}</td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_code}</td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_name ?? '-'}</td>
@@ -134,10 +144,11 @@ export function ManagerDashboardPage() {
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Part Transactions • Received / Issued Movement</p>
           {txnQuery.isLoading ? <p className="text-xs text-[#c7d2df]">Loading transactions...</p> : null}
           <div className="overflow-hidden rounded-md border border-[#263244]">
-            <table className="w-full min-w-[980px] border-collapse text-left text-xs">
+            <table className="w-full min-w-[1060px] border-collapse text-left text-xs">
               <thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]">
                 <tr>
-                  <th className="px-2.5 py-2">Branch</th>
+                  <th className="px-2.5 py-2">Branch Key</th>
+                  <th className="px-2.5 py-2">Branch Code</th>
                   <th className="px-2.5 py-2">Part No</th>
                   <th className="px-2.5 py-2">Item Name</th>
                   <th className="px-2.5 py-2 text-right">Received</th>
@@ -149,7 +160,8 @@ export function ManagerDashboardPage() {
               <tbody className="divide-y divide-[#263244]">
                 {txnRows.map((row) => (
                   <tr key={row.id} className="bg-[#111827]">
-                    <td className="px-2.5 py-2 font-black text-white">{row.branch_code}</td>
+                    <td className="px-2.5 py-2 font-black text-white">{row.branch_key ?? '-'}</td>
+                    <td className="px-2.5 py-2 text-[#d8e3ee]">{row.branch_code}</td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_code}</td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{row.item_name ?? '-'}</td>
                     <td className="px-2.5 py-2 text-right text-[#d8e3ee]">{Number(row.received ?? 0)}</td>
