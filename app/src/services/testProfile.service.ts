@@ -35,7 +35,7 @@ export type UpdateTestProfileInput = {
 
 function friendlyUserError(message: string) {
   const text = message.toLowerCase();
-  if (text.includes('user id') || text.includes('login_id')) return 'This User ID is already assigned. Please use another User ID.';
+  if (text.includes('user id') || text.includes('legacy_user_id') || text.includes('login_id')) return 'This User ID is already assigned. Please use another User ID.';
   if (text.includes('already') || text.includes('registered') || text.includes('duplicate')) return 'This email or User ID is already registered. Please use another User ID, or edit the existing user profile.';
   if (text.includes('password')) return message || 'Password is not valid.';
   if (text.includes('unauthorized') || text.includes('jwt')) return 'Your login session expired. Please logout and login again as developer.';
@@ -59,7 +59,7 @@ async function readFunctionError(error: unknown) {
 
 export async function getTestApprovers(): Promise<TestProfileOption[]> {
   const { data, error } = await supabase
-    .from('test_profiles')
+    .from('portal_profiles')
     .select('id, full_name, branch, role')
     .in('role', ['super', 'manager'])
     .eq('is_active', true)
@@ -67,7 +67,7 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
     .order('full_name', { ascending: true });
 
   if (error) {
-    console.error('Failed to load test approvers', error);
+    console.error('Failed to load portal approvers', error);
     return [];
   }
 
@@ -76,13 +76,13 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
 
 export async function getTestProfiles(): Promise<TestProfileRow[]> {
   const { data, error } = await supabase
-    .from('test_profiles')
-    .select('id, full_name, branch, role, login_id, is_active, created_at')
+    .from('portal_profiles')
+    .select('id, full_name, branch, role, login_id:legacy_user_id, is_active, created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (error) {
-    console.error('Failed to load test profiles', error);
+    console.error('Failed to load portal profiles', error);
     return [];
   }
 
@@ -95,8 +95,9 @@ export async function createTestProfile(input: CreateTestProfileInput) {
   const role = input.role.trim();
   if (!fullName || !branch || !role) throw new Error('Name, branch and role are required.');
 
-  const { error } = await supabase.from('test_profiles').insert({
+  const { error } = await supabase.from('portal_profiles').insert({
     full_name: fullName,
+    legacy_name: fullName,
     branch,
     role,
     is_active: true,
@@ -127,8 +128,8 @@ export async function setTestProfileActive(profileId: string, isActive: boolean)
   if (!profileId) throw new Error('Profile id is required.');
 
   const { data: profile, error: loadError } = await supabase
-    .from('test_profiles')
-    .select('id, full_name, branch, role, login_id')
+    .from('portal_profiles')
+    .select('id, full_name, branch, role, login_id:legacy_user_id')
     .eq('id', profileId)
     .maybeSingle();
   if (loadError) throw loadError;
