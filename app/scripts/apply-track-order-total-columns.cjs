@@ -18,3 +18,6 @@ if (fs.existsSync(newOrderPatch)) require(newOrderPatch);
 
 const trackMobileFilterPatch = path.join(__dirname, 'apply-track-mobile-filter-layout.cjs');
 if (fs.existsSync(trackMobileFilterPatch)) require(trackMobileFilterPatch);
+
+const cdNavPatch = path.join(__dirname, 'apply-cd-nav-patch.cjs');
+if (fs.existsSync(cdNavPatch)) require(cdNavPatch);
