@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Check, CheckCircle2, Clock, CreditCard, FileSignature, IndianRupee, Plus, RotateCcw, Search, X, XCircle } from 'lucide-react';
@@ -42,7 +42,7 @@ function StatCard({ label, value, icon: Icon }: { label: string; value: string; 
   );
 }
 
-function Dialog({ title, description, children, onClose }: { title: string; description?: string; children: React.ReactNode; onClose: () => void }) {
+function Dialog({ title, description, children, onClose }: { title: string; description?: string; children: ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-end bg-slate-950/55 p-3 backdrop-blur-sm sm:items-center sm:justify-center" onMouseDown={onClose}>
       <section className="w-full rounded-[2rem] border border-slate-200 bg-white p-4 shadow-2xl sm:max-w-lg sm:p-5" onMouseDown={(event) => event.stopPropagation()}>
