@@ -21,3 +21,6 @@ if (fs.existsSync(trackMobileFilterPatch)) require(trackMobileFilterPatch);
 
 const cdNavPatch = path.join(__dirname, 'apply-cd-nav-patch.cjs');
 if (fs.existsSync(cdNavPatch)) require(cdNavPatch);
+
+const actionBarPatch = path.join(__dirname, 'mobile-action-bar-fix.cjs');
+if (fs.existsSync(actionBarPatch)) require(actionBarPatch);
