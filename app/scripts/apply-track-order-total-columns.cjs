@@ -15,3 +15,6 @@ if (fs.existsSync(mobilePatch)) require(mobilePatch);
 
 const newOrderPatch = path.join(__dirname, 'apply-new-order-mobile-safety.cjs');
 if (fs.existsSync(newOrderPatch)) require(newOrderPatch);
+
+const trackMobileFilterPatch = path.join(__dirname, 'apply-track-mobile-filter-layout.cjs');
+if (fs.existsSync(trackMobileFilterPatch)) require(trackMobileFilterPatch);
