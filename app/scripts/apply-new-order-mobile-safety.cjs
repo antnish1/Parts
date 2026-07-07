@@ -26,4 +26,9 @@ text = text.replace(
   '<div className="overflow-x-auto rounded-xl border border-[#334155] bg-[#111827]">'
 );
 
+text = text.replace(
+  '<section className="rounded-xl border border-[#6b5b15] bg-[#0b1020] p-3 shadow-sm shadow-black/10">',
+  '<section className="rounded-xl border border-[#6b5b15] bg-[#0b1020] p-3 shadow-sm shadow-black/10" data-mobile-parts-builder>'
+);
+
 fs.writeFileSync(file, text, 'utf8');
