@@ -35,12 +35,17 @@ function isUploadsWorkspace(path: string) {
   return path.startsWith('/uploads');
 }
 
+function isCreditDispatchWorkspace(path: string) {
+  return path.startsWith('/credit-dispatch');
+}
+
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
   if (role === 'hq') return false;
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);
   if (isInventoryWorkspace(path)) return role === 'developer';
+  if (isCreditDispatchWorkspace(path)) return ['branch', 'manager', 'admin', 'developer', 'super'].includes(role);
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');
