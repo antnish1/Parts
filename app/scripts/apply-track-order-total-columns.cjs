@@ -24,3 +24,6 @@ if (fs.existsSync(cdNavPatch)) require(cdNavPatch);
 
 const actionBarPatch = path.join(__dirname, 'mobile-action-bar-fix.cjs');
 if (fs.existsSync(actionBarPatch)) require(actionBarPatch);
+
+const requestDialogPatch = path.join(__dirname, 'apply-request-form-dialogs.cjs');
+if (fs.existsSync(requestDialogPatch)) require(requestDialogPatch);
