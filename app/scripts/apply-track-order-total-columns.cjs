@@ -15,3 +15,6 @@ if (fs.existsSync(mobilePatch)) require(mobilePatch);
 
 const newOrderPatch = path.join(__dirname, 'apply-new-order-mobile-safety.cjs');
 if (fs.existsSync(newOrderPatch)) require(newOrderPatch);
+
+const navPatch = path.join(__dirname, 'apply-cd-nav-patch.cjs');
+if (fs.existsSync(navPatch)) require(navPatch);
