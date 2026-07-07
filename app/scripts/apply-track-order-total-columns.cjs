@@ -27,3 +27,6 @@ if (fs.existsSync(actionBarPatch)) require(actionBarPatch);
 
 const requestDialogPatch = path.join(__dirname, 'apply-request-form-dialogs.cjs');
 if (fs.existsSync(requestDialogPatch)) require(requestDialogPatch);
+
+const recoveryViewLinks = path.join(__dirname, 'apply-recovery-view-links.cjs');
+if (fs.existsSync(recoveryViewLinks)) require(recoveryViewLinks);
