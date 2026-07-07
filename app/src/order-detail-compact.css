@@ -166,3 +166,159 @@
   font-size: 12px !important;
   line-height: 14px !important;
 }
+
+@media (max-width: 767px) {
+  [data-theme='light-pro'] section:has(#order-comments) > div > .no-print:first-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    border-radius: 16px !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.08) !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) > div > .no-print:first-child input,
+  [data-theme='light-pro'] section:has(#order-comments) > div > .no-print:first-child button {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 42px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    line-height: 18px !important;
+    font-size: 12px !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) > div > .no-print:first-child input {
+    grid-column: 1 / -1 !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:first-of-type > div:nth-child(2) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) #order-comments form {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) #order-comments input,
+  [data-theme='light-pro'] section:has(#order-comments) #order-comments button,
+  [data-theme='light-pro'] section:has(#order-comments) #order-comments label {
+    width: 100% !important;
+    min-height: 42px !important;
+    height: auto !important;
+    justify-content: center !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type {
+    padding: 12px !important;
+    background: #f8fbff !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div {
+    overflow: visible !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > thead {
+    display: none !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody {
+    display: grid !important;
+    gap: 12px !important;
+    background: transparent !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    padding: 12px !important;
+    border: 1px solid #d9dee7 !important;
+    border-radius: 18px !important;
+    background: #ffffff !important;
+    box-shadow: 0 8px 22px rgba(16, 24, 40, 0.08) !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr:has(td[colspan]) {
+    display: block !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td {
+    display: block !important;
+    padding: 0 !important;
+    min-width: 0 !important;
+    word-break: break-word !important;
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(2),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(3),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(8),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(13),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(14) {
+    grid-column: 1 / -1 !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td::before {
+    display: block !important;
+    margin-bottom: 3px !important;
+    color: #667085 !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(1)::before { content: 'Chunks'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(2)::before { content: 'Part No'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(3)::before { content: 'Description'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(4)::before { content: 'Qty'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(5)::before { content: 'Billed'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(6)::before { content: 'Pending'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(7)::before { content: 'Value'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(8)::before { content: 'Status'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(9)::before { content: 'Processed'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(10)::before { content: 'Reg Date'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(11)::before { content: 'Bill No'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(12)::before { content: 'Billing Date'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(13)::before { content: 'Transport'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(14)::before { content: 'Docket'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(15)::before { content: 'Inventory'; }
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(16)::before { content: 'Prev 30D'; }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(4),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(5),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(6),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(7),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(15),
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type > div > table > tbody > tr > td:nth-child(16) {
+    border: 1px solid #d9dee7 !important;
+    border-radius: 12px !important;
+    background: #f8fbff !important;
+    padding: 8px 10px !important;
+    text-align: left !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type button {
+    min-height: 38px !important;
+    border-radius: 12px !important;
+  }
+
+  [data-theme='light-pro'] section:has(#order-comments) section:last-of-type table table {
+    min-width: 760px !important;
+  }
+}
