@@ -44,6 +44,12 @@ function docketKey(value: string | null | undefined) {
   return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
+function fieldMatches(value: string | null | undefined, needle: string) {
+  const key = docketKey(value);
+  if (!key || key === '0' || !needle) return false;
+  return key === needle || key.includes(needle) || needle.includes(key);
+}
+
 function one<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) return value[0] ?? null;
   return value ?? null;
@@ -74,44 +80,8 @@ type RawDocketChunk = {
   transport_name: string | null;
   raw_status: string | null;
   created_at: string;
-  order?: {
-    id: string;
-    order_no: string;
-    final_order_no: string | null;
-    branch: string;
-    order_type: string | null;
-    order_for: string | null;
-    customer_name: string | null;
-    machine_no: string | null;
-    status: string;
-    approval_status: string | null;
-  } | Array<{
-    id: string;
-    order_no: string;
-    final_order_no: string | null;
-    branch: string;
-    order_type: string | null;
-    order_for: string | null;
-    customer_name: string | null;
-    machine_no: string | null;
-    status: string;
-    approval_status: string | null;
-  }> | null;
-  item?: {
-    id: string;
-    part_no: string;
-    description: string | null;
-    qty: number | null;
-    edited_qty: number | null;
-    row_status: string | null;
-  } | Array<{
-    id: string;
-    part_no: string;
-    description: string | null;
-    qty: number | null;
-    edited_qty: number | null;
-    row_status: string | null;
-  }> | null;
+  order?: { id: string; order_no: string; final_order_no: string | null; branch: string; order_type: string | null; order_for: string | null; customer_name: string | null; machine_no: string | null; status: string; approval_status: string | null } | Array<{ id: string; order_no: string; final_order_no: string | null; branch: string; order_type: string | null; order_for: string | null; customer_name: string | null; machine_no: string | null; status: string; approval_status: string | null }> | null;
+  item?: { id: string; part_no: string; description: string | null; qty: number | null; edited_qty: number | null; row_status: string | null } | Array<{ id: string; part_no: string; description: string | null; qty: number | null; edited_qty: number | null; row_status: string | null }> | null;
 };
 
 type RawItemDocketRow = {
@@ -129,29 +99,7 @@ type RawItemDocketRow = {
   transport_name: string | null;
   received_date: string | null;
   created_at: string;
-  order?: {
-    id: string;
-    order_no: string;
-    final_order_no: string | null;
-    branch: string;
-    order_type: string | null;
-    order_for: string | null;
-    customer_name: string | null;
-    machine_no: string | null;
-    status: string;
-    approval_status: string | null;
-  } | Array<{
-    id: string;
-    order_no: string;
-    final_order_no: string | null;
-    branch: string;
-    order_type: string | null;
-    order_for: string | null;
-    customer_name: string | null;
-    machine_no: string | null;
-    status: string;
-    approval_status: string | null;
-  }> | null;
+  order?: { id: string; order_no: string; final_order_no: string | null; branch: string; order_type: string | null; order_for: string | null; customer_name: string | null; machine_no: string | null; status: string; approval_status: string | null } | Array<{ id: string; order_no: string; final_order_no: string | null; branch: string; order_type: string | null; order_for: string | null; customer_name: string | null; machine_no: string | null; status: string; approval_status: string | null }> | null;
 };
 
 function normalizeChunkRow(row: RawDocketChunk): TestDocketRow {
@@ -226,9 +174,15 @@ function normalizeItemRow(row: RawItemDocketRow): TestDocketRow {
   };
 }
 
-function matchesDocket(row: { docket_no: string | null | undefined }, needle: string) {
-  const key = docketKey(row.docket_no);
-  return key !== '' && key !== '0' && key === needle;
+function matchesBillingSearch(row: RawDocketChunk, needle: string) {
+  const order = one(row.order);
+  const item = one(row.item);
+  return [row.docket_no, row.invoice_no, row.delivery_no, row.order_no, order?.order_no, order?.final_order_no, order?.machine_no, order?.customer_name, row.part_no, item?.part_no, item?.description].some((value) => fieldMatches(value, needle));
+}
+
+function matchesItemSearch(row: RawItemDocketRow, needle: string) {
+  const order = one(row.order);
+  return [row.docket_no, row.dbms_invoice_no, order?.order_no, order?.final_order_no, order?.machine_no, order?.customer_name, row.part_no, row.description].some((value) => fieldMatches(value, needle));
 }
 
 async function fetchBillingRows(docket: string, branchValues: string[] | null | undefined) {
@@ -238,14 +192,13 @@ async function fetchBillingRows(docket: string, branchValues: string[] | null | 
   let query = supabase
     .from('portal_order_item_billings')
     .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, raw_status, created_at, order:portal_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status), item:portal_order_items!inner(id, part_no, description, qty, edited_qty, row_status)')
-    .not('docket_no', 'is', null)
     .limit(3000);
 
   if (branchValues?.length) query = query.in('order.branch', branchValues);
 
   const { data, error } = await query;
   if (error) throw error;
-  return ((data ?? []) as unknown as RawDocketChunk[]).filter((row) => matchesDocket(row, targetKey)).map(normalizeChunkRow);
+  return ((data ?? []) as unknown as RawDocketChunk[]).filter((row) => matchesBillingSearch(row, targetKey)).map(normalizeChunkRow);
 }
 
 async function fetchItemRows(docket: string, branchValues: string[] | null | undefined) {
@@ -255,14 +208,13 @@ async function fetchItemRows(docket: string, branchValues: string[] | null | und
   let query = supabase
     .from('portal_order_items')
     .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, created_at, order:portal_orders!inner(id, order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status, approval_status)')
-    .not('docket_no', 'is', null)
     .limit(3000);
 
   if (branchValues?.length) query = query.in('order.branch', branchValues);
 
   const { data, error } = await query;
   if (error) throw error;
-  return ((data ?? []) as unknown as RawItemDocketRow[]).filter((row) => matchesDocket(row, targetKey)).map(normalizeItemRow);
+  return ((data ?? []) as unknown as RawItemDocketRow[]).filter((row) => matchesItemSearch(row, targetKey)).map(normalizeItemRow);
 }
 
 export async function lookupTestDocketRows(value: string): Promise<TestDocketRow[]> {
