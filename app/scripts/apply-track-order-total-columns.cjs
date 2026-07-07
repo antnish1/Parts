@@ -9,3 +9,6 @@ if (fs.existsSync(inventoryPatch)) require(inventoryPatch);
 
 const warrantyPatch = path.join(__dirname, 'apply-warranty-super-access-patch.cjs');
 if (fs.existsSync(warrantyPatch)) require(warrantyPatch);
+
+const mobilePatch = path.join(__dirname, 'apply-mobile-shell-patch.cjs');
+if (fs.existsSync(mobilePatch)) require(mobilePatch);
