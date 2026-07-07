@@ -3,13 +3,15 @@ import { ActionLoader } from './FeedbackModal';
 
 type LoaderVariant = 'orbit' | 'scanner' | 'comet' | 'matrix' | 'pulse';
 
-const loadingWords = ['loading', 'verifying', 'checking', 'creating', 'saving', 'activating', 'deactivating', 'processing', 'uploading'];
+const loadingWords = ['verifying', 'checking', 'creating', 'saving', 'activating', 'deactivating', 'processing', 'uploading'];
+const ignoredBusyTexts = ['loading orders', 'loading order', 'approved orders', 'track orders', 'order tracking workspace'];
 
 function clean(value: string) { return value.replace(/\s+/g, ' ').trim(); }
 function includesAny(text: string, words: string[]) { const lower = text.toLowerCase(); return words.some((word) => lower.includes(word)); }
 
 function loaderFor(text: string): { label: string; variant: LoaderVariant } | null {
   const lower = text.toLowerCase();
+  if (ignoredBusyTexts.some((word) => lower.includes(word))) return null;
   if (!includesAny(lower, loadingWords)) return null;
   if (lower.includes('order')) return { label: 'Building order stream', variant: 'matrix' };
   if (lower.includes('comment')) return { label: 'Scanning comments', variant: 'scanner' };
@@ -60,7 +62,7 @@ export function GlobalStatusEffects() {
 
   return (
     <div data-status-effects>
-      {loader ? <div className="fixed bottom-5 right-5 z-[90] rounded-2xl border border-[#263244] bg-[#020617]/90 p-4 shadow-[0_0_40px_rgba(56,189,248,0.18)] backdrop-blur-md"><ActionLoader variant={loader.variant} label={loader.label} /></div> : null}
+      {loader ? <div className="fixed left-3 right-3 top-24 z-[90] rounded-2xl border border-[#263244] bg-[#020617]/92 p-4 shadow-[0_0_40px_rgba(56,189,248,0.18)] backdrop-blur-md sm:left-auto sm:right-5 sm:top-auto sm:bottom-5 sm:w-auto"><ActionLoader variant={loader.variant} label={loader.label} /></div> : null}
     </div>
   );
 }
