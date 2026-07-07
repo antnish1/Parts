@@ -18,3 +18,6 @@ if (fs.existsSync(newOrderPatch)) require(newOrderPatch);
 
 const navPatch = path.join(__dirname, 'apply-cd-nav-patch.cjs');
 if (fs.existsSync(navPatch)) require(navPatch);
+
+const formPatch = path.join(__dirname, 'apply-form-type-patch.cjs');
+if (fs.existsSync(formPatch)) require(formPatch);
