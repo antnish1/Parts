@@ -18,8 +18,12 @@ export type CreditDispatchRecord = {
   approval_status: 'Draft' | 'Pending Approval' | 'Approved' | 'Rejected' | 'Correction Required';
   recovery_status: 'Pending Payment' | 'Partial Payment' | 'Partial Payment - Overdue' | 'Payment Overdue' | 'Closed';
   remarks: string | null;
+  rejection_reason?: string | null;
+  correction_note?: string | null;
   customer_signature_path: string | null;
   issuer_signature_path: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -37,6 +41,17 @@ export type CreditDispatchFormInput = {
   remarks: string;
   customerSignatureDataUrl: string;
   issuerSignatureDataUrl: string;
+};
+
+export type CreditDispatchApprovalAction = 'Approved' | 'Rejected' | 'Correction Required';
+
+export type CreditDispatchPaymentInput = {
+  dispatchId: string;
+  receivedAmount: number;
+  receivedDate: string;
+  paymentMode: 'Cash' | 'UPI' | 'Bank' | 'Cheque' | 'Adjustment' | 'Other';
+  referenceNo?: string;
+  remarks?: string;
 };
 
 function dataUrlToBlob(dataUrl: string) {
@@ -63,12 +78,21 @@ async function uploadSignature(dataUrl: string, type: 'customer' | 'issuer') {
   return path;
 }
 
+async function addEvent(dispatchId: string, eventType: string, eventNote?: string) {
+  const { error } = await supabase.from('portal_credit_dispatch_events').insert({
+    dispatch_id: dispatchId,
+    event_type: eventType,
+    event_note: eventNote?.trim() || null,
+  });
+  if (error) throw error;
+}
+
 export async function getCreditDispatches() {
   const { data, error } = await supabase
     .from('portal_credit_dispatches')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(200);
+    .limit(300);
 
   if (error) throw error;
   return (data ?? []) as CreditDispatchRecord[];
@@ -103,14 +127,48 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
     .single();
 
   if (error) throw error;
+  await addEvent(data.id, 'Submitted for Approval', 'Credit dispatch request submitted digitally with customer and issuer signatures.');
+  return data as CreditDispatchRecord;
+}
 
-  await supabase.from('portal_credit_dispatch_events').insert({
-    dispatch_id: data.id,
-    event_type: 'Submitted for Approval',
-    event_note: 'Credit dispatch request submitted digitally with customer and issuer signatures.',
+export async function updateCreditDispatchApproval(dispatchId: string, action: CreditDispatchApprovalAction, note: string, approverProfileId?: string) {
+  const patch: Record<string, unknown> = {
+    approval_status: action,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (action === 'Approved') {
+    patch.approved_by = approverProfileId ?? null;
+    patch.approved_at = new Date().toISOString();
+    patch.rejection_reason = null;
+    patch.correction_note = null;
+  }
+
+  if (action === 'Rejected') {
+    patch.rejection_reason = note.trim() || 'Rejected by manager';
+  }
+
+  if (action === 'Correction Required') {
+    patch.correction_note = note.trim() || 'Correction required';
+  }
+
+  const { error } = await supabase.from('portal_credit_dispatches').update(patch).eq('id', dispatchId);
+  if (error) throw error;
+  await addEvent(dispatchId, action, note || action);
+}
+
+export async function addCreditDispatchPayment(input: CreditDispatchPaymentInput) {
+  const { error } = await supabase.from('portal_credit_dispatch_payments').insert({
+    dispatch_id: input.dispatchId,
+    received_amount: input.receivedAmount,
+    received_date: input.receivedDate,
+    payment_mode: input.paymentMode,
+    reference_no: input.referenceNo?.trim() || null,
+    remarks: input.remarks?.trim() || null,
   });
 
-  return data as CreditDispatchRecord;
+  if (error) throw error;
+  await addEvent(input.dispatchId, 'Payment Added', `${formatMoney(input.receivedAmount)} received on ${input.receivedDate}. ${input.remarks ?? ''}`);
 }
 
 export function formatMoney(value: number | null | undefined) {
