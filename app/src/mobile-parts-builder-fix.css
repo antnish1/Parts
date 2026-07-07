@@ -1,0 +1,34 @@
+@media (max-width: 767px) {
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(3),
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(6),
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(7) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    min-height: 58px !important;
+    line-height: 1.2 !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+  }
+
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(3)::before,
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(6)::before,
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(7)::before {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+  }
+
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(3),
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(6) {
+    font-weight: 800 !important;
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(7) {
+    font-weight: 900 !important;
+    color: #0f4c81 !important;
+  }
+}
