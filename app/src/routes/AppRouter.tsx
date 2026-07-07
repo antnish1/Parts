@@ -16,6 +16,8 @@ import { InventoryUploadPage } from '../features/inventory/InventoryUploadPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { UploadsPage } from '../features/uploads/UploadsPage';
 import { DocketScannerPage } from '../features/docket/DocketScannerPage';
+import { CreditDispatchListPage } from '../features/credit-dispatch/CreditDispatchListPage';
+import { NewCreditDispatchPage } from '../features/credit-dispatch/NewCreditDispatchPage';
 
 function RoleLanding() {
   const { role, isAuthenticated, isLoading } = useAuth();
@@ -44,6 +46,8 @@ export function AppRouter() {
             <Route path="/inventory/upload" element={<InventoryUploadPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/docket-scanner" element={<DocketScannerPage />} />
+            <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
+            <Route path="/credit-dispatch/new" element={<NewCreditDispatchPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
