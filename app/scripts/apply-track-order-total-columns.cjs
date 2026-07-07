@@ -12,3 +12,6 @@ if (fs.existsSync(warrantyPatch)) require(warrantyPatch);
 
 const mobilePatch = path.join(__dirname, 'apply-mobile-shell-patch.cjs');
 if (fs.existsSync(mobilePatch)) require(mobilePatch);
+
+const newOrderPatch = path.join(__dirname, 'apply-new-order-mobile-safety.cjs');
+if (fs.existsSync(newOrderPatch)) require(newOrderPatch);
