@@ -2,7 +2,22 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 import { normalizePartNo, toNumber } from '../lib/orderLogic';
 
-export type StatusReportResult = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
+export type StatusReportPreviewRow = {
+  status: 'matched' | 'skipped' | 'failed';
+  action: string;
+  orderNo: string;
+  partNo: string;
+  reason: string;
+  billedQty?: number;
+  itemQty?: number;
+  currentBilledQty?: number;
+  currentRowStatus?: string | null;
+  matchCount?: number;
+  activeMatchCount?: number;
+  warning?: string;
+};
+
+export type StatusReportResult = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[]; previewRows?: StatusReportPreviewRow[] };
 
 export type StatusReportRow = {
   finalOrderNo: string;
@@ -63,6 +78,19 @@ function parseDate(value: unknown) {
   return null;
 }
 
+function normalizeStatusResult(data: unknown, rowCount: number): StatusReportResult {
+  const value = data as Partial<StatusReportResult> | null | undefined;
+  return {
+    total: Number(value?.total ?? rowCount),
+    updated: Number(value?.updated ?? 0),
+    inserted: Number(value?.inserted ?? 0),
+    skipped: Number(value?.skipped ?? 0),
+    failed: Number(value?.failed ?? 0),
+    errors: Array.isArray(value?.errors) ? value.errors : [],
+    previewRows: Array.isArray(value?.previewRows) ? value.previewRows : undefined,
+  };
+}
+
 export async function parseStatusReportFile(file: File): Promise<StatusReportRow[]> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { cellDates: true });
@@ -87,16 +115,16 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
   })).filter((row) => row.finalOrderNo && row.partNo);
 }
 
+export async function previewStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
+  const { data, error } = await supabase.functions.invoke('status-report-action', { body: { rows, preview: true } });
+  if (error) throw error;
+  if (data?.error) throw new Error(String(data.error));
+  return normalizeStatusResult(data, rows.length);
+}
+
 export async function applyStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
   const { data, error } = await supabase.functions.invoke('status-report-action', { body: { rows } });
   if (error) throw error;
   if (data?.error) throw new Error(String(data.error));
-  return {
-    total: Number(data?.total ?? rows.length),
-    updated: Number(data?.updated ?? 0),
-    inserted: Number(data?.inserted ?? 0),
-    skipped: Number(data?.skipped ?? 0),
-    failed: Number(data?.failed ?? 0),
-    errors: Array.isArray(data?.errors) ? data.errors : [],
-  };
+  return normalizeStatusResult(data, rows.length);
 }
