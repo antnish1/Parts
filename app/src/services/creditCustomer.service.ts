@@ -24,6 +24,7 @@ export type CreditCustomerOutstanding = {
   customer_type: CreditDispatchRecord['customer_type'];
   default_branch: string | null;
   credit_limit: number | null;
+  is_active?: boolean;
   total_credit: number;
   total_received: number;
   outstanding: number;
@@ -40,6 +41,7 @@ export type CreditCustomerAging = {
   customer_type: CreditDispatchRecord['customer_type'];
   default_branch: string | null;
   credit_limit: number | null;
+  is_active?: boolean;
   outstanding: number;
   bucket_0_7: number;
   bucket_8_15: number;
@@ -136,6 +138,16 @@ export async function updateCreditCustomer(customer: Pick<CreditCustomer, 'id' |
       credit_limit: customer.credit_limit ? Number(customer.credit_limit) : null,
     })
     .eq('id', customer.id);
+  if (error) throw error;
+}
+
+export async function mergeCreditCustomers(sourceCustomerId: string, targetCustomerId: string) {
+  if (!sourceCustomerId || !targetCustomerId) throw new Error('Select both customers.');
+  if (sourceCustomerId === targetCustomerId) throw new Error('Source and target customer cannot be same.');
+  const { error } = await supabase.rpc('portal_merge_credit_customers', {
+    p_source_customer_id: sourceCustomerId,
+    p_target_customer_id: targetCustomerId,
+  });
   if (error) throw error;
 }
 
