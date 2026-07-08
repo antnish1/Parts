@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, BookOpen, Search, ShieldAlert, WalletCards } from 'lucide-react';
+import { ArrowLeft, BookOpen, Search } from 'lucide-react';
 import { formatMoney } from '../../services/creditDispatch.service';
 import { getCreditCustomerOutstanding, riskTone, type CreditCustomerOutstanding } from '../../services/creditCustomer.service';
 
