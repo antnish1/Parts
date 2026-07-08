@@ -91,6 +91,16 @@ function normalizeStatusResult(data: unknown, rowCount: number): StatusReportRes
   };
 }
 
+function statusFunctionError(error: unknown, fallback: string) {
+  if (!error) return fallback;
+  const anyError = error as { message?: string; context?: { status?: number; statusText?: string }; details?: string };
+  const status = anyError.context?.status;
+  const statusText = anyError.context?.statusText;
+  const message = anyError.message || fallback;
+  if (status) return `${message} (${status}${statusText ? ` ${statusText}` : ''})`;
+  return message;
+}
+
 export async function parseStatusReportFile(file: File): Promise<StatusReportRow[]> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { cellDates: true });
@@ -116,15 +126,15 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
 }
 
 export async function previewStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
-  const { data, error } = await supabase.functions.invoke('status-report-action', { body: { rows, preview: true } });
-  if (error) throw error;
+  const { data, error } = await supabase.functions.invoke('status-report-preview-action', { body: { rows } });
+  if (error) throw new Error(statusFunctionError(error, 'Status preview failed. Confirm status-report-preview-action is deployed.'));
   if (data?.error) throw new Error(String(data.error));
   return normalizeStatusResult(data, rows.length);
 }
 
 export async function applyStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
   const { data, error } = await supabase.functions.invoke('status-report-action', { body: { rows } });
-  if (error) throw error;
+  if (error) throw new Error(statusFunctionError(error, 'Status upload failed.'));
   if (data?.error) throw new Error(String(data.error));
   return normalizeStatusResult(data, rows.length);
 }
