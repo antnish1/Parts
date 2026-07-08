@@ -18,6 +18,7 @@ import { UploadsPage } from '../features/uploads/UploadsPage';
 import { DocketScannerPage } from '../features/docket/DocketScannerPage';
 import { CreditDispatchListPage } from '../features/credit-dispatch/CreditDispatchListPage';
 import { CreditDispatchDetailPage } from '../features/credit-dispatch/CreditDispatchDetailPage';
+import { RequestReportsPage } from '../features/credit-dispatch/RequestReportsPage';
 import { NewCreditDispatchPage } from '../features/credit-dispatch/NewCreditDispatchPage';
 
 function RoleLanding() {
@@ -48,6 +49,7 @@ export function AppRouter() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/docket-scanner" element={<DocketScannerPage />} />
             <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
+            <Route path="/credit-dispatch/reports" element={<RequestReportsPage />} />
             <Route path="/credit-dispatch/view" element={<CreditDispatchDetailPage />} />
             <Route path="/credit-dispatch/new" element={<NewCreditDispatchPage />} />
           </Route>
