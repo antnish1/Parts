@@ -13,7 +13,45 @@ const num = (value: unknown) => {
 
 const closedRowStatuses = new Set(['received', 'issued', 'rejected']);
 
-type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
+type ApplyReportRow = {
+  result: 'SUCCESS' | 'SKIPPED' | 'FAILED';
+  reason: string;
+  order_id?: string;
+  item_id?: string;
+  uploaded_order_no: string;
+  matched_order_no?: string;
+  part_no: string;
+  billed_qty: number;
+  previous_item_status?: string | null;
+  current_item_status?: string | null;
+  previous_order_status?: string | null;
+  current_order_status?: string | null;
+  previous_billed_qty?: number;
+  current_billed_qty?: number;
+  effective_item_qty?: number;
+  invoice_no?: string | null;
+  invoice_date?: string | null;
+  docket_no?: string | null;
+  delivery_no?: string | null;
+  transport_name?: string | null;
+  transport_mode?: string | null;
+  packing_detail?: string | null;
+  eway_bill_no?: string | null;
+  gst_invoice_no?: string | null;
+  raw_status?: string | null;
+  order_reg_date?: string | null;
+  branch_name?: string | null;
+  line_no?: string | null;
+  material_description?: string | null;
+  customer_po?: string | null;
+  dealer_code?: string | null;
+  ship_to_party?: string | null;
+  ship_to_name?: string | null;
+  order_type?: string | null;
+  order_qty?: number;
+};
+
+type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[]; reportRows: ApplyReportRow[] };
 type HeaderCandidate = { orderRegDate: string | null; value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 type ItemRow = { id: string; order_id: string; part_no: string; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
 type ChunkRow = { billed_qty: number | string | null; received_qty?: number | string | null; order_reg_date: string | null; invoice_no: string | null; billing_date: string | null; docket_no: string | null; transport_name: string | null };
@@ -84,6 +122,36 @@ function idempotencyKey(parts: unknown[]) {
   return parts.map((part) => normNo(part)).join('|');
 }
 
+function baseReportRow(rawRow: Record<string, unknown>, finalOrderNo: string, partNo: string): ApplyReportRow {
+  return {
+    result: 'SKIPPED',
+    reason: '',
+    uploaded_order_no: finalOrderNo || '-',
+    part_no: partNo || '-',
+    billed_qty: num(rawRow.billedQty),
+    invoice_no: normNo(rawRow.invoiceNo) || null,
+    invoice_date: clean(rawRow.invoiceDate) || null,
+    docket_no: normNo(rawRow.docketNo) || null,
+    delivery_no: normNo(rawRow.deliveryNo) || null,
+    transport_name: clean(rawRow.transportName) || null,
+    transport_mode: normNo(rawRow.transportMode) || null,
+    packing_detail: clean(rawRow.packingDetail) || null,
+    eway_bill_no: normNo(rawRow.ewayBillNo) || null,
+    gst_invoice_no: normNo(rawRow.gstInvoiceNo) || null,
+    raw_status: clean(rawRow.rawStatus) || null,
+    order_reg_date: clean(rawRow.orderRegDate) || null,
+    branch_name: clean(rawRow.branchName) || null,
+    line_no: clean(rawRow.lineNo) || null,
+    material_description: clean(rawRow.materialDescription) || null,
+    customer_po: clean(rawRow.customerPo) || null,
+    dealer_code: clean(rawRow.dealerCode) || null,
+    ship_to_party: clean(rawRow.shipToParty) || null,
+    ship_to_name: clean(rawRow.shipToName) || null,
+    order_type: clean(rawRow.orderType) || null,
+    order_qty: num(rawRow.orderQty),
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -103,7 +171,7 @@ serve(async (req) => {
 
   const body = await req.json().catch(() => ({}));
   const rows = Array.isArray(body.rows) ? body.rows : [];
-  const result: Result = { total: rows.length, updated: 0, inserted: 0, skipped: 0, failed: 0, errors: [] };
+  const result: Result = { total: rows.length, updated: 0, inserted: 0, skipped: 0, failed: 0, errors: [], reportRows: [] };
   const touchedOrders = new Map<string, string>();
   const headerCandidates = new Map<string, HeaderCandidate[]>();
   const now = new Date().toISOString();
@@ -111,17 +179,42 @@ serve(async (req) => {
   for (const rawRow of rows) {
     const finalOrderNo = normNo(rawRow.finalOrderNo);
     const partNo = normPart(rawRow.partNo);
+    const reportRow = baseReportRow(rawRow as Record<string, unknown>, finalOrderNo, partNo);
     try {
-      if (!finalOrderNo || !partNo) { result.skipped += 1; result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: missing order or part`); continue; }
+      if (!finalOrderNo || !partNo) {
+        result.skipped += 1;
+        reportRow.result = 'SKIPPED';
+        reportRow.reason = 'missing order or part';
+        result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reportRow.reason}`);
+        result.reportRows.push(reportRow);
+        continue;
+      }
       const { data: orders, error: orderError } = await adminClient
         .from('portal_orders')
         .select('id,order_no,status,branch')
         .or(`final_order_no.eq.${finalOrderNo},processing_reference.eq.${finalOrderNo},order_no.eq.${finalOrderNo}`)
         .limit(2);
       if (orderError) throw orderError;
-      if (!orders?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: order not found`); continue; }
-      if (orders.length > 1) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: multiple orders matched`); continue; }
+      if (!orders?.length) {
+        result.skipped += 1;
+        reportRow.result = 'SKIPPED';
+        reportRow.reason = 'order not found';
+        result.errors.push(`${finalOrderNo} / ${partNo}: ${reportRow.reason}`);
+        result.reportRows.push(reportRow);
+        continue;
+      }
+      if (orders.length > 1) {
+        result.skipped += 1;
+        reportRow.result = 'SKIPPED';
+        reportRow.reason = 'multiple orders matched';
+        result.errors.push(`${finalOrderNo} / ${partNo}: ${reportRow.reason}`);
+        result.reportRows.push(reportRow);
+        continue;
+      }
       const order = orders[0];
+      reportRow.order_id = order.id;
+      reportRow.matched_order_no = order.order_no;
+      reportRow.previous_order_status = order.status;
 
       const { data: currentItems, error: currentError } = await adminClient
         .from('portal_order_items')
@@ -130,10 +223,29 @@ serve(async (req) => {
         .eq('part_no', partNo)
         .order('created_at', { ascending: true });
       if (currentError) throw currentError;
-      if (!currentItems?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item row not found`); continue; }
+      if (!currentItems?.length) {
+        result.skipped += 1;
+        reportRow.result = 'SKIPPED';
+        reportRow.reason = 'item row not found';
+        result.errors.push(`${finalOrderNo} / ${partNo}: ${reportRow.reason}`);
+        result.reportRows.push(reportRow);
+        continue;
+      }
 
       const activeItem = (currentItems as ItemRow[]).find((item) => !closedRowStatuses.has(normalizeStatus(item.row_status))) ?? null;
-      if (!activeItem) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item is fully received, issued, or rejected`); continue; }
+      if (!activeItem) {
+        result.skipped += 1;
+        reportRow.result = 'SKIPPED';
+        reportRow.reason = 'item is fully received, issued, or rejected';
+        result.errors.push(`${finalOrderNo} / ${partNo}: ${reportRow.reason}`);
+        result.reportRows.push(reportRow);
+        continue;
+      }
+
+      reportRow.item_id = activeItem.id;
+      reportRow.previous_item_status = activeItem.row_status;
+      reportRow.previous_billed_qty = num(activeItem.billed_qty);
+      reportRow.effective_item_qty = effectiveQty(activeItem);
 
       const billingPayload = {
         order_id: order.id,
@@ -189,6 +301,12 @@ serve(async (req) => {
       const { error: itemError } = await adminClient.from('portal_order_items').update(itemUpdate).eq('id', activeItem.id);
       if (itemError) throw itemError;
 
+      reportRow.result = 'SUCCESS';
+      reportRow.reason = 'billing chunk applied and item status recalculated';
+      reportRow.current_item_status = nextRowStatus;
+      reportRow.current_billed_qty = billedTotal;
+      result.reportRows.push(reportRow);
+
       touchedOrders.set(order.id, order.order_no);
       const existingHeaders = headerCandidates.get(order.id) ?? [];
       existingHeaders.push({ orderRegDate: itemUpdate.order_reg_date, value: itemUpdate.dbms_invoice_no, dateValue: itemUpdate.dbms_invoice_date, docket: itemUpdate.docket_no, transport: itemUpdate.transport_name });
@@ -206,7 +324,10 @@ serve(async (req) => {
       result.updated += 1;
     } catch (error) {
       result.failed += 1;
-      result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${error instanceof Error ? error.message : 'failed'}`);
+      reportRow.result = 'FAILED';
+      reportRow.reason = error instanceof Error ? error.message : 'failed';
+      result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reportRow.reason}`);
+      result.reportRows.push(reportRow);
     }
   }
 
@@ -230,6 +351,7 @@ serve(async (req) => {
       };
       const { error: statusError } = await adminClient.from('portal_orders').update(updatePayload).eq('id', orderId);
       if (statusError) throw statusError;
+      result.reportRows.filter((row) => row.order_id === orderId).forEach((row) => { row.current_order_status = nextStatus; });
       await adminClient.from('portal_order_events').insert({
         order_id: orderId,
         event_type: 'ORDER_STATUS_RECALCULATED',
@@ -240,7 +362,9 @@ serve(async (req) => {
         metadata: { header_candidates: headerCandidates.get(orderId) ?? [], synced_header: updatePayload },
       });
     } catch (error) {
-      result.errors.push(`${orderNo}: status recalculation failed - ${error instanceof Error ? error.message : 'failed'}`);
+      const reason = `status recalculation failed - ${error instanceof Error ? error.message : 'failed'}`;
+      result.errors.push(`${orderNo}: ${reason}`);
+      result.reportRows.filter((row) => row.order_id === orderId).forEach((row) => { row.reason = `${row.reason}; ${reason}`; });
     }
   }
 
