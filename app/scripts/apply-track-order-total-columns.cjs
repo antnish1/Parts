@@ -30,3 +30,9 @@ if (fs.existsSync(requestDialogPatch)) require(requestDialogPatch);
 
 const recoveryViewLinks = path.join(__dirname, 'apply-recovery-view-links.cjs');
 if (fs.existsSync(recoveryViewLinks)) require(recoveryViewLinks);
+
+const cdVisualPolish = path.join(__dirname, 'apply-cd-visual-polish.cjs');
+if (fs.existsSync(cdVisualPolish)) require(cdVisualPolish);
+
+const cdStylePolish = path.join(__dirname, 'apply-cd-style-polish.cjs');
+if (fs.existsSync(cdStylePolish)) require(cdStylePolish);
