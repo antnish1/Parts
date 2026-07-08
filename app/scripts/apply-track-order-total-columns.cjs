@@ -39,3 +39,9 @@ if (fs.existsSync(cdStylePolish)) require(cdStylePolish);
 
 const cdReportsButton = path.join(__dirname, 'add-cd-reports-button.cjs');
 if (fs.existsSync(cdReportsButton)) require(cdReportsButton);
+
+const cdRequestRequired = path.join(__dirname, 'apply-cd-request-form-required.cjs');
+if (fs.existsSync(cdRequestRequired)) require(cdRequestRequired);
+
+const cdCorrectionWorkflow = path.join(__dirname, 'apply-cd-correction-workflow.cjs');
+if (fs.existsSync(cdCorrectionWorkflow)) require(cdCorrectionWorkflow);
