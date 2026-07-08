@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileText, WalletCards } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { formatMoney } from '../../services/creditDispatch.service';
 import { getCreditCustomerLedger, riskTone } from '../../services/creditCustomer.service';
 
