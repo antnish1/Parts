@@ -37,6 +37,9 @@ export type StatusReportRow = {
   branchName: string;
 };
 
+type PreviewOrder = { id: string; order_no: string | null; status: string | null; branch: string | null };
+type PreviewItem = { id: string; order_id: string; part_no: string | null; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
+
 function keyOf(value: string) {
   return value.toLowerCase().replace(/\s|_|\.|-|\(|\)|\/|&/g, '');
 }
@@ -101,6 +104,31 @@ function statusFunctionError(error: unknown, fallback: string) {
   return message;
 }
 
+function normalizeStatus(value: unknown) {
+  const status = String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (!status) return '';
+  if (status.includes('receiv')) return status.includes('partial') ? 'partially_received' : 'received';
+  if (status.includes('reject')) return 'rejected';
+  if (status.includes('issued')) return 'issued';
+  if (status.includes('dispatch') || status.includes('despatch')) return status.includes('partial') ? 'partially_dispatched' : 'dispatched';
+  if (status.includes('process')) return 'processed';
+  if (status.includes('approved')) return 'approved';
+  return status;
+}
+
+function effectiveQty(row: PreviewItem) {
+  if (row.edited_qty !== null && row.edited_qty !== undefined && row.edited_qty !== '') return Math.max(0, toNumber(row.edited_qty));
+  return Math.max(0, toNumber(row.qty));
+}
+
+function isClosedStatus(value: unknown) {
+  return ['received', 'issued', 'rejected'].includes(normalizeStatus(value));
+}
+
+function uniqueValues(values: string[]) {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
 export async function parseStatusReportFile(file: File): Promise<StatusReportRow[]> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { cellDates: true });
@@ -125,11 +153,129 @@ export async function parseStatusReportFile(file: File): Promise<StatusReportRow
   })).filter((row) => row.finalOrderNo && row.partNo);
 }
 
+async function findPreviewOrders(orderNo: string) {
+  const { data, error } = await supabase
+    .from('portal_orders')
+    .select('id,order_no,status,branch')
+    .or(`final_order_no.eq.${orderNo},processing_reference.eq.${orderNo},order_no.eq.${orderNo}`)
+    .limit(2);
+  if (error) throw error;
+  return (data ?? []) as PreviewOrder[];
+}
+
+async function findPreviewItems(orderId: string, partNo: string) {
+  const { data, error } = await supabase
+    .from('portal_order_items')
+    .select('id,order_id,part_no,qty,edited_qty,billed_qty,row_status')
+    .eq('order_id', orderId)
+    .eq('part_no', partNo)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as PreviewItem[];
+}
+
 export async function previewStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
-  const { data, error } = await supabase.functions.invoke('status-report-preview-action', { body: { rows } });
-  if (error) throw new Error(statusFunctionError(error, 'Status preview failed. Confirm status-report-preview-action is deployed.'));
-  if (data?.error) throw new Error(String(data.error));
-  return normalizeStatusResult(data, rows.length);
+  const previewRows: StatusReportPreviewRow[] = [];
+  const errors: string[] = [];
+  let updated = 0;
+  let inserted = 0;
+  let skipped = 0;
+  let failed = 0;
+  const orderCache = new Map<string, PreviewOrder[]>();
+  const itemCache = new Map<string, PreviewItem[]>();
+
+  for (const row of rows) {
+    const finalOrderNo = row.finalOrderNo.trim().toUpperCase();
+    const partNo = normalizePartNo(row.partNo);
+    try {
+      if (!finalOrderNo || !partNo) {
+        skipped += 1;
+        const reason = 'missing order or part';
+        errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reason}`);
+        previewRows.push({ status: 'skipped', action: 'skip', orderNo: finalOrderNo || '-', partNo: partNo || '-', reason });
+        continue;
+      }
+
+      let orders = orderCache.get(finalOrderNo);
+      if (!orders) {
+        orders = await findPreviewOrders(finalOrderNo);
+        orderCache.set(finalOrderNo, orders);
+      }
+
+      if (!orders.length) {
+        skipped += 1;
+        const reason = 'order not found';
+        errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
+        previewRows.push({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason });
+        continue;
+      }
+      if (orders.length > 1) {
+        skipped += 1;
+        const reason = 'multiple orders matched';
+        errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
+        previewRows.push({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason, matchCount: orders.length });
+        continue;
+      }
+
+      const order = orders[0];
+      const itemKey = `${order.id}|${partNo}`;
+      let items = itemCache.get(itemKey);
+      if (!items) {
+        items = await findPreviewItems(order.id, partNo);
+        itemCache.set(itemKey, items);
+      }
+
+      if (!items.length) {
+        skipped += 1;
+        const reason = 'item row not found';
+        errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
+        previewRows.push({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason });
+        continue;
+      }
+
+      const activeItems = items.filter((item) => !isClosedStatus(item.row_status));
+      const activeItem = activeItems[0] ?? null;
+      if (!activeItem) {
+        skipped += 1;
+        const reason = 'item is fully received, issued, or rejected';
+        errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
+        previewRows.push({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason, matchCount: items.length, activeMatchCount: 0 });
+        continue;
+      }
+
+      inserted += 1;
+      updated += 1;
+      previewRows.push({
+        status: 'matched',
+        action: 'would_insert_billing_chunk',
+        orderNo: order.order_no || finalOrderNo,
+        partNo,
+        reason: 'Matched by Order No + Part No. Preview only; no database write done.',
+        billedQty: row.billedQty,
+        itemQty: effectiveQty(activeItem),
+        currentBilledQty: toNumber(activeItem.billed_qty),
+        currentRowStatus: activeItem.row_status,
+        matchCount: items.length,
+        activeMatchCount: activeItems.length,
+        warning: activeItems.length > 1 ? 'More than one active item row matched. Current apply logic would use the first active row.' : undefined,
+      });
+    } catch (error) {
+      failed += 1;
+      const reason = error instanceof Error ? error.message : 'preview failed';
+      errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reason}`);
+      previewRows.push({ status: 'failed', action: 'error', orderNo: finalOrderNo || '-', partNo: partNo || '-', reason });
+    }
+  }
+
+  return {
+    total: rows.length,
+    updated,
+    inserted,
+    skipped,
+    failed,
+    errors: errors.slice(0, 100),
+    previewRows,
+  };
 }
 
 export async function applyStatusReportRows(rows: StatusReportRow[]): Promise<StatusReportResult> {
