@@ -45,3 +45,9 @@ if (fs.existsSync(cdRequestRequired)) require(cdRequestRequired);
 
 const cdCorrectionWorkflow = path.join(__dirname, 'apply-cd-correction-workflow.cjs');
 if (fs.existsSync(cdCorrectionWorkflow)) require(cdCorrectionWorkflow);
+
+const cdTypographyCleanup = path.join(__dirname, 'apply-cd-typography-cleanup.cjs');
+if (fs.existsSync(cdTypographyCleanup)) require(cdTypographyCleanup);
+
+const cdCalmStyle = path.join(__dirname, 'apply-cd-calm-style.cjs');
+if (fs.existsSync(cdCalmStyle)) require(cdCalmStyle);
