@@ -51,3 +51,6 @@ if (fs.existsSync(cdTypographyCleanup)) require(cdTypographyCleanup);
 
 const cdCalmStyle = path.join(__dirname, 'apply-cd-calm-style.cjs');
 if (fs.existsSync(cdCalmStyle)) require(cdCalmStyle);
+
+const cdCustomerLedger = path.join(__dirname, 'apply-cd-customer-ledger-patch.cjs');
+if (fs.existsSync(cdCustomerLedger)) require(cdCustomerLedger);
