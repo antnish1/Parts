@@ -34,6 +34,24 @@ function isPendingWorkflow(order: { status?: string | null; approval_status?: st
   return normalizeWorkflow(`${order.status ?? ''} ${order.approval_status ?? ''}`).includes('pending');
 }
 
+function formatMoney(value: number) {
+  return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function toSafeNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getOrderTotalQty(order: { total_qty?: number | string | null }) {
+  return toSafeNumber(order.total_qty);
+}
+
+function getOrderTotalValue(order: { total_value?: number | string | null }) {
+  return toSafeNumber(order.total_value);
+}
+
 export function ApprovalsPage() {
   const { role, profile } = useAuth();
   const [message, setMessage] = useState('');
@@ -73,11 +91,13 @@ export function ApprovalsPage() {
 
     if (!term) return pendingOrders;
 
-    return pendingOrders.filter((order) =>
-      `${order.order_no} ${order.branch} ${order.order_type} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.approver?.full_name ?? ''}`
+    return pendingOrders.filter((order) => {
+      const totalQty = getOrderTotalQty(order);
+      const totalValue = getOrderTotalValue(order);
+      return `${order.order_no} ${order.final_order_no ?? ''} ${order.branch} ${order.order_type} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.approver?.full_name ?? ''} ${totalQty} ${totalValue}`
         .toLowerCase()
-        .includes(term),
-    );
+        .includes(term);
+    });
   }, [pendingOrders, search]);
 
   const counts = {
@@ -264,12 +284,14 @@ export function ApprovalsPage() {
       {isLoading ? <p className="text-xs text-[#c7d2df]">Loading approvals...</p> : null}
 
       <div className="overflow-hidden rounded-lg border border-[#263244]">
-        <table className="w-full min-w-[1160px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[1280px] border-collapse text-left text-xs">
           <thead className="bg-[#0b1020] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]">
             <tr>
               <th className="px-2.5 py-2">Order No</th>
               <th className="px-2.5 py-2">Branch</th>
               <th className="px-2.5 py-2">Type</th>
+              <th className="px-2.5 py-2 text-right">Qty</th>
+              <th className="px-2.5 py-2 text-right">Value</th>
               <th className="px-2.5 py-2">Customer</th>
               <th className="px-2.5 py-2">Machine</th>
               <th className="px-2.5 py-2">Approver</th>
@@ -285,12 +307,16 @@ export function ApprovalsPage() {
               const approveAction = role === 'manager' ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
               const rejectAction = role === 'manager' ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
               const approveLabel = role === 'manager' ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
+              const totalQty = getOrderTotalQty(order);
+              const totalValue = getOrderTotalValue(order);
 
               return (
                 <tr key={order.id} className={getStatusRowClasses(displayStatus)}>
                   <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
+                  <td className="px-2.5 py-2 text-right font-black text-white">{totalQty}</td>
+                  <td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(totalValue)}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.customer_name ?? '-'}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.machine_no ?? '-'}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.approver?.full_name ?? '-'}</td>
