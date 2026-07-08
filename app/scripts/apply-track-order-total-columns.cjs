@@ -54,3 +54,6 @@ if (fs.existsSync(cdCalmStyle)) require(cdCalmStyle);
 
 const cdCustomerLedger = path.join(__dirname, 'apply-cd-customer-ledger-patch.cjs');
 if (fs.existsSync(cdCustomerLedger)) require(cdCustomerLedger);
+
+const cdActionButtonContrast = path.join(__dirname, 'apply-cd-action-button-contrast.cjs');
+if (fs.existsSync(cdActionButtonContrast)) require(cdActionButtonContrast);
