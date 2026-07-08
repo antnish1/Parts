@@ -37,7 +37,7 @@ function CorrectionDialog({ row, isBusy, onClose, onSubmit }: { row: CreditDispa
   }
 
   return (
-    <Dialog title="Correct & Resubmit" description={`${row.dispatch_no ?? row.customer_name} • Sent back by manager`} onClose={onClose}>
+    <Dialog title="Correct & Resubmit" description={(row.dispatch_no ?? row.customer_name) + ' • Sent back by manager'} onClose={onClose}>
       {row.correction_note ? <div className="mb-3 rounded-2xl bg-orange-50 p-3 text-sm font-bold text-orange-700">Manager note: {row.correction_note}</div> : null}
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Customer Name <span className="text-red-500">*</span></span><input className={inputClass} value={customerName} onChange={(event) => setCustomerName(event.target.value)} /></label>
@@ -48,7 +48,7 @@ function CorrectionDialog({ row, isBusy, onClose, onSubmit }: { row: CreditDispa
         <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Document Date <span className="text-red-500">*</span></span><input className={inputClass} type="date" value={documentDate} onChange={(event) => setDocumentDate(event.target.value)} /></label>
         <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Credit Amount <span className="text-red-500">*</span></span><input className={inputClass} type="number" min="0" value={creditAmount} onChange={(event) => setCreditAmount(event.target.value)} /></label>
         <label className="block"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Tentative Closure <span className="text-red-500">*</span></span><select className={inputClass} value={tentativeClosureDays} onChange={(event) => setTentativeClosureDays(Number(event.target.value) as 7 | 15 | 30)}>{[7, 15, 30].map((days) => <option key={days} value={days}>Within {days} Days</option>)}</select></label>
-        <label className="block sm:col-span-2"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Remarks</span><textarea className={`${inputClass} min-h-24`} value={remarks} onChange={(event) => setRemarks(event.target.value)} /></label>
+        <label className="block sm:col-span-2"><span className="mb-1.5 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Remarks</span><textarea className={inputClass + ' min-h-24'} value={remarks} onChange={(event) => setRemarks(event.target.value)} /></label>
       </div>
       {error ? <p className="mt-3 rounded-2xl bg-red-50 p-3 text-xs font-bold text-red-700">{error}</p> : null}
       <div className="mt-4 grid grid-cols-2 gap-2"><Button type="button" variant="secondary" onClick={onClose} disabled={isBusy}>Cancel</Button><Button type="button" onClick={submit} disabled={isBusy}>{isBusy ? 'Sending...' : 'Send Back for Approval'}</Button></div>
