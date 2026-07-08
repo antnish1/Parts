@@ -5,8 +5,9 @@ import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { OrderTypeBadge } from '../../components/tables/OrderTypeBadge';
 import { getOrderList } from '../../services/orderList.service';
-import { getTestTrackingMeta } from '../../services/testTrackingMeta.service';
+import { getTestTrackingMeta, type TrackingMeta } from '../../services/testTrackingMeta.service';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
+import type { TestOrder } from '../../services/testData.service';
 
 const pageSize = 10;
 
@@ -27,6 +28,22 @@ function formatDate(value: string | null | undefined) {
   });
 }
 
+function toSafeNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getOrderTotals(order: TestOrder, itemMeta?: TrackingMeta) {
+  const orderQty = toSafeNumber(order.total_qty);
+  const orderValue = toSafeNumber(order.total_value);
+  return {
+    totalQty: orderQty ?? itemMeta?.totalQty ?? 0,
+    totalValue: orderValue ?? itemMeta?.totalValue ?? 0,
+    commentCount: toSafeNumber(order.comment_count) ?? itemMeta?.commentCount ?? 0,
+  };
+}
+
 export function AdminPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -43,10 +60,13 @@ export function AdminPage() {
   const filteredOrders = useMemo(() => {
     const term = search.trim().toLowerCase();
     const approved = orders.filter((order) => order.status === 'approved');
-    const filtered = approved.filter((order) => !term || `${order.order_no} ${order.final_order_no ?? ''} ${order.branch} ${order.order_type} ${order.order_for} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.status}`.toLowerCase().includes(term));
+    const filtered = approved.filter((order) => {
+      const totals = getOrderTotals(order, metaMap[order.id]);
+      return !term || `${order.order_no} ${order.final_order_no ?? ''} ${order.branch} ${order.order_type} ${order.order_for} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.status} ${totals.totalQty} ${totals.totalValue}`.toLowerCase().includes(term);
+    });
     return [...filtered].sort((a, b) => {
-      const aMeta = metaMap[a.id] ?? { totalQty: 0, totalValue: 0, commentCount: 0 };
-      const bMeta = metaMap[b.id] ?? { totalQty: 0, totalValue: 0, commentCount: 0 };
+      const aMeta = getOrderTotals(a, metaMap[a.id]);
+      const bMeta = getOrderTotals(b, metaMap[b.id]);
       const getValue = (order: typeof a, meta: typeof aMeta): string | number => {
         if (sortKey === 'qty') return meta.totalQty;
         if (sortKey === 'value') return meta.totalValue;
@@ -117,15 +137,15 @@ export function AdminPage() {
           </thead>
           <tbody className="divide-y divide-[#263244] bg-[#111827]">
             {visibleOrders.map((order) => {
-              const meta = metaMap[order.id] ?? { totalQty: 0, totalValue: 0, commentCount: 0 };
+              const totals = getOrderTotals(order, metaMap[order.id]);
               return (
                 <tr key={order.id} className={getStatusRowClasses(order.status)}>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{formatDate(order.created_at)}</td>
                   <td className="px-2.5 py-2"><OrderTypeBadge type={order.order_type} /></td>
                   <td className="px-2.5 py-2 text-white">{order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock'}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
-                  <td className="px-2.5 py-2 text-right font-black text-white">{meta.totalQty}</td>
-                  <td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(meta.totalValue)}</td>
+                  <td className="px-2.5 py-2 text-right font-black text-white">{totals.totalQty}</td>
+                  <td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(totals.totalValue)}</td>
                   <td className="px-2.5 py-2 font-black text-white">{order.final_order_no || order.order_no}</td>
                   <td className="px-2.5 py-2"><StatusBadge status={order.status} /></td>
                   <td className="px-2.5 py-2 text-right"><Link className="text-xs font-black text-[#0f4c81] underline-offset-4 hover:underline" to={`/orders/${order.id}`}>Open</Link></td>
