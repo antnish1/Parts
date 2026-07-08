@@ -87,6 +87,34 @@ async function addEvent(dispatchId: string, eventType: string, eventNote?: strin
   if (error) throw error;
 }
 
+export function deriveCreditDispatchRecoveryStatus(row: CreditDispatchRecord): CreditDispatchRecord['recovery_status'] {
+  const balance = Number(row.balance_amount ?? 0);
+  const received = Number(row.total_received_amount ?? 0);
+  const credit = Number(row.credit_amount ?? 0);
+  if (balance <= 0 || (credit > 0 && received >= credit)) return 'Closed';
+  const isPastDue = Boolean(row.due_date) && row.due_date < new Date().toISOString().slice(0, 10);
+  if (received > 0 && isPastDue) return 'Partial Payment - Overdue';
+  if (received > 0) return 'Partial Payment';
+  if (isPastDue) return 'Payment Overdue';
+  return 'Pending Payment';
+}
+
+function withDerivedRecoveryStatus(row: CreditDispatchRecord): CreditDispatchRecord {
+  if (row.approval_status !== 'Approved') return row;
+  const derived = deriveCreditDispatchRecoveryStatus(row);
+  return derived === row.recovery_status ? row : { ...row, recovery_status: derived };
+}
+
+function validateRequestInput(input: CreditDispatchFormInput) {
+  if (!input.customerName.trim()) throw new Error('Customer name is required.');
+  if (!/^\d{10}$/.test(input.mobileNo.trim())) throw new Error('Enter a valid 10 digit mobile number.');
+  if (!input.documentNo.trim()) throw new Error('Document no. is required.');
+  if (!input.documentDate) throw new Error('Document date is required.');
+  if (!input.creditAmount || input.creditAmount <= 0) throw new Error('Credit amount must be greater than zero.');
+  if (!input.customerSignatureDataUrl) throw new Error('Customer signature is required.');
+  if (!input.issuerSignatureDataUrl) throw new Error('Issuing official signature is required.');
+}
+
 export async function getCreditDispatches() {
   const { data, error } = await supabase
     .from('portal_credit_dispatches')
@@ -95,10 +123,11 @@ export async function getCreditDispatches() {
     .limit(300);
 
   if (error) throw error;
-  return (data ?? []) as CreditDispatchRecord[];
+  return ((data ?? []) as CreditDispatchRecord[]).map(withDerivedRecoveryStatus);
 }
 
 export async function createCreditDispatch(input: CreditDispatchFormInput) {
+  validateRequestInput(input);
   const customerSignaturePath = await uploadSignature(input.customerSignatureDataUrl, 'customer');
   const issuerSignaturePath = await uploadSignature(input.issuerSignatureDataUrl, 'issuer');
   const nowIso = new Date().toISOString();
@@ -111,7 +140,7 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
       customer_type: input.customerType,
       mobile_no: input.mobileNo.trim(),
       document_type: input.documentType,
-      document_no: input.documentNo.trim() || null,
+      document_no: input.documentNo.trim(),
       document_date: input.documentDate,
       credit_amount: input.creditAmount,
       tentative_closure_days: input.tentativeClosureDays,
@@ -152,15 +181,31 @@ export async function updateCreditDispatchApproval(dispatchId: string, action: C
     patch.correction_note = note.trim() || 'Correction required';
   }
 
-  const { error } = await supabase.from('portal_credit_dispatches').update(patch).eq('id', dispatchId);
+  const { error } = await supabase.from('portal_credit_dispatches').update(patch).eq('id', dispatchId).eq('approval_status', 'Pending Approval');
   if (error) throw error;
   await addEvent(dispatchId, action, note || action);
 }
 
 export async function addCreditDispatchPayment(input: CreditDispatchPaymentInput) {
+  const amount = Number(input.receivedAmount ?? 0);
+  if (!amount || amount <= 0) throw new Error('Enter a valid received amount.');
+  if (!input.receivedDate) throw new Error('Received date is required.');
+
+  const { data: dispatch, error: readError } = await supabase
+    .from('portal_credit_dispatches')
+    .select('*')
+    .eq('id', input.dispatchId)
+    .single();
+
+  if (readError) throw readError;
+  const record = withDerivedRecoveryStatus(dispatch as CreditDispatchRecord);
+  if (record.approval_status !== 'Approved') throw new Error('Payment can be added only after manager approval.');
+  if (record.recovery_status === 'Closed') throw new Error('This request is already closed.');
+  if (amount > Number(record.balance_amount ?? 0)) throw new Error('Received amount cannot be greater than balance amount.');
+
   const { error } = await supabase.from('portal_credit_dispatch_payments').insert({
     dispatch_id: input.dispatchId,
-    received_amount: input.receivedAmount,
+    received_amount: amount,
     received_date: input.receivedDate,
     payment_mode: input.paymentMode,
     reference_no: input.referenceNo?.trim() || null,
@@ -168,7 +213,7 @@ export async function addCreditDispatchPayment(input: CreditDispatchPaymentInput
   });
 
   if (error) throw error;
-  await addEvent(input.dispatchId, 'Payment Added', `${formatMoney(input.receivedAmount)} received on ${input.receivedDate}. ${input.remarks ?? ''}`);
+  await addEvent(input.dispatchId, 'Payment Added', `${formatMoney(amount)} received on ${input.receivedDate}. ${input.remarks ?? ''}`);
 }
 
 export function formatMoney(value: number | null | undefined) {
