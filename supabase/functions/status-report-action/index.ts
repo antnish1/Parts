@@ -13,24 +13,10 @@ const num = (value: unknown) => {
 
 const closedRowStatuses = new Set(['received', 'issued', 'rejected']);
 
-type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[]; previewRows?: PreviewRow[] };
+type Result = { total: number; updated: number; inserted: number; skipped: number; failed: number; errors: string[] };
 type HeaderCandidate = { orderRegDate: string | null; value: string | null; dateValue: string | null; transport: string | null; docket: string | null };
 type ItemRow = { id: string; order_id: string; part_no: string; qty: number | string | null; edited_qty: number | string | null; billed_qty: number | string | null; row_status: string | null };
 type ChunkRow = { billed_qty: number | string | null; received_qty?: number | string | null; order_reg_date: string | null; invoice_no: string | null; billing_date: string | null; docket_no: string | null; transport_name: string | null };
-type PreviewRow = {
-  status: 'matched' | 'skipped' | 'failed';
-  action: string;
-  orderNo: string;
-  partNo: string;
-  reason: string;
-  billedQty?: number;
-  itemQty?: number;
-  currentBilledQty?: number;
-  currentRowStatus?: string | null;
-  matchCount?: number;
-  activeMatchCount?: number;
-  warning?: string;
-};
 
 function normalizeStatus(value: unknown) {
   const status = clean(value).toLowerCase().replace(/[\s-]+/g, '_');
@@ -117,49 +103,24 @@ serve(async (req) => {
 
   const body = await req.json().catch(() => ({}));
   const rows = Array.isArray(body.rows) ? body.rows : [];
-  const isPreview = body.preview === true || body.mode === 'preview';
-  const previewRows: PreviewRow[] = [];
   const result: Result = { total: rows.length, updated: 0, inserted: 0, skipped: 0, failed: 0, errors: [] };
-  if (isPreview) result.previewRows = previewRows;
   const touchedOrders = new Map<string, string>();
   const headerCandidates = new Map<string, HeaderCandidate[]>();
   const now = new Date().toISOString();
-
-  function addPreview(row: PreviewRow) {
-    if (isPreview) previewRows.push(row);
-  }
 
   for (const rawRow of rows) {
     const finalOrderNo = normNo(rawRow.finalOrderNo);
     const partNo = normPart(rawRow.partNo);
     try {
-      if (!finalOrderNo || !partNo) {
-        result.skipped += 1;
-        const reason = 'missing order or part';
-        result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reason}`);
-        addPreview({ status: 'skipped', action: 'skip', orderNo: finalOrderNo || '-', partNo: partNo || '-', reason });
-        continue;
-      }
+      if (!finalOrderNo || !partNo) { result.skipped += 1; result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: missing order or part`); continue; }
       const { data: orders, error: orderError } = await adminClient
         .from('portal_orders')
         .select('id,order_no,status,branch')
         .or(`final_order_no.eq.${finalOrderNo},processing_reference.eq.${finalOrderNo},order_no.eq.${finalOrderNo}`)
         .limit(2);
       if (orderError) throw orderError;
-      if (!orders?.length) {
-        result.skipped += 1;
-        const reason = 'order not found';
-        result.errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
-        addPreview({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason });
-        continue;
-      }
-      if (orders.length > 1) {
-        result.skipped += 1;
-        const reason = 'multiple orders matched';
-        result.errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
-        addPreview({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason, matchCount: orders.length });
-        continue;
-      }
+      if (!orders?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: order not found`); continue; }
+      if (orders.length > 1) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: multiple orders matched`); continue; }
       const order = orders[0];
 
       const { data: currentItems, error: currentError } = await adminClient
@@ -169,43 +130,10 @@ serve(async (req) => {
         .eq('part_no', partNo)
         .order('created_at', { ascending: true });
       if (currentError) throw currentError;
-      if (!currentItems?.length) {
-        result.skipped += 1;
-        const reason = 'item row not found';
-        result.errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
-        addPreview({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason });
-        continue;
-      }
+      if (!currentItems?.length) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item row not found`); continue; }
 
-      const activeItems = (currentItems as ItemRow[]).filter((item) => !closedRowStatuses.has(normalizeStatus(item.row_status)));
-      const activeItem = activeItems[0] ?? null;
-      if (!activeItem) {
-        result.skipped += 1;
-        const reason = 'item is fully received, issued, or rejected';
-        result.errors.push(`${finalOrderNo} / ${partNo}: ${reason}`);
-        addPreview({ status: 'skipped', action: 'skip', orderNo: finalOrderNo, partNo, reason, matchCount: currentItems.length, activeMatchCount: 0 });
-        continue;
-      }
-
-      if (isPreview) {
-        result.inserted += 1;
-        result.updated += 1;
-        addPreview({
-          status: 'matched',
-          action: 'would_insert_billing_chunk',
-          orderNo: order.order_no || finalOrderNo,
-          partNo,
-          reason: 'Matched by Order No + Part No. Preview only; no database write done.',
-          billedQty: num(rawRow.billedQty),
-          itemQty: effectiveQty(activeItem),
-          currentBilledQty: num(activeItem.billed_qty),
-          currentRowStatus: activeItem.row_status,
-          matchCount: currentItems.length,
-          activeMatchCount: activeItems.length,
-          warning: activeItems.length > 1 ? 'More than one active item row matched. Current apply logic would use the first active row.' : undefined,
-        });
-        continue;
-      }
+      const activeItem = (currentItems as ItemRow[]).find((item) => !closedRowStatuses.has(normalizeStatus(item.row_status))) ?? null;
+      if (!activeItem) { result.skipped += 1; result.errors.push(`${finalOrderNo} / ${partNo}: item is fully received, issued, or rejected`); continue; }
 
       const billingPayload = {
         order_id: order.id,
@@ -278,13 +206,9 @@ serve(async (req) => {
       result.updated += 1;
     } catch (error) {
       result.failed += 1;
-      const reason = error instanceof Error ? error.message : 'failed';
-      result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${reason}`);
-      addPreview({ status: 'failed', action: 'error', orderNo: finalOrderNo || '-', partNo: partNo || '-', reason });
+      result.errors.push(`${finalOrderNo || '-'} / ${partNo || '-'}: ${error instanceof Error ? error.message : 'failed'}`);
     }
   }
-
-  if (isPreview) return json(result);
 
   for (const [orderId, orderNo] of touchedOrders.entries()) {
     try {
