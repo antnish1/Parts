@@ -23,6 +23,13 @@ to authenticated
 using (public.portal_can_manage_credit_customers())
 with check (public.portal_can_manage_credit_customers());
 
+-- Customer profile details should be refreshed when editable customer identity fields change.
+-- A direct customer_id reassignment during merge must not overwrite the target profile.
+drop trigger if exists trg_credit_dispatch_customer_before_update on public.portal_credit_dispatches;
+create trigger trg_credit_dispatch_customer_before_update
+before update of customer_name, mobile_no, customer_type, branch on public.portal_credit_dispatches
+for each row execute function public.portal_credit_dispatch_customer_before_save();
+
 create or replace function public.portal_merge_credit_customers(
   p_source_customer_id uuid,
   p_target_customer_id uuid
