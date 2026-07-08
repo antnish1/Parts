@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { uploadInventoryExcel } from '../../services/inventoryUploadWriter';
-import { applyStatusReportRows, parseStatusReportFile, previewStatusReportRows, type StatusReportResult, type StatusReportRow } from '../../services/statusReport.service';
+import { applyStatusReportRows, downloadStatusReportResultExcel, parseStatusReportFile, previewStatusReportRows, type StatusReportResult, type StatusReportRow } from '../../services/statusReport.service';
 import { readUploadMeta, saveUploadMeta, uploadProgress, type UploadMeta } from '../../lib/uploadMeta';
 
 export function UploadsPage() {
@@ -103,6 +103,13 @@ export function UploadsPage() {
       const result = await applyStatusReportRows(statusRows);
       setStatusStep('refreshing');
       setStatusResult(result);
+      let reportNote = '';
+      try {
+        downloadStatusReportResultExcel(result, statusRows, statusFileName || 'status-report.xlsx');
+        reportNote = ' Excel report downloaded.';
+      } catch (reportError) {
+        reportNote = ` Excel report generation failed: ${reportError instanceof Error ? reportError.message : 'unknown error'}.`;
+      }
       const meta: UploadMeta = {
         at: new Date().toISOString(),
         module: 'status-report',
@@ -118,12 +125,21 @@ export function UploadsPage() {
       await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
       await queryClient.invalidateQueries({ queryKey: ['test-order-view'] });
       setStatusStep('complete');
-      setStatusMessage(`Order status upload complete. Billing chunks ${result.inserted}, item rows updated ${result.updated}, skipped ${result.skipped}, failed ${result.failed}.`);
+      setStatusMessage(`Order status upload complete. Billing chunks ${result.inserted}, item rows updated ${result.updated}, skipped ${result.skipped}, failed ${result.failed}.${reportNote}`);
     } catch (error) {
       setStatusStep('failed');
       setStatusMessage(error instanceof Error ? error.message : 'Order status upload failed.');
     } finally {
       setIsStatusUploading(false);
+    }
+  }
+
+  function handleDownloadStatusReport() {
+    if (!statusResult) return;
+    try {
+      downloadStatusReportResultExcel(statusResult, statusRows, statusFileName || 'status-report.xlsx');
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Excel report generation failed.');
     }
   }
 
@@ -138,6 +154,7 @@ export function UploadsPage() {
 
   const previewRows = statusResult?.previewRows ?? [];
   const canApplyStatus = statusRows.length > 0 && !!statusResult?.previewRows && (statusResult?.updated ?? 0) > 0 && !isStatusUploading;
+  const canDownloadStatusReport = !!statusResult?.reportRows?.length && !isStatusUploading;
 
   return (
     <PageCard eyebrow="Uploads" title="Uploads" description="Central upload workspace for inventory and order status files.">
@@ -170,9 +187,10 @@ export function UploadsPage() {
             </div>
             {statusMeta ? <span className="rounded-full border border-[#d9dee7] px-2.5 py-1 text-[11px] font-black text-[#475569]">Last: {statusMeta.updatedRows ?? 0} updated • {statusMeta.failedRows} failed</span> : null}
           </div>
-          <div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
+          <div className="grid gap-2 lg:grid-cols-[1fr_auto_auto_auto]">
             <input type="file" accept=".xlsx,.xls" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" disabled={isStatusUploading} onChange={(event) => void handleStatusPreview(event.target.files?.[0])} />
             <button className="rounded-md border border-[#1677ff] px-3 py-1.5 text-xs font-black text-[#1677ff] disabled:opacity-40" disabled={!canApplyStatus} onClick={() => void handleStatusApply()}>Apply Previewed Rows</button>
+            <button className="rounded-md border border-[#16a34a] px-3 py-1.5 text-xs font-black text-[#16a34a] disabled:opacity-40" disabled={!canDownloadStatusReport} onClick={handleDownloadStatusReport}>Download Report</button>
             <button className="rounded-md border border-[#d9dee7] px-3 py-1.5 text-xs font-black text-[#475569] disabled:opacity-40" disabled={isStatusUploading || (!statusRows.length && !statusResult && !statusFileName)} onClick={clearStatusPreview}>Clear</button>
           </div>
           <p className="mt-2 text-xs text-[#667085]">{isStatusUploading ? `Step: ${statusStep}` : statusMessage || 'Expected: Order No, Material No, Billed Qty, Billing Dt, Bill No, Docket, Transport, Delivery No'}</p>
