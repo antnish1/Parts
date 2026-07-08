@@ -36,3 +36,6 @@ if (fs.existsSync(cdVisualPolish)) require(cdVisualPolish);
 
 const cdStylePolish = path.join(__dirname, 'apply-cd-style-polish.cjs');
 if (fs.existsSync(cdStylePolish)) require(cdStylePolish);
+
+const cdReportsButton = path.join(__dirname, 'add-cd-reports-button.cjs');
+if (fs.existsSync(cdReportsButton)) require(cdReportsButton);
