@@ -1,0 +1,37 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Save } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { formatMoney } from '../../services/creditDispatch.service';
+import { getCreditCustomer, getCreditCustomerLedger, riskTone, updateCreditCustomer } from '../../services/creditCustomer.service';
+
+const inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100';
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <label className="block"><span className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.13em] text-slate-500">{label}</span>{children}</label>;
+}
+
+export function CreditCustomerProfilePage() {
+  const customerId = new URLSearchParams(window.location.search).get('id') ?? '';
+  const queryClient = useQueryClient();
+  const customerQuery = useQuery({ queryKey: ['credit-customer', customerId], queryFn: () => getCreditCustomer(customerId), enabled: Boolean(customerId) });
+  const ledgerQuery = useQuery({ queryKey: ['credit-customer-ledger', customerId], queryFn: () => getCreditCustomerLedger(customerId), enabled: Boolean(customerId) });
+  const [form, setForm] = useState({ customer_name: '', mobile_no: '', customer_type: 'Customer' as 'Major Account' | 'Retailer' | 'Customer', default_branch: '', address: '', gst_no: '', business_partner_code: '', credit_limit: '' });
+
+  useEffect(() => {
+    const row = customerQuery.data;
+    if (!row) return;
+    setForm({ customer_name: row.customer_name, mobile_no: row.mobile_no, customer_type: row.customer_type, default_branch: row.default_branch ?? '', address: row.address ?? '', gst_no: row.gst_no ?? '', business_partner_code: row.business_partner_code ?? '', credit_limit: row.credit_limit ? String(row.credit_limit) : '' });
+  }, [customerQuery.data]);
+
+  const mutation = useMutation({ mutationFn: () => updateCreditCustomer({ id: customerId, customer_name: form.customer_name, mobile_no: form.mobile_no, customer_type: form.customer_type, default_branch: form.default_branch, address: form.address, gst_no: form.gst_no, business_partner_code: form.business_partner_code, credit_limit: form.credit_limit ? Number(form.credit_limit) : null }), onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['credit-customer', customerId] }); await queryClient.invalidateQueries({ queryKey: ['credit-customers'] }); await queryClient.invalidateQueries({ queryKey: ['credit-aging'] }); } });
+
+  if (!customerId) return <div className="rounded-3xl bg-red-50 p-6 text-sm font-medium text-red-700">Missing customer id.</div>;
+  if (customerQuery.isLoading) return <div className="rounded-3xl bg-white p-6 text-sm font-medium text-slate-500">Loading customer...</div>;
+  if (customerQuery.error || !customerQuery.data) return <div className="rounded-3xl bg-red-50 p-6 text-sm font-medium text-red-700">Unable to load customer.</div>;
+
+  const summary = ledgerQuery.data?.summary;
+
+  return <div data-cd-theme="profile" className="cd-shell mx-auto max-w-5xl space-y-4 pb-20"><div className="cd-hero rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><Link to="/credit-dispatch/customers" className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-slate-500"><ArrowLeft className="h-4 w-4" />Back</Link><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[11px] font-medium uppercase tracking-[0.15em] text-blue-600">Customer Profile</p><p className="mt-1 text-lg font-semibold text-slate-900">{customerQuery.data.customer_name}</p></div>{summary ? <span className={`w-fit rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-[0.1em] ${riskTone(summary.risk_category)}`}>{summary.risk_category}</span> : null}</div></div>{summary ? <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-medium uppercase tracking-[0.13em] text-slate-400">Outstanding</p><p className="mt-1 text-lg font-semibold text-red-700">{formatMoney(summary.outstanding)}</p></div><div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-medium uppercase tracking-[0.13em] text-slate-400">Overdue</p><p className="mt-1 text-lg font-semibold text-red-700">{formatMoney(summary.overdue)}</p></div><div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-medium uppercase tracking-[0.13em] text-slate-400">Credit Limit</p><p className="mt-1 text-lg font-semibold text-slate-900">{formatMoney(Number(form.credit_limit || 0))}</p></div></div> : null}<section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="grid gap-3 sm:grid-cols-2"><Field label="Customer Name"><input className={inputClass} value={form.customer_name} onChange={(event) => setForm({ ...form, customer_name: event.target.value })} /></Field><Field label="Mobile No."><input className={inputClass} maxLength={10} value={form.mobile_no} onChange={(event) => setForm({ ...form, mobile_no: event.target.value.replace(/\D/g, '').slice(0, 10) })} /></Field><Field label="Customer Type"><select className={inputClass} value={form.customer_type} onChange={(event) => setForm({ ...form, customer_type: event.target.value as typeof form.customer_type })}>{['Major Account', 'Retailer', 'Customer'].map((item) => <option key={item} value={item}>{item}</option>)}</select></Field><Field label="Default Branch"><input className={inputClass} value={form.default_branch} onChange={(event) => setForm({ ...form, default_branch: event.target.value })} /></Field><Field label="Credit Limit"><input className={inputClass} type="number" min="0" value={form.credit_limit} onChange={(event) => setForm({ ...form, credit_limit: event.target.value })} /></Field><Field label="Business Partner Code"><input className={inputClass} value={form.business_partner_code} onChange={(event) => setForm({ ...form, business_partner_code: event.target.value })} /></Field><Field label="GST No."><input className={inputClass} value={form.gst_no} onChange={(event) => setForm({ ...form, gst_no: event.target.value.toUpperCase() })} /></Field><Field label="Address"><textarea className={`${inputClass} min-h-24`} value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} /></Field></div>{mutation.error ? <p className="mt-3 rounded-2xl bg-red-50 p-3 text-xs font-medium text-red-700">{(mutation.error as Error).message}</p> : null}{mutation.isSuccess ? <p className="mt-3 rounded-2xl bg-emerald-50 p-3 text-xs font-medium text-emerald-700">Customer updated.</p> : null}<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end"><Link to={'/credit-dispatch/customers/ledger?id=' + customerId} className="inline-flex items-center justify-center rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">View Ledger</Link><Button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending}><Save className="h-4 w-4" />{mutation.isPending ? 'Saving...' : 'Save Customer'}</Button></div></section></div>;
+}

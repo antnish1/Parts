@@ -21,6 +21,8 @@ import { CreditDispatchDetailPage } from '../features/credit-dispatch/CreditDisp
 import { RequestReportsPage } from '../features/credit-dispatch/RequestReportsPage';
 import { CreditCustomersPage } from '../features/credit-dispatch/CreditCustomersPage';
 import { CreditCustomerLedgerPage } from '../features/credit-dispatch/CreditCustomerLedgerPage';
+import { CreditCustomerProfilePage } from '../features/credit-dispatch/CreditCustomerProfilePage';
+import { CreditAgingPage } from '../features/credit-dispatch/CreditAgingPage';
 import { NewCreditDispatchPage } from '../features/credit-dispatch/NewCreditDispatchPage';
 
 function RoleLanding() {
@@ -52,6 +54,8 @@ export function AppRouter() {
             <Route path="/docket-scanner" element={<DocketScannerPage />} />
             <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
             <Route path="/credit-dispatch/customers" element={<CreditCustomersPage />} />
+            <Route path="/credit-dispatch/customers/aging" element={<CreditAgingPage />} />
+            <Route path="/credit-dispatch/customers/profile" element={<CreditCustomerProfilePage />} />
             <Route path="/credit-dispatch/customers/ledger" element={<CreditCustomerLedgerPage />} />
             <Route path="/credit-dispatch/reports" element={<RequestReportsPage />} />
             <Route path="/credit-dispatch/view" element={<CreditDispatchDetailPage />} />

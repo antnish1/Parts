@@ -33,6 +33,23 @@ export type CreditCustomerOutstanding = {
   risk_category: 'Green' | 'Amber' | 'Red';
 };
 
+export type CreditCustomerAging = {
+  customer_id: string;
+  customer_name: string;
+  mobile_no: string;
+  customer_type: CreditDispatchRecord['customer_type'];
+  default_branch: string | null;
+  credit_limit: number | null;
+  outstanding: number;
+  bucket_0_7: number;
+  bucket_8_15: number;
+  bucket_16_30: number;
+  bucket_30_plus: number;
+  overdue: number;
+  latest_due_date: string | null;
+  risk_category: 'Green' | 'Amber' | 'Red';
+};
+
 export type CreditCustomerLedgerRow = {
   customer_id: string;
   dispatch_id: string;
@@ -53,6 +70,11 @@ export function riskTone(risk: string) {
   if (risk === 'Red') return 'border-red-200 bg-red-50 text-red-700';
   if (risk === 'Amber') return 'border-amber-200 bg-amber-50 text-amber-700';
   return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+}
+
+export function buildPaymentReminder(customer: Pick<CreditCustomerOutstanding, 'customer_name' | 'mobile_no' | 'outstanding' | 'overdue'>) {
+  const amount = Number(customer.overdue || 0) > 0 ? customer.overdue : customer.outstanding;
+  return `Dear ${customer.customer_name}, payment of ${formatMoney(amount)} is pending against your credit dispatch account. Kindly arrange payment at the earliest. - Frontier Commercial Vehicle Pvt. Ltd.`;
 }
 
 export async function searchCreditCustomers(query: string) {
@@ -80,6 +102,41 @@ export async function getCreditCustomerOutstanding() {
 
   if (error) throw error;
   return (data ?? []) as CreditCustomerOutstanding[];
+}
+
+export async function getCreditCustomerAging() {
+  const { data, error } = await supabase
+    .from('portal_credit_customer_aging_view')
+    .select('*')
+    .order('overdue', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as CreditCustomerAging[];
+}
+
+export async function getCreditCustomer(customerId: string) {
+  const { data, error } = await supabase.from('portal_credit_customers').select('*').eq('id', customerId).single();
+  if (error) throw error;
+  return data as CreditCustomer;
+}
+
+export async function updateCreditCustomer(customer: Pick<CreditCustomer, 'id' | 'customer_name' | 'mobile_no' | 'customer_type' | 'default_branch' | 'address' | 'gst_no' | 'business_partner_code' | 'credit_limit'>) {
+  if (!customer.customer_name.trim()) throw new Error('Customer name is required.');
+  if (!/^\d{10}$/.test(customer.mobile_no.trim())) throw new Error('Enter a valid 10 digit mobile number.');
+  const { error } = await supabase
+    .from('portal_credit_customers')
+    .update({
+      customer_name: customer.customer_name.trim(),
+      mobile_no: customer.mobile_no.trim(),
+      customer_type: customer.customer_type,
+      default_branch: customer.default_branch?.trim() || null,
+      address: customer.address?.trim() || null,
+      gst_no: customer.gst_no?.trim() || null,
+      business_partner_code: customer.business_partner_code?.trim() || null,
+      credit_limit: customer.credit_limit ? Number(customer.credit_limit) : null,
+    })
+    .eq('id', customer.id);
+  if (error) throw error;
 }
 
 export async function getCreditCustomerLedger(customerId: string) {
