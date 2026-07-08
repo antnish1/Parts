@@ -12,6 +12,7 @@ const num = (value: unknown) => {
 };
 
 const closedRowStatuses = new Set(['received', 'issued', 'rejected']);
+const allowedStatusUploadRoles = ['admin', 'manager', 'developer'];
 
 type ApplyReportRow = {
   result: 'SUCCESS' | 'SKIPPED' | 'FAILED';
@@ -167,7 +168,7 @@ serve(async (req) => {
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
   const { data: profile, error: profileError } = await adminClient.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
   if (profileError) return json({ error: profileError.message }, 400);
-  if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can apply status reports' }, 403);
+  if (!profile?.is_active || !allowedStatusUploadRoles.includes(profile.role)) return json({ error: 'Only active admin, manager, or developer can apply status reports' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const rows = Array.isArray(body.rows) ? body.rows : [];
