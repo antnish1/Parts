@@ -46,15 +46,15 @@ export function DocketScannerPage() {
 
   async function lookupRows(valueOverride?: string) {
     const value = normalizeDocketNo(valueOverride || docketNo);
-    setScannerStatus(value ? `Searching ${value}...` : 'Enter or scan docket, invoice, order, machine or part reference.');
+    setScannerStatus(value ? `Searching docket ${value}...` : 'Enter or scan docket number.');
     if (!value) return;
     try {
       const result = await lookupTestDocketRows(value);
       setRows(result);
       setExpandedRows({});
-      setScannerStatus(result.length ? `${result.length} matching row(s) found.` : 'No matching rows found. Try docket, invoice, delivery, order, machine or part no.');
+      setScannerStatus(result.length ? `${result.length} docket row(s) found.` : 'No matching docket rows found. Check docket number and try again.');
     } catch (error) {
-      setScannerStatus(error instanceof Error ? error.message : 'Lookup failed.');
+      setScannerStatus(error instanceof Error ? error.message : 'Docket lookup failed.');
     }
   }
 
@@ -70,7 +70,7 @@ export function DocketScannerPage() {
 
   async function startScanner() {
     if (!window.BarcodeDetector) {
-      setScannerStatus('BarcodeDetector is not supported on this browser. Use manual search.');
+      setScannerStatus('BarcodeDetector is not supported on this browser. Use manual docket search.');
       return;
     }
     try {
@@ -82,7 +82,7 @@ export function DocketScannerPage() {
       }
       const detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'itf'] });
       setIsScanning(true);
-      setScannerStatus('Scanner running. Point camera at barcode.');
+      setScannerStatus('Scanner running. Point camera at docket barcode.');
       scanTimerRef.current = window.setInterval(() => {
         const video = videoRef.current;
         if (!video || video.readyState < 2) return;
@@ -94,7 +94,7 @@ export function DocketScannerPage() {
           lastScanRef.current = raw;
           lastScanAtRef.current = now;
           setDocketNo(raw);
-          setScannerStatus(`Detected ${raw}. Searching rows...`);
+          setScannerStatus(`Detected docket ${raw}. Searching rows...`);
           void lookupRows(raw);
         }).catch(() => undefined);
       }, 700);
@@ -109,11 +109,11 @@ export function DocketScannerPage() {
   async function receiveRow(row: TestDocketRow) {
     const key = rowKey(row);
     setBusyId(key);
-    setScannerStatus(`Receiving ${row.part_no} from ${row.docket_no || row.invoice_no || docketNo}...`);
+    setScannerStatus(`Receiving ${row.part_no} from docket ${row.docket_no || docketNo}...`);
     try {
       await receiveTestDocketRow(row);
       setScannerStatus(`${row.part_no}: billed quantity marked as received.`);
-      await lookupRows(row.docket_no || row.invoice_no || docketNo);
+      await lookupRows(row.docket_no || docketNo);
     } catch (error) {
       setScannerStatus(error instanceof Error ? error.message : 'Receive update failed.');
     } finally {
@@ -126,11 +126,11 @@ export function DocketScannerPage() {
   }
 
   return (
-    <PageCard eyebrow="Docket" title="Docket Scanner" description="Search docket, invoice, delivery, order, machine or part reference.">
+    <PageCard eyebrow="Docket" title="Docket Scanner" description="Search and receive rows by Docket No only.">
       <div className="grid gap-3 xl:grid-cols-[0.7fr_1.3fr]">
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Scanner Control</p>
-          <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#6D8196] bg-[#111827] text-center text-xs text-[#c7d2df]"><video ref={videoRef} className="h-full w-full object-cover" muted playsInline />{!isScanning ? <span className="absolute">Camera scanner area<br />Manual search is active</span> : null}</div>
+          <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#6D8196] bg-[#111827] text-center text-xs text-[#c7d2df]"><video ref={videoRef} className="h-full w-full object-cover" muted playsInline />{!isScanning ? <span className="absolute">Camera scanner area<br />Manual docket search is active</span> : null}</div>
           <div className="mt-3 grid grid-cols-2 gap-2"><button className="min-h-[44px] rounded-xl border border-[#263244] text-xs font-black text-[#82C8E5] disabled:opacity-40" disabled={isScanning} onClick={() => void startScanner()}>Start Scanner</button><button className="min-h-[44px] rounded-xl border border-[#263244] text-xs font-black text-[#ef6f7b] disabled:opacity-40" disabled={!isScanning} onClick={stopScanner}>Stop Scanner</button></div>
           <p className="mt-2 rounded-lg border border-[#263244] bg-[#111827] p-2 text-xs text-[#c7d2df]">Status: {scannerStatus}</p>
         </div>
@@ -138,10 +138,10 @@ export function DocketScannerPage() {
         <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Docket Row Receive</p>
           <div className="grid gap-2 lg:grid-cols-[1fr_auto]">
-            <input className="min-h-[44px] rounded-md border border-[#263244] bg-[#111827] px-3 py-2 text-sm text-white outline-none focus:border-[#82C8E5] lg:min-h-0 lg:py-1.5 lg:text-xs" value={docketNo} onChange={(event) => setDocketNo(normalizeDocketNo(event.target.value))} placeholder="Search docket, invoice, order, machine or part" onKeyDown={(event) => { if (event.key === 'Enter') void lookupRows(); }} />
+            <input className="min-h-[44px] rounded-md border border-[#263244] bg-[#111827] px-3 py-2 text-sm text-white outline-none focus:border-[#82C8E5] lg:min-h-0 lg:py-1.5 lg:text-xs" value={docketNo} onChange={(event) => setDocketNo(normalizeDocketNo(event.target.value))} placeholder="Enter docket number only" onKeyDown={(event) => { if (event.key === 'Enter') void lookupRows(); }} />
             <button className="min-h-[44px] rounded-xl border border-[#82C8E5]/50 px-4 text-xs font-black text-[#82C8E5] hover:bg-[#111827]" onClick={() => void lookupRows()}>Search</button>
           </div>
-          <p className="mt-2 text-[11px] text-[#c7d2df]">Search now supports docket, invoice, delivery, order number, final order number, machine number, customer, part number and part name.</p>
+          <p className="mt-2 text-[11px] text-[#c7d2df]">Search is restricted to Docket No only. Invoice, order, machine, customer and part fields are not used here.</p>
 
           <div className="mt-3 space-y-2 md:hidden">
             {rows.map((row) => {
@@ -152,7 +152,7 @@ export function DocketScannerPage() {
               return (
                 <div key={key} className="rounded-2xl border border-[#d9dee7] bg-white p-3 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0"><p className="truncate text-sm font-black text-[#0f172a]">{row.docket_no || row.invoice_no || row.delivery_no || '-'}</p><p className="truncate text-[11px] font-semibold text-[#667085]">{row.final_order_no || row.order_no} • {row.branch}</p></div>
+                    <div className="min-w-0"><p className="truncate text-sm font-black text-[#0f172a]">{row.docket_no || '-'}</p><p className="truncate text-[11px] font-semibold text-[#667085]">{row.final_order_no || row.order_no} • {row.branch}</p></div>
                     <StatusBadge status={row.item_status || row.order_status} />
                   </div>
                   <p className="mt-2 text-xs font-black text-[#0f4c81]">{row.part_no}</p>
@@ -163,7 +163,7 @@ export function DocketScannerPage() {
                 </div>
               );
             })}
-            {rows.length === 0 ? <p className="rounded-xl border border-[#263244] bg-[#111827] p-3 text-xs text-[#c7d2df]">No rows loaded yet.</p> : null}
+            {rows.length === 0 ? <p className="rounded-xl border border-[#263244] bg-[#111827] p-3 text-xs text-[#c7d2df]">No docket rows loaded yet.</p> : null}
           </div>
 
           <div className="mt-3 hidden overflow-x-auto rounded-md border border-[#263244] md:block">
