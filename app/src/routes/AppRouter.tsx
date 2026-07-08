@@ -19,6 +19,8 @@ import { DocketScannerPage } from '../features/docket/DocketScannerPage';
 import { CreditDispatchListPage } from '../features/credit-dispatch/CreditDispatchListPage';
 import { CreditDispatchDetailPage } from '../features/credit-dispatch/CreditDispatchDetailPage';
 import { RequestReportsPage } from '../features/credit-dispatch/RequestReportsPage';
+import { CreditCustomersPage } from '../features/credit-dispatch/CreditCustomersPage';
+import { CreditCustomerLedgerPage } from '../features/credit-dispatch/CreditCustomerLedgerPage';
 import { NewCreditDispatchPage } from '../features/credit-dispatch/NewCreditDispatchPage';
 
 function RoleLanding() {
@@ -49,6 +51,8 @@ export function AppRouter() {
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/docket-scanner" element={<DocketScannerPage />} />
             <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
+            <Route path="/credit-dispatch/customers" element={<CreditCustomersPage />} />
+            <Route path="/credit-dispatch/customers/ledger" element={<CreditCustomerLedgerPage />} />
             <Route path="/credit-dispatch/reports" element={<RequestReportsPage />} />
             <Route path="/credit-dispatch/view" element={<CreditDispatchDetailPage />} />
             <Route path="/credit-dispatch/new" element={<NewCreditDispatchPage />} />
