@@ -19,6 +19,7 @@ export function UploadsPage() {
   const [statusStep, setStatusStep] = useState('idle');
   const [isStatusUploading, setIsStatusUploading] = useState(false);
   const [statusRows, setStatusRows] = useState<StatusReportRow[]>([]);
+  const [statusParsedCount, setStatusParsedCount] = useState(0);
   const [statusFileName, setStatusFileName] = useState('');
   const [statusMeta, setStatusMeta] = useState<UploadMeta | null>(() => readUploadMeta('partsConnectStatusUploadMeta'));
 
@@ -72,9 +73,11 @@ export function UploadsPage() {
     setStatusMessage('Reading order status Excel file...');
     setStatusResult(null);
     setStatusRows([]);
+    setStatusParsedCount(0);
     setStatusFileName(file.name);
     try {
       const rows = await parseStatusReportFile(file);
+      setStatusParsedCount(rows.length);
       if (!rows.length) throw new Error('No valid status rows found. Expected columns include Order No, Material No, Billed Qty and Billing Dt.');
       setStatusRows(rows);
       setStatusStep('server');
@@ -85,7 +88,6 @@ export function UploadsPage() {
       setStatusMessage(`Preview ready. Matched ${preview.updated}, skipped ${preview.skipped}, failed ${preview.failed}. No database rows were changed.`);
     } catch (error) {
       setStatusStep('failed');
-      setStatusRows([]);
       setStatusMessage(error instanceof Error ? error.message : 'Order status preview failed.');
     } finally {
       setIsStatusUploading(false);
@@ -127,6 +129,7 @@ export function UploadsPage() {
 
   function clearStatusPreview() {
     setStatusRows([]);
+    setStatusParsedCount(0);
     setStatusResult(null);
     setStatusFileName('');
     setStatusStep('idle');
@@ -170,11 +173,11 @@ export function UploadsPage() {
           <div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
             <input type="file" accept=".xlsx,.xls" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]" disabled={isStatusUploading} onChange={(event) => void handleStatusPreview(event.target.files?.[0])} />
             <button className="rounded-md border border-[#1677ff] px-3 py-1.5 text-xs font-black text-[#1677ff] disabled:opacity-40" disabled={!canApplyStatus} onClick={() => void handleStatusApply()}>Apply Previewed Rows</button>
-            <button className="rounded-md border border-[#d9dee7] px-3 py-1.5 text-xs font-black text-[#475569] disabled:opacity-40" disabled={isStatusUploading || (!statusRows.length && !statusResult)} onClick={clearStatusPreview}>Clear</button>
+            <button className="rounded-md border border-[#d9dee7] px-3 py-1.5 text-xs font-black text-[#475569] disabled:opacity-40" disabled={isStatusUploading || (!statusRows.length && !statusResult && !statusFileName)} onClick={clearStatusPreview}>Clear</button>
           </div>
           <p className="mt-2 text-xs text-[#667085]">{isStatusUploading ? `Step: ${statusStep}` : statusMessage || 'Expected: Order No, Material No, Billed Qty, Billing Dt, Bill No, Docket, Transport, Delivery No'}</p>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#eef2f6]"><div className="h-full bg-[#1677ff] transition-all" style={{ width: `${statusProgress}%` }} /></div>
-          {statusFileName ? <p className="mt-2 text-[11px] text-[#6D8196]">Selected: {statusFileName} • Parsed rows: {statusRows.length}</p> : null}
+          {statusFileName ? <p className="mt-2 text-[11px] text-[#6D8196]">Selected: {statusFileName} • Parsed rows: {statusParsedCount} • Ready rows: {statusRows.length}</p> : null}
           {statusMessage ? <p className="mt-2 whitespace-pre-wrap text-xs font-semibold text-[#101827]">{statusMessage}</p> : null}
           {statusMeta ? <p className="mt-1 text-[11px] text-[#6D8196]">Last file: {statusMeta.file} • {new Date(statusMeta.at).toLocaleString('en-IN')}</p> : null}
           {statusResult ? <div className="mt-2 grid grid-cols-5 gap-2 text-xs"><p className="text-[#667085]">Total: <b className="text-[#101827]">{statusResult.total}</b></p><p className="text-[#667085]">Chunks: <b className="text-[#101827]">{statusResult.inserted}</b></p><p className="text-[#667085]">Matched: <b className="text-[#101827]">{statusResult.updated}</b></p><p className="text-[#667085]">Skipped: <b className="text-[#101827]">{statusResult.skipped}</b></p><p className="text-[#667085]">Failed: <b className="text-[#101827]">{statusResult.failed}</b></p></div> : null}
