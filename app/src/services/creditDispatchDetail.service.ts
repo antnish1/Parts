@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { CreditDispatchRecord } from './creditDispatch.service';
+import { deriveCreditDispatchRecoveryStatus, type CreditDispatchRecord } from './creditDispatch.service';
 
 export type CreditDispatchPayment = {
   id: string;
@@ -37,6 +37,12 @@ async function getSignedSignatureUrl(path: string | null | undefined) {
   return data?.signedUrl ?? null;
 }
 
+function withDerivedRecoveryStatus(row: CreditDispatchRecord): CreditDispatchRecord {
+  if (row.approval_status !== 'Approved') return row;
+  const recoveryStatus = deriveCreditDispatchRecoveryStatus(row);
+  return recoveryStatus === row.recovery_status ? row : { ...row, recovery_status: recoveryStatus };
+}
+
 export async function getCreditDispatchDetail(dispatchId: string): Promise<CreditDispatchDetail> {
   const dispatchQuery = supabase.from('portal_credit_dispatches').select('*').eq('id', dispatchId).single();
   const paymentsQuery = supabase.from('portal_credit_dispatch_payments').select('*').eq('dispatch_id', dispatchId).order('received_date', { ascending: false }).order('created_at', { ascending: false });
@@ -48,7 +54,7 @@ export async function getCreditDispatchDetail(dispatchId: string): Promise<Credi
   if (paymentsError) throw paymentsError;
   if (eventsError) throw eventsError;
 
-  const record = dispatch as CreditDispatchRecord;
+  const record = withDerivedRecoveryStatus(dispatch as CreditDispatchRecord);
   const [customerSignatureUrl, issuerSignatureUrl] = await Promise.all([
     getSignedSignatureUrl(record.customer_signature_path),
     getSignedSignatureUrl(record.issuer_signature_path),
