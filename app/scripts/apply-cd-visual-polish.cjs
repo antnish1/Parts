@@ -45,6 +45,10 @@ patchFile('src/features/credit-dispatch/NewCreditDispatchPage.tsx', (content) =>
     '<div data-cd-theme="request" className="cd-shell cd-request mx-auto max-w-4xl pb-24">',
   );
   next = next.replace(
+    '<div className="mx-auto max-w-4xl pb-44 xl:pb-24">',
+    '<div data-cd-theme="request" className="cd-shell cd-request mx-auto max-w-4xl pb-44 xl:pb-24">',
+  );
+  next = next.replace(
     '<div className="mx-auto max-w-4xl pb-[11rem] xl:pb-24">',
     '<div data-cd-theme="request" className="cd-shell cd-request mx-auto max-w-4xl pb-[11rem] xl:pb-24">',
   );
