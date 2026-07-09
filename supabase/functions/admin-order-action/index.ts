@@ -19,6 +19,21 @@ function isClosedStatus(value: unknown) {
   return status === 'received' || status === 'issued' || status === 'rejected';
 }
 
+async function finalOrderNumberExists(adminClient: ReturnType<typeof createClient>, reference: string, currentOrderId: string) {
+  const columns = ['final_order_no', 'processing_reference', 'order_no'];
+  for (const column of columns) {
+    const { data, error } = await adminClient
+      .from('portal_orders')
+      .select('id')
+      .eq(column, reference)
+      .neq('id', currentOrderId)
+      .limit(1);
+    if (error) throw error;
+    if (data?.length) return true;
+  }
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -79,14 +94,8 @@ serve(async (req) => {
       if (reference === String(order.order_no).toUpperCase()) return json({ error: 'Final order number cannot be same as temporary order number' }, 400);
       if (normalizeStatus(order.status) !== 'approved' && normalizeStatus(order.approval_status) !== 'approved') return json({ error: 'Only approved orders can be processed.' }, 400);
 
-      const { data: duplicateRows, error: duplicateError } = await adminClient
-        .from('portal_orders')
-        .select('id')
-        .or(`final_order_no.eq.${reference},processing_reference.eq.${reference},order_no.eq.${reference}`)
-        .neq('id', order.id)
-        .limit(1);
-      if (duplicateError) throw duplicateError;
-      if (duplicateRows?.length) return json({ error: 'Final order number already exists' }, 409);
+      const hasDuplicate = await finalOrderNumberExists(adminClient, reference, order.id);
+      if (hasDuplicate) return json({ error: 'Final order number already exists' }, 409);
 
       const { error } = await adminClient.from('portal_orders').update({
         status: 'processed',
