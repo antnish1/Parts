@@ -249,7 +249,7 @@ async function getInTransitQtyByPart(branch: string, partNos: string[]) {
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('portal_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, employee_id, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role))'
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, employee_id, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)'
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
