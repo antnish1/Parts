@@ -15,7 +15,6 @@ edit('src/services/testOrderView.service.ts', (s) => {
   s = s.replace("type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };", "type PersonLink = { full_name: string | null; role: string | null };\ntype RawOrderView = Omit<TestOrderView, 'approver' | 'employee'> & { approver?: PersonLink | PersonLink[] | null; employee?: PersonLink | PersonLink[] | null; };");
   s = s.replace("  const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;\n  return { ...order, approver };", "  const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;\n  const employee = Array.isArray(order.employee) ? order.employee[0] ?? null : order.employee ?? null;\n  return { ...order, approver, employee };");
   s = s.replace("id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, approver_id", "id, order_no, branch, order_type, order_for, employee_name_legacy, approved_by_name, approved_by_super_name, machine_no, customer_name, call_id, warranty_status, status, approval_status, approver_id");
-  s = s.replace("created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)", "created_at, employee:portal_profiles!portal_orders_employee_id_fkey(full_name, role), approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)");
   return s;
 });
 
