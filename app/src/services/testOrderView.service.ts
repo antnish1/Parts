@@ -16,6 +16,7 @@ export type TestOrderView = {
   warranty_status: string | null;
   status: string;
   approval_status: string;
+  employee_id: string | null;
   approver_id: string | null;
   processing_reference: string | null;
   processed_notes: string | null;
@@ -29,6 +30,7 @@ export type TestOrderView = {
   transport_name: string | null;
   created_at: string;
   approver?: { full_name: string | null; role: string | null } | null;
+  employee?: { full_name: string | null; role: string | null } | null;
 };
 
 export type TestOrderBillingChunk = {
@@ -81,7 +83,7 @@ export type TestOrderEvent = { id: string; event_type: string; old_status: strin
 export type TestOrderCommentAttachment = { id: string; comment_id: string; original_file_name: string; mime_type: string; file_size_bytes: number; created_at: string; };
 export type TestOrderComment = { id: string; comment_type: string; body: string | null; attachment_path: string | null; created_at: string; author?: { full_name: string | null; role: string | null } | null; attachments: TestOrderCommentAttachment[]; };
 
-type RawOrderView = Omit<TestOrderView, 'approver'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
+type RawOrderView = Omit<TestOrderView, 'approver' | 'employee'> & { approver?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; employee?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawComment = Omit<TestOrderComment, 'author' | 'attachments'> & { author?: { full_name: string | null; role: string | null } | Array<{ full_name: string | null; role: string | null }> | null; };
 type RawItem = Omit<TestOrderViewItem, 'billing_chunks' | 'in_transit_qty'>;
 type TransitCandidate = RawItem & { order_id: string; billing_chunks?: TestOrderBillingChunk[]; portal_orders?: { branch: string | null; status: string | null; approval_status: string | null } | null };
@@ -90,7 +92,8 @@ const OPEN_TRANSIT_STATUSES = new Set(['APPROVED', 'PROCESSED', 'PARTIALLY DISPA
 
 function normalizeOrderView(order: RawOrderView): TestOrderView {
   const approver = Array.isArray(order.approver) ? order.approver[0] ?? null : order.approver ?? null;
-  return { ...order, approver };
+  const employee = Array.isArray(order.employee) ? order.employee[0] ?? null : order.employee ?? null;
+  return { ...order, approver, employee };
 }
 
 function normalizeComment(comment: RawComment, attachments: TestOrderCommentAttachment[]): TestOrderComment {
@@ -246,7 +249,7 @@ async function getInTransitQtyByPart(branch: string, partNos: string[]) {
 export async function getTestOrderView(orderId: string) {
   const { data: order, error: orderError } = await supabase
     .from('portal_orders')
-    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)')
+    .select('id, order_no, branch, order_type, order_for, machine_no, customer_name, call_id, warranty_status, status, approval_status, employee_id, approver_id, processing_reference, processed_notes, processed_date, final_order_no, order_reg_date, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, created_at, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role)')
     .eq('id', orderId)
     .single();
   if (orderError) throw orderError;
@@ -255,6 +258,17 @@ export async function getTestOrderView(orderId: string) {
   if (!(await currentBranchScopeIncludes(rawOrder.branch))) throw new Error('This order belongs to another branch.');
   const profile = await getCurrentPortalProfile();
   if (profile?.role === 'super' && rawOrder.approver_id !== profile.id) throw new Error('This order is assigned to another approver.');
+
+  let employee: TestOrderView['employee'] = null;
+  if (rawOrder.employee_id) {
+    const { data: employeeProfile, error: employeeError } = await supabase
+      .from('portal_profiles')
+      .select('full_name, role')
+      .eq('id', rawOrder.employee_id)
+      .maybeSingle();
+    if (employeeError) console.warn('Order employee lookup failed.', employeeError.message);
+    else employee = employeeProfile;
+  }
 
   const { data: items, error: itemError } = await supabase
     .from('portal_order_items')
@@ -289,5 +303,5 @@ export async function getTestOrderView(orderId: string) {
   const attachmentMap = await getCommentAttachments(orderId, rawComments);
   const commentsWithAttachments = rawComments.map((comment) => normalizeComment(comment, attachmentMap.get(comment.id) ?? []));
 
-  return { order: normalizeOrderView(rawOrder), items: itemsWithChunks, events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
+  return { order: { ...normalizeOrderView(rawOrder), employee }, items: itemsWithChunks, events: (events ?? []) as TestOrderEvent[], comments: commentsWithAttachments };
 }
