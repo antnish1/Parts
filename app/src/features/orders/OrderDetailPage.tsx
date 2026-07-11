@@ -117,7 +117,7 @@ export function OrderDetailPage() {
     { label: 'Order Type', value: order.order_type },
     { label: 'Order For', value: order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock' },
     { label: 'Branch', value: order.branch },
-    { label: 'Employee', value: '-' },
+    { label: 'Employee Name', value: order.employee?.full_name || '-' },
     { label: 'Status', value: displayStatus, type: 'status' },
     { label: 'Machine No', value: order.machine_no || '-' },
     { label: 'Customer', value: order.customer_name || '-' },
@@ -268,61 +268,86 @@ export function OrderDetailPage() {
 
       <article id="order-print-document" className="order-print-document" aria-label="Printable order document">
         <header className="print-doc-header">
-          <div>
-            <div className="print-brand">Parts Connect Portal</div>
-            <div className="print-subtitle">Internal Parts Order &amp; Approval Document</div>
+          <div className="print-brand-block">
+            <div className="print-logo-mark">PC</div>
+            <div><div className="print-brand">Parts Connect Portal</div><div className="print-subtitle">Internal Parts Order &amp; Approval Document</div></div>
           </div>
-          <div>
-            <div className="print-title">Parts Order Details</div>
-            <div className="print-muted">Order ID: {order.final_order_no || order.order_no}</div>
-          </div>
+          <div><div className="print-title">Parts Order Details</div><div className="print-order-id">Order ID: {order.final_order_no || order.order_no}</div></div>
         </header>
 
-        <div className="print-meta-grid">
-          <div className="print-meta"><span className="print-meta-label">Order Date &amp; Time</span><span className="print-meta-value">{formatDate(order.created_at)}</span></div>
-          <div className="print-meta"><span className="print-meta-label">Current Status</span><span className="print-meta-value">{displayStatus}</span></div>
-          <div className="print-meta"><span className="print-meta-label">Branch</span><span className="print-meta-value">{summaryValue(order.branch)}</span></div>
-          <div className="print-meta"><span className="print-meta-label">Line Items</span><span className="print-meta-value">{items.length}</span></div>
-          {summaryRows.map((row) => (
-            <div className="print-meta" key={`print-${row.label}`}><span className="print-meta-label">{row.label}</span><span className="print-meta-value">{summaryValue(row.value)}</span></div>
-          ))}
-          <div className="print-meta"><span className="print-meta-label">Order Registration Date</span><span className="print-meta-value">{orderRegDateLabel}</span></div>
-          <div className="print-meta"><span className="print-meta-label">Processed Date</span><span className="print-meta-value">{summaryValue(order.processed_date)}</span></div>
+        <div className="print-top-facts">
+          <div className="print-fact"><strong>Order Date &amp; Time</strong><span>{formatDate(order.created_at)}</span></div>
+          <div className="print-fact"><strong>Branch</strong><span>{summaryValue(order.branch)}</span></div>
+          <div className="print-fact"><strong>Current Status</strong><span>{displayStatus}</span></div>
+          <div className="print-fact"><strong>Line Items</strong><span>{items.length}</span></div>
+        </div>
+
+        <h2 className="print-section-title">Order Summary</h2>
+        <div className="print-summary-grid">
+          <div className="print-summary-row"><strong>Order Type:</strong><span>{summaryValue(order.order_type)}</span></div>
+          <div className="print-summary-row"><strong>Order For:</strong><span>{order.order_for === 'Customer' ? 'Customer' : summaryValue(order.order_for)}</span></div>
+          <div className="print-summary-row"><strong>Branch:</strong><span>{summaryValue(order.branch)}</span></div>
+          <div className="print-summary-row"><strong>Employee Name:</strong><span>{summaryValue(order.employee?.full_name)}</span></div>
+          <div className="print-summary-row"><strong>Call ID:</strong><span>{summaryValue(order.call_id)}</span></div>
+          <div className="print-summary-row"><strong>Status:</strong><span>{displayStatus}</span></div>
+          <div className="print-summary-row"><strong>Machine No:</strong><span>{summaryValue(order.machine_no)}</span></div>
+          <div className="print-summary-row"><strong>Customer:</strong><span>{summaryValue(order.customer_name)}</span></div>
+          <div className="print-summary-row"><strong>Machine Type:</strong><span>{summaryValue(order.warranty_status)}</span></div>
+          <div className="print-summary-row"><strong>Approved By:</strong><span>{summaryValue(order.approver?.full_name)}</span></div>
+          <div className="print-summary-row"><strong>DBMS Order No:</strong><span>{summaryValue(order.final_order_no || order.processing_reference)}</span></div>
+          <div className="print-summary-row"><strong>Processed Date:</strong><span>{formatDate(order.processed_date)}</span></div>
         </div>
 
         <h2 className="print-section-title">Parts Details</h2>
         <table className="print-table">
-          <thead><tr><th>Part</th><th>Description</th><th>Qty</th><th>Billed</th><th>Pending</th><th>Value</th><th>Status</th><th>Reg Dt</th><th>Bill No</th><th>Billing Dt</th><th>Transport</th><th>Docket</th></tr></thead>
+          <thead><tr><th>Part</th><th>Description</th><th>Qty</th><th>Billed</th><th>Pending</th><th>Value</th><th>Status</th><th>Processed</th><th>Reg Dt</th><th>Bill No</th><th>Billing Dt</th><th>Transport</th><th>Docket</th></tr></thead>
           <tbody>
             {items.map((item) => (
-              <tr key={`print-item-${item.id}`}>
-                <td>{item.part_no}</td><td>{item.description || '-'}</td>
-                <td className="print-num">{getEffectiveQty(item)}</td><td className="print-num">{getBilledQty(item)}</td><td className="print-num">{getPendingQty(item)}</td>
-                <td className="print-num">{formatMoney(getEffectiveValue(item))}</td><td>{getResolvedRowStatus(item)}</td>
-                <td>{item.order_reg_date || orderRegDateLabel}</td><td>{item.dbms_invoice_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
-                <td>{item.dbms_invoice_date || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td><td>{item.transport_name || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
-                <td>{item.docket_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
-              </tr>
+              <Fragment key={`print-item-${item.id}`}>
+                <tr>
+                  <td>{item.part_no}</td><td>{item.description || '-'}</td>
+                  <td className="print-num">{getEffectiveQty(item)}</td><td className="print-num">{getBilledQty(item)}</td><td className="print-num">{getPendingQty(item)}</td>
+                  <td className="print-num">{formatMoney(getEffectiveValue(item))}</td><td>{getResolvedRowStatus(item)}</td><td>{formatDate(order.processed_date)}</td>
+                  <td>{item.order_reg_date || orderRegDateLabel}</td><td>{item.dbms_invoice_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+                  <td>{item.dbms_invoice_date || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td><td>{item.transport_name || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+                  <td>{item.docket_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+                </tr>
+                {item.billing_chunks.length > 1 ? item.billing_chunks.map((chunk) => (
+                  <tr className="print-chunk-row" key={`print-chunk-${chunk.id}`}>
+                    <td>↳ {item.part_no}</td><td>Billing chunk</td><td>-</td><td className="print-num">{Number(chunk.billed_qty ?? 0)}</td><td>-</td><td>-</td>
+                    <td>{chunk.raw_status || '-'}</td><td>{formatDate(chunk.created_at)}</td><td>{chunk.order_reg_date || '-'}</td><td>{chunk.invoice_no || '-'}</td>
+                    <td>{chunk.billing_date || '-'}</td><td>{chunk.transport_name || '-'}</td><td>{chunk.docket_no || '-'}</td>
+                  </tr>
+                )) : null}
+              </Fragment>
             ))}
           </tbody>
         </table>
+
         <div className="print-totals">
-          <div className="print-total">Total Qty <strong>{totalQty}</strong></div>
-          <div className="print-total">Billed Qty <strong>{totalBilled}</strong></div>
-          <div className="print-total">Pending Qty <strong>{totalPending}</strong></div>
-          <div className="print-total">Total Value <strong>{formatMoney(totalValue)}</strong></div>
+          <div className="print-total"><span>Total Qty</span><strong>{totalQty}</strong></div>
+          <div className="print-total"><span>Total Billed Qty</span><strong>{totalBilled}</strong></div>
+          <div className="print-total"><span>Total Pending Qty</span><strong>{totalPending}</strong></div>
+          <div className="print-total"><span>Total Value</span><strong>{formatMoney(totalValue)}</strong></div>
+          <div className="print-total"><span>Number of line items</span><strong>{items.length}</strong></div>
         </div>
 
-        <h2 className="print-section-title">Comments</h2>
-        {comments.length ? comments.map((comment) => (
-          <div className="print-comment" key={`print-comment-${comment.id}`}>
-            <strong>{comment.author?.full_name || 'Unknown User'}</strong> — {comment.body || '-'}
-            <div className="print-comment-author">{formatDate(comment.created_at)}{comment.attachments.length ? ` • Attachments: ${comment.attachments.map((attachment) => attachment.original_file_name).join(', ')}` : ''}</div>
-          </div>
-        )) : <div className="print-comment">No comments.</div>}
-
-        <h2 className="print-section-title">Order Activity</h2>
-        <div className="print-activity"><OrderActivityPanel events={events} /></div>
+        <h2 className="print-section-title">Comments &amp; Order Activity</h2>
+        <div className="print-history-list">
+          {comments.map((comment) => (
+            <div className="print-history-row" key={`print-comment-${comment.id}`}>
+              <strong>{comment.author?.full_name || 'Unknown User'}</strong><span> — {comment.body || '-'}</span>
+              <small>{formatDate(comment.created_at)}{comment.attachments.length ? ` • Attachments: ${comment.attachments.map((attachment) => attachment.original_file_name).join(', ')}` : ''}</small>
+            </div>
+          ))}
+          {events.map((event) => (
+            <div className="print-history-row" key={`print-event-${event.id}`}>
+              <strong>{event.event_type.replace(/_/g, ' ')}</strong><span> — {event.notes || [event.old_status, event.new_status].filter(Boolean).join(' → ') || '-'}</span>
+              <small>{formatDate(event.created_at)}</small>
+            </div>
+          ))}
+          {!comments.length && !events.length ? <div className="print-history-row">No comments or activity recorded.</div> : null}
+        </div>
       </article>
 
       <section className="rounded-lg border border-[#d9dee7] bg-white px-4 py-3">
