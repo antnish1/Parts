@@ -209,18 +209,44 @@ export function OrderDetailPage() {
     }
   }
 
-  function downloadCsv() {
-    const rows = [
-      ['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Reg Dt', 'Bill No', 'Billing Dt', 'Transport', 'Docket', 'Chunks', 'Inventory', 'Prev 30d'],
-      ...items.map((item) => [item.part_no, item.description || '', getEffectiveQty(item), getBilledQty(item), getPendingQty(item), getEffectiveValue(item), getResolvedRowStatus(item), order.processed_date || '', item.order_reg_date || orderRegDateLabel, item.dbms_invoice_no || '', item.dbms_invoice_date || '', item.transport_name || '', item.docket_no || '', item.billing_chunks.length, inventoryMap[normalizePartNo(item.part_no)] ?? 0, item.previous_30d_qty ?? 0]),
-    ];
-    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  function downloadOrderDocument() {
+    const documentElement = document.getElementById('order-print-document');
+    if (!documentElement) return;
+    const documentTitle = `Parts Order Details - ${order.final_order_no || order.order_no}`;
+    const styles = `
+      @page { size: A4 portrait; margin: 8mm; }
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #111827; font-family: Arial, sans-serif; font-size: 9px; }
+      .order-print-document { display: block; }
+      .print-doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #111827; padding-bottom: 5px; margin-bottom: 6px; }
+      .print-brand { font-size: 18px; font-weight: 800; }
+      .print-subtitle, .print-muted { color: #475569; }
+      .print-title { font-size: 17px; font-weight: 800; text-align: right; }
+      .print-section-title { margin: 7px 0 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+      .print-meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #94a3b8; }
+      .print-meta { min-height: 30px; padding: 4px 6px; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; }
+      .print-meta-label { display: block; color: #475569; font-size: 7px; font-weight: 700; text-transform: uppercase; }
+      .print-meta-value { display: block; margin-top: 2px; font-size: 9px; font-weight: 700; overflow-wrap: anywhere; }
+      .print-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      .print-table th, .print-table td { border: 1px solid #94a3b8; padding: 3px; font-size: 7px; line-height: 1.2; vertical-align: top; overflow-wrap: anywhere; }
+      .print-table th { background: #eef2f6; font-weight: 800; text-align: left; }
+      .print-num { text-align: right; }
+      .print-totals { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #94a3b8; border-top: 0; }
+      .print-total { padding: 4px 6px; border-right: 1px solid #cbd5e1; }
+      .print-total strong { float: right; }
+      .print-comment { border: 1px solid #cbd5e1; padding: 4px 6px; margin-bottom: 3px; break-inside: avoid; }
+      .print-comment-author { margin-top: 2px; color: #475569; font-size: 7px; }
+      .print-activity { font-size: 8px; }
+      .print-activity button { display: none; }
+      tr, .print-meta, .print-total { break-inside: avoid; }
+    `;
+    const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${documentTitle}</title><style>${styles}</style></head><body>${documentElement.outerHTML}</body></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${order.final_order_no || order.order_no}-parts.csv`;
+    link.download = `${order.final_order_no || order.order_no}-order-details.html`;
     link.click();
-    URL.revokeObjectURL(url);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   return (
@@ -232,13 +258,72 @@ export function OrderDetailPage() {
         {canProcess ? <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runProcessAction()}>{busyAction === 'process' ? 'Processing' : 'Process'}</button> : null}
         {canApprove ? <button type="button" className="h-8 rounded-md border border-[#b7d7c3] bg-white px-3 text-xs font-medium text-[#14532d] hover:bg-[#f0fdf4] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runApprovalAction('approve')}>Approve</button> : null}
         {canApprove ? <button type="button" className="h-8 rounded-md border border-[#f2c8c8] bg-white px-3 text-xs font-medium text-[#b42318] hover:bg-[#fff1f3] disabled:opacity-50" disabled={isBlockingAction} onClick={() => void runApprovalAction('reject')}>Reject</button> : null}
-        <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff]" disabled={isBlockingAction} onClick={downloadCsv}>Download</button>
+        <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff]" disabled={isBlockingAction} onClick={downloadOrderDocument}>Download</button>
         <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff]" disabled={isBlockingAction} onClick={() => window.print()}>Print</button>
         <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff]" disabled={isBlockingAction} onClick={() => document.getElementById('order-comments')?.scrollIntoView({ behavior: 'smooth' })}>Comment</button>
         <button type="button" className="h-8 rounded-md border border-[#cfd8e3] bg-white px-3 text-xs font-medium text-[#0f172a] hover:bg-[#f3f8ff]" disabled={isBlockingAction} onClick={() => navigate(-1)}>Back</button>
       </div>
 
       {actionMessage ? <p className="no-print mb-2 rounded-md border border-[#d9dee7] bg-[#f8fbff] px-3 py-2 text-xs font-medium text-[#344054]">{actionMessage}</p> : null}
+
+      <article id="order-print-document" className="order-print-document" aria-label="Printable order document">
+        <header className="print-doc-header">
+          <div>
+            <div className="print-brand">Parts Connect Portal</div>
+            <div className="print-subtitle">Internal Parts Order &amp; Approval Document</div>
+          </div>
+          <div>
+            <div className="print-title">Parts Order Details</div>
+            <div className="print-muted">Order ID: {order.final_order_no || order.order_no}</div>
+          </div>
+        </header>
+
+        <div className="print-meta-grid">
+          <div className="print-meta"><span className="print-meta-label">Order Date &amp; Time</span><span className="print-meta-value">{formatDate(order.created_at)}</span></div>
+          <div className="print-meta"><span className="print-meta-label">Current Status</span><span className="print-meta-value">{displayStatus}</span></div>
+          <div className="print-meta"><span className="print-meta-label">Branch</span><span className="print-meta-value">{summaryValue(order.branch)}</span></div>
+          <div className="print-meta"><span className="print-meta-label">Line Items</span><span className="print-meta-value">{items.length}</span></div>
+          {summaryRows.map((row) => (
+            <div className="print-meta" key={`print-${row.label}`}><span className="print-meta-label">{row.label}</span><span className="print-meta-value">{summaryValue(row.value)}</span></div>
+          ))}
+          <div className="print-meta"><span className="print-meta-label">Order Registration Date</span><span className="print-meta-value">{orderRegDateLabel}</span></div>
+          <div className="print-meta"><span className="print-meta-label">Processed Date</span><span className="print-meta-value">{summaryValue(order.processed_date)}</span></div>
+        </div>
+
+        <h2 className="print-section-title">Parts Details</h2>
+        <table className="print-table">
+          <thead><tr><th>Part</th><th>Description</th><th>Qty</th><th>Billed</th><th>Pending</th><th>Value</th><th>Status</th><th>Reg Dt</th><th>Bill No</th><th>Billing Dt</th><th>Transport</th><th>Docket</th></tr></thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={`print-item-${item.id}`}>
+                <td>{item.part_no}</td><td>{item.description || '-'}</td>
+                <td className="print-num">{getEffectiveQty(item)}</td><td className="print-num">{getBilledQty(item)}</td><td className="print-num">{getPendingQty(item)}</td>
+                <td className="print-num">{formatMoney(getEffectiveValue(item))}</td><td>{getResolvedRowStatus(item)}</td>
+                <td>{item.order_reg_date || orderRegDateLabel}</td><td>{item.dbms_invoice_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+                <td>{item.dbms_invoice_date || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td><td>{item.transport_name || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+                <td>{item.docket_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="print-totals">
+          <div className="print-total">Total Qty <strong>{totalQty}</strong></div>
+          <div className="print-total">Billed Qty <strong>{totalBilled}</strong></div>
+          <div className="print-total">Pending Qty <strong>{totalPending}</strong></div>
+          <div className="print-total">Total Value <strong>{formatMoney(totalValue)}</strong></div>
+        </div>
+
+        <h2 className="print-section-title">Comments</h2>
+        {comments.length ? comments.map((comment) => (
+          <div className="print-comment" key={`print-comment-${comment.id}`}>
+            <strong>{comment.author?.full_name || 'Unknown User'}</strong> — {comment.body || '-'}
+            <div className="print-comment-author">{formatDate(comment.created_at)}{comment.attachments.length ? ` • Attachments: ${comment.attachments.map((attachment) => attachment.original_file_name).join(', ')}` : ''}</div>
+          </div>
+        )) : <div className="print-comment">No comments.</div>}
+
+        <h2 className="print-section-title">Order Activity</h2>
+        <div className="print-activity"><OrderActivityPanel events={events} /></div>
+      </article>
 
       <section className="rounded-lg border border-[#d9dee7] bg-white px-4 py-3">
         <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-[#eef2f6] pb-2">
