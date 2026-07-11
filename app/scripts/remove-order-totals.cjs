@@ -6,6 +6,8 @@ if (!fs.existsSync(filePath)) process.exit(0);
 
 let content = fs.readFileSync(filePath, 'utf8');
 
+// Preserve total calculations because the print/download document uses them.
+
 const startText = '<div className="mt-4 rounded-xl border border-[#c7d7e5]';
 const start = content.indexOf(startText);
 if (start !== -1) {
