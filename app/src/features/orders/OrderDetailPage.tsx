@@ -214,31 +214,41 @@ export function OrderDetailPage() {
     if (!documentElement) return;
     const documentTitle = `Parts Order Details - ${order.final_order_no || order.order_no}`;
     const styles = `
-      @page { size: A4 portrait; margin: 8mm; }
+      @page { size: A4 portrait; margin: 7mm; }
       * { box-sizing: border-box; }
-      body { margin: 0; color: #111827; font-family: Arial, sans-serif; font-size: 9px; }
-      .order-print-document { display: block; }
-      .print-doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #111827; padding-bottom: 5px; margin-bottom: 6px; }
-      .print-brand { font-size: 18px; font-weight: 800; }
-      .print-subtitle, .print-muted { color: #475569; }
-      .print-title { font-size: 17px; font-weight: 800; text-align: right; }
-      .print-section-title { margin: 7px 0 3px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-      .print-meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #94a3b8; }
-      .print-meta { min-height: 30px; padding: 4px 6px; border-right: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; }
-      .print-meta-label { display: block; color: #475569; font-size: 7px; font-weight: 700; text-transform: uppercase; }
-      .print-meta-value { display: block; margin-top: 2px; font-size: 9px; font-weight: 700; overflow-wrap: anywhere; }
+      body { margin: 0; color: #111827; background: #fff; font-family: Arial, sans-serif; font-size: 8px; line-height: 1.2; }
+      .order-print-document { display: block; width: 100%; }
+      .print-doc-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #111827; padding: 0 2px 5px; margin-bottom: 5px; }
+      .print-brand-block { display: flex; align-items: center; gap: 7px; }
+      .print-logo-mark { display: grid; place-items: center; width: 28px; height: 28px; border: 1.5px solid #111827; font-size: 9px; font-weight: 900; }
+      .print-brand { font-size: 17px; font-weight: 800; }
+      .print-subtitle, .print-muted, .print-order-id { color: #475569; }
+      .print-title { font-size: 16px; font-weight: 800; text-align: right; }
+      .print-order-id { margin-top: 1px; font-size: 8px; text-align: right; }
+      .print-top-facts { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid #94a3b8; padding: 2px 0 4px; }
+      .print-fact { display: grid; grid-template-columns: 108px 1fr; gap: 5px; padding: 2px 3px; }
+      .print-fact strong { font-size: 8px; }
+      .print-section-title { margin: 5px 0 3px; font-size: 9px; font-weight: 800; }
+      .print-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+      .print-summary-row { display: grid; grid-template-columns: 105px 1fr; min-height: 22px; align-items: center; border: 1px solid #b8c1cc; padding: 2px 5px; break-inside: avoid; }
+      .print-summary-row span { text-align: right; font-weight: 700; overflow-wrap: anywhere; }
       .print-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-      .print-table th, .print-table td { border: 1px solid #94a3b8; padding: 3px; font-size: 7px; line-height: 1.2; vertical-align: top; overflow-wrap: anywhere; }
-      .print-table th { background: #eef2f6; font-weight: 800; text-align: left; }
+      .print-table th, .print-table td { border: 1px solid #94a3b8; padding: 2.5px 2px; font-size: 6.2px; line-height: 1.15; vertical-align: middle; overflow-wrap: anywhere; }
+      .print-table th { background: #eef2f6; font-weight: 800; text-align: center; }
+      .print-table th:nth-child(1) { width: 8%; } .print-table th:nth-child(2) { width: 13%; }
+      .print-table th:nth-child(3), .print-table th:nth-child(4), .print-table th:nth-child(5) { width: 4%; }
+      .print-table th:nth-child(6) { width: 7%; } .print-table th:nth-child(7) { width: 8%; }
+      .print-table th:nth-child(8), .print-table th:nth-child(9), .print-table th:nth-child(11) { width: 8%; }
+      .print-table th:nth-child(10) { width: 9%; } .print-table th:nth-child(12), .print-table th:nth-child(13) { width: 9%; }
+      .print-table tr { break-inside: avoid; }
       .print-num { text-align: right; }
-      .print-totals { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #94a3b8; border-top: 0; }
-      .print-total { padding: 4px 6px; border-right: 1px solid #cbd5e1; }
-      .print-total strong { float: right; }
-      .print-comment { border: 1px solid #cbd5e1; padding: 4px 6px; margin-bottom: 3px; break-inside: avoid; }
-      .print-comment-author { margin-top: 2px; color: #475569; font-size: 7px; }
-      .print-activity { font-size: 8px; }
-      .print-activity button { display: none; }
-      tr, .print-meta, .print-total { break-inside: avoid; }
+      .print-chunk-row td { background: #f8fafc; color: #475569; font-size: 5.8px; }
+      .print-totals { border: 1px solid #94a3b8; border-top: 0; }
+      .print-total { display: flex; justify-content: space-between; min-height: 18px; align-items: center; padding: 2px 5px; border-bottom: 1px solid #cbd5e1; break-inside: avoid; }
+      .print-total:last-child { border-bottom: 0; }
+      .print-history-list { display: grid; gap: 3px; }
+      .print-history-row { border: 1px solid #b8c1cc; padding: 4px 6px; break-inside: avoid; }
+      .print-history-row small { display: block; margin-top: 2px; color: #475569; font-size: 6.5px; }
     `;
     const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${documentTitle}</title><style>${styles}</style></head><body>${documentElement.outerHTML}</body></html>`;
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
