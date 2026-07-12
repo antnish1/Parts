@@ -1,0 +1,109 @@
+@media (min-width: 1024px) {
+  /* The legacy light-pro theme converts all asides and dark utility classes to white.
+     Keep the desktop navigation as a deliberate high-contrast surface. */
+  body #root [data-theme='light-pro'].pc-app aside.pc-sidebar {
+    background: #0b1f3a !important;
+    border-color: #183a5d !important;
+    color: #e7eef7 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-brand {
+    border-color: rgb(255 255 255 / 13%) !important;
+    background: #102b49 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-brand-title {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-brand-subtitle {
+    color: #b7c8da !important;
+    -webkit-text-fill-color: #b7c8da !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-toggle {
+    border-color: rgb(255 255 255 / 14%) !important;
+    background: #102b49 !important;
+    color: #dbe7f2 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-toggle:hover {
+    background: #183f66 !important;
+    color: #ffffff !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-group {
+    color: #8fa8c0 !important;
+    -webkit-text-fill-color: #8fa8c0 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link {
+    background: transparent !important;
+    color: #d4e0ec !important;
+    -webkit-text-fill-color: #d4e0ec !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link svg {
+    color: #abc0d4 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link:hover {
+    background: #163654 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link:hover svg {
+    color: #ffffff !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link[aria-current='page'] {
+    background: #ffffff !important;
+    color: #0b2e55 !important;
+    -webkit-text-fill-color: #0b2e55 !important;
+    box-shadow: inset 3px 0 0 #f2c300, 0 1px 3px rgb(0 0 0 / 18%) !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link[aria-current='page'] svg {
+    color: #0f5fa8 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-footer {
+    border-top-color: rgb(255 255 255 / 14%) !important;
+    background: #0b1f3a !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-profile {
+    border-color: rgb(255 255 255 / 14%) !important;
+    background: #132f4f !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-profile-name {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-profile-meta {
+    color: #b7c8da !important;
+    -webkit-text-fill-color: #b7c8da !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-signout {
+    border-color: #355473 !important;
+    background: #102b49 !important;
+    color: #f4f7fb !important;
+    -webkit-text-fill-color: #f4f7fb !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-signout:hover {
+    border-color: #ef9a9a !important;
+    background: #3a2630 !important;
+    color: #ffe4e6 !important;
+    -webkit-text-fill-color: #ffe4e6 !important;
+  }
+
+  body #root [data-theme='light-pro'].pc-app .pc-sidebar-signout svg {
+    color: currentColor !important;
+  }
+}
