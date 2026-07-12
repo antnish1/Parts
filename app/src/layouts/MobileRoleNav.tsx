@@ -38,7 +38,7 @@ export function MobileRoleNav({ items, role }: MobileRoleNavProps) {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d9dee7] bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.14)] backdrop-blur xl:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d9dee7] bg-white/95 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgba(15,23,42,0.14)] backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
           {primary.map((item) => {
             const Icon = item.icon;
@@ -66,7 +66,7 @@ export function MobileRoleNav({ items, role }: MobileRoleNavProps) {
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-[60] bg-[#020617]/50 px-3 pb-[calc(88px+env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm xl:hidden" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[60] bg-[#020617]/50 px-3 pb-[calc(88px+env(safe-area-inset-bottom))] pt-16 backdrop-blur-sm lg:hidden" onClick={() => setOpen(false)}>
           <div className="mx-auto max-w-md rounded-3xl border border-[#d9dee7] bg-white p-3 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-black text-[#0f172a]">More Options</p>
