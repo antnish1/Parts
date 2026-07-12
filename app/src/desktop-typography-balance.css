@@ -1,0 +1,84 @@
+@media (min-width: 1024px) {
+  /* Reduce inherited heavy utility weights across desktop content without changing size or spacing. */
+  [data-theme='light-pro'] .pc-content .font-black,
+  [data-theme='light-pro'] .pc-content .font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  /* Preserve clear hierarchy only where emphasis is operationally useful. */
+  [data-theme='light-pro'] .pc-page-title,
+  [data-theme='light-pro'] .pc-content h1,
+  [data-theme='light-pro'] .pc-content h2,
+  [data-theme='light-pro'] .pc-content h3 {
+    font-weight: 700 !important;
+  }
+
+  [data-theme='light-pro'] .pc-content :is(.text-xl, .text-2xl, .text-3xl).font-black,
+  [data-theme='light-pro'] .pc-content :is(.text-xl, .text-2xl, .text-3xl).font-extrabold {
+    font-weight: 700 !important;
+  }
+
+  [data-theme='light-pro'] .pc-content .pc-status-badge,
+  [data-theme='light-pro'] .pc-content .pc-button,
+  [data-theme='light-pro'] .pc-content button.font-black,
+  [data-theme='light-pro'] .pc-content button.font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) th {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) td.font-black,
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) td.font-extrabold,
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) td .font-black,
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) td .font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-content label.font-black,
+  [data-theme='light-pro'] .pc-content label.font-extrabold,
+  [data-theme='light-pro'] .pc-content p.font-black,
+  [data-theme='light-pro'] .pc-content p.font-extrabold,
+  [data-theme='light-pro'] .pc-content span.font-black,
+  [data-theme='light-pro'] .pc-content span.font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  /* Sidebar: readable but not visually heavy on every row. */
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-link[aria-current='page'],
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-sidebar-brand-title,
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-sidebar-profile-name {
+    font-weight: 700 !important;
+  }
+
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-nav-group,
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-sidebar-brand-subtitle,
+  [data-theme='light-pro'].pc-app .pc-sidebar .pc-sidebar-profile-meta {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-kicker {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-title {
+    font-weight: 700 !important;
+  }
+
+  /* Credit Dispatch desktop typography follows the same hierarchy. */
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .font-black,
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .font-extrabold {
+    font-weight: 600 !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] :is(h1, h2, h3),
+  [data-theme='light-pro'] .pc-content [data-cd-theme] :is(.text-xl, .text-2xl, .text-3xl).font-black,
+  [data-theme='light-pro'] .pc-content [data-cd-theme] :is(.text-xl, .text-2xl, .text-3xl).font-extrabold {
+    font-weight: 700 !important;
+  }
+}
