@@ -1,0 +1,145 @@
+@media (min-width: 1024px) {
+  /* Keep supporting workspaces aligned to the compact desktop system. */
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] > div > .mb-3.grid > button {
+    min-height: 58px;
+    border-radius: 8px !important;
+    padding: 9px 11px !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] > div > .mb-3.grid > button p:last-child {
+    margin-top: 2px !important;
+    font-size: 14px !important;
+    line-height: 18px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] > div > .mb-3.flex {
+    min-height: 32px;
+    border-color: var(--pc-border) !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
+    padding: 5px 8px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] > div > .overflow-x-auto {
+    border-color: var(--pc-border) !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] table th,
+  [data-theme='light-pro'] [data-page-title='Delayed VOR'] table td {
+    padding-block: 6px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Uploads'] > div > .grid > section {
+    border-color: var(--pc-border) !important;
+    border-radius: 9px !important;
+    background: #ffffff !important;
+    padding: 11px !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Uploads'] > div > .grid > section > div:first-child {
+    border-bottom: 1px solid #edf1f5;
+    padding-bottom: 7px;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Uploads'] input[type='file'] {
+    min-height: 30px !important;
+    height: 30px !important;
+    border-color: var(--pc-border-strong) !important;
+    border-radius: 7px !important;
+    background: #ffffff !important;
+    color: #334155 !important;
+    font-size: 11px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Uploads'] button {
+    min-height: 30px;
+    border-radius: 7px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Uploads'] .max-h-64 {
+    border-color: var(--pc-border) !important;
+    border-radius: 8px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] section,
+  [data-theme='light-pro'] [data-page-title='Reports'] .rounded-xl,
+  [data-theme='light-pro'] [data-page-title='Reports'] .rounded-lg,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] section,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] .rounded-xl,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] .rounded-lg,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] section,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] .rounded-xl,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] .rounded-lg {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] [class*='bg-[#0b1020]'],
+  [data-theme='light-pro'] [data-page-title='Reports'] [class*='bg-[#111827]'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] [class*='bg-[#0b1020]'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] [class*='bg-[#111827]'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] [class*='bg-[#0b1020]'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] [class*='bg-[#111827]'] {
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] [class*='text-white'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] [class*='text-white'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] [class*='text-white'] {
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] [class*='text-[#d8e3ee]'],
+  [data-theme='light-pro'] [data-page-title='Reports'] [class*='text-[#c7d2df]'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] [class*='text-[#d8e3ee]'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] [class*='text-[#c7d2df]'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] [class*='text-[#d8e3ee]'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] [class*='text-[#c7d2df]'] {
+    color: #475569 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] table,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] table,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] table {
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] table th,
+  [data-theme='light-pro'] [data-page-title='Reports'] table td,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] table th,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] table td,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] table th,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] table td {
+    padding-block: 6px !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] input,
+  [data-theme='light-pro'] [data-page-title='Reports'] select,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] input,
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] select,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] input,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] select,
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] textarea {
+    border-color: var(--pc-border-strong) !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] button[class*='border'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] button[class*='border'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] button[class*='border'] {
+    border-color: var(--pc-border-strong) !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Reports'] button[class*='bg-[#1677ff]'],
+  [data-theme='light-pro'] [data-page-title='Docket Scanner'] button[class*='bg-[#1677ff]'],
+  [data-theme='light-pro'] [data-page-title='Developer Workspace'] button[class*='bg-[#1677ff]'] {
+    background: var(--pc-primary) !important;
+    color: #ffffff !important;
+  }
+}
