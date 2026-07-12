@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
-import { getOrderList } from '../../services/orderList.service';
+import { getApprovalOrderList } from '../../services/orderList.service';
 import {
   acceptTestOrderReviewEdits,
   approveTestOrderWithOriginalQty,
@@ -53,16 +53,21 @@ function getOrderTotalValue(order: { total_value?: number | string | null }) {
 }
 
 export function ApprovalsPage() {
+  const navigate = useNavigate();
   const { role, profile } = useAuth();
+  const { reviewOrderId } = useParams();
+  const isReviewPage = !!reviewOrderId;
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState('');
-  const [reviewId, setReviewId] = useState('');
+  const [inlineReviewId, setInlineReviewId] = useState('');
+  const reviewId = reviewOrderId || inlineReviewId;
+  const setReviewId = setInlineReviewId;
   const [editedQty, setEditedQty] = useState<Record<string, string>>({});
 
   const { data: orders = [], refetch, isLoading } = useQuery({
-    queryKey: ['order-list-paged'],
-    queryFn: getOrderList,
+    queryKey: ['approval-order-list'],
+    queryFn: getApprovalOrderList,
   });
 
   type OrderRow = (typeof orders)[number];
@@ -103,8 +108,8 @@ export function ApprovalsPage() {
   const counts = {
     pending: pendingOrders.filter((order) => !isManagerApprovalStage(order) && isPendingWorkflow(order)).length,
     manager: pendingOrders.filter((order) => isManagerApprovalStage(order)).length,
-    approved: orders.filter((order) => order.status === 'approved').length,
-    rejected: orders.filter((order) => order.status === 'rejected').length,
+    approved: pendingOrders.length,
+    rejected: filteredOrders.length,
   };
 
   const isBlockingAction = !!busyId;
@@ -235,7 +240,10 @@ export function ApprovalsPage() {
 
       setMessage(action === 'acceptEdits' ? 'Saved review quantities accepted.' : 'Approved with original quantities.');
 
-      if (action === 'approveOriginal') setReviewId('');
+      if (action === 'approveOriginal') {
+        if (isReviewPage) window.location.href = '/approvals/pending';
+        else setReviewId('');
+      }
 
       await reviewQuery.refetch();
       await refetch();
@@ -250,6 +258,8 @@ export function ApprovalsPage() {
     <PageCard eyebrow="Approvals" title="Approval Queue" description="Review, approve, reject, or send orders to final manager approval.">
       <BlockingActionOverlay show={isBlockingAction} label={blockingLabel} />
 
+      {!isReviewPage ? (
+        <>
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
           <p className="text-[10px] uppercase text-[#6D8196]">Pending</p>
@@ -260,11 +270,11 @@ export function ApprovalsPage() {
           <p className="text-sm font-black text-white">{counts.manager}</p>
         </div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
-          <p className="text-[10px] uppercase text-[#6D8196]">Approved</p>
+          <p className="text-[10px] uppercase text-[#6D8196]">Queue</p>
           <p className="text-sm font-black text-white">{counts.approved}</p>
         </div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
-          <p className="text-[10px] uppercase text-[#6D8196]">Rejected</p>
+          <p className="text-[10px] uppercase text-[#6D8196]">Showing</p>
           <p className="text-sm font-black text-white">{counts.rejected}</p>
         </div>
       </div>
@@ -311,7 +321,7 @@ export function ApprovalsPage() {
               const totalValue = getOrderTotalValue(order);
 
               return (
-                <tr key={order.id} className={getStatusRowClasses(displayStatus)}>
+                <tr key={order.id} className={`${getStatusRowClasses(displayStatus)} cursor-pointer transition hover:brightness-110`} onClick={() => navigate(`/orders/${order.id}`)} title="Click to open order detail">
                   <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
@@ -328,24 +338,21 @@ export function ApprovalsPage() {
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => setReviewId(order.id)}
+                        onClick={(event) => { event.stopPropagation(); setReviewId(order.id); }}
                       >
                         Review
                       </button>
-                      <Link className="font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>
-                        View
-                      </Link>
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => void runAction(order, approveAction)}
+                        onClick={(event) => { event.stopPropagation(); void runAction(order, approveAction); }}
                       >
                         {approveLabel}
                       </button>
                       <button
                         className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => void runAction(order, rejectAction)}
+                        onClick={(event) => { event.stopPropagation(); void runAction(order, rejectAction); }}
                       >
                         Reject
                       </button>
@@ -360,16 +367,19 @@ export function ApprovalsPage() {
         {filteredOrders.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No pending orders found.</p> : null}
       </div>
 
+        </>
+      ) : null}
+
       {reviewId ? (
-        <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+        <div className={isReviewPage ? 'rounded-lg border border-[#263244] bg-[#0b1020] p-3' : 'mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3'}>
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Item Review</p>
             <button
               className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40"
               disabled={isBlockingAction}
-              onClick={() => setReviewId('')}
+              onClick={() => isReviewPage ? window.history.back() : setReviewId('')}
             >
-              Close
+              {isReviewPage ? 'Back to Queue' : 'Close'}
             </button>
           </div>
 
