@@ -8,6 +8,7 @@ import { GlobalStatusEffects } from '../components/ui/GlobalStatusEffects';
 import { NewOrderPage } from '../features/orders/NewOrderPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { TrackOrdersPage } from '../features/tracking/TrackOrdersPage';
+import { DelayedVorPage } from '../features/tracking/DelayedVorPage';
 import { ApprovalsPage } from '../features/approvals/ApprovalsPage';
 import { AdminPage } from '../features/admin/AdminPage';
 import { ManagerDashboardPage } from '../features/manager/ManagerDashboardPage';
@@ -42,6 +43,7 @@ export function AppRouter() {
             <Route index element={<RoleLanding />} />
             <Route path="/orders/new" element={<NewOrderPage />} />
             <Route path="/orders/track" element={<TrackOrdersPage />} />
+            <Route path="/orders/delayed-vor" element={<DelayedVorPage />} />
             <Route path="/orders/:orderId" element={<OrderDetailPage />} />
             <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
             <Route path="/approvals/:queue" element={<ApprovalsPage />} />
