@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
@@ -45,6 +45,7 @@ function getOrderTotals(order: TestOrder, itemMeta?: TrackingMeta) {
 }
 
 export function AdminPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
@@ -132,14 +133,13 @@ export function AdminPage() {
               <th className="px-2.5 py-2 text-right"><SortHead label="Value" column="value" align="right" /></th>
               <th className="px-2.5 py-2"><SortHead label="Order No" column="order_no" /></th>
               <th className="px-2.5 py-2"><SortHead label="Status" column="status" /></th>
-              <th className="px-2.5 py-2 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#263244] bg-[#111827]">
             {visibleOrders.map((order) => {
               const totals = getOrderTotals(order, metaMap[order.id]);
               return (
-                <tr key={order.id} className={getStatusRowClasses(order.status)}>
+                <tr key={order.id} className={`${getStatusRowClasses(order.status)} cursor-pointer transition hover:brightness-110`} onClick={() => navigate(`/orders/${order.id}`)} title="Click to open order detail">
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{formatDate(order.created_at)}</td>
                   <td className="px-2.5 py-2"><OrderTypeBadge type={order.order_type} /></td>
                   <td className="px-2.5 py-2 text-white">{order.order_for === 'Customer' ? order.customer_name || 'Customer' : 'Stock'}</td>
@@ -148,7 +148,6 @@ export function AdminPage() {
                   <td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(totals.totalValue)}</td>
                   <td className="px-2.5 py-2 font-black text-white">{order.final_order_no || order.order_no}</td>
                   <td className="px-2.5 py-2"><StatusBadge status={order.status} /></td>
-                  <td className="px-2.5 py-2 text-right"><Link className="text-xs font-black text-[#0f4c81] underline-offset-4 hover:underline" to={`/orders/${order.id}`}>Open</Link></td>
                 </tr>
               );
             })}
