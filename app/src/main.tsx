@@ -14,6 +14,7 @@ import './mobile-approval-contrast.css';
 import './desktop-sidebar-contrast.css';
 import './desktop-supporting-pages.css';
 import './desktop-typography-balance.css';
+import './desktop-credit-dispatch-progress.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
