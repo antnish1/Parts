@@ -12,6 +12,7 @@ import './desktop-foundation.css';
 import './desktop-core-pages.css';
 import './mobile-approval-contrast.css';
 import './desktop-sidebar-contrast.css';
+import './desktop-supporting-pages.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
