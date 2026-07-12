@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
@@ -47,8 +47,23 @@ const navItems: NavItem[] = [
   { to: '/developer/workspace', label: 'Developer', icon: Settings, desktopGroup: 'Administration', desktopOrder: 60 },
 ];
 
+function getDesktopPageTitle(pathname: string, items: NavItem[]) {
+  if (pathname.startsWith('/approvals/review/')) return 'Approval Review';
+  if (/^\/orders\/[^/]+$/.test(pathname)) return 'Order Details';
+  if (pathname.startsWith('/credit-dispatch/reports')) return 'Credit Dispatch Reports';
+  if (pathname.startsWith('/credit-dispatch/aging')) return 'Credit Aging';
+  if (pathname.startsWith('/credit-dispatch/customers')) return 'Credit Customers';
+
+  const match = [...items]
+    .filter((item) => item.to === pathname || (item.to !== '/' && pathname.startsWith(`${item.to}/`)))
+    .sort((left, right) => right.to.length - left.to.length)[0];
+
+  return match?.desktopLabel ?? match?.label ?? 'Parts Connect Portal';
+}
+
 export function AppLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
   const isManager = profile?.role === 'manager';
@@ -73,6 +88,11 @@ export function AppLayout() {
     [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],
   );
 
+  const desktopPageTitle = useMemo(
+    () => getDesktopPageTitle(location.pathname, roleNavItems),
+    [location.pathname, roleNavItems],
+  );
+
   async function handleSignOut() {
     await supabase.auth.signOut();
     navigate('/login', { replace: true });
@@ -80,7 +100,7 @@ export function AppLayout() {
 
   return (
     <div data-theme="light-pro" className="pc-app min-h-screen bg-[#111827] text-pc-text">
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen items-start">
         <aside
           data-collapsed={isSidebarCollapsed ? 'true' : 'false'}
           className={`${isSidebarCollapsed ? 'w-16' : 'w-56'} pc-sidebar hidden shrink-0 border-r border-[#263244] bg-[#0b1020] p-2 transition-all duration-200 lg:flex lg:flex-col`}
@@ -105,11 +125,11 @@ export function AppLayout() {
             <Menu className="h-4 w-4" />
           </button>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="pc-sidebar-nav-scroll min-h-0 flex-1 overflow-y-auto">
             <RoleAwareNav items={roleNavItems} role={profile?.role} collapsed={isSidebarCollapsed} />
           </div>
 
-          <div className="mt-2 space-y-1.5">
+          <div className="pc-sidebar-footer mt-2 space-y-1.5">
             {!isSidebarCollapsed ? (
               <div className="pc-sidebar-profile rounded-lg border border-[#263244] px-2.5 py-2 text-xs">
                 <p className="pc-sidebar-profile-name truncate font-black">{profile?.fullName ?? 'User'}</p>
@@ -128,7 +148,7 @@ export function AppLayout() {
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="pc-main flex min-h-screen min-w-0 flex-1 flex-col">
           <header className="pc-mobile-header sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-3 py-2 backdrop-blur lg:hidden">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
@@ -148,7 +168,7 @@ export function AppLayout() {
           <header className="pc-desktop-header sticky top-0 z-20 hidden items-center justify-between border-b lg:flex">
             <div className="min-w-0">
               <p className="pc-desktop-kicker">Parts Connect Portal</p>
-              <p className="pc-desktop-title truncate">Compact operational workspace</p>
+              <p className="pc-desktop-title truncate">{desktopPageTitle}</p>
             </div>
             <div className="pc-desktop-user flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1">
               <span className="truncate text-[11px] font-bold">{profile?.fullName ?? 'User'}</span>
