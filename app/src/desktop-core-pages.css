@@ -1,0 +1,272 @@
+@media (min-width: 1024px) {
+  [data-theme='light-pro'] .pc-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-nav-scroll {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #45617e transparent;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-nav-scroll::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-nav-scroll::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #45617e;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-footer {
+    flex: 0 0 auto;
+    margin-top: 8px !important;
+    border-top: 1px solid rgb(255 255 255 / 10%);
+    background: var(--pc-nav) !important;
+    padding-top: 8px;
+  }
+
+  [data-theme='light-pro'] .pc-main {
+    min-height: 100vh;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-title {
+    max-width: 560px;
+  }
+
+  /* Desktop contrast protection for legacy dark-theme utility classes converted to light surfaces. */
+  [data-theme='light-pro'] .pc-page-card td[class*='text-white'],
+  [data-theme='light-pro'] .pc-page-card p[class*='text-white'],
+  [data-theme='light-pro'] .pc-page-card div[class*='text-white']:not([class*='bg-']),
+  [data-theme='light-pro'] .pc-page-card label[class*='text-white']:not([class*='bg-']),
+  [data-theme='light-pro'] .pc-page-card strong[class*='text-white'],
+  [data-theme='light-pro'] .pc-page-card small[class*='text-white'] {
+    color: var(--pc-text) !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card td[class*='text-[#d8e3ee]'],
+  [data-theme='light-pro'] .pc-page-card td[class*='text-[#c7d2df]'],
+  [data-theme='light-pro'] .pc-page-card p[class*='text-[#d8e3ee]'],
+  [data-theme='light-pro'] .pc-page-card p[class*='text-[#c7d2df]'],
+  [data-theme='light-pro'] .pc-page-card div[class*='text-[#d8e3ee]']:not([class*='bg-']),
+  [data-theme='light-pro'] .pc-page-card div[class*='text-[#c7d2df]']:not([class*='bg-']),
+  [data-theme='light-pro'] .pc-page-card label[class*='text-[#d8e3ee]']:not([class*='bg-']),
+  [data-theme='light-pro'] .pc-page-card label[class*='text-[#c7d2df]']:not([class*='bg-']) {
+    color: #475569 !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card [class*='bg-white'][class*='text-white'],
+  [data-theme='light-pro'] .pc-page-card [class*='bg-[#ffffff]'][class*='text-white'],
+  [data-theme='light-pro'] .pc-page-card [class*='bg-[#f8fafc]'][class*='text-white'],
+  [data-theme='light-pro'] .pc-content [data-cd-theme] [class*='bg-white'][class*='text-white'] {
+    color: var(--pc-text) !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) tbody {
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) tbody > tr {
+    color: var(--pc-text);
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) tbody > tr:hover {
+    filter: none !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card input::placeholder,
+  [data-theme='light-pro'] .pc-page-card textarea::placeholder {
+    color: #8a99aa !important;
+    opacity: 1;
+  }
+
+  /* Approval Queue and Approved Orders */
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-3.grid > div,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-3.grid > div {
+    border-color: var(--pc-border) !important;
+    background: #f8fafc !important;
+    box-shadow: inset 0 2px 0 #dce9f5 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-3.grid > div p:first-child,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-3.grid > div p:first-child {
+    color: #64748b !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-3.grid > div p:last-child,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-3.grid > div p:last-child {
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-2.flex,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-2.flex {
+    border: 1px solid var(--pc-border);
+    border-radius: 8px;
+    background: #f8fafc !important;
+    padding: 6px;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .overflow-hidden,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .overflow-hidden {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] > div:first-child {
+    border-bottom: 1px solid #e7edf3;
+    padding-bottom: 7px;
+  }
+
+  /* Track Orders */
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > div:first-child > button {
+    border-color: var(--pc-border) !important;
+    background: #f8fafc !important;
+    box-shadow: inset 0 2px 0 #dce9f5;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > div:first-child > button:hover {
+    border-color: #aebdcb !important;
+    background: #f1f5f9 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > div:first-child > button p:first-child {
+    color: #64748b !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > div:first-child > button p:last-child {
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > div:nth-child(2) {
+    border: 1px solid var(--pc-border);
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 6px;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > .hidden.overflow-hidden {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > .mt-2.flex {
+    color: #475569 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Track Orders'] > div > .mt-2.flex button {
+    color: var(--pc-primary) !important;
+  }
+
+  /* Order Details */
+  [data-theme='light-pro'] [data-page-title='Order Detail'] > div > .no-print:first-of-type {
+    position: sticky;
+    top: 50px;
+    z-index: 12;
+    border-color: var(--pc-border) !important;
+    background: rgb(255 255 255 / 97%) !important;
+    box-shadow: 0 3px 10px rgb(15 23 42 / 8%);
+    backdrop-filter: blur(8px);
+  }
+
+  [data-theme='light-pro'] [data-page-title='Order Detail'] section,
+  [data-theme='light-pro'] [data-page-title='Order Detail'] #order-comments {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Order Detail'] section:last-of-type {
+    background: #f8fafc !important;
+  }
+
+  /* New Order */
+  [data-theme='light-pro'] [data-page-title='New Order'] form > div:first-child > section {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] form > section {
+    border-color: var(--pc-border-strong) !important;
+    background: #f8fafc !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] form > section > div:nth-child(2) {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] form > section > div:last-child {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] label,
+  [data-theme='light-pro'] [data-page-title='New Order'] form section > p:first-child {
+    color: #475569 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] form section > p:first-child {
+    color: #0f5fa8 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='New Order'] table td {
+    color: #334155 !important;
+  }
+
+  /* Manager Inventory */
+  [data-theme='light-pro'] [data-page-title='Inventory'] > div > .rounded-lg {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Inventory'] > div > .rounded-lg > div:first-child {
+    border-bottom: 1px solid #edf1f5;
+    padding-bottom: 7px;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Inventory'] > div > .rounded-lg p[class*='text-[#82C8E5]'] {
+    color: #0f5fa8 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Inventory'] > div > .rounded-lg button[class*='text-[#82C8E5]'] {
+    color: #0f5fa8 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Inventory'] .overflow-hidden {
+    border-color: var(--pc-border) !important;
+    background: #ffffff !important;
+  }
+
+  /* Credit Dispatch desktop only. Existing mobile layout is untouched. */
+  [data-theme='light-pro'] .pc-content [data-cd-theme] [class*='bg-white'] {
+    color: #0f172a;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] [class*='bg-white'][class*='text-slate-100'],
+  [data-theme='light-pro'] .pc-content [data-cd-theme] [class*='bg-white'][class*='text-white'] {
+    color: #0f172a !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] table tbody {
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] table td,
+  [data-theme='light-pro'] .pc-content [data-cd-theme] table td p:not([class*='text-']) {
+    color: #334155;
+  }
+}

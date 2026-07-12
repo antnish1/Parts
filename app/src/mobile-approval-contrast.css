@@ -1,0 +1,67 @@
+@media (max-width: 767px) {
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr,
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td {
+    border-color: #334155 !important;
+    background: #111827 !important;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td::before {
+    color: #bdcadd !important;
+    -webkit-text-fill-color: #bdcadd !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td :where(p, span, div, label, strong, small, em, b) {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Action'],
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Edit'],
+  body [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Review'] {
+    background: #07101f !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table button,
+  body [data-page-title='Approval Queue'] table.responsive-card-table button *,
+  body [data-page-title='Approval Queue'] table.responsive-card-table a,
+  body [data-page-title='Approval Queue'] table.responsive-card-table a * {
+    color: #9bdcf6 !important;
+    -webkit-text-fill-color: #9bdcf6 !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table .pc-status-badge,
+  body [data-page-title='Approval Queue'] table.responsive-card-table .pc-status-badge * {
+    border-color: #64748b !important;
+    background: #263244 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  body [data-page-title='Approval Queue'] table.responsive-card-table input,
+  body [data-page-title='Approval Queue'] table.responsive-card-table select,
+  body [data-page-title='Approval Queue'] table.responsive-card-table textarea {
+    border-color: #475569 !important;
+    background: #07101f !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
+
+  body [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] {
+    border-color: #334155 !important;
+    background: #111827 !important;
+    color: #f8fafc !important;
+  }
+
+  body [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] :where(p, span, div, label, strong, small, em, b) {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  body [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] button,
+  body [data-page-title='Approval Queue'] > div > .rounded-lg[class*='bg-[#0b1020]'] button * {
+    color: #9bdcf6 !important;
+    -webkit-text-fill-color: #9bdcf6 !important;
+  }
+}
