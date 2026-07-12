@@ -5,6 +5,7 @@ import { RequireAuth } from '../auth/RequireAuth';
 import { useAuth } from '../auth/useAuth';
 import { roleHomePath } from '../auth/roleGuards';
 import { GlobalStatusEffects } from '../components/ui/GlobalStatusEffects';
+import { ResponsiveTableEffects } from '../components/tables/ResponsiveTableEffects';
 import { NewOrderPage } from '../features/orders/NewOrderPage';
 import { OrderDetailPage } from '../features/orders/OrderDetailPage';
 import { TrackOrdersPage } from '../features/tracking/TrackOrdersPage';
@@ -67,6 +68,7 @@ export function AppRouter() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <GlobalStatusEffects />
+      <ResponsiveTableEffects />
     </>
   );
 }
