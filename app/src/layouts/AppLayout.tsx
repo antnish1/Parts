@@ -7,7 +7,6 @@ import {
   ClockAlert,
   Database,
   FilePlus2,
-  FileSignature,
   LayoutDashboard,
   ListOrdered,
   LogOut,
@@ -41,7 +40,6 @@ const navItems: NavItem[] = [
   { to: '/inventory/upload', label: 'Inventory Upload', icon: Database, group: 'Inventory' },
   { to: '/reports', label: 'Reports', icon: BarChart3, group: 'Insights' },
   { to: '/developer/workspace', label: 'Developer', icon: Settings, group: 'Administration' },
-  { to: '/credit-dispatch/reports', label: 'Dispatch Reports', icon: FileSignature, group: 'Insights' },
 ];
 
 export function AppLayout() {
