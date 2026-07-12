@@ -51,6 +51,10 @@ patch('src/features/credit-dispatch/CreditDispatchListPage.tsx', [
     "{['All', 'Pending Approval', 'Approved', 'Correction Required', 'Rejected', 'Pending Payment', 'Partial Payment', 'Partial Payment - Overdue', 'Payment Overdue', 'Closed'].map((status) => <option key={status} value={status}>{status}</option>)}",
     "{['All', ...creditDispatchProgressStatuses].map((status) => <option key={status} value={status}>{status}</option>)}",
   ],
+  [
+    "<div className=\"mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0\">",
+    "<div data-cd-theme=\"tracker\" className=\"cd-shell cd-tracker mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0\">",
+  ],
 ]);
 
 patch('src/features/credit-dispatch/RequestReportsPage.tsx', [
