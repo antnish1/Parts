@@ -1,0 +1,85 @@
+@media (min-width: 1024px) {
+  [data-theme='light-pro'] .pc-content .cd-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-width: 1px;
+    border-radius: 999px;
+    font-weight: 600 !important;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  [data-theme='light-pro'] .pc-content .cd-status::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .cd-status--pending-approval { background:#eff6ff !important; color:#1d4ed8 !important; border-color:#bfdbfe !important; }
+  .cd-status--correction { background:#fff7ed !important; color:#c2410c !important; border-color:#fed7aa !important; }
+  .cd-status--rejected { background:#fff1f2 !important; color:#be123c !important; border-color:#fecdd3 !important; }
+  .cd-status--pending-payment { background:#f5f3ff !important; color:#6d28d9 !important; border-color:#ddd6fe !important; }
+  .cd-status--partial { background:#fffbeb !important; color:#b45309 !important; border-color:#fde68a !important; }
+  .cd-status--overdue { background:#fef2f2 !important; color:#b91c1c !important; border-color:#fecaca !important; }
+  .cd-status--partial-overdue { background:#fff7ed !important; color:#9a3412 !important; border-color:#fdba74 !important; }
+  .cd-status--closed { background:#ecfdf5 !important; color:#047857 !important; border-color:#a7f3d0 !important; }
+  .cd-status--neutral { background:#f8fafc !important; color:#475569 !important; border-color:#cbd5e1 !important; }
+
+  [data-theme='light-pro'] .pc-content .cd-row-actions {
+    align-items: center;
+    flex-wrap: nowrap;
+    min-width: 248px;
+  }
+  [data-theme='light-pro'] .pc-content .cd-action {
+    min-height: 28px !important;
+    border-radius: 7px !important;
+    border-width: 1px !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+  }
+  .cd-action--approve { background:#047857 !important; color:#fff !important; border-color:#047857 !important; }
+  .cd-action--reject { background:#fff !important; color:#be123c !important; border-color:#fda4af !important; }
+  .cd-action--correct { background:#fff7ed !important; color:#c2410c !important; border-color:#fdba74 !important; }
+  .cd-action--payment { background:#1d4ed8 !important; color:#fff !important; border-color:#1d4ed8 !important; }
+
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/new'],
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/customers'],
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/reports'],
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/customers/aging'],
+  [data-theme='light-pro'] .pc-content [href*='/credit-dispatch/customers/profile'],
+  [data-theme='light-pro'] .pc-content [href*='/credit-dispatch/customers/ledger'] {
+    min-height: 30px;
+    border-radius: 7px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #fff !important;
+    color: #0f3f75 !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/new'] {
+    background:#0f5fa8 !important;
+    color:#fff !important;
+    border-color:#0f5fa8 !important;
+  }
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/customers/aging'] {
+    background:#fff7ed !important;
+    color:#9a3412 !important;
+    border-color:#fdba74 !important;
+  }
+  [data-theme='light-pro'] .pc-content [href*='/credit-dispatch/customers/ledger'] {
+    background:#eff6ff !important;
+    color:#1d4ed8 !important;
+    border-color:#bfdbfe !important;
+  }
+  [data-theme='light-pro'] .pc-content [href*='/credit-dispatch/customers/profile'] {
+    background:#f8fafc !important;
+    color:#334155 !important;
+  }
+  [data-theme='light-pro'] .pc-content [href='/credit-dispatch/reports'] {
+    background:#f5f3ff !important;
+    color:#6d28d9 !important;
+    border-color:#ddd6fe !important;
+  }
+}
