@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Boxes, ClipboardCheck, FilePlus2, Home, LogOut, Menu, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
+import { Boxes, ClipboardCheck, ClockAlert, FilePlus2, FileSignature, Home, LogOut, Menu, PackageSearch, ScanLine, Settings, Upload, Users } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
@@ -14,6 +14,8 @@ const navItems: NavItem[] = [
   { to: '/', label: 'Home', icon: Home },
   { to: '/orders/new', label: 'New Order', icon: FilePlus2 },
   { to: '/orders/track', label: 'Track Orders', icon: PackageSearch },
+  { to: '/credit-dispatch', label: 'Credit Dispatch', icon: FileSignature },
+  { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert },
   { to: '/approvals/pending', label: 'Approvals', icon: ClipboardCheck },
   { to: '/admin/approved', label: 'Admin', icon: Boxes },
   { to: '/manager/dashboard', label: 'Inventory', icon: PackageSearch },
@@ -28,20 +30,26 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
+  const isManager = profile?.role === 'manager';
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const adminCounterQuery = useQuery({
     queryKey: ['admin-approved-orders-nav-counter'],
     queryFn: getOrderList,
-    enabled: isAdmin,
+    enabled: isAdmin || isManager,
     refetchInterval: 15000,
   });
 
   const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
+  const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => `${order.status} ${order.approval_status}`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
 
   const roleNavItems = useMemo(
-    () => navItems.map((item) => (isAdmin && item.to === '/' ? { ...item, label: 'Approved Orders', badge: approvedOrdersCount } : item)),
-    [approvedOrdersCount, isAdmin],
+    () => navItems.map((item) => {
+      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', badge: approvedOrdersCount };
+      if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
+      return item;
+    }),
+    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],
   );
 
   async function handleSignOut() {
@@ -68,9 +76,12 @@ export function AppLayout() {
         <main className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 border-b border-[#263244] bg-[#111827]/95 px-3 py-2 backdrop-blur lg:px-4">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-fit items-center gap-2">
-                <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 rounded-md bg-white object-contain p-0.5" />
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#82C8E5]">Parts Connect Portal</p>
+              <div className="flex min-w-0 items-center gap-2">
+                <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-8 w-8 shrink-0 rounded-md bg-white object-contain p-0.5" />
+                <div className="min-w-0">
+                  <p className="truncate text-[9px] font-black uppercase tracking-[0.18em] text-[#82C8E5]">Parts Connect Portal</p>
+                  <p className="truncate text-[10px] font-bold text-[#667085]">{profile?.fullName ?? 'User'} • {profile?.role ?? 'role'} • {profile?.branch ?? 'branch'}</p>
+                </div>
               </div>
               <Button variant="secondary" className="rounded-md border-[#314158] bg-[#1e293b] px-3 py-1.5 text-xs font-black !text-[#f8fafc] shadow-sm hover:border-[#64748b] hover:bg-[#0f172a] [&_svg]:!text-[#f8fafc]" onClick={handleSignOut}>
                 <LogOut className="h-3.5 w-3.5" />
@@ -79,7 +90,7 @@ export function AppLayout() {
             </div>
           </header>
           <MobileRoleNav items={roleNavItems} role={profile?.role} />
-          <div className="p-2.5 lg:p-3"><Outlet /></div>
+          <div className="p-2.5 pb-24 lg:p-3 xl:pb-3"><Outlet /></div>
         </main>
       </div>
     </div>

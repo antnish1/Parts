@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, CheckCircle2, ClipboardCheck, FileSignature, IndianRupee, Save, Send } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../auth/useAuth';
@@ -49,7 +49,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-const inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold text-slate-900 outline-none transition placeholder:text-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100';
+const inputClass = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-bold uppercase text-slate-900 outline-none transition placeholder:normal-case placeholder:text-slate-300 focus:border-blue-400 focus:ring-4 focus:ring-blue-100';
 
 export function NewCreditDispatchPage() {
   const navigate = useNavigate();
@@ -81,7 +81,7 @@ export function NewCreditDispatchPage() {
   const creditAmountNumber = Number(form.creditAmount || 0);
 
   const createMutation = useMutation({
-    mutationFn: () => createCreditDispatch({ ...form, creditAmount: creditAmountNumber }),
+    mutationFn: () => createCreditDispatch({ ...form, branch: form.branch.toUpperCase(), customerName: form.customerName.toUpperCase(), documentNo: form.documentNo.toUpperCase(), remarks: form.remarks.toUpperCase(), creditAmount: creditAmountNumber }),
     onSuccess: async () => {
       localStorage.removeItem(draftKey);
       await queryClient.invalidateQueries({ queryKey: ['credit-dispatches'] });
@@ -132,10 +132,10 @@ export function NewCreditDispatchPage() {
   return (
     <div className="mx-auto max-w-4xl pb-24">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Link to="/credit-dispatch" className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-blue-700">
+        <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-blue-700">
           <ArrowLeft className="h-4 w-4" />
           Back
-        </Link>
+        </button>
         <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-blue-700">
           Branch: {profile?.branch ?? 'Unassigned'}
         </span>
@@ -169,7 +169,7 @@ export function NewCreditDispatchPage() {
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Customer Name"><input className={inputClass} value={form.customerName} onChange={(event) => update('customerName', event.target.value)} placeholder="Enter customer name" /></Field>
+              <Field label="Customer Name"><input className={inputClass} value={form.customerName} onChange={(event) => update('customerName', event.target.value.toUpperCase())} placeholder="Enter customer name" /></Field>
               <Field label="Mobile No."><input className={inputClass} inputMode="numeric" maxLength={10} value={form.mobileNo} onChange={(event) => update('mobileNo', event.target.value.replace(/\D/g, '').slice(0, 10))} placeholder="10 digit mobile no." /></Field>
               <Field label="Customer Type"><select className={inputClass} value={form.customerType} onChange={(event) => update('customerType', event.target.value as FormState['customerType'])}>{customerTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
               <Field label="Branch"><input className={`${inputClass} bg-slate-50`} value={form.branch} readOnly /></Field>
@@ -188,12 +188,12 @@ export function NewCreditDispatchPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Document Type"><select className={inputClass} value={form.documentType} onChange={(event) => update('documentType', event.target.value as FormState['documentType'])}>{documentTypes.map((item) => <option key={item} value={item}>{item}</option>)}</select></Field>
-              <Field label="Document No."><input className={inputClass} value={form.documentNo} onChange={(event) => update('documentNo', event.target.value)} placeholder="DC / Invoice / PI number" /></Field>
+              <Field label="Document No."><input className={inputClass} value={form.documentNo} onChange={(event) => update('documentNo', event.target.value.toUpperCase())} placeholder="DC / Invoice / PI number" /></Field>
               <Field label="Document Date"><input className={inputClass} type="date" value={form.documentDate} onChange={(event) => update('documentDate', event.target.value)} /></Field>
               <Field label="Credit Amount"><input className={inputClass} type="number" min="0" inputMode="decimal" value={form.creditAmount} onChange={(event) => update('creditAmount', event.target.value)} placeholder="0" /></Field>
               <Field label="Tentative Closure"><select className={inputClass} value={form.tentativeClosureDays} onChange={(event) => update('tentativeClosureDays', Number(event.target.value) as FormState['tentativeClosureDays'])}>{closureOptions.map((days) => <option key={days} value={days}>Within {days} Days</option>)}</select></Field>
               <Field label="Due Date"><input className={`${inputClass} bg-slate-50`} value={dueDate} readOnly /></Field>
-              <div className="sm:col-span-2"><Field label="Remarks"><textarea className={`${inputClass} min-h-24 resize-y`} value={form.remarks} onChange={(event) => update('remarks', event.target.value)} placeholder="Optional remarks" /></Field></div>
+              <div className="sm:col-span-2"><Field label="Remarks"><textarea className={`${inputClass} min-h-24 resize-y`} value={form.remarks} onChange={(event) => update('remarks', event.target.value.toUpperCase())} placeholder="Optional remarks" /></Field></div>
             </div>
           </section>
         ) : null}

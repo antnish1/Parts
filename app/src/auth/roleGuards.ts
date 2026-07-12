@@ -41,6 +41,7 @@ function isCreditDispatchWorkspace(path: string) {
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  if (path === '/orders/delayed-vor') return true;
   if (role === 'hq') return false;
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);

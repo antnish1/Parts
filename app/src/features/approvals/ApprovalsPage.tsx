@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
@@ -53,6 +53,7 @@ function getOrderTotalValue(order: { total_value?: number | string | null }) {
 }
 
 export function ApprovalsPage() {
+  const navigate = useNavigate();
   const { role, profile } = useAuth();
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
@@ -311,7 +312,7 @@ export function ApprovalsPage() {
               const totalValue = getOrderTotalValue(order);
 
               return (
-                <tr key={order.id} className={getStatusRowClasses(displayStatus)}>
+                <tr key={order.id} className={`${getStatusRowClasses(displayStatus)} cursor-pointer transition hover:brightness-110`} onClick={() => navigate(`/orders/${order.id}`)} title="Click to open order detail">
                   <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
                   <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
@@ -328,24 +329,21 @@ export function ApprovalsPage() {
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => setReviewId(order.id)}
+                        onClick={(event) => { event.stopPropagation(); setReviewId(order.id); }}
                       >
                         Review
                       </button>
-                      <Link className="font-black text-[#82C8E5] hover:underline" to={`/orders/${order.id}`}>
-                        View
-                      </Link>
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => void runAction(order, approveAction)}
+                        onClick={(event) => { event.stopPropagation(); void runAction(order, approveAction); }}
                       >
                         {approveLabel}
                       </button>
                       <button
                         className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={() => void runAction(order, rejectAction)}
+                        onClick={(event) => { event.stopPropagation(); void runAction(order, rejectAction); }}
                       >
                         Reject
                       </button>
