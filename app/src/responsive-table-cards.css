@@ -39,6 +39,7 @@
     border-radius: 0.75rem !important;
     background: #111827 !important;
     box-shadow: 0 8px 22px rgb(0 0 0 / 14%);
+    color: #d8e3ee !important;
   }
 
   table.responsive-card-table tbody > tr > td {
@@ -53,6 +54,7 @@
     padding: 0.6rem 0.75rem !important;
     border: 0 !important;
     border-bottom: 1px solid rgb(38 50 68 / 72%) !important;
+    color: #d8e3ee !important;
     text-align: left !important;
     white-space: normal !important;
     overflow-wrap: anywhere;
@@ -64,7 +66,7 @@
 
   table.responsive-card-table tbody > tr > td::before {
     content: attr(data-mobile-label);
-    color: #6d8196;
+    color: #a8b7c8;
     font-size: 0.625rem;
     font-weight: 900;
     line-height: 1rem;
@@ -90,6 +92,10 @@
     max-width: 100%;
   }
 
+  table.responsive-card-table tbody > tr > td :where(p, span, div, label, strong, small, em, b) {
+    color: inherit !important;
+  }
+
   table.responsive-card-table tbody > tr > td .flex {
     flex-wrap: wrap !important;
     justify-content: flex-start !important;
@@ -100,6 +106,20 @@
   table.responsive-card-table select,
   table.responsive-card-table textarea {
     max-width: 100% !important;
+    border-color: #3b4b61 !important;
+    background: #0b1020 !important;
+    color: #ffffff !important;
+  }
+
+  table.responsive-card-table input::placeholder,
+  table.responsive-card-table textarea::placeholder {
+    color: #8fa2b8 !important;
+    opacity: 1;
+  }
+
+  table.responsive-card-table select option {
+    background: #ffffff;
+    color: #111827;
   }
 
   table.responsive-card-table input[type='number'],
