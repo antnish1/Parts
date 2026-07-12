@@ -1,0 +1,15 @@
+const fs = require('fs');
+const path = require('path');
+const filePath = path.resolve(__dirname, '../src/features/credit-dispatch/CreditDispatchListPage.tsx');
+let source = fs.readFileSync(filePath, 'utf8');
+const swaps = [
+["function statusClass(status: string) {\n  if (status === 'Closed') return 'bg-emerald-100 text-emerald-700 border-emerald-200';\n  if (status.includes('Overdue')) return 'bg-red-100 text-red-700 border-red-200';\n  if (status.includes('Partial')) return 'bg-amber-100 text-amber-700 border-amber-200';\n  if (status === 'Approved') return 'bg-blue-100 text-blue-700 border-blue-200';\n  if (status === 'Rejected') return 'bg-rose-100 text-rose-700 border-rose-200';\n  if (status === 'Correction Required') return 'bg-orange-100 text-orange-700 border-orange-200';\n  return 'bg-slate-100 text-slate-700 border-slate-200';\n}","function statusClass(status: string) {\n  if (status === 'Pending Approval') return 'cd-status cd-status--pending-approval';\n  if (status === 'Correction Required') return 'cd-status cd-status--correction';\n  if (status === 'Rejected') return 'cd-status cd-status--rejected';\n  if (status === 'Pending Payment') return 'cd-status cd-status--pending-payment';\n  if (status === 'Partial Payment') return 'cd-status cd-status--partial';\n  if (status === 'Payment Overdue') return 'cd-status cd-status--overdue';\n  if (status === 'Partial Payment - Overdue') return 'cd-status cd-status--partial-overdue';\n  if (status === 'Closed') return 'cd-status cd-status--closed';\n  return 'cd-status cd-status--neutral';\n}"],
+["<div className={compact ? 'flex flex-wrap gap-1.5' : 'grid grid-cols-3 gap-2'}>","<div className={compact ? 'cd-row-actions flex flex-wrap gap-1.5' : 'cd-row-actions grid grid-cols-3 gap-2'}>"],
+["className=\"px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Approved')}","className=\"cd-action cd-action--approve px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Approved')}"],
+["variant=\"danger\" className=\"px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Rejected')}","variant=\"danger\" className=\"cd-action cd-action--reject px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Rejected')}"],
+["variant=\"secondary\" className=\"px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Correction Required')}","variant=\"secondary\" className=\"cd-action cd-action--correct px-2 py-1.5 text-[11px]\" disabled={isBusy} onClick={() => onApproval(row, 'Correction Required')}"],
+["className={compact ? 'px-3 py-1.5 text-xs' : 'w-full rounded-2xl'}", "className={compact ? 'cd-action cd-action--payment px-3 py-1.5 text-xs' : 'cd-action cd-action--payment w-full rounded-2xl'}"]
+];
+for (const [from,to] of swaps) { if (source.includes(to)) continue; if (!source.includes(from)) throw new Error('Pattern not found: '+from.slice(0,100)); source = source.replace(from,to); }
+fs.writeFileSync(filePath, source);
+console.log('Credit Dispatch action design applied.');
