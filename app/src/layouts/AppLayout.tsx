@@ -3,19 +3,24 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart3,
+  Boxes,
   ClipboardCheck,
   ClockAlert,
   Database,
   FilePlus2,
+  FileSignature,
+  Home,
   LayoutDashboard,
   ListOrdered,
   LogOut,
   Menu,
+  PackageSearch,
   ScanLine,
   Settings,
   ShieldCheck,
   Truck,
   Upload,
+  Users,
   Warehouse,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -27,19 +32,19 @@ import { RoleAwareNav, type NavItem } from './RoleAwareNav';
 import { MobileRoleNav } from './MobileRoleNav';
 
 const navItems: NavItem[] = [
-  { to: '/', label: 'Home', icon: LayoutDashboard, group: 'Overview' },
-  { to: '/orders/new', label: 'New Order', icon: FilePlus2, group: 'Orders' },
-  { to: '/orders/track', label: 'Track Orders', icon: ListOrdered, group: 'Orders' },
-  { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert, group: 'Orders' },
-  { to: '/approvals/pending', label: 'Approvals', icon: ClipboardCheck, group: 'Approvals' },
-  { to: '/admin/approved', label: 'Approved Orders', icon: ShieldCheck, group: 'Approvals' },
-  { to: '/credit-dispatch', label: 'Credit Dispatch', icon: Truck, group: 'Operations' },
-  { to: '/docket-scanner', label: 'Docket Scanner', icon: ScanLine, group: 'Operations' },
-  { to: '/manager/dashboard', label: 'Inventory', icon: Warehouse, group: 'Inventory' },
-  { to: '/uploads', label: 'Uploads', icon: Upload, group: 'Inventory' },
-  { to: '/inventory/upload', label: 'Inventory Upload', icon: Database, group: 'Inventory' },
-  { to: '/reports', label: 'Reports', icon: BarChart3, group: 'Insights' },
-  { to: '/developer/workspace', label: 'Developer', icon: Settings, group: 'Administration' },
+  { to: '/', label: 'Home', icon: Home, desktopIcon: LayoutDashboard, desktopGroup: 'Overview', desktopOrder: 0 },
+  { to: '/orders/new', label: 'New Order', icon: FilePlus2, desktopGroup: 'Orders', desktopOrder: 10 },
+  { to: '/orders/track', label: 'Track Orders', icon: PackageSearch, desktopIcon: ListOrdered, desktopGroup: 'Orders', desktopOrder: 11 },
+  { to: '/credit-dispatch', label: 'Credit Dispatch', icon: FileSignature, desktopIcon: Truck, desktopGroup: 'Operations', desktopOrder: 30 },
+  { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert, desktopGroup: 'Orders', desktopOrder: 12 },
+  { to: '/approvals/pending', label: 'Approvals', icon: ClipboardCheck, desktopGroup: 'Approvals', desktopOrder: 20 },
+  { to: '/admin/approved', label: 'Admin', icon: Boxes, desktopLabel: 'Approved Orders', desktopIcon: ShieldCheck, desktopGroup: 'Approvals', desktopOrder: 21 },
+  { to: '/manager/dashboard', label: 'Inventory', icon: PackageSearch, desktopIcon: Warehouse, desktopGroup: 'Inventory', desktopOrder: 40 },
+  { to: '/uploads', label: 'Uploads', icon: Upload, desktopGroup: 'Inventory', desktopOrder: 41 },
+  { to: '/inventory/upload', label: 'Inventory Upload', icon: Boxes, desktopIcon: Database, desktopGroup: 'Inventory', desktopOrder: 42 },
+  { to: '/reports', label: 'Reports', icon: Users, desktopIcon: BarChart3, desktopGroup: 'Insights', desktopOrder: 50 },
+  { to: '/docket-scanner', label: 'Docket', icon: ScanLine, desktopLabel: 'Docket Scanner', desktopGroup: 'Operations', desktopOrder: 31 },
+  { to: '/developer/workspace', label: 'Developer', icon: Settings, desktopGroup: 'Administration', desktopOrder: 60 },
 ];
 
 export function AppLayout() {
@@ -61,7 +66,7 @@ export function AppLayout() {
 
   const roleNavItems = useMemo(
     () => navItems.map((item) => {
-      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', badge: approvedOrdersCount };
+      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
       if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
       return item;
     }),
