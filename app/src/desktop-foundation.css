@@ -1,0 +1,432 @@
+:root {
+  --pc-page: #f3f6fa;
+  --pc-surface: #ffffff;
+  --pc-surface-soft: #f8fafc;
+  --pc-border: #d8e0ea;
+  --pc-border-strong: #c5d0dd;
+  --pc-text: #0f172a;
+  --pc-muted: #64748b;
+  --pc-primary: #0f5fa8;
+  --pc-primary-soft: #eaf3fb;
+  --pc-nav: #0b1f3a;
+  --pc-nav-soft: #153352;
+  --pc-accent: #f2c300;
+  --pc-success: #047857;
+  --pc-warning: #b45309;
+  --pc-danger: #b42318;
+}
+
+@media (min-width: 1024px) {
+  [data-theme='light-pro'].pc-app {
+    background: var(--pc-page) !important;
+    color: var(--pc-text) !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar {
+    background: var(--pc-nav) !important;
+    border-color: #1c3b5d !important;
+    padding: 8px !important;
+    box-shadow: 8px 0 24px rgb(15 23 42 / 8%);
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-brand {
+    min-height: 42px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 9px;
+    background: rgb(255 255 255 / 5%) !important;
+    padding: 6px 7px;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-brand img {
+    border-radius: 7px;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-brand-title {
+    color: #ffffff !important;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 14px;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-brand-subtitle {
+    color: #91a7bf !important;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-toggle {
+    min-height: 28px;
+    border-color: rgb(255 255 255 / 12%) !important;
+    background: transparent !important;
+    color: #cbd5e1 !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-toggle:hover {
+    background: var(--pc-nav-soft) !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-nav {
+    margin-top: 6px !important;
+  }
+
+  [data-theme='light-pro'] .pc-nav-group {
+    margin: 10px 8px 4px;
+    color: #7188a1 !important;
+    font-size: 8px;
+    font-weight: 900;
+    line-height: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar .pc-nav-link {
+    min-height: 30px;
+    border-radius: 7px;
+    padding: 6px 8px !important;
+    color: #cbd5e1 !important;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar .pc-nav-link:hover {
+    background: var(--pc-nav-soft) !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar .pc-nav-link[aria-current='page'] {
+    background: #ffffff !important;
+    color: #0b2e55 !important;
+    box-shadow: inset 3px 0 0 var(--pc-accent), 0 1px 2px rgb(0 0 0 / 12%);
+  }
+
+  [data-theme='light-pro'] .pc-sidebar .pc-nav-link svg {
+    color: currentColor !important;
+  }
+
+  [data-theme='light-pro'] .pc-nav-badge {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-profile {
+    border-color: rgb(255 255 255 / 12%) !important;
+    background: rgb(255 255 255 / 6%) !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-profile-name {
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-profile-meta {
+    color: #91a7bf !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-signout {
+    min-height: 30px;
+    border-color: rgb(255 255 255 / 12%) !important;
+    background: transparent !important;
+    color: #dbe7f2 !important;
+  }
+
+  [data-theme='light-pro'] .pc-sidebar-signout:hover {
+    background: #2a2531 !important;
+    border-color: rgb(248 113 113 / 45%) !important;
+    color: #fecaca !important;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-header {
+    min-height: 44px;
+    border-color: var(--pc-border) !important;
+    background: rgb(255 255 255 / 96%) !important;
+    padding: 0 14px !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  }
+
+  [data-theme='light-pro'] .pc-desktop-kicker {
+    color: var(--pc-primary) !important;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-title {
+    color: var(--pc-text) !important;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  [data-theme='light-pro'] .pc-desktop-user {
+    border-color: var(--pc-border) !important;
+    background: var(--pc-surface-soft) !important;
+    color: var(--pc-text) !important;
+  }
+
+  [data-theme='light-pro'] .pc-content {
+    width: 100%;
+    max-width: 1600px;
+    margin-inline: auto;
+    padding: 12px 14px !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card {
+    border-color: var(--pc-border) !important;
+    border-radius: 10px !important;
+    background: var(--pc-surface) !important;
+    padding: 12px !important;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 5%) !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-heading {
+    min-height: 24px;
+    border-bottom: 1px solid #edf1f5;
+    padding-bottom: 7px;
+  }
+
+  [data-theme='light-pro'] .pc-page-title {
+    color: #123b63 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 18px !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-eyebrow {
+    color: var(--pc-primary) !important;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  [data-theme='light-pro'] .pc-page-description {
+    max-width: 560px;
+    color: var(--pc-muted) !important;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 15px;
+  }
+
+  [data-theme='light-pro'] .pc-page-card input:not([type='file']):not([type='checkbox']):not([type='radio']),
+  [data-theme='light-pro'] .pc-page-card select {
+    min-height: 30px !important;
+    height: 30px !important;
+    border-color: var(--pc-border-strong) !important;
+    border-radius: 7px !important;
+    background: #ffffff !important;
+    padding-block: 4px !important;
+    color: var(--pc-text) !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card input:focus,
+  [data-theme='light-pro'] .pc-page-card select:focus,
+  [data-theme='light-pro'] .pc-page-card textarea:focus {
+    border-color: var(--pc-primary) !important;
+    box-shadow: 0 0 0 2px rgb(15 95 168 / 12%) !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button {
+    min-height: 30px !important;
+    border-radius: 7px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    line-height: 16px !important;
+    box-shadow: none !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--primary {
+    border: 1px solid var(--pc-primary) !important;
+    background: var(--pc-primary) !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--primary:hover {
+    background: #0b4f8d !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--secondary {
+    border: 1px solid var(--pc-border-strong) !important;
+    background: #ffffff !important;
+    color: #24364a !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--secondary:hover,
+  [data-theme='light-pro'] .pc-app .pc-button--ghost:hover {
+    background: var(--pc-primary-soft) !important;
+    color: #123b63 !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--danger {
+    border: 1px solid #dc2626 !important;
+    background: #dc2626 !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-app .pc-button--ghost {
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: #475569 !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) th {
+    padding: 6px 10px !important;
+    color: #475569 !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 14px !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) td {
+    padding: 6px 10px !important;
+    color: #334155;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+
+  [data-theme='light-pro'] .pc-page-card table:not(.print-table) thead {
+    background: #f1f5f9 !important;
+    box-shadow: inset 0 -1px 0 var(--pc-border);
+  }
+
+  [data-theme='light-pro'] .pc-page-card .responsive-card-table-shell {
+    overflow: auto !important;
+    border-color: var(--pc-border) !important;
+    border-radius: 8px !important;
+    background: #ffffff !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-badge {
+    border: 1px solid currentColor !important;
+    border-radius: 999px !important;
+    padding: 1px 5px !important;
+    font-size: 9px !important;
+    line-height: 13px !important;
+    letter-spacing: 0.06em !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-pending-approval {
+    border-color: #bfdbfe !important;
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-pending-manager-approval {
+    border-color: #c7d2fe !important;
+    background: #eef2ff !important;
+    color: #4338ca !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-approved,
+  [data-theme='light-pro'] .pc-status-received {
+    border-color: #a7f3d0 !important;
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-processed {
+    border-color: #c4b5fd !important;
+    background: #f5f3ff !important;
+    color: #5b21b6 !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-dispatched,
+  [data-theme='light-pro'] .pc-status-partially-dispatched {
+    border-color: #d8b4fe !important;
+    background: #faf5ff !important;
+    color: #6d28d9 !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-issued {
+    border-color: #fed7aa !important;
+    background: #fff7ed !important;
+    color: #b45309 !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-rejected,
+  [data-theme='light-pro'] .pc-status-partially-rejected {
+    border-color: #fecdd3 !important;
+    background: #fff1f2 !important;
+    color: #be123c !important;
+  }
+
+  [data-theme='light-pro'] .pc-status-partially-received {
+    border-color: #a5f3fc !important;
+    background: #ecfeff !important;
+    color: #0e7490 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-3.grid > div,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-3.grid > div {
+    border-color: var(--pc-border) !important;
+    background: var(--pc-surface-soft) !important;
+    box-shadow: inset 0 2px 0 #dce9f5;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] > div > .mb-2.flex,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] > div > .mb-2.flex {
+    border: 1px solid var(--pc-border);
+    border-radius: 8px;
+    background: var(--pc-surface-soft);
+    padding: 6px;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] button,
+  [data-theme='light-pro'] [data-page-title='Approved Orders'] button {
+    font-weight: 700 !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] {
+    max-width: none !important;
+    padding-bottom: 12px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .rounded-3xl {
+    border-radius: 12px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .rounded-2xl {
+    border-radius: 8px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .p-4 {
+    padding: 12px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] .p-3 {
+    padding: 10px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] h1 {
+    font-size: 16px !important;
+    line-height: 20px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] input,
+  [data-theme='light-pro'] .pc-content [data-cd-theme] select,
+  [data-theme='light-pro'] .pc-content [data-cd-theme] button {
+    border-radius: 7px !important;
+    font-size: 12px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] table th {
+    padding: 6px 10px !important;
+    font-size: 10px !important;
+    line-height: 14px !important;
+  }
+
+  [data-theme='light-pro'] .pc-content [data-cd-theme] table td {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+}
