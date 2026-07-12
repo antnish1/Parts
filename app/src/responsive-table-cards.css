@@ -131,4 +131,50 @@
   table.responsive-card-table a {
     white-space: normal !important;
   }
+
+  /* Approval cards use a dark mobile surface. Keep every value readable even when
+     legacy light-theme utility overrides are also present. */
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr,
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Action'],
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Edit'],
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td[data-mobile-label*='Review'] {
+    background-color: #0b1020 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td::before {
+    color: #b9c8d8 !important;
+    -webkit-text-fill-color: #b9c8d8 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table tbody > tr > td :where(p, span, div, label, strong, small, em, b) {
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table .pc-status-badge {
+    border-color: #64748b !important;
+    background: #263244 !important;
+    color: #f8fafc !important;
+    -webkit-text-fill-color: #f8fafc !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table button,
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table a {
+    color: #9bdcf6 !important;
+    -webkit-text-fill-color: #9bdcf6 !important;
+  }
+
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table input,
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table select,
+  [data-theme='light-pro'] [data-page-title='Approval Queue'] table.responsive-card-table textarea {
+    background: #07101f !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+  }
 }
