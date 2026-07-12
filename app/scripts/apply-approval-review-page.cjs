@@ -4,6 +4,9 @@ const path = require('path');
 const filePath = path.join(__dirname, '..', 'src', 'features', 'approvals', 'ApprovalsPage.tsx');
 let content = fs.readFileSync(filePath, 'utf8');
 
+// The approval page now owns its dedicated review-route behavior directly.
+if (content.includes("const { reviewOrderId = '' } = useParams();")) process.exit(0);
+
 function replaceOnce(from, to) {
   if (!content.includes(from)) return;
   content = content.replace(from, to);

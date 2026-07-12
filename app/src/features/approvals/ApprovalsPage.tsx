@@ -6,17 +6,15 @@ import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
-import { getOrderList } from '../../services/orderList.service';
+import { getApprovalOrderList } from '../../services/orderList.service';
 import {
   acceptTestOrderReviewEdits,
   approveTestOrderWithOriginalQty,
-  resetTestOrderItemQty,
   setTestOrderApproved,
   setTestOrderManagerApproved,
   setTestOrderManagerRejected,
   setTestOrderRejected,
   updateTestOrderItemQty,
-  zeroTestOrderItemForReview,
 } from '../../services/testApproval.service';
 import { getTestOrderView } from '../../services/testOrderView.service';
 import { getEffectiveQty, getEffectiveValue } from '../../lib/orderLogic';
@@ -55,15 +53,16 @@ function getOrderTotalValue(order: { total_value?: number | string | null }) {
 export function ApprovalsPage() {
   const navigate = useNavigate();
   const { role, profile } = useAuth();
+  const { reviewOrderId = '' } = useParams();
+  const isReviewPage = !!reviewOrderId;
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState('');
-  const [reviewId, setReviewId] = useState('');
   const [editedQty, setEditedQty] = useState<Record<string, string>>({});
 
   const { data: orders = [], refetch, isLoading } = useQuery({
-    queryKey: ['order-list-paged'],
-    queryFn: getOrderList,
+    queryKey: ['approval-order-list'],
+    queryFn: getApprovalOrderList,
   });
 
   type OrderRow = (typeof orders)[number];
@@ -71,9 +70,9 @@ export function ApprovalsPage() {
   const [pendingOverride, setPendingOverride] = useState<{ order: OrderRow; action: 'managerApprove' } | null>(null);
 
   const reviewQuery = useQuery({
-    queryKey: ['approval-review', reviewId],
-    queryFn: () => getTestOrderView(reviewId),
-    enabled: !!reviewId,
+    queryKey: ['approval-review', reviewOrderId],
+    queryFn: () => getTestOrderView(reviewOrderId),
+    enabled: isReviewPage,
   });
 
   const pendingOrders = useMemo(
@@ -104,8 +103,8 @@ export function ApprovalsPage() {
   const counts = {
     pending: pendingOrders.filter((order) => !isManagerApprovalStage(order) && isPendingWorkflow(order)).length,
     manager: pendingOrders.filter((order) => isManagerApprovalStage(order)).length,
-    approved: orders.filter((order) => order.status === 'approved').length,
-    rejected: orders.filter((order) => order.status === 'rejected').length,
+    approved: pendingOrders.length,
+    rejected: filteredOrders.length,
   };
 
   const isBlockingAction = !!busyId;
@@ -163,60 +162,9 @@ export function ApprovalsPage() {
       setMessage(`${order.order_no} ${labels[action]}.`);
       setPendingOverride(null);
 
-      if (reviewId === order.id) setReviewId('');
-
       await refetch();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Approval action failed.');
-    } finally {
-      setBusyId('');
-    }
-  }
-
-  async function saveItemQty(itemId: string) {
-    const qty = Number(editedQty[itemId] ?? '');
-
-    setMessage('');
-    setBusyId(itemId);
-
-    try {
-      await updateTestOrderItemQty(itemId, qty);
-      setMessage('Edited quantity saved.');
-      await reviewQuery.refetch();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Quantity update failed.');
-    } finally {
-      setBusyId('');
-    }
-  }
-
-  async function resetItemQty(itemId: string) {
-    setMessage('');
-    setBusyId(itemId);
-
-    try {
-      await resetTestOrderItemQty(itemId);
-      setEditedQty((current) => ({ ...current, [itemId]: '' }));
-      setMessage('Edited quantity reset.');
-      await reviewQuery.refetch();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Quantity reset failed.');
-    } finally {
-      setBusyId('');
-    }
-  }
-
-  async function zeroItemQty(itemId: string) {
-    setMessage('');
-    setBusyId(itemId);
-
-    try {
-      await zeroTestOrderItemForReview(itemId);
-      setEditedQty((current) => ({ ...current, [itemId]: '0' }));
-      setMessage('Review quantity set to 0.');
-      await reviewQuery.refetch();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Review update failed.');
     } finally {
       setBusyId('');
     }
@@ -231,15 +179,19 @@ export function ApprovalsPage() {
     setBusyId(`${order.id}-${action}`);
 
     try {
-      if (action === 'acceptEdits') await acceptTestOrderReviewEdits(order);
+      if (action === 'acceptEdits') {
+        for (const item of reviewQuery.data.items) {
+          const qty = Number(editedQty[item.id] ?? item.edited_qty ?? getEffectiveQty(item));
+          if (!Number.isInteger(qty) || qty < 0) throw new Error(`${item.part_no}: edited quantity must be a whole number.`);
+          await updateTestOrderItemQty(item.id, qty);
+        }
+        await acceptTestOrderReviewEdits(order);
+      }
       if (action === 'approveOriginal') await approveTestOrderWithOriginalQty(order);
 
-      setMessage(action === 'acceptEdits' ? 'Saved review quantities accepted.' : 'Approved with original quantities.');
-
-      if (action === 'approveOriginal') setReviewId('');
-
-      await reviewQuery.refetch();
+      setMessage(action === 'acceptEdits' ? 'Edited quantities saved and accepted.' : 'Approved with original quantities.');
       await refetch();
+      navigate(-1);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Review action failed.');
     } finally {
@@ -251,6 +203,7 @@ export function ApprovalsPage() {
     <PageCard eyebrow="Approvals" title="Approval Queue" description="Review, approve, reject, or send orders to final manager approval.">
       <BlockingActionOverlay show={isBlockingAction} label={blockingLabel} />
 
+      {!isReviewPage ? <>
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
           <p className="text-[10px] uppercase text-[#6D8196]">Pending</p>
@@ -261,11 +214,11 @@ export function ApprovalsPage() {
           <p className="text-sm font-black text-white">{counts.manager}</p>
         </div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
-          <p className="text-[10px] uppercase text-[#6D8196]">Approved</p>
+          <p className="text-[10px] uppercase text-[#6D8196]">Queue</p>
           <p className="text-sm font-black text-white">{counts.approved}</p>
         </div>
         <div className="rounded-md border border-[#263244] bg-[#0b1020] px-2 py-1.5">
-          <p className="text-[10px] uppercase text-[#6D8196]">Rejected</p>
+          <p className="text-[10px] uppercase text-[#6D8196]">Showing</p>
           <p className="text-sm font-black text-white">{counts.rejected}</p>
         </div>
       </div>
@@ -329,10 +282,11 @@ export function ApprovalsPage() {
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
-                        onClick={(event) => { event.stopPropagation(); setReviewId(order.id); }}
+                        onClick={(event) => { event.stopPropagation(); navigate(`/approvals/review/${order.id}`); }}
                       >
                         Review
                       </button>
+                      {role !== 'manager' ? <>
                       <button
                         className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
                         disabled={isBlockingAction}
@@ -347,6 +301,7 @@ export function ApprovalsPage() {
                       >
                         Reject
                       </button>
+                      </> : null}
                     </div>
                   </td>
                 </tr>
@@ -357,17 +312,18 @@ export function ApprovalsPage() {
 
         {filteredOrders.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No pending orders found.</p> : null}
       </div>
+      </> : null}
 
-      {reviewId ? (
-        <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+      {isReviewPage ? (
+        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Item Review</p>
             <button
               className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40"
               disabled={isBlockingAction}
-              onClick={() => setReviewId('')}
+              onClick={() => navigate(-1)}
             >
-              Close
+              Back to Queue
             </button>
           </div>
 
@@ -384,7 +340,7 @@ export function ApprovalsPage() {
                   disabled={isBlockingAction}
                   onClick={() => void runReviewOrderAction('acceptEdits')}
                 >
-                  Accept Saved Edits
+                  Accept Edits
                 </button>
                 <button
                   className="text-xs font-black text-[#c7d2df] hover:underline disabled:opacity-40"
@@ -408,14 +364,11 @@ export function ApprovalsPage() {
                   <th className="px-2.5 py-2 text-right">Edited</th>
                   <th className="px-2.5 py-2 text-right">DNP</th>
                   <th className="px-2.5 py-2 text-right">Value</th>
-                  <th className="px-2.5 py-2 text-right">Action</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-[#263244]">
                 {reviewQuery.data?.items.map((item) => {
-                  const suggested = Math.max(0, Number(item.qty ?? 0) - Number(item.previous_30d_qty ?? 0));
-
                   return (
                     <tr key={item.id} className="bg-[#111827]">
                       <td className="px-2.5 py-2 font-black text-white">{item.part_no}</td>
@@ -432,38 +385,6 @@ export function ApprovalsPage() {
                       </td>
                       <td className="px-2.5 py-2 text-right text-[#d8e3ee]">{item.dnp ?? 0}</td>
                       <td className="px-2.5 py-2 text-right font-black text-white">₹{getEffectiveValue(item).toFixed(2)}</td>
-                      <td className="px-2.5 py-2 text-right">
-                        <div className="flex justify-end gap-3">
-                          <button
-                            className="font-black text-[#c7d2df] hover:underline disabled:opacity-40"
-                            disabled={isBlockingAction}
-                            onClick={() => setEditedQty((current) => ({ ...current, [item.id]: String(suggested) }))}
-                          >
-                            Suggest
-                          </button>
-                          <button
-                            className="font-black text-[#82C8E5] hover:underline disabled:opacity-40"
-                            disabled={isBlockingAction}
-                            onClick={() => void saveItemQty(item.id)}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="font-black text-[#ef6f7b] hover:underline disabled:opacity-40"
-                            disabled={isBlockingAction}
-                            onClick={() => void zeroItemQty(item.id)}
-                          >
-                            Zero
-                          </button>
-                          <button
-                            className="font-black text-[#c7d2df] hover:underline disabled:opacity-40"
-                            disabled={isBlockingAction}
-                            onClick={() => void resetItemQty(item.id)}
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      </td>
                     </tr>
                   );
                 })}
