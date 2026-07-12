@@ -2,7 +2,7 @@ import { ChangeEvent, Fragment, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Paperclip, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
@@ -212,94 +212,231 @@ export function OrderDetailPage() {
 
   function downloadOrderWorkbook() {
     const orderNo = order.final_order_no || order.order_no;
-    const summaryRowsForExcel: Array<[string, string | number]> = [
-      ['Parts Connect Portal', 'Internal Parts Order & Approval Document'],
-      ['Order ID', orderNo],
-      ['Order Date & Time', formatDate(order.created_at)],
-      ['Current Status', displayStatus],
-      ['Branch', summaryValue(order.branch)],
-      ['Number of Line Items', items.length],
-      ['Order Type', summaryValue(order.order_type)],
-      ['Order For', String(order.order_for ?? '').toLowerCase() === 'stock' ? 'Stock' : 'Customer'],
-      ['Employee Name', summaryValue(order.employee?.full_name || order.employee_name_legacy)],
-      ['Call ID', summaryValue(order.call_id)],
-      ['Machine No', summaryValue(order.machine_no)],
-      ['Machine Type', summaryValue(order.warranty_status)],
-      ['Customer', summaryValue(order.customer_name)],
-      ['Approved By', summaryValue(order.approved_by_name || order.approved_by_super_name || order.approver?.full_name)],
-      ['DBMS Order No', summaryValue(order.final_order_no || order.processing_reference)],
-      ['Order Registration Date', orderRegDateLabel],
-      ['Processed Date', formatDate(order.processed_date)],
-      ['Total Qty', totalQty],
-      ['Total Billed Qty', totalBilled],
-      ['Total Pending Qty', totalPending],
-      ['Total Value', totalValue],
+    const rows: Array<Array<string | number>> = [];
+    const merges: XLSX.Range[] = [];
+
+    const addMergedRow = (text: string, startColumn = 0, endColumn = 14) => {
+      const row = rows.length;
+      const values = Array(15).fill('');
+      values[startColumn] = text;
+      rows.push(values);
+      merges.push({ s: { r: row, c: startColumn }, e: { r: row, c: endColumn } });
+      return row;
+    };
+
+    const titleRow = addMergedRow('PARTS CONNECT PORTAL');
+    const subtitleRow = addMergedRow('Complete Parts Order Details');
+    const orderIdRow = addMergedRow(`Order ID: ${orderNo}`);
+    rows.push(Array(15).fill(''));
+
+    const summaryHeaderRow = addMergedRow('ORDER SUMMARY');
+    const summaryPairs: Array<[string, string | number, string, string | number]> = [
+      ['Order Date & Time', formatDate(order.created_at), 'Current Status', displayStatus],
+      ['Branch', summaryValue(order.branch), 'Number of Line Items', items.length],
+      ['Order Type', summaryValue(order.order_type), 'Order For', String(order.order_for ?? '').toLowerCase() === 'stock' ? 'Stock' : 'Customer'],
+      ['Employee Name', summaryValue(order.employee?.full_name || order.employee_name_legacy), 'Call ID', summaryValue(order.call_id)],
+      ['Machine No', summaryValue(order.machine_no), 'Machine Type', summaryValue(order.warranty_status)],
+      ['Customer', summaryValue(order.customer_name), 'Approved By', summaryValue(order.approved_by_name || order.approved_by_super_name || order.approver?.full_name)],
+      ['DBMS Order No', summaryValue(order.final_order_no || order.processing_reference), 'Processed Date', formatDate(order.processed_date)],
+      ['Order Registration Date', orderRegDateLabel, 'Order Status', displayStatus],
     ];
+    const summaryStartRow = rows.length;
+    summaryPairs.forEach(([leftLabel, leftValue, rightLabel, rightValue]) => {
+      const row = rows.length;
+      rows.push([leftLabel, leftValue, '', '', '', '', '', rightLabel, rightValue, '', '', '', '', '', '']);
+      merges.push({ s: { r: row, c: 1 }, e: { r: row, c: 6 } });
+      merges.push({ s: { r: row, c: 8 }, e: { r: row, c: 14 } });
+    });
 
-    const partsRows = items.map((item) => ({
-      Part: item.part_no,
-      Description: item.description || '-',
-      Qty: getEffectiveQty(item),
-      Billed: getBilledQty(item),
-      Pending: getPendingQty(item),
-      Value: getEffectiveValue(item),
-      Status: getResolvedRowStatus(item),
-      Processed: formatDate(order.processed_date),
-      'Registration Date': item.order_reg_date || orderRegDateLabel,
-      'Bill No': item.dbms_invoice_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
-      'Billing Date': item.dbms_invoice_date || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
-      Transport: item.transport_name || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
-      Docket: item.docket_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
-      Inventory: inventoryMap[normalizePartNo(item.part_no)] ?? 0,
-      'In Transit': item.in_transit_qty ?? item.previous_30d_qty ?? 0,
-    }));
+    rows.push(Array(15).fill(''));
+    const partsHeaderRow = addMergedRow('PARTS DETAILS');
+    const partsColumnRow = rows.length;
+    rows.push(['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Registration Date', 'Bill No', 'Billing Date', 'Transport', 'Docket', 'Inventory', 'In Transit']);
+    const partsStartRow = rows.length;
+    items.forEach((item) => rows.push([
+      item.part_no,
+      item.description || '-',
+      getEffectiveQty(item),
+      getBilledQty(item),
+      getPendingQty(item),
+      getEffectiveValue(item),
+      getResolvedRowStatus(item),
+      formatDate(order.processed_date),
+      item.order_reg_date || orderRegDateLabel,
+      item.dbms_invoice_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
+      item.dbms_invoice_date || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
+      item.transport_name || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
+      item.docket_no || (item.billing_chunks.length > 1 ? 'Multiple' : '-'),
+      inventoryMap[normalizePartNo(item.part_no)] ?? 0,
+      item.in_transit_qty ?? item.previous_30d_qty ?? 0,
+    ]));
+    const partsEndRow = rows.length - 1;
 
-    const billingRows = items.flatMap((item) => item.billing_chunks.map((chunk) => ({
-      Part: item.part_no,
-      Description: item.description || '-',
-      Invoice: chunk.invoice_no || '-',
-      'Billing Date': chunk.billing_date || '-',
-      Docket: chunk.docket_no || '-',
-      Transport: chunk.transport_name || '-',
-      'Delivery No': chunk.delivery_no || '-',
-      'Billed Qty': Number(chunk.billed_qty ?? 0),
-      'Received Qty': Number(chunk.received_qty ?? 0),
-      'Received At': formatDate(chunk.received_at),
-      Status: chunk.raw_status || '-',
-      Uploaded: formatDate(chunk.created_at),
-    })));
+    const totalsStartRow = rows.length;
+    rows.push(['TOTALS', '', totalQty, totalBilled, totalPending, totalValue, '', '', '', '', '', '', '', '', items.length]);
+    merges.push({ s: { r: totalsStartRow, c: 0 }, e: { r: totalsStartRow, c: 1 } });
 
-    const commentRows = comments.map((comment) => ({
-      Type: 'Comment',
-      User: comment.author?.full_name || 'Unknown User',
-      Details: comment.body || '-',
-      Attachments: comment.attachments.map((attachment) => attachment.original_file_name).join(', ') || '-',
-      Date: formatDate(comment.created_at),
-    }));
-    const activityRows = events.map((event) => ({
-      Type: 'Activity',
-      User: '-',
-      Details: event.notes || [event.old_status, event.new_status].filter(Boolean).join(' → ') || event.event_type.replace(/_/g, ' '),
-      Attachments: '-',
-      Date: formatDate(event.created_at),
-    }));
+    rows.push(Array(15).fill(''));
+    const billingHeaderRow = addMergedRow('BILLING & DOCKET DETAILS');
+    const billingColumnRow = rows.length;
+    rows.push(['Part', 'Description', 'Invoice', 'Billing Date', 'Docket', 'Transport', 'Delivery No', 'Billed Qty', 'Received Qty', 'Received At', 'Status', 'Uploaded', '', '', '']);
+    merges.push({ s: { r: billingColumnRow, c: 11 }, e: { r: billingColumnRow, c: 14 } });
+    const billingStartRow = rows.length;
+    const billingRows = items.flatMap((item) => item.billing_chunks.map((chunk) => [
+      item.part_no,
+      item.description || '-',
+      chunk.invoice_no || '-',
+      chunk.billing_date || '-',
+      chunk.docket_no || '-',
+      chunk.transport_name || '-',
+      chunk.delivery_no || '-',
+      Number(chunk.billed_qty ?? 0),
+      Number(chunk.received_qty ?? 0),
+      formatDate(chunk.received_at),
+      chunk.raw_status || '-',
+      formatDate(chunk.created_at),
+      '', '', '',
+    ]));
+    if (billingRows.length) rows.push(...billingRows);
+    else {
+      const row = rows.length;
+      rows.push(['No billing or docket entries recorded', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 14 } });
+    }
+    const billingEndRow = rows.length - 1;
+
+    rows.push(Array(15).fill(''));
+    const historyHeaderRow = addMergedRow('COMMENTS & ORDER ACTIVITY');
+    const historyColumnRow = rows.length;
+    rows.push(['Type', 'User', 'Details', '', '', '', '', '', '', '', 'Attachments', '', '', 'Date', '']);
+    merges.push({ s: { r: historyColumnRow, c: 2 }, e: { r: historyColumnRow, c: 9 } });
+    merges.push({ s: { r: historyColumnRow, c: 10 }, e: { r: historyColumnRow, c: 12 } });
+    merges.push({ s: { r: historyColumnRow, c: 13 }, e: { r: historyColumnRow, c: 14 } });
+    const historyStartRow = rows.length;
+    const historyRows = [
+      ...comments.map((comment) => ({
+        type: 'Comment',
+        user: comment.author?.full_name || 'Unknown User',
+        details: comment.body || '-',
+        attachments: comment.attachments.map((attachment) => attachment.original_file_name).join(', ') || '-',
+        date: formatDate(comment.created_at),
+      })),
+      ...events.map((event) => ({
+        type: 'Activity',
+        user: '-',
+        details: event.notes || [event.old_status, event.new_status].filter(Boolean).join(' → ') || event.event_type.replace(/_/g, ' '),
+        attachments: '-',
+        date: formatDate(event.created_at),
+      })),
+    ];
+    if (historyRows.length) {
+      historyRows.forEach((entry) => {
+        const row = rows.length;
+        rows.push([entry.type, entry.user, entry.details, '', '', '', '', '', '', '', entry.attachments, '', '', entry.date, '']);
+        merges.push({ s: { r: row, c: 2 }, e: { r: row, c: 9 } });
+        merges.push({ s: { r: row, c: 10 }, e: { r: row, c: 12 } });
+        merges.push({ s: { r: row, c: 13 }, e: { r: row, c: 14 } });
+      });
+    } else {
+      const row = rows.length;
+      rows.push(['No comments or activity recorded', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      merges.push({ s: { r: row, c: 0 }, e: { r: row, c: 14 } });
+    }
+    const historyEndRow = rows.length - 1;
+
+    const worksheet = XLSX.utils.aoa_to_sheet(rows);
+    worksheet['!merges'] = merges;
+    worksheet['!cols'] = [
+      { wch: 17 }, { wch: 32 }, { wch: 9 }, { wch: 9 }, { wch: 9 },
+      { wch: 14 }, { wch: 20 }, { wch: 18 }, { wch: 19 }, { wch: 18 },
+      { wch: 18 }, { wch: 21 }, { wch: 18 }, { wch: 11 }, { wch: 12 },
+    ];
+    worksheet['!rows'] = rows.map((_, index) => ({ hpt: index === titleRow ? 28 : index === subtitleRow ? 22 : index === orderIdRow ? 18 : index === partsColumnRow || index === billingColumnRow || index === historyColumnRow ? 26 : 20 }));
+    worksheet['!freeze'] = { xSplit: 0, ySplit: partsColumnRow + 1 };
+    worksheet['!autofilter'] = { ref: `A${partsColumnRow + 1}:O${Math.max(partsColumnRow + 1, partsEndRow + 1)}` };
+
+    const thinBorder = {
+      top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+      bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+      left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+      right: { style: 'thin', color: { rgb: 'CBD5E1' } },
+    };
+    const sectionRows = [summaryHeaderRow, partsHeaderRow, billingHeaderRow, historyHeaderRow];
+
+    for (let row = 0; row < rows.length; row += 1) {
+      for (let column = 0; column < 15; column += 1) {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        if (!worksheet[address]) worksheet[address] = { t: 's', v: '' };
+        worksheet[address].s = {
+          font: { name: 'Calibri', sz: 10, color: { rgb: '0F172A' } },
+          alignment: { vertical: 'center', wrapText: true },
+        };
+      }
+    }
+
+    worksheet['A1'].s = { font: { name: 'Calibri', sz: 20, bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '0F4C81' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+    worksheet['A2'].s = { font: { name: 'Calibri', sz: 14, bold: true, color: { rgb: '0F4C81' } }, fill: { fgColor: { rgb: 'EAF3FB' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+    worksheet['A3'].s = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '475569' } }, alignment: { horizontal: 'center', vertical: 'center' } };
+
+    sectionRows.forEach((row) => {
+      const address = XLSX.utils.encode_cell({ r: row, c: 0 });
+      worksheet[address].s = { font: { name: 'Calibri', sz: 11, bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '1677B8' } }, alignment: { horizontal: 'left', vertical: 'center' } };
+    });
+
+    for (let row = summaryStartRow; row < summaryStartRow + summaryPairs.length; row += 1) {
+      [0, 7].forEach((column) => {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '334155' } }, fill: { fgColor: { rgb: 'EAF3FB' } }, border: thinBorder, alignment: { vertical: 'center' } };
+      });
+      [1, 8].forEach((column) => {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'FFFFFF' } }, border: thinBorder, alignment: { horizontal: 'right', vertical: 'center', wrapText: true } };
+      });
+    }
+
+    [partsColumnRow, billingColumnRow, historyColumnRow].forEach((row) => {
+      for (let column = 0; column < 15; column += 1) {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { font: { name: 'Calibri', sz: 9, bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '334155' } }, border: thinBorder, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+      }
+    });
+
+    for (let row = partsStartRow; row <= partsEndRow; row += 1) {
+      for (let column = 0; column < 15; column += 1) {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { ...worksheet[address].s, fill: { fgColor: { rgb: row % 2 ? 'F8FAFC' : 'FFFFFF' } }, border: thinBorder };
+      }
+      worksheet[XLSX.utils.encode_cell({ r: row, c: 5 })].z = '₹#,##0.00';
+    }
+
+    for (let column = 0; column < 15; column += 1) {
+      const address = XLSX.utils.encode_cell({ r: totalsStartRow, c: column });
+      worksheet[address].s = { font: { name: 'Calibri', sz: 10, bold: true, color: { rgb: '0F172A' } }, fill: { fgColor: { rgb: 'DDF3E4' } }, border: thinBorder, alignment: { vertical: 'center' } };
+    }
+    worksheet[XLSX.utils.encode_cell({ r: totalsStartRow, c: 5 })].z = '₹#,##0.00';
+
+    for (let row = billingStartRow; row <= billingEndRow; row += 1) {
+      for (let column = 0; column < 15; column += 1) {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { ...worksheet[address].s, fill: { fgColor: { rgb: row % 2 ? 'F8FAFC' : 'FFFFFF' } }, border: thinBorder };
+      }
+    }
+
+    for (let row = historyStartRow; row <= historyEndRow; row += 1) {
+      for (let column = 0; column < 15; column += 1) {
+        const address = XLSX.utils.encode_cell({ r: row, c: column });
+        worksheet[address].s = { ...worksheet[address].s, fill: { fgColor: { rgb: row % 2 ? 'F8FAFC' : 'FFFFFF' } }, border: thinBorder, alignment: { vertical: 'top', wrapText: true } };
+      }
+    }
+
+    worksheet['!printHeader'] = '&CParts Connect Portal — Order Details';
+    worksheet['!printFooter'] = '&LOrder ' + orderNo + '&RPage &P of &N';
+    worksheet['!pageSetup'] = { orientation: 'landscape', fitToWidth: 1, fitToHeight: 0, paperSize: 9 };
+    worksheet['!margins'] = { left: 0.25, right: 0.25, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 };
 
     const workbook = XLSX.utils.book_new();
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRowsForExcel);
-    const partsSheet = XLSX.utils.json_to_sheet(partsRows);
-    const billingSheet = XLSX.utils.json_to_sheet(billingRows.length ? billingRows : [{ Part: '-', Description: 'No billing chunks recorded' }]);
-    const historySheet = XLSX.utils.json_to_sheet([...commentRows, ...activityRows].length ? [...commentRows, ...activityRows] : [{ Type: '-', User: '-', Details: 'No comments or activity recorded', Attachments: '-', Date: '-' }]);
-
-    summarySheet['!cols'] = [{ wch: 28 }, { wch: 48 }];
-    partsSheet['!cols'] = [{ wch: 16 }, { wch: 32 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 14 }, { wch: 20 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 10 }, { wch: 12 }];
-    billingSheet['!cols'] = [{ wch: 16 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-    historySheet['!cols'] = [{ wch: 12 }, { wch: 24 }, { wch: 70 }, { wch: 40 }, { wch: 20 }];
-
-    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Order Summary');
-    XLSX.utils.book_append_sheet(workbook, partsSheet, 'Parts');
-    XLSX.utils.book_append_sheet(workbook, billingSheet, 'Billing Details');
-    XLSX.utils.book_append_sheet(workbook, historySheet, 'Comments & Activity');
-    XLSX.writeFile(workbook, `${orderNo}-order-details.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Order Details');
+    XLSX.writeFile(workbook, `${orderNo}-order-details.xlsx`, { cellStyles: true });
   }
 
   return (
