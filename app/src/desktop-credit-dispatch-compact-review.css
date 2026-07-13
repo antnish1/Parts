@@ -1,0 +1,83 @@
+@media (min-width: 1024px) {
+  [data-theme='light-pro'] .pc-content .cd-review-menu {
+    position: relative;
+    width: 108px;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-menu > summary {
+    list-style: none;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-trigger {
+    display: inline-flex;
+    min-height: 28px;
+    width: 108px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border: 1px solid #93c5fd;
+    border-radius: 7px;
+    background: #eff6ff;
+    padding: 5px 10px;
+    color: #1d4ed8;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-trigger:hover,
+  [data-theme='light-pro'] .pc-content .cd-review-menu[open] .cd-review-trigger {
+    border-color: #60a5fa;
+    background: #dbeafe;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-panel {
+    position: absolute;
+    right: 0;
+    z-index: 40;
+    margin-top: 5px;
+    width: 176px;
+    overflow: hidden;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 4px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-option {
+    display: flex;
+    min-height: 30px;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    padding: 6px 9px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-option:disabled {
+    cursor: not-allowed;
+    opacity: .5;
+  }
+
+  [data-theme='light-pro'] .pc-content .cd-review-option--approve { color: #047857; }
+  [data-theme='light-pro'] .pc-content .cd-review-option--approve:hover { background: #ecfdf5; }
+  [data-theme='light-pro'] .pc-content .cd-review-option--reject { color: #be123c; }
+  [data-theme='light-pro'] .pc-content .cd-review-option--reject:hover { background: #fff1f2; }
+  [data-theme='light-pro'] .pc-content .cd-review-option--correct { color: #c2410c; }
+  [data-theme='light-pro'] .pc-content .cd-review-option--correct:hover { background: #fff7ed; }
+
+  [data-theme='light-pro'] .pc-content .cd-row-actions {
+    min-width: 0;
+  }
+}
