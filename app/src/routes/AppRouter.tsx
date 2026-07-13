@@ -20,6 +20,7 @@ function lazyNamed<T extends ComponentType<object>>(
 
 const NewOrderPage = lazyNamed(() => import('../features/orders/NewOrderPage'), 'NewOrderPage');
 const OrderDetailPage = lazyNamed(() => import('../features/orders/OrderDetailPage'), 'OrderDetailPage');
+const OrderDataCorrectionPage = lazyNamed(() => import('../features/orders/OrderDataCorrectionPage'), 'OrderDataCorrectionPage');
 const TrackOrdersPage = lazyNamed(() => import('../features/tracking/TrackOrdersPage'), 'TrackOrdersPage');
 const DelayedVorPage = lazyNamed(() => import('../features/tracking/DelayedVorPage'), 'DelayedVorPage');
 const ApprovalsPage = lazyNamed(() => import('../features/approvals/ApprovalsPage'), 'ApprovalsPage');
@@ -66,6 +67,7 @@ export function AppRouter() {
               <Route path="/orders/new" element={<NewOrderPage />} />
               <Route path="/orders/track" element={<TrackOrdersPage />} />
               <Route path="/orders/delayed-vor" element={<DelayedVorPage />} />
+              <Route path="/orders/:orderId/correct" element={<OrderDataCorrectionPage />} />
               <Route path="/orders/:orderId" element={<OrderDetailPage />} />
               <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
               <Route path="/approvals/:queue" element={<ApprovalsPage />} />
