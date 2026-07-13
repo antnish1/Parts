@@ -108,6 +108,7 @@ export type CorrectionPayload = {
   reference?: string;
   updateLinkedBillings?: boolean;
   syncMatchingItems?: boolean;
+  deleteLinkedBillings?: boolean;
 };
 
 function functionError(error: unknown, fallback: string) {
