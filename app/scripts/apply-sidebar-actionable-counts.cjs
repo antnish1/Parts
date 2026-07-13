@@ -49,7 +49,7 @@ replaceOnce(
 
 replaceOnce(
   `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
-  const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => \`${order.status} ${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;`,
+  const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;`,
   `  const creditDispatchCounterQuery = useQuery({
     queryKey: ['credit-dispatch-nav-counter', profile?.role, profile?.branch],
     queryFn: getCreditDispatches,
@@ -60,7 +60,7 @@ replaceOnce(
   const orders = adminCounterQuery.data ?? [];
   const creditDispatches = creditDispatchCounterQuery.data ?? [];
   const approvedOrdersCount = orders.filter((order) => order.status === 'approved').length;
-  const managerApprovalCount = orders.filter((order) => \`${order.status} ${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
+  const managerApprovalCount = orders.filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
   const delayedVorCount = orders.filter(isDelayedVorOrder).length;
   const managerCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Approval').length;
   const branchKey = normalizeBranch(profile?.branch);
