@@ -1,49 +1,52 @@
 const fs = require('fs');
 const path = require('path');
 
-function patch(filePath, from, to, label) {
-  let source = fs.readFileSync(filePath, 'utf8');
-  if (source.includes(to)) return;
-  if (!source.includes(from)) {
-    console.warn(`${label} marker not found; existing generated source left unchanged`);
-    return;
+const pagePath = path.resolve(__dirname, '../src/features/credit-dispatch/NewCreditDispatchPage.tsx');
+let pageSource = fs.readFileSync(pagePath, 'utf8');
+
+if (!pageSource.includes('<SalesEmployeeAutocomplete')) {
+  const fieldRegex = /<Field label="Sales Employee Name"><input[\s\S]*?placeholder="Enter sales employee name"\s*\/><\/Field>/;
+  if (fieldRegex.test(pageSource)) {
+    pageSource = pageSource.replace(
+      fieldRegex,
+      `<Field label="Sales Employee Name"><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></Field>`,
+    );
+  } else {
+    throw new Error('sales employee input field marker not found');
   }
-  source = source.replace(from, to);
-  fs.writeFileSync(filePath, source);
 }
 
-const pagePath = path.resolve(__dirname, '../src/features/credit-dispatch/NewCreditDispatchPage.tsx');
-patch(
-  pagePath,
-  "import { SignaturePad } from './SignaturePad';",
-  "import { SignaturePad } from './SignaturePad';\nimport { SalesEmployeeAutocomplete } from './SalesEmployeeAutocomplete';",
-  'sales employee autocomplete import',
-);
-patch(
-  pagePath,
-  `<Field label="Sales Employee Name"><input className={inputClass} value={form.salesEmployeeName ?? ''} onChange={(event) => update('salesEmployeeName', event.target.value.toUpperCase())} placeholder="Enter sales employee name" /></Field>`,
-  `<Field label="Sales Employee Name"><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></Field>`,
-  'sales employee autocomplete field',
-);
+if (pageSource.includes('<SalesEmployeeAutocomplete') && !pageSource.includes("from './SalesEmployeeAutocomplete'")) {
+  pageSource = pageSource.replace(
+    "import { SignaturePad } from './SignaturePad';",
+    "import { SignaturePad } from './SignaturePad';\nimport { SalesEmployeeAutocomplete } from './SalesEmployeeAutocomplete';",
+  );
+}
+fs.writeFileSync(pagePath, pageSource);
 
 const servicePath = path.resolve(__dirname, '../src/services/creditDispatch.service.ts');
-patch(
-  servicePath,
-  "import { supabase } from '../lib/supabase';",
-  "import { supabase } from '../lib/supabase';\nimport { ensureSalesEmployeeName } from './salesEmployee.service';",
-  'sales employee service import',
-);
-patch(
-  servicePath,
-  `export async function createCreditDispatch(input: CreditDispatchFormInput) {\n  validateRequestInput(input);`,
-  `export async function createCreditDispatch(input: CreditDispatchFormInput) {\n  validateRequestInput(input);\n  const salesEmployeeName = await ensureSalesEmployeeName(input.salesEmployeeName ?? '');`,
-  'sales employee ensure on submit',
-);
-patch(
-  servicePath,
+let serviceSource = fs.readFileSync(servicePath, 'utf8');
+
+if (!serviceSource.includes('const salesEmployeeName = await ensureSalesEmployeeName')) {
+  const createMarker = `export async function createCreditDispatch(input: CreditDispatchFormInput) {\n  validateRequestInput(input);`;
+  if (!serviceSource.includes(createMarker)) throw new Error('credit dispatch create marker not found');
+  serviceSource = serviceSource.replace(
+    createMarker,
+    `${createMarker}\n  const salesEmployeeName = await ensureSalesEmployeeName(input.salesEmployeeName ?? '');`,
+  );
+}
+
+if (serviceSource.includes('ensureSalesEmployeeName') && !serviceSource.includes("from './salesEmployee.service'")) {
+  serviceSource = serviceSource.replace(
+    "import { supabase } from '../lib/supabase';",
+    "import { supabase } from '../lib/supabase';\nimport { ensureSalesEmployeeName } from './salesEmployee.service';",
+  );
+}
+
+serviceSource = serviceSource.replace(
   `sales_employee_name: (input.salesEmployeeName ?? '').trim().toUpperCase(),`,
   `sales_employee_name: salesEmployeeName,`,
-  'sales employee normalized insert',
 );
+fs.writeFileSync(servicePath, serviceSource);
 
 console.log('Sales employee autocomplete and reusable master persistence applied.');
