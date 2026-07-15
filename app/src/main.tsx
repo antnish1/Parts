@@ -18,6 +18,7 @@ import './desktop-credit-dispatch-progress.css';
 import './desktop-credit-customer-pages.css';
 import './desktop-credit-dispatch-actions.css';
 import './desktop-credit-dispatch-compact-review.css';
+import './desktop-approval-queue-fit.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
