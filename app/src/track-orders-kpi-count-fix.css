@@ -1,1 +1,8 @@
-placeholder
+@media (min-width: 768px) {
+  .pc-kpi-card[data-active='true'] .pc-kpi-count,
+  .pc-kpi-card[data-active='true'] .pc-kpi-count * {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  }
+}
