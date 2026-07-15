@@ -1,11 +1,13 @@
 @media (min-width: 768px) {
   .pc-kpi-card {
-    position: relative;
+    position: relative !important;
     min-width: 0;
+    min-height: 68px;
     overflow: hidden;
-    border: 1px solid #d5deea;
-    background: linear-gradient(145deg, #ffffff 0%, #f6f9fc 100%);
-    color: #0b1f3a;
+    border: 1px solid #d5deea !important;
+    background: linear-gradient(145deg, #ffffff 0%, #f6f9fc 100%) !important;
+    color: #0b1f3a !important;
+    padding-bottom: 22px !important;
     transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease, color 180ms ease;
   }
 
@@ -19,18 +21,19 @@
     background: rgba(15, 95, 168, 0.08);
     transform: scale(0.72);
     transition: transform 220ms ease, background 220ms ease;
+    pointer-events: none;
   }
 
   .pc-kpi-card:hover {
     transform: translateY(-2px);
-    border-color: #9bbada;
+    border-color: #9bbada !important;
     box-shadow: 0 8px 18px rgba(15, 95, 168, 0.13);
   }
 
   .pc-kpi-card[data-active='true'] {
-    border-color: #0f5fa8;
-    background: linear-gradient(135deg, #0b1f3a 0%, #0f5fa8 100%);
-    color: #ffffff;
+    border-color: #0b1f3a !important;
+    background: linear-gradient(135deg, #0b1f3a 0%, #0f5fa8 100%) !important;
+    color: #ffffff !important;
     box-shadow: 0 10px 24px rgba(11, 31, 58, 0.22);
     animation: pc-kpi-activate 260ms ease both;
   }
@@ -41,18 +44,28 @@
   }
 
   .pc-kpi-label,
-  .pc-kpi-count,
-  .pc-kpi-value {
+  .pc-kpi-count {
     position: relative;
     z-index: 1;
   }
 
-  .pc-kpi-label { color: #58708d; }
-  .pc-kpi-count { color: #0b1f3a; }
-  .pc-kpi-value { color: #60758d; }
-  .pc-kpi-card[data-active='true'] .pc-kpi-label { color: #d9e9f8; }
-  .pc-kpi-card[data-active='true'] .pc-kpi-count { color: #ffffff; }
-  .pc-kpi-card[data-active='true'] .pc-kpi-value { color: #ffe47a; }
+  .pc-kpi-value {
+    position: absolute !important;
+    right: 8px !important;
+    bottom: 5px !important;
+    z-index: 2;
+    margin: 0 !important;
+    line-height: 1 !important;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .pc-kpi-label { color: #58708d !important; }
+  .pc-kpi-count { color: #0b1f3a !important; }
+  .pc-kpi-value { color: #60758d !important; }
+  .pc-kpi-card[data-active='true'] .pc-kpi-label { color: #d9e9f8 !important; }
+  .pc-kpi-card[data-active='true'] .pc-kpi-count { color: #ffffff !important; }
+  .pc-kpi-card[data-active='true'] .pc-kpi-value { color: #ffe47a !important; }
 
   @keyframes pc-kpi-activate {
     0% { transform: scale(0.97); }
