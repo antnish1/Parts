@@ -18,12 +18,7 @@ function patchRegex(filePath, regex, to, label) {
 }
 
 const trackingPath = path.resolve(__dirname, '../src/features/tracking/TrackOrdersPage.tsx');
-patch(
-  trackingPath,
-  "import { searchOrderIdsByItem } from '../../services/orderItemSearch.service';",
-  "import { searchOrderItemSummaries } from '../../services/orderItemSearchSummary.service';",
-  'track matched item summary import',
-);
+patch(trackingPath, "import { searchOrderIdsByItem } from '../../services/orderItemSearch.service';", "import { searchOrderItemSummaries } from '../../services/orderItemSearchSummary.service';", 'track matched item summary import');
 patch(
   trackingPath,
   "  const [searchParams] = useSearchParams();\n  const [search, setSearch] = useState(searchParams.get('q') ?? '');\n  const [statusFilter, setStatusFilter] = useState('all');\n  const [dateFrom, setDateFrom] = useState('');\n  const [dateTo, setDateTo] = useState('');\n  const [page, setPage] = useState(1);\n  const [sortKey, setSortKey] = useState<SortKey>('created_at');\n  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');",
@@ -45,30 +40,20 @@ patch(
 patchRegex(
   trackingPath,
   /  const counts = useMemo\([\s\S]*?\n  \}, \[orders, metaMap\]\);/,
-  "  const counts = useMemo(() => {\n    const statuses = orders.map((order) => getTrackingMeta(order, metaMap[order.id]).resolvedStatus || order.status);\n    return { total: orders.length, pending: statuses.filter((status) => status.includes('pending')).length, approved: statuses.filter((status) => status === 'approved').length, processed: statuses.filter((status) => status === 'processed').length, dispatched: statuses.filter((status) => status === 'dispatched').length, received: statuses.filter((status) => status === 'received').length, rejected: statuses.filter((status) => status === 'rejected').length };\n  }, [orders, metaMap]);\n\n  const kpiValues = useMemo(() => {\n    const totals = { all: 0, pending: 0, approved: 0, processed: 0, dispatched: 0, received: 0, rejected: 0 };\n    orders.forEach((order) => {\n      const meta = getTrackingMeta(order, metaMap[order.id]);\n      const status = meta.resolvedStatus || order.status;\n      totals.all += meta.totalValue;\n      if (status.includes('pending')) totals.pending += meta.totalValue;\n      if (status in totals) totals[status] += meta.totalValue;\n    });\n    return totals;\n  }, [orders, metaMap]);",
+  "  const counts = useMemo(() => {\n    const statuses = orders.map((order) => getTrackingMeta(order, metaMap[order.id]).resolvedStatus || order.status);\n    return { total: orders.length, pending: statuses.filter((status) => status.includes('pending')).length, approved: statuses.filter((status) => status === 'approved').length, processed: statuses.filter((status) => status === 'processed').length, dispatched: statuses.filter((status) => status === 'dispatched').length, received: statuses.filter((status) => status === 'received').length, rejected: statuses.filter((status) => status === 'rejected').length };\n  }, [orders, metaMap]);\n\n  const kpiValues = useMemo(() => {\n    const totals = { all: 0, pending: 0, approved: 0, processed: 0, dispatched: 0, received: 0, rejected: 0 };\n    orders.forEach((order) => {\n      const meta = getTrackingMeta(order, metaMap[order.id]);\n      const status = meta.resolvedStatus || order.status;\n      totals.all += meta.totalValue;\n      if (status.includes('pending')) totals.pending += meta.totalValue;\n      if (status === 'approved') totals.approved += meta.totalValue;\n      if (status === 'processed') totals.processed += meta.totalValue;\n      if (status === 'dispatched') totals.dispatched += meta.totalValue;\n      if (status === 'received') totals.received += meta.totalValue;\n      if (status === 'rejected') totals.rejected += meta.totalValue;\n    });\n    return totals;\n  }, [orders, metaMap]);",
   'track KPI values',
 );
 patchRegex(
   trackingPath,
   /<div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-7">[\s\S]*?<\/div>\n      <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-/,
-  `<div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-7">{[\n        ['all', 'Total', counts.total, kpiValues.all],\n        ['pending', 'Pending', counts.pending, kpiValues.pending],\n        ['approved', 'Approved', counts.approved, kpiValues.approved],\n        ['processed', 'Processed', counts.processed, kpiValues.processed],\n        ['dispatched', 'Dispatched', counts.dispatched, kpiValues.dispatched],\n        ['received', 'Received', counts.received, kpiValues.received],\n        ['rejected', 'Rejected', counts.rejected, kpiValues.rejected],\n      ].map(([key, label, count, value]) => (\n        <button key={String(key)} type="button" className="pc-kpi-card rounded-md px-2 py-1.5 text-left" data-active={statusFilter === key} onClick={() => updateFilter(() => setStatusFilter(String(key)))}>\n          <p className="pc-kpi-label text-[10px] uppercase">{label}</p>\n          <p className="pc-kpi-count text-sm font-bold">{count}</p>\n          <p className="pc-kpi-value absolute bottom-1 right-2 text-[9px] font-semibold">{formatMoney(Number(value))}</p>\n        </button>\n      ))}</div>\n      <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-`,
+  `<div className="mb-2 grid grid-cols-2 gap-2 md:grid-cols-7">{[\n        ['all', 'Total', counts.total, kpiValues.all],\n        ['pending', 'Pending', counts.pending, kpiValues.pending],\n        ['approved', 'Approved', counts.approved, kpiValues.approved],\n        ['processed', 'Processed', counts.processed, kpiValues.processed],\n        ['dispatched', 'Dispatched', counts.dispatched, kpiValues.dispatched],\n        ['received', 'Received', counts.received, kpiValues.received],\n        ['rejected', 'Rejected', counts.rejected, kpiValues.rejected],\n      ].map(([key, label, count, value]) => (\n        <button key={String(key)} type="button" className="pc-kpi-card rounded-md px-2 py-1.5 text-left" data-active={statusFilter === String(key)} onClick={() => updateFilter(() => setStatusFilter(String(key)))}>\n          <p className="pc-kpi-label text-[10px] uppercase">{label}</p>\n          <p className="pc-kpi-count text-sm font-bold">{count}</p>\n          <p className="pc-kpi-value absolute bottom-1 right-2 text-[9px] font-semibold">{formatMoney(Number(value))}</p>\n        </button>\n      ))}</div>\n      <div className="mb-2 grid grid-cols-2 gap-2 lg:grid-cols-`,
   'track interactive KPI cards',
 );
 patchRegex(trackingPath, /getTrackingMeta\(order, metaMap\[order\.id\]\)/g, 'getVisibleTrackingMeta(order, metaMap[order.id])', 'track visible matched metrics');
 
 const approvalsPath = path.resolve(__dirname, '../src/features/approvals/ApprovalsPage.tsx');
-patch(
-  approvalsPath,
-  "import { useMemo, useState } from 'react';",
-  "import { useEffect, useMemo, useState } from 'react';",
-  'approval effect import',
-);
-patch(
-  approvalsPath,
-  "import { useNavigate, useParams } from 'react-router-dom';",
-  "import { useNavigate, useParams, useSearchParams } from 'react-router-dom';",
-  'approval search params import',
-);
+patch(approvalsPath, "import { useMemo, useState } from 'react';", "import { useEffect, useMemo, useState } from 'react';", 'approval effect import');
+patch(approvalsPath, "import { useNavigate, useParams } from 'react-router-dom';", "import { useNavigate, useParams, useSearchParams } from 'react-router-dom';", 'approval search params import');
 patch(
   approvalsPath,
   "  const [message, setMessage] = useState('');\n  const [search, setSearch] = useState('');",
@@ -81,34 +66,19 @@ patch(
   "  useEffect(() => {\n    const next = new URLSearchParams();\n    if (search) next.set('q', search);\n    if (queueFilter !== 'all') next.set('queue', queueFilter);\n    if (next.toString() !== searchParams.toString()) setSearchParams(next, { replace: true });\n  }, [search, queueFilter, searchParams, setSearchParams]);\n\n  const pendingOrders = useMemo(",
   'approval URL sync',
 );
-patch(
-  approvalsPath,
-  "    if (!term) return pendingOrders;",
-  "    const queueOrders = queueFilter === 'manager' ? pendingOrders.filter(isManagerApprovalStage) : queueFilter === 'pending' ? pendingOrders.filter((order) => !isManagerApprovalStage(order)) : pendingOrders;\n    if (!term) return queueOrders;",
-  'approval KPI filter source',
-);
-patch(
-  approvalsPath,
-  "    return pendingOrders.filter((order) => {",
-  "    return queueOrders.filter((order) => {",
-  'approval search filtered source',
-);
-patch(
-  approvalsPath,
-  "  }, [pendingOrders, search]);",
-  "  }, [pendingOrders, search, queueFilter]);",
-  'approval filtered dependencies',
-);
+patch(approvalsPath, "    if (!term) return pendingOrders;", "    const queueOrders = queueFilter === 'manager' ? pendingOrders.filter(isManagerApprovalStage) : queueFilter === 'pending' ? pendingOrders.filter((order) => !isManagerApprovalStage(order)) : pendingOrders;\n    if (!term) return queueOrders;", 'approval KPI filter source');
+patch(approvalsPath, "    return pendingOrders.filter((order) => {", "    return queueOrders.filter((order) => {", 'approval search filtered source');
+patch(approvalsPath, "  }, [pendingOrders, search]);", "  }, [pendingOrders, search, queueFilter]);", 'approval filtered dependencies');
 patch(
   approvalsPath,
   "  const isBlockingAction = !!busyId;",
-  "  const approvalKpiValues = useMemo(() => {\n    const pending = pendingOrders.filter((order) => !isManagerApprovalStage(order));\n    const manager = pendingOrders.filter(isManagerApprovalStage);\n    const totalValue = (rows) => rows.reduce((sum, order) => sum + getOrderTotalValue(order), 0);\n    return { pending: totalValue(pending), manager: totalValue(manager), all: totalValue(pendingOrders), showing: totalValue(filteredOrders) };\n  }, [pendingOrders, filteredOrders]);\n\n  const isBlockingAction = !!busyId;",
+  "  const approvalKpiValues = useMemo(() => {\n    const pending = pendingOrders.filter((order) => !isManagerApprovalStage(order));\n    const manager = pendingOrders.filter(isManagerApprovalStage);\n    const totalValue = (rows: OrderRow[]) => rows.reduce((sum, order) => sum + getOrderTotalValue(order), 0);\n    return { pending: totalValue(pending), manager: totalValue(manager), all: totalValue(pendingOrders), showing: totalValue(filteredOrders) };\n  }, [pendingOrders, filteredOrders]);\n\n  const isBlockingAction = !!busyId;",
   'approval KPI values',
 );
 patchRegex(
   approvalsPath,
   /<div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">[\s\S]*?<\/div>\n\n      <div className="mb-2 flex/,
-  `<div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">{[\n        ['pending', 'Pending', counts.pending, approvalKpiValues.pending],\n        ['manager', 'Manager', counts.manager, approvalKpiValues.manager],\n        ['all', 'Queue', counts.approved, approvalKpiValues.all],\n        ['all', 'Showing', counts.rejected, approvalKpiValues.showing],\n      ].map(([key, label, count, value], index) => (\n        <button key={String(label)} type="button" className="pc-kpi-card rounded-md px-2 py-1.5 text-left" data-active={queueFilter === key && (label !== 'Showing' || index === 3)} onClick={() => setQueueFilter(String(key))}>\n          <p className="pc-kpi-label text-[10px] uppercase">{label}</p>\n          <p className="pc-kpi-count text-sm font-bold">{count}</p>\n          <p className="pc-kpi-value absolute bottom-1 right-2 text-[9px] font-semibold">{formatMoney(Number(value))}</p>\n        </button>\n      ))}</div>\n\n      <div className="mb-2 flex`,
+  `<div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">{[\n        ['pending', 'Pending', counts.pending, approvalKpiValues.pending],\n        ['manager', 'Manager', counts.manager, approvalKpiValues.manager],\n        ['all', 'Queue', counts.approved, approvalKpiValues.all],\n        ['all', 'Showing', counts.rejected, approvalKpiValues.showing],\n      ].map(([key, label, count, value]) => (\n        <button key={String(label)} type="button" className="pc-kpi-card rounded-md px-2 py-1.5 text-left" data-active={queueFilter === String(key) && String(label) !== 'Showing'} onClick={() => setQueueFilter(String(key))}>\n          <p className="pc-kpi-label text-[10px] uppercase">{label}</p>\n          <p className="pc-kpi-count text-sm font-bold">{count}</p>\n          <p className="pc-kpi-value absolute bottom-1 right-2 text-[9px] font-semibold">{formatMoney(Number(value))}</p>\n        </button>\n      ))}</div>\n\n      <div className="mb-2 flex`,
   'approval interactive KPI cards',
 );
 
