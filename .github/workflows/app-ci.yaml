@@ -12,5 +12,14 @@ jobs:
           node-version: 20
       - run: npm install
         working-directory: app
-      - run: npm run build
+      - id: app-build
+        run: npm run build 2>&1 | tee build.log
         working-directory: app
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: app-build-log
+          path: app/build.log
+      - if: steps.app-build.outcome == 'failure'
+        run: exit 1
