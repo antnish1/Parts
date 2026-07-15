@@ -4,7 +4,10 @@ const path = require('path');
 function patch(filePath, from, to, label) {
   let source = fs.readFileSync(filePath, 'utf8');
   if (source.includes(to)) return;
-  if (!source.includes(from)) throw new Error(`${label} marker not found`);
+  if (!source.includes(from)) {
+    console.warn(`${label} marker not found; leaving existing generated markup unchanged`);
+    return;
+  }
   source = source.replace(from, to);
   fs.writeFileSync(filePath, source);
 }
@@ -12,7 +15,10 @@ function patch(filePath, from, to, label) {
 function patchRegex(filePath, regex, to, label) {
   let source = fs.readFileSync(filePath, 'utf8');
   if (source.includes(to)) return;
-  if (!regex.test(source)) throw new Error(`${label} marker not found`);
+  if (!regex.test(source)) {
+    console.warn(`${label} marker not found; leaving existing generated markup unchanged`);
+    return;
+  }
   source = source.replace(regex, to);
   fs.writeFileSync(filePath, source);
 }
