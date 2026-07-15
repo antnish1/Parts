@@ -1,0 +1,7 @@
+@media (min-width: 768px) {
+  .pc-kpi-card[data-active='true'] {
+    background-color: #0b1f3a !important;
+    background-image: linear-gradient(135deg, #07182f 0%, #0b3765 55%, #0f5fa8 100%) !important;
+    border-color: #0b1f3a !important;
+  }
+}
