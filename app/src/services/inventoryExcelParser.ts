@@ -19,6 +19,19 @@ export type ParsedInventoryUploadRow = {
   inv_value: number;
 };
 
+const INACTIVE_INVENTORY_BRANCH_CODES = new Set([
+  'DFM001',
+  'DFM002',
+  'DFM0014',
+  'DFM0031',
+  'DFM0033',
+  'HDFM002',
+]);
+
+const INVENTORY_BRANCH_OVERRIDES: Record<string, { branchName: string; branchCode: string }> = {
+  DFM003: { branchName: 'JABALPUR PARTS', branchCode: 'DFM003' },
+};
+
 function normalizeHeader(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -50,21 +63,30 @@ export async function parseInventoryExcel(file: File, reportDate: string) {
   const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
   const deduped = new Map<string, ParsedInventoryUploadRow>();
   let failedRows = 0;
+  let ignoredRows = 0;
 
   rawRows.forEach((row) => {
-    const branchName = clean(readColumn(row, ['Branch']));
-    const branchCode = clean(readColumn(row, ['Br. Code', 'Br Code', 'Branch Code', 'BrCode'])).toUpperCase();
+    const sourceBranchName = clean(readColumn(row, ['Branch']));
+    const sourceBranchCode = clean(readColumn(row, ['Br. Code', 'Br Code', 'Branch Code', 'BrCode'])).toUpperCase();
     const itemCode = clean(readColumn(row, ['Itemcode', 'Item Code', 'Material', 'Part No', 'PartNo'])).replace(/\s+/g, '').toUpperCase();
     const itemName = clean(readColumn(row, ['ItemName', 'Item Name', 'Description']));
     const itemGroup = clean(readColumn(row, ['Item Group', 'ItemGroup', 'Group']));
     const uom = clean(readColumn(row, ['UOM', 'Uom']));
-    const footerText = `${branchName} ${branchCode} ${itemCode} ${itemName}`.toLowerCase();
+    const footerText = `${sourceBranchName} ${sourceBranchCode} ${itemCode} ${itemName}`.toLowerCase();
 
-    if (!branchCode || !itemCode || footerText.includes('grand total') || footerText === '') {
+    if (INACTIVE_INVENTORY_BRANCH_CODES.has(sourceBranchCode)) {
+      ignoredRows += 1;
+      return;
+    }
+
+    if (!sourceBranchCode || !itemCode || footerText.includes('grand total') || footerText === '') {
       failedRows += 1;
       return;
     }
 
+    const branchOverride = INVENTORY_BRANCH_OVERRIDES[sourceBranchCode];
+    const branchCode = branchOverride?.branchCode ?? sourceBranchCode;
+    const branchName = branchOverride?.branchName ?? sourceBranchName;
     const openingBalance = toNumber(readColumn(row, ['Opening Balance', 'OpeningBalance', 'Opening Bal']));
     const openingValue = toNumber(readColumn(row, ['Opening Inv Val', 'Opening Inv Value', 'Opening Value', 'OpeningInvVal']));
     const receivedQty = toNumber(readColumn(row, ['Received', 'Receipt', 'Received Qty', 'ReceivedQty']));
@@ -93,5 +115,5 @@ export async function parseInventoryExcel(file: File, reportDate: string) {
     });
   });
 
-  return { totalRows: rawRows.length, failedRows, rows: [...deduped.values()] };
+  return { totalRows: rawRows.length, failedRows, ignoredRows, rows: [...deduped.values()] };
 }
