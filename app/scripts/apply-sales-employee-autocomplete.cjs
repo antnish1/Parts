@@ -4,7 +4,10 @@ const path = require('path');
 function patch(filePath, from, to, label) {
   let source = fs.readFileSync(filePath, 'utf8');
   if (source.includes(to)) return;
-  if (!source.includes(from)) throw new Error(`${label} marker not found`);
+  if (!source.includes(from)) {
+    console.warn(`${label} marker not found; existing generated source left unchanged`);
+    return;
+  }
   source = source.replace(from, to);
   fs.writeFileSync(filePath, source);
 }
