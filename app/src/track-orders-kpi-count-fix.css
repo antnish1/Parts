@@ -1,8 +1,30 @@
 @media (min-width: 768px) {
-  .pc-kpi-card[data-active='true'] .pc-kpi-count,
-  .pc-kpi-card[data-active='true'] .pc-kpi-count * {
+  .pc-content button.pc-kpi-card[data-active='true'],
+  .pc-content .pc-kpi-card[data-active='true'] {
+    border-color: #07182f !important;
+    background: linear-gradient(135deg, #07182f 0%, #0b3765 55%, #0f5fa8 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(11, 31, 58, 0.28) !important;
+  }
+
+  .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-label,
+  .pc-content .pc-kpi-card[data-active='true'] .pc-kpi-label {
+    color: #d9e9f8 !important;
+    opacity: 1 !important;
+  }
+
+  .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-count,
+  .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-count *,
+  .pc-content .pc-kpi-card[data-active='true'] .pc-kpi-count,
+  .pc-content .pc-kpi-card[data-active='true'] .pc-kpi-count * {
     color: #ffffff !important;
     opacity: 1 !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  }
+
+  .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-value,
+  .pc-content .pc-kpi-card[data-active='true'] .pc-kpi-value {
+    color: #ffe47a !important;
+    opacity: 1 !important;
   }
 }
