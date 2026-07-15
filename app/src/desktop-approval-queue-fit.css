@@ -1,0 +1,45 @@
+@media (min-width: 1024px) {
+  .approval-queue-table table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  .approval-queue-table th,
+  .approval-queue-table td {
+    overflow: hidden;
+    padding-left: 0.45rem !important;
+    padding-right: 0.45rem !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .approval-queue-table th:nth-child(1),
+  .approval-queue-table td:nth-child(1) { width: 18%; }
+  .approval-queue-table th:nth-child(2),
+  .approval-queue-table td:nth-child(2) { width: 8%; }
+  .approval-queue-table th:nth-child(3),
+  .approval-queue-table td:nth-child(3) { width: 5%; }
+  .approval-queue-table th:nth-child(4),
+  .approval-queue-table td:nth-child(4) { width: 4%; }
+  .approval-queue-table th:nth-child(5),
+  .approval-queue-table td:nth-child(5) { width: 9%; }
+  .approval-queue-table th:nth-child(6),
+  .approval-queue-table td:nth-child(6) { width: 13%; }
+  .approval-queue-table th:nth-child(7),
+  .approval-queue-table td:nth-child(7) { width: 8%; }
+  .approval-queue-table th:nth-child(8),
+  .approval-queue-table td:nth-child(8) { width: 14%; }
+  .approval-queue-table th:nth-child(9),
+  .approval-queue-table td:nth-child(9) { width: 15%; }
+  .approval-queue-table th:nth-child(10),
+  .approval-queue-table td:nth-child(10) { width: 6%; }
+
+  .approval-queue-table td:nth-child(9) > * {
+    max-width: 100%;
+  }
+
+  .approval-queue-table td:nth-child(10) button {
+    white-space: nowrap;
+  }
+}
