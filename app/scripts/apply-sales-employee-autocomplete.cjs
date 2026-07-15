@@ -45,12 +45,18 @@ if (!pageSource.includes("Sales employee name is required.")) {
 }
 
 if (!pageSource.includes('<SalesEmployeeAutocomplete')) {
-  pageSource = replaceOnce(
-    pageSource,
-    `          <div className="space-y-4">\n            <SignaturePad title="Customer Signature"`,
-    `          <div className="space-y-4">\n            <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">\n              <Field label="Sales Employee Name"><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></Field>\n            </section>\n            <SignaturePad title="Customer Signature"`,
-    'sales employee autocomplete field',
-  );
+  const fieldReplacement = `<Field label="Sales Employee Name"><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></Field>`;
+  const existingField = /<Field label="Sales Employee Name">[\s\S]*?<\/Field>/;
+  if (existingField.test(pageSource)) {
+    pageSource = pageSource.replace(existingField, fieldReplacement);
+  } else {
+    pageSource = replaceOnce(
+      pageSource,
+      `<SignaturePad title="Customer Signature"`,
+      `<section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">\n              ${fieldReplacement}\n            </section>\n            <SignaturePad title="Customer Signature"`,
+      'customer signature marker for sales employee field',
+    );
+  }
 }
 
 if (!pageSource.includes("['Sales Employee', form.salesEmployeeName")) {
