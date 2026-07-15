@@ -33,69 +33,19 @@ patch(servicePath, `      remarks: input.remarks.trim() || null,\n      customer
 
 const newCreditPath = path.resolve(__dirname, '../src/features/credit-dispatch/NewCreditDispatchPage.tsx');
 patch(newCreditPath, `    remarks: '',\n    customerSignatureDataUrl: '',`, `    remarks: '',\n    salesEmployeeName: '',\n    customerSignatureDataUrl: '',`, 'new credit sales employee state');
-patch(
-  newCreditPath,
-  `        setForm({ ...initialState(profile?.branch ?? ''), ...JSON.parse(saved), customerSignatureDataUrl: '', issuerSignatureDataUrl: '' });`,
-  `        setForm({ ...initialState(profile?.branch ?? ''), ...JSON.parse(saved), documentDate: today, customerSignatureDataUrl: '', issuerSignatureDataUrl: '' });`,
-  'today document date for restored draft',
-);
+patch(newCreditPath, `        setForm({ ...initialState(profile?.branch ?? ''), ...JSON.parse(saved), customerSignatureDataUrl: '', issuerSignatureDataUrl: '' });`, `        setForm({ ...initialState(profile?.branch ?? ''), ...JSON.parse(saved), documentDate: today, customerSignatureDataUrl: '', issuerSignatureDataUrl: '' });`, 'today document date for restored draft');
 patch(newCreditPath, `      if (!form.customerSignatureDataUrl) return 'Customer signature is required.';`, `      if (!form.salesEmployeeName.trim()) return 'Sales employee name is required.';\n      if (!form.customerSignatureDataUrl) return 'Customer signature is required.';`, 'sales employee form validation');
-patch(
-  newCreditPath,
-  `          <div className="space-y-4">\n            <SignaturePad title="Customer Signature"`,
-  `          <div className="space-y-4">\n            <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">\n              <Field label="Sales Employee Name"><input className={inputClass} value={form.salesEmployeeName} onChange={(event) => update('salesEmployeeName', event.target.value.toUpperCase())} placeholder="Enter sales employee name" /></Field>\n            </section>\n            <SignaturePad title="Customer Signature"`,
-  'sales employee signature input',
-);
+patch(newCreditPath, `          <div className="space-y-4">\n            <SignaturePad title="Customer Signature"`, `          <div className="space-y-4">\n            <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">\n              <Field label="Sales Employee Name"><input className={inputClass} value={form.salesEmployeeName} onChange={(event) => update('salesEmployeeName', event.target.value.toUpperCase())} placeholder="Enter sales employee name" /></Field>\n            </section>\n            <SignaturePad title="Customer Signature"`, 'sales employee signature input');
 patch(newCreditPath, `['Customer', form.customerName], ['Mobile', form.mobileNo], ['Customer Type', form.customerType],`, `['Customer', form.customerName], ['Mobile', form.mobileNo], ['Customer Type', form.customerType], ['Sales Employee', form.salesEmployeeName],`, 'sales employee review');
 
 const creditListPath = path.resolve(__dirname, '../src/features/credit-dispatch/CreditDispatchListPage.tsx');
-patch(
-  creditListPath,
-  `const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as const;`,
-  `const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as const;\n\nfunction isPaymentOverdue(row: CreditDispatchRecord) {\n  return row.approval_status === 'Approved' && row.recovery_status !== 'Closed' && Number(row.balance_amount || 0) > 0 && Boolean(row.due_date) && row.due_date < today;\n}\n\nfunction visibleRecoveryStatus(row: CreditDispatchRecord) {\n  if (!isPaymentOverdue(row)) return row.recovery_status;\n  return Number(row.total_received_amount || 0) > 0 ? 'Partial Payment - Overdue' : 'Payment Overdue';\n}`,
-  'credit overdue helpers',
-);
-patchRegex(
-  creditListPath,
-  /const overdueCount = rows\.filter\([\s\S]*?\)\.length;\n  const closedCount/,
-  `const overdueRows = rows.filter(isPaymentOverdue);\n  const overdueCount = overdueRows.length;\n  const overdueBalance = overdueRows.reduce((sum, row) => sum + Number(row.balance_amount || 0), 0);\n  const closedCount`,
-  'credit overdue totals',
-);
-patchRegex(
-  creditListPath,
-  /<StatCard label="Overdue" value=\{String\(overdueCount\)\} icon=\{Clock\} \/>/,
-  `<StatCard label="Overdue" value={formatMoney(overdueBalance)} icon={Clock} />`,
-  'overdue KPI amount',
-);
-patchRegex(
-  creditListPath,
-  /<tr key=\{row\.id\} className="align-top hover:bg-slate-50\/70">/g,
-  `<tr key={row.id} className={\`align-top transition-colors ${isPaymentOverdue(row) ? 'bg-red-50 ring-1 ring-inset ring-red-200 hover:bg-red-100/70' : 'hover:bg-slate-50/70'}\`}>`,
-  'overdue desktop row highlight',
-);
-patchRegex(
-  creditListPath,
-  /<article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0\.5 hover:shadow-md">/g,
-  `<article className={\`rounded-3xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${isPaymentOverdue(row) ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'}\`}>`,
-  'overdue mobile card highlight',
-);
-patchRegex(
-  creditListPath,
-  /statusClass\(row\.recovery_status\)\}`}>\{row\.recovery_status\}<\/span>/g,
-  `statusClass(visibleRecoveryStatus(row))}\`}>{visibleRecoveryStatus(row)}</span>`,
-  'overdue recovery badge',
-);
-patch(
-  creditListPath,
-  `const matchesStatus = statusFilter === 'All' || row.approval_status === statusFilter || row.recovery_status === statusFilter;`,
-  `const recoveryStatus = visibleRecoveryStatus(row);\n      const matchesStatus = statusFilter === 'All' || row.approval_status === statusFilter || recoveryStatus === statusFilter;`,
-  'overdue status filtering',
-);
-patch(
-  creditListPath,
-  `[row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, row.approval_status, row.recovery_status, row.credit_amount, row.balance_amount]`,
-  `[row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, row.approval_status, recoveryStatus, row.credit_amount, row.balance_amount]`,
-  'overdue status search',
-);
+patch(creditListPath, `const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as const;`, `const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as const;\n\nfunction isPaymentOverdue(row: CreditDispatchRecord) {\n  return row.approval_status === 'Approved' && row.recovery_status !== 'Closed' && Number(row.balance_amount || 0) > 0 && Boolean(row.due_date) && row.due_date < today;\n}\n\nfunction visibleRecoveryStatus(row: CreditDispatchRecord) {\n  if (!isPaymentOverdue(row)) return row.recovery_status;\n  return Number(row.total_received_amount || 0) > 0 ? 'Partial Payment - Overdue' : 'Payment Overdue';\n}`, 'credit overdue helpers');
+patchRegex(creditListPath, /const overdueCount = rows\.filter\([\s\S]*?\)\.length;\n  const closedCount/, `const overdueRows = rows.filter(isPaymentOverdue);\n  const overdueCount = overdueRows.length;\n  const overdueBalance = overdueRows.reduce((sum, row) => sum + Number(row.balance_amount || 0), 0);\n  const closedCount`, 'credit overdue totals');
+patchRegex(creditListPath, /<StatCard label="Overdue" value=\{String\(overdueCount\)\} icon=\{Clock\} \/>/, `<StatCard label="Overdue" value={formatMoney(overdueBalance)} icon={Clock} />`, 'overdue KPI amount');
+patchRegex(creditListPath, /<tr key=\{row\.id\} className="align-top hover:bg-slate-50\/70">/g, `<tr key={row.id} className={\`align-top transition-colors \${isPaymentOverdue(row) ? 'bg-red-50 ring-1 ring-inset ring-red-200 hover:bg-red-100/70' : 'hover:bg-slate-50/70'}\`}>`, 'overdue desktop row highlight');
+patchRegex(creditListPath, /<article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0\.5 hover:shadow-md">/g, `<article className={\`rounded-3xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md \${isPaymentOverdue(row) ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white'}\`}>`, 'overdue mobile card highlight');
+patchRegex(creditListPath, /statusClass\(row\.recovery_status\)\}`}>\{row\.recovery_status\}<\/span>/g, `statusClass(visibleRecoveryStatus(row))}\`}>{visibleRecoveryStatus(row)}</span>`, 'overdue recovery badge');
+patch(creditListPath, `const matchesStatus = statusFilter === 'All' || row.approval_status === statusFilter || row.recovery_status === statusFilter;`, `const recoveryStatus = visibleRecoveryStatus(row);\n      const matchesStatus = statusFilter === 'All' || row.approval_status === statusFilter || recoveryStatus === statusFilter;`, 'overdue status filtering');
+patch(creditListPath, `[row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, row.approval_status, row.recovery_status, row.credit_amount, row.balance_amount]`, `[row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, row.approval_status, recoveryStatus, row.credit_amount, row.balance_amount]`, 'overdue status search');
 
 console.log('KPI, order summary, and Credit Dispatch overdue polish applied.');
