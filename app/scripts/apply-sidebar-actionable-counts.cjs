@@ -25,7 +25,8 @@ replaceOnce(
 function isDelayedVorOrder(order: Awaited<ReturnType<typeof getOrderList>>[number]) {
   const type = String(order.order_type ?? '').trim().toUpperCase();
   const status = String(order.status ?? '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
-  if (type !== 'VOR' || status !== 'processed' || !order.processed_date) return false;
+  const delayedStatuses = new Set(['processed', 'partial_dispatched', 'partially_dispatched', 'partial_received', 'partially_received']);
+  if (type !== 'VOR' || !delayedStatuses.has(status) || !order.processed_date) return false;
   const processedAt = new Date(order.processed_date).getTime();
   if (!Number.isFinite(processedAt)) return false;
   return Math.floor((Date.now() - processedAt) / 86_400_000) > 3;
