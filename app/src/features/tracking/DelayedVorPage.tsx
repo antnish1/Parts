@@ -8,6 +8,14 @@ import { getOrderList } from '../../services/orderList.service';
 
 type Bucket = '3-7' | '7+';
 
+const delayedEligibleStatuses = new Set([
+  'processed',
+  'partial_dispatched',
+  'partially_dispatched',
+  'partial_received',
+  'partially_received',
+]);
+
 function elapsedDays(value: string | null | undefined) {
   if (!value) return 0;
   return Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000);
@@ -26,7 +34,7 @@ export function DelayedVorPage() {
 
   const delayedOrders = useMemo(() => orders
     .filter((order) => String(order.order_type ?? '').trim().toUpperCase() === 'VOR')
-    .filter((order) => String(order.status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'processed')
+    .filter((order) => delayedEligibleStatuses.has(String(order.status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_')))
     .map((order) => ({ order, days: elapsedDays(order.processed_date) }))
     .filter(({ days }) => days > 3), [orders]);
 
@@ -44,7 +52,7 @@ export function DelayedVorPage() {
   }, [bucket, delayedOrders, search]);
 
   return (
-    <PageCard eyebrow="VOR Monitoring" title="Delayed VOR" description="Processed VOR orders still awaiting dispatch beyond the allowed timeline.">
+    <PageCard eyebrow="VOR Monitoring" title="Delayed VOR" description="Processed or partially fulfilled VOR orders pending beyond the allowed timeline.">
       <div className="mb-3 grid gap-2 sm:grid-cols-2">
         <button type="button" onClick={() => setBucket('3-7')} className={`rounded-xl border p-3 text-left ${bucket === '3-7' ? 'border-[#82C8E5] bg-[#e6f4ff]' : 'border-[#d9dee7] bg-white'}`}><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Pending 3–7 Days</p><p className="mt-1 text-xl font-black text-[#0f172a]">{counts.threeToSeven}</p></button>
         <button type="button" onClick={() => setBucket('7+')} className={`rounded-xl border p-3 text-left ${bucket === '7+' ? 'border-[#ef6f7b] bg-[#fff1f3]' : 'border-[#d9dee7] bg-white'}`}><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Pending Over 7 Days</p><p className="mt-1 text-xl font-black text-[#b42318]">{counts.overSeven}</p></button>

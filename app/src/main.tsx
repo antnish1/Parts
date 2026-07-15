@@ -20,6 +20,7 @@ import './desktop-credit-dispatch-actions.css';
 import './desktop-credit-dispatch-compact-review.css';
 import './desktop-approval-queue-fit.css';
 import './desktop-kpi-interactions.css';
+import './track-orders-kpi-count-fix.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
