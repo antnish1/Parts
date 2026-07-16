@@ -11,16 +11,19 @@ function patchFile(relativePath, patcher) {
 
 patchFile('src/features/credit-dispatch/NewCreditDispatchPage.tsx', (content) => {
   let next = content;
-  if (!next.includes('CreditCustomerPicker')) {
-    next = next.replace("import { SignaturePad } from './SignaturePad';", "import { SignaturePad } from './SignaturePad';\nimport { CreditCustomerPicker } from './CreditCustomerPicker';");
+  if (!next.includes("import { CreditCustomerPicker } from './CreditCustomerPicker';")) {
+    const marker = "import { SignaturePad } from './SignaturePad';";
+    if (!next.includes(marker)) throw new Error('Credit customer picker import marker not found');
+    next = next.replace(marker, `${marker}\nimport { CreditCustomerPicker } from './CreditCustomerPicker';`);
   }
 
-  const originalRequired = '<Field label="Customer Name" required><input className={inputClass} value={form.customerName} onChange={(event) => update(\'customerName\', event.target.value)} placeholder="Enter customer name" /></Field>';
-  const originalPlain = '<Field label="Customer Name"><input className={inputClass} value={form.customerName} onChange={(event) => update(\'customerName\', event.target.value)} placeholder="Enter customer name" /></Field>';
-  const picker = '<div className="sm:col-span-2"><CreditCustomerPicker value={form.customerName} onChange={(value) => update(\'customerName\', value)} onSelect={(customer) => { update(\'customerName\', customer.customer_name); update(\'mobileNo\', customer.mobile_no); update(\'customerType\', customer.customer_type); }} /></div>';
+  if (!next.includes('<CreditCustomerPicker value={form.customerName}')) {
+    const customerField = /<Field label="Customer Name"(?: required)?><input[^>]*value=\{form\.customerName\}[\s\S]*?placeholder="Enter customer name"\s*\/><\/Field>/;
+    if (!customerField.test(next)) throw new Error('Credit customer name field marker not found');
+    const picker = '<div className="sm:col-span-2"><CreditCustomerPicker value={form.customerName} onChange={(value) => update(\'customerName\', value.toUpperCase())} onSelect={(customer) => { update(\'customerName\', customer.customer_name); update(\'mobileNo\', customer.mobile_no); update(\'customerType\', customer.customer_type); }} /></div>';
+    next = next.replace(customerField, picker);
+  }
 
-  next = next.replace(originalRequired, picker);
-  next = next.replace(originalPlain, picker);
   return next;
 });
 
@@ -33,3 +36,5 @@ patchFile('src/features/credit-dispatch/CreditDispatchListPage.tsx', (content) =
   );
   return next;
 });
+
+console.log('Credit customer picker and customer navigation applied.');
