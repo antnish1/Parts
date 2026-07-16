@@ -37,9 +37,8 @@ export async function ensureSalesEmployeeName(value: string): Promise<string> {
         name,
         is_active: true,
         created_by: sessionData.session?.user.id ?? null,
-        updated_at: new Date().toISOString(),
       },
-      { onConflict: 'name', ignoreDuplicates: false },
+      { onConflict: 'name', ignoreDuplicates: true },
     );
 
   if (error) throw error;
