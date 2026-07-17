@@ -12,8 +12,8 @@ function replaceOnce(from, to, label) {
 
 replaceOnce(
   "import { getOrderList } from '../services/orderList.service';",
-  "import { getOrderList } from '../services/orderList.service';\nimport { getCreditDispatches } from '../services/creditDispatch.service';",
-  'credit dispatch import',
+  "import { getOrderList } from '../services/orderList.service';\nimport { getDelayedVorEligibleOrderIds } from '../services/delayedVor.service';\nimport { getCreditDispatches } from '../services/creditDispatch.service';",
+  'counter service imports',
 );
 
 replaceOnce(
@@ -22,11 +22,9 @@ replaceOnce(
   return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-function isDelayedVorOrder(order: Awaited<ReturnType<typeof getOrderList>>[number]) {
+function isDelayedVorOrder(order: Awaited<ReturnType<typeof getOrderList>>[number], eligibleOrderIds: Set<string>) {
   const type = String(order.order_type ?? '').trim().toUpperCase();
-  const status = String(order.status ?? '').trim().toLowerCase().replace(/[\\s-]+/g, '_');
-  const delayedStatuses = new Set(['processed', 'partial_dispatched', 'partially_dispatched', 'partial_received', 'partially_received']);
-  if (type !== 'VOR' || !delayedStatuses.has(status) || !order.processed_date) return false;
+  if (type !== 'VOR' || !eligibleOrderIds.has(String(order.id)) || !order.processed_date) return false;
   const processedAt = new Date(order.processed_date).getTime();
   if (!Number.isFinite(processedAt)) return false;
   return Math.floor((Date.now() - processedAt) / 86_400_000) > 3;
@@ -51,7 +49,14 @@ replaceOnce(
 replaceOnce(
   `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
   const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;`,
-  `  const creditDispatchCounterQuery = useQuery({
+  `  const delayedVorItemsQuery = useQuery({
+    queryKey: ['delayed-vor-nav-item-status-orders'],
+    queryFn: getDelayedVorEligibleOrderIds,
+    enabled: Boolean(profile),
+    refetchInterval: 15000,
+  });
+
+  const creditDispatchCounterQuery = useQuery({
     queryKey: ['credit-dispatch-nav-counter', profile?.role, profile?.branch],
     queryFn: getCreditDispatches,
     enabled: isManager || isBranch,
@@ -59,10 +64,11 @@ replaceOnce(
   });
 
   const orders = adminCounterQuery.data ?? [];
+  const eligibleDelayedVorOrderIds = new Set(delayedVorItemsQuery.data ?? []);
   const creditDispatches = creditDispatchCounterQuery.data ?? [];
   const approvedOrdersCount = orders.filter((order) => order.status === 'approved').length;
   const managerApprovalCount = orders.filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
-  const delayedVorCount = orders.filter(isDelayedVorOrder).length;
+  const delayedVorCount = orders.filter((order) => isDelayedVorOrder(order, eligibleDelayedVorOrderIds)).length;
   const managerCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Approval').length;
   const branchKey = normalizeBranch(profile?.branch);
   const branchCreditDispatchCount = creditDispatches.filter((row) =>
