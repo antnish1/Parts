@@ -22,6 +22,7 @@ import './desktop-approval-queue-fit.css';
 import './desktop-kpi-interactions.css';
 import './track-orders-kpi-count-fix.css';
 import './track-orders-kpi-render-state.css';
+import './track-orders-kpi-desktop-active.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
