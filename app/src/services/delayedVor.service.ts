@@ -13,15 +13,13 @@ function normalizeStatus(value: string | null | undefined) {
 export async function getDelayedVorEligibleOrderIds() {
   const { data, error } = await supabase
     .from('portal_order_items')
-    .select('order_id, row_status, dispatch_status');
+    .select('order_id, row_status');
 
   if (error) throw error;
 
   const orderIds = new Set<string>();
   for (const row of data ?? []) {
-    const rowStatus = normalizeStatus(row.row_status);
-    const dispatchStatus = normalizeStatus(row.dispatch_status);
-    if (delayedRowStatuses.has(rowStatus) || delayedRowStatuses.has(dispatchStatus)) {
+    if (delayedRowStatuses.has(normalizeStatus(row.row_status))) {
       orderIds.add(String(row.order_id));
     }
   }
