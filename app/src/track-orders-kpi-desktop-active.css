@@ -1,0 +1,21 @@
+@media (min-width: 1024px) {
+  html body #root .pc-content button.pc-kpi-card[data-active='true'],
+  html body #root main button.pc-kpi-card[data-active='true'] {
+    background: linear-gradient(135deg, #07182f 0%, #0b3765 55%, #0f5fa8 100%) !important;
+    background-color: #0b1f3a !important;
+    border-color: #0b1f3a !important;
+    color: #ffffff !important;
+  }
+
+  html body #root .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-label,
+  html body #root .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-count,
+  html body #root main button.pc-kpi-card[data-active='true'] .pc-kpi-label,
+  html body #root main button.pc-kpi-card[data-active='true'] .pc-kpi-count {
+    color: #ffffff !important;
+  }
+
+  html body #root .pc-content button.pc-kpi-card[data-active='true'] .pc-kpi-value,
+  html body #root main button.pc-kpi-card[data-active='true'] .pc-kpi-value {
+    color: #ffe47a !important;
+  }
+}
