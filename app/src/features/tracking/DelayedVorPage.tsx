@@ -4,17 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { ClockAlert } from 'lucide-react';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { getDelayedVorEligibleOrderIds } from '../../services/delayedVor.service';
 import { getOrderList } from '../../services/orderList.service';
 
 type Bucket = '3-7' | '7+';
-
-const delayedEligibleStatuses = new Set([
-  'processed',
-  'partial_dispatched',
-  'partially_dispatched',
-  'partial_received',
-  'partially_received',
-]);
 
 function elapsedDays(value: string | null | undefined) {
   if (!value) return 0;
@@ -30,13 +23,15 @@ export function DelayedVorPage() {
   const navigate = useNavigate();
   const [bucket, setBucket] = useState<Bucket>('3-7');
   const [search, setSearch] = useState('');
-  const { data: orders = [], isLoading, error } = useQuery({ queryKey: ['delayed-vor-orders'], queryFn: getOrderList, refetchInterval: 30_000 });
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery({ queryKey: ['delayed-vor-orders'], queryFn: getOrderList, refetchInterval: 30_000 });
+  const { data: eligibleOrderIds = [], isLoading: itemsLoading, error: itemsError } = useQuery({ queryKey: ['delayed-vor-item-status-orders'], queryFn: getDelayedVorEligibleOrderIds, refetchInterval: 30_000 });
 
+  const eligibleOrderIdSet = useMemo(() => new Set(eligibleOrderIds), [eligibleOrderIds]);
   const delayedOrders = useMemo(() => orders
     .filter((order) => String(order.order_type ?? '').trim().toUpperCase() === 'VOR')
-    .filter((order) => delayedEligibleStatuses.has(String(order.status ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_')))
+    .filter((order) => eligibleOrderIdSet.has(String(order.id)))
     .map((order) => ({ order, days: elapsedDays(order.processed_date) }))
-    .filter(({ days }) => days > 3), [orders]);
+    .filter(({ days }) => days > 3), [eligibleOrderIdSet, orders]);
 
   const counts = {
     threeToSeven: delayedOrders.filter(({ days }) => days >= 4 && days <= 7).length,
@@ -51,8 +46,11 @@ export function DelayedVorPage() {
       .sort((a, b) => b.days - a.days);
   }, [bucket, delayedOrders, search]);
 
+  const isLoading = ordersLoading || itemsLoading;
+  const error = ordersError || itemsError;
+
   return (
-    <PageCard eyebrow="VOR Monitoring" title="Delayed VOR" description="Processed or partially fulfilled VOR orders pending beyond the allowed timeline.">
+    <PageCard eyebrow="VOR Monitoring" title="Delayed VOR" description="VOR orders older than 3 days where at least one item row is Processed or Partially Dispatched.">
       <div className="mb-3 grid gap-2 sm:grid-cols-2">
         <button type="button" onClick={() => setBucket('3-7')} className={`rounded-xl border p-3 text-left ${bucket === '3-7' ? 'border-[#82C8E5] bg-[#e6f4ff]' : 'border-[#d9dee7] bg-white'}`}><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Pending 3–7 Days</p><p className="mt-1 text-xl font-black text-[#0f172a]">{counts.threeToSeven}</p></button>
         <button type="button" onClick={() => setBucket('7+')} className={`rounded-xl border p-3 text-left ${bucket === '7+' ? 'border-[#ef6f7b] bg-[#fff1f3]' : 'border-[#d9dee7] bg-white'}`}><p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#667085]">Pending Over 7 Days</p><p className="mt-1 text-xl font-black text-[#b42318]">{counts.overSeven}</p></button>
