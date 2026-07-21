@@ -44,14 +44,24 @@ if (!source.includes(badgeLine)) {
   else throw new Error('Installation badge mapping insertion point not found.');
 }
 
-const transformedDeps = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
-const transformedDepsWithInstallation = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
-const originalDeps = `    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`;
-const originalDepsWithInstallation = `    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`;
+const dependencyVariants = [
+  [
+    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,
+    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,
+  ],
+  [
+    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,
+    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,
+  ],
+  [
+    `    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`,
+    `    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`,
+  ],
+];
 if (!source.includes('installationPendingCount, isAdmin')) {
-  if (source.includes(transformedDeps)) source = source.replace(transformedDeps, transformedDepsWithInstallation);
-  else if (source.includes(originalDeps)) source = source.replace(originalDeps, originalDepsWithInstallation);
-  else throw new Error('Installation memo dependency insertion point not found.');
+  const match = dependencyVariants.find(([from]) => source.includes(from));
+  if (!match) throw new Error('Installation memo dependency insertion point not found.');
+  source = source.replace(match[0], match[1]);
 }
 
 fs.writeFileSync(filePath, source);
