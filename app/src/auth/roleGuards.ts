@@ -15,9 +15,11 @@ function isInventoryWorkspace(path: string) { return path.startsWith('/inventory
 function isDocketWorkspace(path: string) { return path.startsWith('/docket-scanner'); }
 function isUploadsWorkspace(path: string) { return path.startsWith('/uploads'); }
 function isCreditDispatchWorkspace(path: string) { return path.startsWith('/credit-dispatch'); }
+function isInstallationWorkspace(path: string) { return path.startsWith('/installations'); }
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  if (isInstallationWorkspace(path)) return true;
   if (path === '/orders/delayed-vor') return true;
   if (path === '/orders/pending-issue') return ['branch', 'admin', 'manager', 'developer', 'hq'].includes(role);
   if (role === 'hq') return false;

@@ -18,6 +18,9 @@ const OrderDataCorrectionPage = lazyNamed(() => import('../features/orders/Order
 const TrackOrdersPage = lazyNamed(() => import('../features/tracking/TrackOrdersPage'), 'TrackOrdersPage');
 const DelayedVorPage = lazyNamed(() => import('../features/tracking/DelayedVorPage'), 'DelayedVorPage');
 const PendingIssueOrdersPage = lazyNamed(() => import('../features/tracking/PendingIssueOrdersPage'), 'PendingIssueOrdersPage');
+const InstallationListPage = lazyNamed(() => import('../features/installations/InstallationListPage'), 'InstallationListPage');
+const NewInstallationPage = lazyNamed(() => import('../features/installations/NewInstallationPage'), 'NewInstallationPage');
+const InstallationDetailPage = lazyNamed(() => import('../features/installations/InstallationDetailPage'), 'InstallationDetailPage');
 const ApprovalsPage = lazyNamed(() => import('../features/approvals/ApprovalsPage'), 'ApprovalsPage');
 const AdminPage = lazyNamed(() => import('../features/admin/AdminPage'), 'AdminPage');
 const ManagerDashboardPage = lazyNamed(() => import('../features/manager/ManagerDashboardPage'), 'ManagerDashboardPage');
@@ -51,6 +54,9 @@ export function AppRouter() {
           <Route path="/orders/pending-issue" element={<PendingIssueOrdersPage />} />
           <Route path="/orders/:orderId/correct" element={<OrderDataCorrectionPage />} />
           <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="/installations" element={<InstallationListPage />} />
+          <Route path="/installations/new" element={<NewInstallationPage />} />
+          <Route path="/installations/:installationId" element={<InstallationDetailPage />} />
           <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
           <Route path="/approvals/:queue" element={<ApprovalsPage />} />
           <Route path="/admin/:queue" element={<AdminPage />} />
