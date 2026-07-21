@@ -8,14 +8,8 @@ import { roleHomePath } from '../auth/roleGuards';
 import { GlobalStatusEffects } from '../components/ui/GlobalStatusEffects';
 import { ResponsiveTableEffects } from '../components/tables/ResponsiveTableEffects';
 
-function lazyNamed<T extends ComponentType<object>>(
-  loader: () => Promise<Record<string, T>>,
-  exportName: string,
-): LazyExoticComponent<T> {
-  return lazy(async () => {
-    const module = await loader();
-    return { default: module[exportName] };
-  });
+function lazyNamed<T extends ComponentType<object>>(loader: () => Promise<Record<string, T>>, exportName: string): LazyExoticComponent<T> {
+  return lazy(async () => { const module = await loader(); return { default: module[exportName] }; });
 }
 
 const NewOrderPage = lazyNamed(() => import('../features/orders/NewOrderPage'), 'NewOrderPage');
@@ -23,6 +17,7 @@ const OrderDetailPage = lazyNamed(() => import('../features/orders/OrderDetailPa
 const OrderDataCorrectionPage = lazyNamed(() => import('../features/orders/OrderDataCorrectionPage'), 'OrderDataCorrectionPage');
 const TrackOrdersPage = lazyNamed(() => import('../features/tracking/TrackOrdersPage'), 'TrackOrdersPage');
 const DelayedVorPage = lazyNamed(() => import('../features/tracking/DelayedVorPage'), 'DelayedVorPage');
+const PendingIssueOrdersPage = lazyNamed(() => import('../features/tracking/PendingIssueOrdersPage'), 'PendingIssueOrdersPage');
 const ApprovalsPage = lazyNamed(() => import('../features/approvals/ApprovalsPage'), 'ApprovalsPage');
 const AdminPage = lazyNamed(() => import('../features/admin/AdminPage'), 'AdminPage');
 const ManagerDashboardPage = lazyNamed(() => import('../features/manager/ManagerDashboardPage'), 'ManagerDashboardPage');
@@ -40,59 +35,43 @@ const CreditCustomerProfilePage = lazyNamed(() => import('../features/credit-dis
 const CreditAgingPage = lazyNamed(() => import('../features/credit-dispatch/CreditAgingPage'), 'CreditAgingPage');
 const NewCreditDispatchPage = lazyNamed(() => import('../features/credit-dispatch/NewCreditDispatchPage'), 'NewCreditDispatchPage');
 
-function RouteFallback() {
-  return (
-    <div className="flex min-h-[120px] items-center justify-center rounded-lg border border-[#d8e0ea] bg-white text-xs font-semibold text-[#64748b]">
-      Loading page…
-    </div>
-  );
-}
-
-function RoleLanding() {
-  const { role, isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return null;
-  if (!isAuthenticated || !role) return <Navigate to="/login" replace />;
-  return <Navigate to={roleHomePath[role]} replace />;
-}
+function RouteFallback() { return <div className="flex min-h-[120px] items-center justify-center rounded-lg border border-[#d8e0ea] bg-white text-xs font-semibold text-[#64748b]">Loading page…</div>; }
+function RoleLanding() { const { role, isAuthenticated, isLoading } = useAuth(); if (isLoading) return null; if (!isAuthenticated || !role) return <Navigate to="/login" replace />; return <Navigate to={roleHomePath[role]} replace />; }
 
 export function AppRouter() {
-  return (
-    <>
-      <Suspense fallback={<RouteFallback />}>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<RequireAuth />}>
-            <Route element={<AppLayout />}>
-              <Route index element={<RoleLanding />} />
-              <Route path="/orders/new" element={<NewOrderPage />} />
-              <Route path="/orders/track" element={<TrackOrdersPage />} />
-              <Route path="/orders/delayed-vor" element={<DelayedVorPage />} />
-              <Route path="/orders/:orderId/correct" element={<OrderDataCorrectionPage />} />
-              <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-              <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
-              <Route path="/approvals/:queue" element={<ApprovalsPage />} />
-              <Route path="/admin/:queue" element={<AdminPage />} />
-              <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
-              <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
-              <Route path="/uploads" element={<UploadsPage />} />
-              <Route path="/inventory/upload" element={<InventoryUploadPage />} />
-              <Route path="/reports" element={<ReportsPage />} />
-              <Route path="/docket-scanner" element={<DocketScannerPage />} />
-              <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
-              <Route path="/credit-dispatch/customers" element={<CreditCustomersPage />} />
-              <Route path="/credit-dispatch/customers/aging" element={<CreditAgingPage />} />
-              <Route path="/credit-dispatch/customers/profile" element={<CreditCustomerProfilePage />} />
-              <Route path="/credit-dispatch/customers/ledger" element={<CreditCustomerLedgerPage />} />
-              <Route path="/credit-dispatch/reports" element={<RequestReportsPage />} />
-              <Route path="/credit-dispatch/view" element={<CreditDispatchDetailPage />} />
-              <Route path="/credit-dispatch/new" element={<NewCreditDispatchPage />} />
-            </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
-      <GlobalStatusEffects />
-      <ResponsiveTableEffects />
-    </>
-  );
+  return <>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<RequireAuth />}><Route element={<AppLayout />}>
+          <Route index element={<RoleLanding />} />
+          <Route path="/orders/new" element={<NewOrderPage />} />
+          <Route path="/orders/track" element={<TrackOrdersPage />} />
+          <Route path="/orders/delayed-vor" element={<DelayedVorPage />} />
+          <Route path="/orders/pending-issue" element={<PendingIssueOrdersPage />} />
+          <Route path="/orders/:orderId/correct" element={<OrderDataCorrectionPage />} />
+          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+          <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
+          <Route path="/approvals/:queue" element={<ApprovalsPage />} />
+          <Route path="/admin/:queue" element={<AdminPage />} />
+          <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
+          <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
+          <Route path="/uploads" element={<UploadsPage />} />
+          <Route path="/inventory/upload" element={<InventoryUploadPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/docket-scanner" element={<DocketScannerPage />} />
+          <Route path="/credit-dispatch" element={<CreditDispatchListPage />} />
+          <Route path="/credit-dispatch/customers" element={<CreditCustomersPage />} />
+          <Route path="/credit-dispatch/customers/aging" element={<CreditAgingPage />} />
+          <Route path="/credit-dispatch/customers/profile" element={<CreditCustomerProfilePage />} />
+          <Route path="/credit-dispatch/customers/ledger" element={<CreditCustomerLedgerPage />} />
+          <Route path="/credit-dispatch/reports" element={<RequestReportsPage />} />
+          <Route path="/credit-dispatch/view" element={<CreditDispatchDetailPage />} />
+          <Route path="/credit-dispatch/new" element={<NewCreditDispatchPage />} />
+        </Route></Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+    <GlobalStatusEffects /><ResponsiveTableEffects />
+  </>;
 }
