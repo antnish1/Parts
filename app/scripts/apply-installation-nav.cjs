@@ -22,6 +22,7 @@ if (!source.includes(item)) {
 const queryBlock = `  const installationCounterQuery = useQuery({
     queryKey: ['installation-pending-count'],
     queryFn: getInstallationPendingCount,
+    enabled: Boolean(profile),
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
@@ -29,21 +30,29 @@ const queryBlock = `  const installationCounterQuery = useQuery({
   const installationPendingCount = installationCounterQuery.data ?? 0;
 `;
 if (!source.includes(`queryKey: ['installation-pending-count']`)) {
-  const marker = `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;`;
-  if (source.includes(marker)) source = source.replace(marker, `${queryBlock}\n${marker}`);
-  else console.warn('Installation counter query insertion point not found.');
+  const transformedMarker = `  const orders = adminCounterQuery.data ?? [];`;
+  const originalMarker = `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;`;
+  if (source.includes(transformedMarker)) source = source.replace(transformedMarker, `${queryBlock}\n${transformedMarker}`);
+  else if (source.includes(originalMarker)) source = source.replace(originalMarker, `${queryBlock}\n${originalMarker}`);
+  else throw new Error('Installation counter query insertion point not found.');
 }
 
 const badgeLine = `      if (item.to === '/installations') return { ...item, badge: installationPendingCount };`;
 if (!source.includes(badgeLine)) {
   const marker = `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };`;
   if (source.includes(marker)) source = source.replace(marker, `${badgeLine}\n${marker}`);
-  else console.warn('Installation badge mapping insertion point not found.');
+  else throw new Error('Installation badge mapping insertion point not found.');
 }
 
-const oldDeps = `    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`;
-const newDeps = `    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`;
-if (source.includes(oldDeps)) source = source.replace(oldDeps, newDeps);
+const transformedDeps = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
+const transformedDepsWithInstallation = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
+const originalDeps = `    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`;
+const originalDepsWithInstallation = `    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`;
+if (!source.includes('installationPendingCount, isAdmin')) {
+  if (source.includes(transformedDeps)) source = source.replace(transformedDeps, transformedDepsWithInstallation);
+  else if (source.includes(originalDeps)) source = source.replace(originalDeps, originalDepsWithInstallation);
+  else throw new Error('Installation memo dependency insertion point not found.');
+}
 
 fs.writeFileSync(filePath, source);
 console.log('Installation navigation and pending counter applied.');
