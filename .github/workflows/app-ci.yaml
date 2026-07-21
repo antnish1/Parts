@@ -23,10 +23,10 @@ jobs:
           npm run build > /tmp/app-build.log 2>&1 || { tail -n 80 /tmp/app-build.log; exit 1; }
           tail -n 20 /tmp/app-build.log
         working-directory: app
-      - name: Post build diagnostics
-        if: failure() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          { echo '### App CI build diagnostics'; echo '```'; tail -n 80 /tmp/app-build.log; echo '```'; } > /tmp/diagnostic.md
-          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/diagnostic.md
+      - name: Upload build diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-diagnostics
+          path: /tmp/app-build.log
+          retention-days: 1
