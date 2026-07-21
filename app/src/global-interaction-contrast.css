@@ -1,13 +1,7 @@
 /*
  * Global interaction contrast contract.
- *
- * The light theme historically rewrites text-white to dark text so legacy
- * dark screens can be displayed on white surfaces. That broad rule also
- * affected genuinely dark interactive controls and selected KPI cards.
- * Keep this file imported last so interactive states always retain readable
- * foreground colours on desktop and mobile.
+ * Imported last so interactive states retain readable foreground colours.
  */
-
 :root {
   --pc-interactive-dark: #0b1f3a;
   --pc-interactive-blue: #0f5fa8;
@@ -15,96 +9,53 @@
   --pc-focus-ring: #66a9e8;
 }
 
-/* Primary/dark interactive surfaces must always use a light foreground. */
 [data-theme='light-pro'] :is(button, a, [role='button'], label):is(
-  [class*='bg-[#0b1f3a]'],
-  [class*='bg-[#0f5fa8]'],
-  [class*='bg-[#0b4d8a]'],
-  [class*='bg-[#075fb8]'],
-  [class*='bg-[#111827]'],
-  [class*='bg-[#0b1020]'],
-  [class*='bg-blue-600'],
-  [class*='bg-blue-700'],
-  [class*='bg-indigo-600'],
-  [class*='bg-slate-900'],
-  [class*='bg-slate-950'],
-  [class*='bg-emerald-600'],
-  [class*='bg-red-600']
-) {
-  color: var(--pc-interactive-foreground) !important;
-}
+  [class*='bg-[#0b1f3a]'],[class*='bg-[#0f5fa8]'],[class*='bg-[#0b4d8a]'],[class*='bg-[#075fb8]'],
+  [class*='bg-[#111827]'],[class*='bg-[#0b1020]'],[class*='bg-blue-600'],[class*='bg-blue-700'],
+  [class*='bg-indigo-600'],[class*='bg-slate-900'],[class*='bg-slate-950'],[class*='bg-emerald-600'],[class*='bg-red-600']
+) { color: var(--pc-interactive-foreground) !important; }
 
 [data-theme='light-pro'] :is(button, a, [role='button'], label):is(
-  [class*='bg-[#0b1f3a]'],
-  [class*='bg-[#0f5fa8]'],
-  [class*='bg-[#0b4d8a]'],
-  [class*='bg-[#075fb8]'],
-  [class*='bg-[#111827]'],
-  [class*='bg-[#0b1020]'],
-  [class*='bg-blue-600'],
-  [class*='bg-blue-700'],
-  [class*='bg-indigo-600'],
-  [class*='bg-slate-900'],
-  [class*='bg-slate-950'],
-  [class*='bg-emerald-600'],
-  [class*='bg-red-600']
-) :is(span, strong, p, small, svg) {
-  color: inherit !important;
-  opacity: 1 !important;
-}
+  [class*='bg-[#0b1f3a]'],[class*='bg-[#0f5fa8]'],[class*='bg-[#0b4d8a]'],[class*='bg-[#075fb8]'],
+  [class*='bg-[#111827]'],[class*='bg-[#0b1020]'],[class*='bg-blue-600'],[class*='bg-blue-700'],
+  [class*='bg-indigo-600'],[class*='bg-slate-900'],[class*='bg-slate-950'],[class*='bg-emerald-600'],[class*='bg-red-600']
+) :is(span, strong, p, small, svg) { color: inherit !important; opacity: 1 !important; }
 
-/* Selected KPI cards use dark surfaces. Protect every text/icon child from
-   older theme selectors that force text-white back to dark navy. */
 [data-theme='light-pro'] button:is(
-  [class*='bg-[#0b1f3a]'],
-  [class*='bg-[#0f5fa8]'],
-  [class*='bg-[#0b4d8a]'],
-  [class*='bg-[#111827]'],
-  [class*='bg-[#0b1020]'],
-  [class*='bg-slate-900'],
-  [class*='bg-slate-950']
-) * {
-  color: var(--pc-interactive-foreground) !important;
+  [class*='bg-[#0b1f3a]'],[class*='bg-[#0f5fa8]'],[class*='bg-[#0b4d8a]'],[class*='bg-[#111827]'],
+  [class*='bg-[#0b1020]'],[class*='bg-slate-900'],[class*='bg-slate-950']
+) * { color: var(--pc-interactive-foreground) !important; opacity: 1 !important; }
+
+[data-theme='light-pro'] :is(button, a, [role='button']):is([class*='bg-[#111827]'], [class*='bg-slate-900']) { background-color: #111827 !important; }
+[data-theme='light-pro'] :is(button, a, [role='button']):is([class*='bg-[#0b1020]'], [class*='bg-slate-950']) { background-color: #0b1020 !important; }
+
+/* Disabled controls use a light surface with a dark foreground. This prevents
+   light-on-light text while still making the unavailable state obvious. */
+[data-theme='light-pro'] :is(button, [role='button'])[disabled],
+[data-theme='light-pro'] label:has(input:disabled) {
+  background-color: #e8f1f8 !important;
+  border-color: #bfd0df !important;
+  color: #526173 !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+[data-theme='light-pro'] :is(button, [role='button'])[disabled] *,
+[data-theme='light-pro'] label:has(input:disabled) * {
+  color: #526173 !important;
   opacity: 1 !important;
 }
 
-/* Restore dark backgrounds on interactive elements only. The legacy light
-   theme may intentionally turn non-interactive dark panels white. */
-[data-theme='light-pro'] :is(button, a, [role='button']):is([class*='bg-[#111827]'], [class*='bg-slate-900']) {
-  background-color: #111827 !important;
-}
-
-[data-theme='light-pro'] :is(button, a, [role='button']):is([class*='bg-[#0b1020]'], [class*='bg-slate-950']) {
-  background-color: #0b1020 !important;
-}
-
-/* Disabled controls remain readable without appearing active. */
-[data-theme='light-pro'] :is(button, [role='button'])[disabled] {
-  opacity: 0.5;
-}
-
-/* Consistent keyboard focus visibility on both desktop and mobile. */
 [data-theme='light-pro'] :is(button, a, [role='button'], input, select, textarea):focus-visible {
   outline: 2px solid var(--pc-focus-ring) !important;
   outline-offset: 2px !important;
 }
 
-/* Mobile browsers can retain tap highlight/visited text colours. Ensure the
-   foreground stays tied to the active surface. */
 @media (max-width: 767px) {
   [data-theme='light-pro'] :is(button, a, [role='button'], label):is(
-    [class*='bg-[#0b1f3a]'],
-    [class*='bg-[#0f5fa8]'],
-    [class*='bg-[#0b4d8a]'],
-    [class*='bg-[#075fb8]'],
-    [class*='bg-[#111827]'],
-    [class*='bg-[#0b1020]'],
-    [class*='bg-blue-600'],
-    [class*='bg-blue-700'],
-    [class*='bg-slate-900'],
-    [class*='bg-slate-950']
-  ) {
-    color: var(--pc-interactive-foreground) !important;
-    -webkit-tap-highlight-color: transparent;
-  }
+    [class*='bg-[#0b1f3a]'],[class*='bg-[#0f5fa8]'],[class*='bg-[#0b4d8a]'],[class*='bg-[#075fb8]'],
+    [class*='bg-[#111827]'],[class*='bg-[#0b1020]'],[class*='bg-blue-600'],[class*='bg-blue-700'],
+    [class*='bg-slate-900'],[class*='bg-slate-950']
+  ) { color: var(--pc-interactive-foreground) !important; -webkit-tap-highlight-color: transparent; }
+  [data-theme='light-pro'] :is(button, [role='button'])[disabled],
+  [data-theme='light-pro'] label:has(input:disabled) { color: #526173 !important; }
 }
