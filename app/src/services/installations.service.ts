@@ -67,7 +67,9 @@ export async function uploadInstallationDocument(installationId: string, type: I
 
 export async function getInstallationDocumentUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from('installation-documents').createSignedUrl(path, 300);
-  throwIfError(error); return data.signedUrl;
+  throwIfError(error);
+  if (!data?.signedUrl) throw new Error('Could not create a secure document preview link.');
+  return data.signedUrl;
 }
 
 export async function submitInstallationEntry(id: string, jcbInvoiceNo: string, svrNo: string) {
