@@ -1,47 +1,25 @@
 export type UserRole = 'branch' | 'admin' | 'super' | 'manager' | 'viewer' | 'developer' | 'hq';
 
-export type UserProfile = {
-  id: string;
-  fullName: string;
-  branch: string;
-  role: UserRole;
-  isActive: boolean;
-};
+export type UserProfile = { id: string; fullName: string; branch: string; role: UserRole; isActive: boolean; };
 
 export const roleHomePath: Record<UserRole, string> = {
-  branch: '/orders/new',
-  admin: '/admin/approved',
-  super: '/approvals/pending',
-  manager: '/approvals/pending',
-  viewer: '/orders/track',
-  developer: '/developer/workspace',
-  hq: '/',
+  branch: '/orders/new', admin: '/admin/approved', super: '/approvals/pending', manager: '/approvals/pending',
+  viewer: '/orders/track', developer: '/developer/workspace', hq: '/',
 };
 
 function isOrderWorkspace(path: string) {
   if (path === '/orders/new') return false;
-  return path.startsWith('/orders/track') || /^\/orders\/[^/]+$/.test(path);
+  return path.startsWith('/orders/track') || path.startsWith('/orders/pending-issue') || /^\/orders\/[^/]+$/.test(path);
 }
-
-function isInventoryWorkspace(path: string) {
-  return path.startsWith('/inventory');
-}
-
-function isDocketWorkspace(path: string) {
-  return path.startsWith('/docket-scanner');
-}
-
-function isUploadsWorkspace(path: string) {
-  return path.startsWith('/uploads');
-}
-
-function isCreditDispatchWorkspace(path: string) {
-  return path.startsWith('/credit-dispatch');
-}
+function isInventoryWorkspace(path: string) { return path.startsWith('/inventory'); }
+function isDocketWorkspace(path: string) { return path.startsWith('/docket-scanner'); }
+function isUploadsWorkspace(path: string) { return path.startsWith('/uploads'); }
+function isCreditDispatchWorkspace(path: string) { return path.startsWith('/credit-dispatch'); }
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
   if (path === '/orders/delayed-vor') return true;
+  if (path === '/orders/pending-issue') return ['branch', 'admin', 'manager', 'developer', 'hq'].includes(role);
   if (role === 'hq') return false;
   if (/^\/orders\/[^/]+\/correct$/.test(path)) return ['manager', 'developer'].includes(role);
   if (path === '/orders/new') return role === 'branch';
