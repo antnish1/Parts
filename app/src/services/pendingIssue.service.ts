@@ -22,6 +22,7 @@ type OrderRow = Omit<PendingIssueOrder, 'total_qty' | 'total_value' | 'age_days'
 type ItemRow = LegacyLikeOrderItem & { id: string; order_id: string };
 type BillingRow = { item_id: string; billed_qty: number | string | null; received_qty: number | string | null; received_at: string | null };
 const PAGE_SIZE = 1000;
+const ID_BATCH_SIZE = 150;
 
 async function fetchAll<T>(factory: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
   const rows: T[] = [];
@@ -31,6 +32,15 @@ async function fetchAll<T>(factory: (from: number, to: number) => PromiseLike<{ 
     const page = data ?? [];
     rows.push(...page);
     if (page.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
+async function fetchByIdBatches<T>(ids: string[], factory: (ids: string[], from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>) {
+  const rows: T[] = [];
+  for (let index = 0; index < ids.length; index += ID_BATCH_SIZE) {
+    const batch = ids.slice(index, index + ID_BATCH_SIZE);
+    rows.push(...await fetchAll<T>((from, to) => factory(batch, from, to)));
   }
   return rows;
 }
@@ -55,12 +65,12 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
   const orderIds = visibleOrders.map((order) => order.id);
   if (!orderIds.length) return [];
 
-  const items = await fetchAll<ItemRow>((from, to) => supabase.from('portal_order_items')
+  const items = await fetchByIdBatches<ItemRow>(orderIds, (ids, from, to) => supabase.from('portal_order_items')
     .select('id, order_id, qty, edited_qty, value, edited_value, billed_qty, row_status')
-    .in('order_id', orderIds).range(from, to));
+    .in('order_id', ids).range(from, to));
   const itemIds = items.map((item) => item.id);
-  const billings = itemIds.length ? await fetchAll<BillingRow>((from, to) => supabase.from('portal_order_item_billings')
-    .select('item_id, billed_qty, received_qty, received_at').in('item_id', itemIds).range(from, to)) : [];
+  const billings = itemIds.length ? await fetchByIdBatches<BillingRow>(itemIds, (ids, from, to) => supabase.from('portal_order_item_billings')
+    .select('item_id, billed_qty, received_qty, received_at').in('item_id', ids).range(from, to)) : [];
 
   const chunksByItem = new Map<string, BillingRow[]>();
   for (const chunk of billings) chunksByItem.set(chunk.item_id, [...(chunksByItem.get(chunk.item_id) ?? []), chunk]);
