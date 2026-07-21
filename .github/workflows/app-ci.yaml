@@ -10,18 +10,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install --silent
+      - run: npm install
         working-directory: app
-      - name: Run build
-        shell: bash
-        run: |
-          npm run build > /tmp/app-build.log 2>&1 || { tail -n 80 /tmp/app-build.log; exit 1; }
-          tail -n 20 /tmp/app-build.log
+      - run: npm run build
         working-directory: app
-      - name: Upload build diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-build-diagnostics-2
-          path: /tmp/app-build.log
-          retention-days: 1
