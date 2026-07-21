@@ -2,6 +2,10 @@ name: App CI
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,8 +17,16 @@ jobs:
       - run: npm install --silent
         working-directory: app
       - name: Run build
+        id: app_build
         shell: bash
         run: |
           npm run build > /tmp/app-build.log 2>&1 || { tail -n 80 /tmp/app-build.log; exit 1; }
           tail -n 20 /tmp/app-build.log
         working-directory: app
+      - name: Post build diagnostics
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo '### App CI build diagnostics'; echo '```'; tail -n 80 /tmp/app-build.log; echo '```'; } > /tmp/diagnostic.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/diagnostic.md
