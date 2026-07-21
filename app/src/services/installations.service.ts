@@ -14,34 +14,36 @@ export type InstallationEntry = {
   portal_installation_items?: InstallationItem[]; portal_installation_documents?: InstallationDocument[];
 };
 
-function throwIfError(error: { message: string } | null) { if (error) throw new Error(error.message); }
+type MessageError = { message: string } | null;
+function throwIfError(error: MessageError) { if (error) throw new Error(error.message); }
 
 export async function listInstallationEntries(): Promise<InstallationEntry[]> {
   const { data, error } = await supabase.from('portal_installation_entries')
     .select('id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)')
     .order('created_at', { ascending: false });
-  throwIfError(error); return (data ?? []) as InstallationEntry[];
+  throwIfError(error); return (data ?? []) as unknown as InstallationEntry[];
 }
 
 export async function getInstallationEntry(id: string): Promise<InstallationEntry> {
   const { data, error } = await supabase.from('portal_installation_entries')
     .select('id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)')
     .eq('id', id).single();
-  throwIfError(error); return data as InstallationEntry;
+  throwIfError(error); return data as unknown as InstallationEntry;
 }
 
 export async function listInstallationBranches(): Promise<string[]> {
   const { data, error } = await supabase.from('portal_profiles').select('branch').eq('is_active', true).not('branch', 'is', null);
   throwIfError(error);
-  return [...new Set((data ?? []).map((row) => String(row.branch ?? '').trim()).filter(Boolean))].sort();
+  const rows = (data ?? []) as Array<{ branch: string | null }>;
+  return [...new Set(rows.map((row) => String(row.branch ?? '').trim()).filter(Boolean))].sort();
 }
 
-export async function createInstallationEntry(input: { equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; items: InstallationItem[] }) {
+export async function createInstallationEntry(input: { equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; items: InstallationItem[] }): Promise<string> {
   const { data, error } = await supabase.rpc('portal_create_installation_entry', {
     p_equipment_type: input.equipment_type, p_invoice_date: input.invoice_date, p_branch: input.branch,
     p_invoice_no: input.invoice_no, p_customer_name: input.customer_name, p_items: input.items,
   });
-  throwIfError(error); return data as string;
+  throwIfError(error); return String(data);
 }
 
 export async function uploadInstallationDocument(installationId: string, type: InstallationDocumentType, file: File) {
@@ -52,14 +54,18 @@ export async function uploadInstallationDocument(installationId: string, type: I
   const path = `${installationId}/${type.toLowerCase()}/${Date.now()}-${safe}`;
   const { error: uploadError } = await supabase.storage.from('installation-documents').upload(path, file, { upsert: false, contentType: file.type });
   throwIfError(uploadError);
-  const { data: profileData, error: profileError } = await supabase.from('portal_profiles').select('id').eq('auth_user_id', (await supabase.auth.getUser()).data.user?.id ?? '').maybeSingle();
+  const userResult = await supabase.auth.getUser();
+  const authUserId = userResult.data.user?.id ?? '';
+  const { data: profileData, error: profileError } = await supabase.from('portal_profiles').select('id').eq('auth_user_id', authUserId).maybeSingle();
   throwIfError(profileError);
-  await supabase.from('portal_installation_documents').update({ is_active: false }).eq('installation_id', installationId).eq('document_type', type).eq('is_active', true);
-  const { error } = await supabase.from('portal_installation_documents').insert({ installation_id: installationId, document_type: type, storage_path: path, file_name: file.name, mime_type: file.type, file_size: file.size, uploaded_by: profileData?.id ?? null });
+  const profile = profileData as { id?: string } | null;
+  const { error: deactivateError } = await supabase.from('portal_installation_documents').update({ is_active: false }).eq('installation_id', installationId).eq('document_type', type).eq('is_active', true);
+  throwIfError(deactivateError);
+  const { error } = await supabase.from('portal_installation_documents').insert({ installation_id: installationId, document_type: type, storage_path: path, file_name: file.name, mime_type: file.type, file_size: file.size, uploaded_by: profile?.id ?? null });
   throwIfError(error);
 }
 
-export async function getInstallationDocumentUrl(path: string) {
+export async function getInstallationDocumentUrl(path: string): Promise<string> {
   const { data, error } = await supabase.storage.from('installation-documents').createSignedUrl(path, 300);
   throwIfError(error); return data.signedUrl;
 }
