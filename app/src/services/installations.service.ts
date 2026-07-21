@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 
 export const INSTALLATION_VIEWER_PROFILE_ID = '9f3c378e-89d4-4427-87f2-c66061dbf3e2';
-export type InstallationStatus = 'PENDING' | 'COMPLETED' | 'ACCEPTED';
+export type InstallationStatus = 'PENDING' | 'ACCEPTANCE_PENDING' | 'ACCEPTED';
 export type EquipmentType = 'ENGINE' | 'ROCK_BREAKER';
 export type InstallationDocumentType = 'JCB_INVOICE' | 'DBMS_INVOICE' | 'SVR';
 
@@ -14,21 +14,25 @@ export type InstallationEntry = {
   portal_installation_items?: InstallationItem[]; portal_installation_documents?: InstallationDocument[];
 };
 
+export type PartMasterMatch = { part_no: string; description: string };
 type MessageError = { message: string } | null;
 function throwIfError(error: MessageError) { if (error) throw new Error(error.message); }
 
+const entrySelect = 'id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)';
+
 export async function listInstallationEntries(): Promise<InstallationEntry[]> {
-  const { data, error } = await supabase.from('portal_installation_entries')
-    .select('id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('portal_installation_entries').select(entrySelect).order('created_at', { ascending: false });
   throwIfError(error); return (data ?? []) as unknown as InstallationEntry[];
 }
 
 export async function getInstallationEntry(id: string): Promise<InstallationEntry> {
-  const { data, error } = await supabase.from('portal_installation_entries')
-    .select('id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)')
-    .eq('id', id).single();
+  const { data, error } = await supabase.from('portal_installation_entries').select(entrySelect).eq('id', id).single();
   throwIfError(error); return data as unknown as InstallationEntry;
+}
+
+export async function getInstallationPendingCount(): Promise<number> {
+  const rows = await listInstallationEntries();
+  return rows.filter((entry) => entry.status !== 'ACCEPTED').length;
 }
 
 export async function listInstallationBranches(): Promise<string[]> {
@@ -36,6 +40,16 @@ export async function listInstallationBranches(): Promise<string[]> {
   throwIfError(error);
   const rows = (data ?? []) as Array<{ branch: string | null }>;
   return [...new Set(rows.map((row) => String(row.branch ?? '').trim()).filter(Boolean))].sort();
+}
+
+export async function findPartMasterMatches(partNo: string): Promise<PartMasterMatch[]> {
+  const value = partNo.trim();
+  if (value.length < 2) return [];
+  const { data, error } = await supabase.from('part_master').select('PartNo,Description').ilike('PartNo', `%${value}%`).limit(8);
+  throwIfError(error);
+  return ((data ?? []) as Array<{ PartNo?: string | null; Description?: string | null }>).map((row) => ({
+    part_no: String(row.PartNo ?? '').trim(), description: String(row.Description ?? '').trim(),
+  })).filter((row) => row.part_no);
 }
 
 export async function createInstallationEntry(input: { equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; items: InstallationItem[] }): Promise<string> {
@@ -66,7 +80,7 @@ export async function uploadInstallationDocument(installationId: string, type: I
 }
 
 export async function getInstallationDocumentUrl(path: string): Promise<string> {
-  const { data, error } = await supabase.storage.from('installation-documents').createSignedUrl(path, 300);
+  const { data, error } = await supabase.storage.from('installation-documents').createSignedUrl(path, 900);
   throwIfError(error);
   if (!data?.signedUrl) throw new Error('Could not create a secure document preview link.');
   return data.signedUrl;
