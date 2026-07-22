@@ -12,16 +12,5 @@ jobs:
           node-version: 20
       - run: npm install
         working-directory: app
-      - id: build
-        run: |
-          set +e
-          npm run build > build.log 2>&1
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+      - run: npm run build
         working-directory: app
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: app-build-log
-          path: app/build.log
-      - if: steps.build.outputs.exit_code != '0'
-        run: exit 1
