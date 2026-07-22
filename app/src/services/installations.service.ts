@@ -52,6 +52,22 @@ export async function findPartMasterMatches(partNo: string): Promise<PartMasterM
   })).filter((row) => row.part_no);
 }
 
+export async function getPartMasterDescriptions(partNos: string[]): Promise<Record<string, string>> {
+  const normalized = [...new Set(partNos.map((value) => value.trim().toUpperCase()).filter(Boolean))];
+  if (!normalized.length) return {};
+  const descriptions: Record<string, string> = {};
+  for (let index = 0; index < normalized.length; index += 150) {
+    const chunk = normalized.slice(index, index + 150);
+    const { data, error } = await supabase.from('part_master').select('PartNo,Description').in('PartNo', chunk);
+    throwIfError(error);
+    for (const row of (data ?? []) as Array<{ PartNo?: string | null; Description?: string | null }>) {
+      const partNo = String(row.PartNo ?? '').trim().toUpperCase();
+      if (partNo && descriptions[partNo] === undefined) descriptions[partNo] = String(row.Description ?? '').trim();
+    }
+  }
+  return descriptions;
+}
+
 export async function getExistingInstallationInvoiceNos(invoiceNos: string[]): Promise<string[]> {
   const normalized = [...new Set(invoiceNos.map((value) => value.trim().toUpperCase()).filter(Boolean))];
   if (!normalized.length) return [];
