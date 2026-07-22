@@ -9,7 +9,7 @@ export type InstallationItem = { id?: string; part_no: string; description: stri
 export type InstallationDocument = { id: string; installation_id: string; document_type: InstallationDocumentType; storage_path: string; file_name: string; mime_type: string; file_size: number; uploaded_at: string; is_active: boolean };
 export type InstallationEntry = {
   id: string; entry_no: string; equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string;
-  customer_name: string; status: InstallationStatus; jcb_invoice_no: string | null; svr_no: string | null;
+  customer_name: string; equipment_no: string | null; status: InstallationStatus; jcb_invoice_no: string | null; svr_no: string | null;
   equipment_registration_no: string | null; created_at: string; branch_submitted_at: string | null; accepted_at: string | null;
   portal_installation_items?: InstallationItem[]; portal_installation_documents?: InstallationDocument[];
 };
@@ -18,7 +18,7 @@ export type PartMasterMatch = { part_no: string; description: string };
 type MessageError = { message: string } | null;
 function throwIfError(error: MessageError) { if (error) throw new Error(error.message); }
 
-const entrySelect = 'id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)';
+const entrySelect = 'id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,equipment_no,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)';
 
 export async function listInstallationEntries(): Promise<InstallationEntry[]> {
   const { data, error } = await supabase.from('portal_installation_entries').select(entrySelect).order('created_at', { ascending: false });
@@ -45,11 +45,24 @@ export async function listInstallationBranches(): Promise<string[]> {
 export async function findPartMasterMatches(partNo: string): Promise<PartMasterMatch[]> {
   const value = partNo.trim();
   if (value.length < 2) return [];
-  const { data, error } = await supabase.from('part_master').select('PartNo,Description').ilike('PartNo', `%${value}%`).limit(8);
+  const { data, error } = await supabase.from('part_master').select('PartNo,Description').ilike('PartNo', `%${value}%`).limit(12);
   throwIfError(error);
   return ((data ?? []) as Array<{ PartNo?: string | null; Description?: string | null }>).map((row) => ({
     part_no: String(row.PartNo ?? '').trim(), description: String(row.Description ?? '').trim(),
   })).filter((row) => row.part_no);
+}
+
+export async function getExistingInstallationInvoiceNos(invoiceNos: string[]): Promise<string[]> {
+  const normalized = [...new Set(invoiceNos.map((value) => value.trim().toUpperCase()).filter(Boolean))];
+  if (!normalized.length) return [];
+  const found: string[] = [];
+  for (let index = 0; index < normalized.length; index += 150) {
+    const chunk = normalized.slice(index, index + 150);
+    const { data, error } = await supabase.from('portal_installation_entries').select('invoice_no').in('invoice_no', chunk);
+    throwIfError(error);
+    found.push(...((data ?? []) as Array<{ invoice_no?: string | null }>).map((row) => String(row.invoice_no ?? '').trim().toUpperCase()).filter(Boolean));
+  }
+  return [...new Set(found)];
 }
 
 export async function createInstallationEntry(input: { equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; items: InstallationItem[] }): Promise<string> {
@@ -58,6 +71,21 @@ export async function createInstallationEntry(input: { equipment_type: Equipment
     p_invoice_no: input.invoice_no, p_customer_name: input.customer_name, p_items: input.items,
   });
   throwIfError(error); return String(data);
+}
+
+export async function createInstallationEntriesBulk(rows: Array<{ equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; part_no: string; description: string; quantity: number }>) {
+  const created: string[] = [];
+  for (const row of rows) {
+    created.push(await createInstallationEntry({
+      equipment_type: row.equipment_type,
+      invoice_date: row.invoice_date,
+      branch: row.branch,
+      invoice_no: row.invoice_no,
+      customer_name: row.customer_name,
+      items: [{ part_no: row.part_no, description: row.description, quantity: row.quantity }],
+    }));
+  }
+  return created;
 }
 
 export async function uploadInstallationDocument(installationId: string, type: InstallationDocumentType, file: File) {
@@ -86,8 +114,8 @@ export async function getInstallationDocumentUrl(path: string): Promise<string> 
   return data.signedUrl;
 }
 
-export async function submitInstallationEntry(id: string, jcbInvoiceNo: string, svrNo: string) {
-  const { error } = await supabase.rpc('portal_submit_installation_entry', { p_installation_id: id, p_jcb_invoice_no: jcbInvoiceNo, p_svr_no: svrNo });
+export async function submitInstallationEntry(id: string, equipmentNo: string, jcbInvoiceNo: string, svrNo: string) {
+  const { error } = await supabase.rpc('portal_submit_installation_entry', { p_installation_id: id, p_equipment_no: equipmentNo, p_jcb_invoice_no: jcbInvoiceNo, p_svr_no: svrNo });
   throwIfError(error);
 }
 
