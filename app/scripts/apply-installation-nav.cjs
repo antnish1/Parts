@@ -10,7 +10,9 @@ if (!source.includes(serviceImport)) {
   else console.warn('Installation counter import insertion point not found.');
 }
 
-const item = `  { to: '/installations', label: 'Installations', icon: Settings, desktopLabel: 'Engine Installations', desktopGroup: 'Operations', desktopOrder: 32 },`;
+const legacyItem = `  { to: '/installations', label: 'Installations', icon: Settings, desktopLabel: 'Engine Installations', desktopGroup: 'Operations', desktopOrder: 32 },`;
+const item = `  { to: '/installations', label: 'Engine & Breaker', icon: Settings, desktopLabel: 'Engine & Breaker', desktopGroup: 'Operations', desktopOrder: 32 },`;
+if (source.includes(legacyItem)) source = source.replace(legacyItem, item);
 if (!source.includes(item)) {
   const preferred = `  { to: '/credit-dispatch', label: 'Credit Dispatch', icon: FileSignature, desktopIcon: Truck, desktopGroup: 'Operations', desktopOrder: 30 },`;
   const fallback = `  { to: '/docket-scanner', label: 'Docket', icon: ScanLine, desktopLabel: 'Docket Scanner', desktopGroup: 'Operations', desktopOrder: 31 },`;
@@ -28,7 +30,7 @@ const queryBlock = `  const installationCounterQuery = useQuery({
   });
 
   const installationPendingCount = installationCounterQuery.data ?? 0;
-`;
+ `;
 if (!source.includes(`queryKey: ['installation-pending-count']`)) {
   const transformedMarker = `  const orders = adminCounterQuery.data ?? [];`;
   const originalMarker = `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;`;
@@ -45,18 +47,9 @@ if (!source.includes(badgeLine)) {
 }
 
 const dependencyVariants = [
-  [
-    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,
-    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,
-  ],
-  [
-    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,
-    `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,
-  ],
-  [
-    `    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`,
-    `    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`,
-  ],
+  [`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`],
+  [`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`],
+  [`    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`,`    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`],
 ];
 if (!source.includes('installationPendingCount, isAdmin')) {
   const match = dependencyVariants.find(([from]) => source.includes(from));
@@ -65,4 +58,4 @@ if (!source.includes('installationPendingCount, isAdmin')) {
 }
 
 fs.writeFileSync(filePath, source);
-console.log('Installation navigation and pending counter applied.');
+console.log('Engine & Breaker navigation and pending counter applied.');
