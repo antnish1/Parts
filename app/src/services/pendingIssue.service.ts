@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { getEffectiveQty, getEffectiveValue, getOrderStatusLabel, type LegacyLikeOrderItem } from '../lib/orderLogic';
+import { getBilledQty, getEffectiveQty, getEffectiveValue, getOrderStatusLabel, getReceivedQty, getResolvedRowStatus, type LegacyLikeOrderItem } from '../lib/orderLogic';
 import { getCurrentBranchScopeValues, normalizeBranchKey } from './branchScope.service';
 
 export type PendingIssueOrder = {
@@ -18,8 +18,23 @@ export type PendingIssueOrder = {
   age_days: number;
 };
 
+export type PendingIssuePartExportRow = {
+  order_id: string;
+  part_no: string;
+  description: string | null;
+  original_qty: number;
+  edited_qty: number | null;
+  effective_qty: number;
+  item_value: number;
+  edited_value: number | null;
+  effective_value: number;
+  billed_qty: number;
+  received_qty: number;
+  item_status: string;
+};
+
 type OrderRow = Omit<PendingIssueOrder, 'total_qty' | 'total_value' | 'age_days'> & { order_for: string | null; status: string | null; issued_at: string | null };
-type ItemRow = LegacyLikeOrderItem & { id: string; order_id: string };
+type ItemRow = LegacyLikeOrderItem & { id: string; order_id: string; description?: string | null };
 type BillingRow = { item_id: string; billed_qty: number | string | null; received_qty: number | string | null; received_at: string | null };
 const PAGE_SIZE = 1000;
 const ID_BATCH_SIZE = 150;
@@ -94,4 +109,39 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
       total_value: orderItems.reduce((sum, item) => sum + getEffectiveValue(item), 0), age_days: ageInDays(receivedDate),
     }];
   }).sort((a, b) => b.age_days - a.age_days);
+}
+
+export async function getPendingIssueOrderParts(orderIds: string[]): Promise<PendingIssuePartExportRow[]> {
+  const ids = [...new Set(orderIds.filter(Boolean))];
+  if (!ids.length) return [];
+
+  const items = await fetchByIdBatches<ItemRow>(ids, (batch, from, to) => supabase.from('portal_order_items')
+    .select('id, order_id, part_no, description, qty, edited_qty, value, edited_value, billed_qty, row_status')
+    .in('order_id', batch).range(from, to));
+  const itemIds = items.map((item) => item.id);
+  const billings = itemIds.length ? await fetchByIdBatches<BillingRow>(itemIds, (batch, from, to) => supabase.from('portal_order_item_billings')
+    .select('item_id, billed_qty, received_qty, received_at').in('item_id', batch).range(from, to)) : [];
+
+  const chunksByItem = new Map<string, BillingRow[]>();
+  for (const chunk of billings) chunksByItem.set(chunk.item_id, [...(chunksByItem.get(chunk.item_id) ?? []), chunk]);
+
+  return items.map((item) => {
+    const resolved = { ...item, billing_chunks: chunksByItem.get(item.id) ?? [] };
+    const editedQty = item.edited_qty === null || item.edited_qty === undefined || item.edited_qty === '' ? null : Number(item.edited_qty);
+    const editedValue = item.edited_value === null || item.edited_value === undefined || item.edited_value === '' ? null : Number(item.edited_value);
+    return {
+      order_id: item.order_id,
+      part_no: String(item.part_no ?? item.PartNo ?? '').trim(),
+      description: item.description ?? null,
+      original_qty: Number(item.qty ?? item.Qty ?? 0),
+      edited_qty: editedQty,
+      effective_qty: getEffectiveQty(resolved),
+      item_value: Number(item.value ?? item.Value ?? 0),
+      edited_value: editedValue,
+      effective_value: getEffectiveValue(resolved),
+      billed_qty: getBilledQty(resolved),
+      received_qty: getReceivedQty(resolved),
+      item_status: getResolvedRowStatus(resolved),
+    };
+  });
 }
