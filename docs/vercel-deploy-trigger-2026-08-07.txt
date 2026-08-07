@@ -1,3 +1,0 @@
-Vercel production redeploy trigger.
-Requested: 2026-08-07
-Purpose: deploy current main after Pending Issue Excel export changes.
