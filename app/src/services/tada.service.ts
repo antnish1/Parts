@@ -147,3 +147,57 @@ export async function receiveTadaDispatch(dispatchId: string, stage: 'HQ' | 'ACC
   });
   throwIfError(error);
 }
+
+export async function developerUpdateTadaDispatch(input: {
+  dispatchId: string;
+  dispatchDate: string;
+  dispatchedBy: string;
+  dispatchMode: 'Bus' | 'Transport' | 'By Hand';
+  referenceNo: string;
+  reason: string;
+}) {
+  const { error } = await supabase.rpc('portal_developer_update_tada_dispatch', {
+    p_dispatch_id: input.dispatchId,
+    p_dispatch_date: input.dispatchDate,
+    p_dispatched_by: input.dispatchedBy,
+    p_dispatch_mode: input.dispatchMode,
+    p_reference_no: input.referenceNo,
+    p_reason: input.reason,
+  });
+  throwIfError(error);
+}
+
+export async function developerUpdateTadaSvr(input: {
+  itemId: string;
+  svrNo: string;
+  engineerId: string | null;
+  engineerName: string;
+  dateFrom: string;
+  dateTo: string;
+  machineNo: string;
+  customerName: string;
+  reason: string;
+}) {
+  const { error } = await supabase.rpc('portal_developer_update_tada_svr', {
+    p_item_id: input.itemId,
+    p_svr_no: input.svrNo,
+    p_engineer_id: input.engineerId,
+    p_engineer_name: input.engineerName,
+    p_date_from: input.dateFrom,
+    p_date_to: input.dateTo,
+    p_machine_no: input.machineNo,
+    p_customer_name: input.customerName,
+    p_reason: input.reason,
+  });
+  throwIfError(error);
+}
+
+export async function developerDeleteTadaSvr(itemId: string, reason: string) {
+  const { error } = await supabase.rpc('portal_developer_delete_tada_svr', { p_item_id: itemId, p_reason: reason });
+  throwIfError(error);
+}
+
+export async function developerDeleteTadaDispatch(dispatchId: string, reason: string) {
+  const { error } = await supabase.rpc('portal_developer_delete_tada_dispatch', { p_dispatch_id: dispatchId, p_reason: reason });
+  throwIfError(error);
+}
