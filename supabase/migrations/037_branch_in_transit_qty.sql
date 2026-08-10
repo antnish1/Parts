@@ -19,9 +19,9 @@ security invoker
 set search_path = public
 as $$
   with requested_parts as (
-    select distinct regexp_replace(upper(trim(value)), '\s+', '', 'g') as part_no
-    from unnest(coalesce(p_part_nos, array[]::text[])) as value
-    where nullif(trim(value), '') is not null
+    select distinct regexp_replace(upper(trim(parts.value)), '\s+', '', 'g') as part_no
+    from unnest(coalesce(p_part_nos, array[]::text[])) as parts(value)
+    where nullif(trim(parts.value), '') is not null
   ),
   target_branch as (
     select public.resolve_portal_branch(p_branch) as branch_key
