@@ -77,24 +77,50 @@ replaceOnce(
   'counter calculations',
 );
 
-replaceOnce(
-  `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
+const tadaNavigationBlock = `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
       if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
-      return item;`,
-  `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
+      if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
+      if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
+      if (item.to === '/ta-da' && isDeveloper && developerTadaCount > 0) return { ...item, badge: developerTadaCount };
+      return item;`;
+
+const enhancedTadaNavigationBlock = `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
       if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
       if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };
       if (isManager && item.to === '/credit-dispatch') return { ...item, badge: managerCreditDispatchCount };
       if (isBranch && item.to === '/credit-dispatch') return { ...item, badge: branchCreditDispatchCount };
-      return item;`,
-  'navigation badges',
-);
+      if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
+      if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
+      if (item.to === '/ta-da' && isDeveloper && developerTadaCount > 0) return { ...item, badge: developerTadaCount };
+      return item;`;
 
-replaceOnce(
-  "    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],",
-  "    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],",
-  'memo dependencies',
-);
+const legacyNavigationBlock = `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
+      if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
+      return item;`;
+
+const enhancedLegacyNavigationBlock = `      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
+      if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
+      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };
+      if (isManager && item.to === '/credit-dispatch') return { ...item, badge: managerCreditDispatchCount };
+      if (isBranch && item.to === '/credit-dispatch') return { ...item, badge: branchCreditDispatchCount };
+      return item;`;
+
+if (source.includes(tadaNavigationBlock) || source.includes(enhancedTadaNavigationBlock)) {
+  replaceOnce(tadaNavigationBlock, enhancedTadaNavigationBlock, 'TA/DA navigation badges');
+} else {
+  replaceOnce(legacyNavigationBlock, enhancedLegacyNavigationBlock, 'navigation badges');
+}
+
+const tadaMemoDeps = "    [accountsTadaCount, approvedOrdersCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isManager, managerApprovalCount, managerTadaCount],";
+const enhancedTadaMemoDeps = "    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],";
+const legacyMemoDeps = "    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],";
+const enhancedLegacyMemoDeps = "    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],";
+
+if (source.includes(tadaMemoDeps) || source.includes(enhancedTadaMemoDeps)) {
+  replaceOnce(tadaMemoDeps, enhancedTadaMemoDeps, 'TA/DA memo dependencies');
+} else {
+  replaceOnce(legacyMemoDeps, enhancedLegacyMemoDeps, 'memo dependencies');
+}
 
 fs.writeFileSync(filePath, source);
 console.log('Sidebar actionable counters applied.');
