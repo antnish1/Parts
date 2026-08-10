@@ -37,6 +37,9 @@ const CreditCustomerLedgerPage = lazyNamed(() => import('../features/credit-disp
 const CreditCustomerProfilePage = lazyNamed(() => import('../features/credit-dispatch/CreditCustomerProfilePage'), 'CreditCustomerProfilePage');
 const CreditAgingPage = lazyNamed(() => import('../features/credit-dispatch/CreditAgingPage'), 'CreditAgingPage');
 const NewCreditDispatchPage = lazyNamed(() => import('../features/credit-dispatch/NewCreditDispatchPage'), 'NewCreditDispatchPage');
+const TadaTrackingPage = lazyNamed(() => import('../features/tada/TadaTrackingPage'), 'TadaTrackingPage');
+const TadaNewDispatchPage = lazyNamed(() => import('../features/tada/TadaNewDispatchPage'), 'TadaNewDispatchPage');
+const TadaDispatchDetailPage = lazyNamed(() => import('../features/tada/TadaDispatchDetailPage'), 'TadaDispatchDetailPage');
 
 function RouteFallback() { return <div className="flex min-h-[120px] items-center justify-center rounded-lg border border-[#d8e0ea] bg-white text-xs font-semibold text-[#64748b]">Loading page…</div>; }
 function RoleLanding() { const { role, isAuthenticated, isLoading } = useAuth(); if (isLoading) return null; if (!isAuthenticated || !role) return <Navigate to="/login" replace />; return <Navigate to={roleHomePath[role]} replace />; }
@@ -57,6 +60,9 @@ export function AppRouter() {
           <Route path="/installations" element={<InstallationListPage />} />
           <Route path="/installations/new" element={<NewInstallationPage />} />
           <Route path="/installations/:installationId" element={<InstallationDetailPage />} />
+          <Route path="/ta-da" element={<TadaTrackingPage />} />
+          <Route path="/ta-da/new" element={<TadaNewDispatchPage />} />
+          <Route path="/ta-da/:dispatchId" element={<TadaDispatchDetailPage />} />
           <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
           <Route path="/approvals/:queue" element={<ApprovalsPage />} />
           <Route path="/admin/:queue" element={<AdminPage />} />
