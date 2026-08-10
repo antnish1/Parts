@@ -12,13 +12,18 @@ function patchFile(filePath, replacements) {
 }
 
 const approvalsPath = path.resolve(__dirname, '../src/features/approvals/ApprovalsPage.tsx');
-patchFile(approvalsPath, [
-  {
-    from: '<div className="overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full min-w-[1280px] border-collapse text-left text-xs">',
-    to: '<div className="approval-queue-table overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full table-fixed border-collapse text-left text-xs">',
-    label: 'approval queue fixed table',
-  },
-]);
+{
+  let source = fs.readFileSync(approvalsPath, 'utf8');
+  const legacy = '<div className="overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full min-w-[1280px] border-collapse text-left text-xs">';
+  const fixed = '<div className="approval-queue-table overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full table-fixed border-collapse text-left text-xs">';
+  const compactMenu = '<div className="rounded-lg border border-[#263244] md:overflow-visible max-md:overflow-x-auto">\n          <table className="w-full min-w-[1080px] border-collapse text-left text-xs">';
+
+  if (!source.includes(fixed) && !source.includes(compactMenu)) {
+    if (!source.includes(legacy)) throw new Error('approval queue fixed table marker not found');
+    source = source.replace(legacy, fixed);
+    fs.writeFileSync(approvalsPath, source);
+  }
+}
 
 const trackingPath = path.resolve(__dirname, '../src/features/tracking/TrackOrdersPage.tsx');
 patchFile(trackingPath, [

@@ -12,7 +12,16 @@ function patch(filePath, from, to, label) {
 function patchRegex(filePath, regex, to, label) {
   let source = fs.readFileSync(filePath, 'utf8');
   if (source.includes(to)) return;
-  if (!regex.test(source)) throw new Error(`${label} marker not found`);
+  if (!regex.test(source)) {
+    if (label === 'approval interactive KPI cards') {
+      const fallback = /<div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">[\s\S]*?<\/div>\n\s*<div className="mb-2 flex/;
+      if (!fallback.test(source)) throw new Error(`${label} marker not found`);
+      source = source.replace(fallback, to);
+      fs.writeFileSync(filePath, source);
+      return;
+    }
+    throw new Error(`${label} marker not found`);
+  }
   source = source.replace(regex, to);
   fs.writeFileSync(filePath, source);
 }
