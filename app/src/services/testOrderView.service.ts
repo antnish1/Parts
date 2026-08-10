@@ -3,6 +3,7 @@ import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo 
 import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
 import { getBranchCalculationScope } from './branchCalculation.service';
 import { withCentralOrderValues } from './centralBranchGroup.service';
+import { getInTransitQtyByBranchParts } from './inTransit.service';
 
 export type TestOrderView = {
   id: string;
@@ -214,36 +215,7 @@ async function getBillingChunksForItems(itemIds: string[]) {
 }
 
 async function getInTransitQtyByPart(branch: string, partNos: string[]) {
-  const normalizedParts = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
-  const result: Record<string, number> = {};
-  const branchScope = withCentralOrderValues(await getBranchCalculationScope(branch));
-  if (!branchScope.length || normalizedParts.length === 0) return result;
-
-  const { data, error } = await supabase
-    .from('portal_order_items')
-    .select('id, order_id, part_no, description, dnp, qty, edited_qty, billed_qty, value, edited_value, previous_30d_qty, order_reg_date, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, row_status, portal_orders!inner(branch, status, approval_status)')
-    .in('part_no', normalizedParts)
-    .in('portal_orders.branch', branchScope)
-    .neq('portal_orders.status', 'received')
-    .neq('portal_orders.status', 'issued')
-    .neq('portal_orders.status', 'rejected')
-    .neq('portal_orders.approval_status', 'rejected');
-
-  if (error) {
-    console.warn('In transit lookup failed.', error.message);
-    return result;
-  }
-
-  const rows = (data ?? []) as unknown as TransitCandidate[];
-  const chunkMap = await getBillingChunksForItems(rows.map((row) => row.id));
-  for (const row of rows) {
-    const withChunks = { ...row, billing_chunks: chunkMap.get(row.id) ?? [] };
-    if (!isTransitCandidate(withChunks)) continue;
-    const part = normalizePartNo(row.part_no);
-    result[part] = (result[part] ?? 0) + Math.max(0, getEffectiveQty(withChunks) - getReceivedQty(withChunks));
-  }
-
-  return result;
+  return getInTransitQtyByBranchParts(branch, partNos);
 }
 
 export async function getTestOrderView(orderId: string) {
