@@ -150,6 +150,7 @@ export async function receiveTadaDispatch(dispatchId: string, stage: 'HQ' | 'ACC
 
 export async function developerUpdateTadaDispatch(input: {
   dispatchId: string;
+  branch: string;
   dispatchDate: string;
   dispatchedBy: string;
   dispatchMode: 'Bus' | 'Transport' | 'By Hand';
@@ -158,6 +159,7 @@ export async function developerUpdateTadaDispatch(input: {
 }) {
   const { error } = await supabase.rpc('portal_developer_update_tada_dispatch', {
     p_dispatch_id: input.dispatchId,
+    p_branch: input.branch,
     p_dispatch_date: input.dispatchDate,
     p_dispatched_by: input.dispatchedBy,
     p_dispatch_mode: input.dispatchMode,
