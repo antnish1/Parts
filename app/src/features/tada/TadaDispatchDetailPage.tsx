@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { getTadaDispatch, receiveTadaDispatch, type TadaReceiptResult } from '../../services/tada.service';
+import { TadaDeveloperControls } from './TadaDeveloperControls';
 import { getTadaStatusMeta, tadaLocationMeta, TadaMiniBadge, TadaStatusBadge } from './tadaUi';
 
 const exceptionReasons = ['Not Found in Packet', 'Document Incomplete', 'Wrong SVR', 'Damaged / Unreadable', 'Other'];
@@ -84,13 +85,11 @@ export function TadaDispatchDetailPage() {
           <button type="button" className="inline-flex items-center gap-1 text-xs font-black text-[#1d4ed8]" onClick={() => navigate(-1)}><ArrowLeft className="h-3.5 w-3.5" />Back</button>
           <TadaStatusBadge status={dispatch.status} />
         </div>
-
         <div className="mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
           <div className="rounded-lg border border-white/80 bg-white/80 px-2 py-1.5 text-center"><p className="text-[9px] font-black uppercase text-[#64748b]">Sent</p><p className="text-base font-black leading-tight text-[#172033]">{allItems.length}</p></div>
           <div className="rounded-lg border border-white/80 bg-white/80 px-2 py-1.5 text-center"><p className="text-[9px] font-black uppercase text-[#64748b]">HQ</p><p className="text-base font-black leading-tight text-[#172033]">{hqReceivedCount}/{allItems.length}</p></div>
           <div className="rounded-lg border border-white/80 bg-white/80 px-2 py-1.5 text-center"><p className="text-[9px] font-black uppercase text-[#64748b]">Accounts</p><p className="text-base font-black leading-tight text-[#172033]">{accountsReceivedCount}/{hqReceivedCount}</p></div>
         </div>
-
         <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 rounded-lg bg-white/65 px-2.5 py-2 text-[10px] sm:grid-cols-3 lg:grid-cols-6">
           <p><span className="font-black text-[#64748b]">Date</span><br/><span className="font-bold text-[#172033]">{dispatch.dispatch_date}</span></p>
           <p><span className="font-black text-[#64748b]">Mode</span><br/><span className="font-bold text-[#172033]">{dispatch.dispatch_mode}</span></p>
@@ -101,13 +100,14 @@ export function TadaDispatchDetailPage() {
         </div>
       </div>
 
+      {profile?.role === 'developer' ? <TadaDeveloperControls dispatch={dispatch} items={allItems} onChanged={async () => { await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]); }} onDispatchDeleted={() => navigate('/ta-da', { replace: true })} /> : null}
+
       {receiptStage ? <section className={`mt-2 rounded-xl border p-2.5 sm:p-3 ${receiptStage === 'ACCOUNTS' ? 'border-blue-200 bg-blue-50/70' : 'border-amber-200 bg-amber-50/70'}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0"><div className="flex items-center gap-1.5"><PackageCheck className="h-4 w-4 shrink-0 text-[#1d4ed8]"/><p className="text-xs font-black text-[#172033]">{receiptStage === 'HQ' ? 'HQ Receipt' : 'Accounts Receipt'}</p></div><p className="mt-0.5 text-[10px] leading-4 text-[#475569]">Checked = physically received. Uncheck only missing documents.</p></div>
           <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-[#172033]">{receiptItems.length} SVRs</span>
         </div>
         <div className="mt-2 flex gap-3 border-y border-black/5 py-1.5 text-[10px] font-black"><button className="text-[#1d4ed8]" onClick={() => setAll(true)}>All Received</button><button className="text-[#475569]" onClick={() => setAll(false)}>Clear All</button></div>
-
         <div className="mt-2 space-y-1.5">{receiptItems.map((item) => {
           const state = receiptState[item.id] ?? { received: true, reason: '', remark: '' };
           return <div key={item.id} className={`rounded-lg border bg-white p-2 ${state.received ? 'border-[#dbe3ec]' : 'border-red-200 bg-red-50/50'}`}>
@@ -129,7 +129,6 @@ export function TadaDispatchDetailPage() {
 
       <section className="mt-2 rounded-xl border border-[#dbe3ec] bg-white p-2.5 sm:p-3">
         <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-[#475569]"/><p className="text-xs font-black text-[#172033]">SVR Movement</p></div><span className="text-[10px] font-bold text-[#64748b]">{allItems.length} records</span></div>
-
         <div className="space-y-1.5 md:hidden">{allItems.map((item) => {
           const location = tadaLocationMeta[item.current_location] ?? { label: item.current_location, badgeClass: 'border-slate-200 bg-slate-50 text-slate-700' };
           return <div key={item.id} className="rounded-lg border border-[#e2e8f0] p-2">
@@ -138,7 +137,6 @@ export function TadaDispatchDetailPage() {
             <div className="mt-1.5 flex flex-wrap gap-1"><span className="text-[9px] font-black uppercase text-[#64748b]">HQ</span>{receiptBadge(item.hq_received, item.hq_exception_reason)}<span className="ml-1 text-[9px] font-black uppercase text-[#64748b]">Accounts</span>{item.hq_received !== true ? <TadaMiniBadge className="border-slate-200 bg-slate-50 text-slate-500">—</TadaMiniBadge> : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</div>
           </div>;
         })}</div>
-
         <div className="hidden overflow-x-auto rounded-md border border-[#e2e8f0] md:block"><table className="w-full min-w-[1040px] border-collapse text-left text-xs"><thead className="bg-[#f8fafc] text-[10px] uppercase tracking-[0.08em] text-[#64748b]"><tr><th className="px-2.5 py-2">SVR</th><th className="px-2.5 py-2">Engineer</th><th className="px-2.5 py-2">Visit</th><th className="px-2.5 py-2">Machine / Customer</th><th className="px-2.5 py-2">Location</th><th className="px-2.5 py-2">HQ</th><th className="px-2.5 py-2">Accounts</th></tr></thead><tbody className="divide-y divide-[#e2e8f0]">{allItems.map((item) => {
           const location = tadaLocationMeta[item.current_location] ?? { label: item.current_location, badgeClass: 'border-slate-200 bg-slate-50 text-slate-700' };
           return <tr key={item.id}><td className="px-2.5 py-2 font-black text-[#172033]">{item.svr_no}</td><td className="px-2.5 py-2">{item.engineer_name_snapshot}</td><td className="px-2.5 py-2">{item.date_from === item.date_to ? item.date_from : `${item.date_from} → ${item.date_to}`}</td><td className="px-2.5 py-2"><b>{item.machine_no}</b><br/><span className="text-[10px] text-[#64748b]">{item.customer_name}</span></td><td className="px-2.5 py-2"><TadaMiniBadge className={location.badgeClass}>{location.label}</TadaMiniBadge></td><td className="px-2.5 py-2">{receiptBadge(item.hq_received, item.hq_exception_reason)}</td><td className="px-2.5 py-2">{item.hq_received !== true ? '—' : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</td></tr>;
