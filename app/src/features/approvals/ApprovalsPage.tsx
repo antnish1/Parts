@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
+import { OrderTypeBadge } from '../../components/tables/OrderTypeBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
@@ -34,6 +35,24 @@ function isPendingWorkflow(order: { status?: string | null; approval_status?: st
 
 function formatMoney(value: number) {
   return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function getOrderForLabel(order: { order_for?: string | null; customer_name?: string | null }) {
+  return String(order.order_for ?? '').toLowerCase() === 'customer' ? order.customer_name || 'Customer' : 'Stock';
 }
 
 function toSafeNumber(value: unknown) {
@@ -94,7 +113,7 @@ export function ApprovalsPage() {
     return pendingOrders.filter((order) => {
       const totalQty = getOrderTotalQty(order);
       const totalValue = getOrderTotalValue(order);
-      return `${order.order_no} ${order.final_order_no ?? ''} ${order.branch} ${order.order_type} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.approver?.full_name ?? ''} ${totalQty} ${totalValue}`
+      return `${order.order_no} ${order.final_order_no ?? ''} ${order.branch} ${order.order_type} ${getOrderForLabel(order)} ${order.customer_name ?? ''} ${order.machine_no ?? ''} ${order.approver?.full_name ?? ''} ${totalQty} ${totalValue}`
         .toLowerCase()
         .includes(term);
     });
@@ -113,7 +132,7 @@ export function ApprovalsPage() {
     : busyId.includes('approve') || busyId.includes('Approve')
       ? 'Approving order'
       : busyId.includes('acceptEdits')
-        ? 'Accepting edits'
+        ? 'Accepting edits and approving'
         : busyId.includes('approveOriginal')
           ? 'Approving original qty'
           : 'Saving changes';
@@ -181,7 +200,7 @@ export function ApprovalsPage() {
       }
       if (action === 'approveOriginal') await approveTestOrderWithOriginalQty(order);
 
-      setMessage(action === 'acceptEdits' ? 'Edited quantities saved and accepted.' : 'Approved with original quantities.');
+      setMessage(action === 'acceptEdits' ? 'Approved with edited quantities.' : 'Approved with original quantities.');
       await refetch();
       navigate(-1);
     } catch (error) {
@@ -205,7 +224,7 @@ export function ApprovalsPage() {
 
         <div className="mb-2 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <input
-            className="rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5] lg:w-96"
+            className="min-h-[44px] rounded-md border border-[#263244] bg-[#0b1020] px-2.5 py-2 text-sm text-white outline-none focus:border-[#82C8E5] md:min-h-0 md:py-1.5 md:text-xs lg:w-96"
             placeholder="Search order, branch, customer, machine, approver"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -216,17 +235,75 @@ export function ApprovalsPage() {
 
         {isLoading ? <p className="text-xs text-[#c7d2df]">Loading approvals...</p> : null}
 
-        <div className="rounded-lg border border-[#263244] md:overflow-visible max-md:overflow-x-auto">
-          <table className="w-full min-w-[1080px] border-collapse text-left text-xs">
+        <div className="space-y-2 md:hidden">
+          {filteredOrders.map((order) => {
+            const isManagerQueue = isManagerApprovalStage(order);
+            const displayStatus = isManagerQueue ? 'pending_manager_approval' : order.status;
+            const totalQty = getOrderTotalQty(order);
+            const totalValue = getOrderTotalValue(order);
+            const isMenuOpen = openActionMenuId === order.id;
+            const approveAction = role === 'manager' ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
+            const rejectAction = role === 'manager' ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
+            const approveLabel = role === 'manager' ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
+
+            return (
+              <div key={order.id} className="relative rounded-2xl border border-[#d9dee7] bg-white p-3 shadow-sm">
+                <button type="button" className="w-full text-left" onClick={() => navigate(`/orders/${order.id}`)}>
+                  <div className="flex items-start justify-between gap-2 pr-10">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-[#0f172a]">{order.final_order_no || order.order_no}</p>
+                      {order.final_order_no ? <p className="text-[10px] font-semibold text-[#667085]">Temp {order.order_no}</p> : null}
+                    </div>
+                    <StatusBadge status={displayStatus} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-[#667085]">
+                    <span>{formatDateTime(order.created_at)}</span><span>•</span><span>{order.branch}</span><span>•</span><OrderTypeBadge type={order.order_type} />
+                  </div>
+                  <p className="mt-2 truncate text-xs font-semibold text-[#0f172a]">{getOrderForLabel(order)}{order.machine_no ? ` • ${order.machine_no}` : ''}</p>
+                  <p className="mt-1 truncate text-[11px] text-[#667085]">Approver: {order.approver?.full_name ?? '-'}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-[#f8fbff] p-2 text-center text-xs">
+                    <div><p className="text-[10px] uppercase text-[#667085]">Qty</p><p className="font-black text-[#0f172a]">{totalQty}</p></div>
+                    <div><p className="text-[10px] uppercase text-[#667085]">Value</p><p className="font-black text-[#0f172a]">{formatMoney(totalValue)}</p></div>
+                  </div>
+                </button>
+
+                <div className="absolute right-3 top-3" onClick={(event) => event.stopPropagation()}>
+                  <button
+                    type="button"
+                    aria-label={`Actions for ${order.order_no}`}
+                    aria-expanded={isMenuOpen}
+                    disabled={isBlockingAction}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#cbd5e1] bg-white text-lg font-black leading-none text-[#334155] shadow-sm transition hover:bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#82C8E5]/40 disabled:opacity-40"
+                    onClick={() => setOpenActionMenuId((current) => current === order.id ? '' : order.id)}
+                  >⋮</button>
+                  {isMenuOpen ? (
+                    <div className="absolute right-0 top-9 z-40 w-40 overflow-hidden rounded-lg border border-[#cbd5e1] bg-white py-1 text-left shadow-xl">
+                      <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#1d4ed8] hover:bg-[#eff6ff]" onClick={() => { setOpenActionMenuId(''); navigate(`/approvals/review/${order.id}`); }}>Review</button>
+                      {role !== 'manager' ? <>
+                        <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#0f766e] hover:bg-[#ecfdf5]" onClick={() => void runAction(order, approveAction)}>{approveLabel}</button>
+                        <div className="mx-2 border-t border-[#e2e8f0]" />
+                        <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#dc2626] hover:bg-[#fef2f2]" onClick={() => void runAction(order, rejectAction)}>Reject</button>
+                      </> : null}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+          {filteredOrders.length === 0 ? <p className="rounded-xl border border-[#d9dee7] bg-white p-3 text-xs text-[#667085]">No pending orders found.</p> : null}
+        </div>
+
+        <div className="hidden overflow-visible rounded-lg border border-[#263244] md:block">
+          <table className="w-full min-w-[980px] border-collapse text-left text-xs">
             <thead className="bg-[#0b1020] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]">
               <tr>
+                <th className="px-2.5 py-2">Date & Time</th>
                 <th className="px-2.5 py-2">Order No</th>
                 <th className="px-2.5 py-2">Branch</th>
                 <th className="px-2.5 py-2">Type</th>
+                <th className="px-2.5 py-2">For</th>
                 <th className="px-2.5 py-2 text-right">Qty</th>
                 <th className="px-2.5 py-2 text-right">Value</th>
-                <th className="px-2.5 py-2">Customer</th>
-                <th className="px-2.5 py-2">Machine</th>
                 <th className="px-2.5 py-2">Approver</th>
                 <th className="px-2.5 py-2">Status</th>
                 <th className="w-14 px-2 py-2 text-center">Action</th>
@@ -247,14 +324,17 @@ export function ApprovalsPage() {
 
                 return (
                   <tr key={order.id} className={`${getStatusRowClasses(displayStatus)} cursor-pointer transition hover:brightness-110`} onClick={() => navigate(`/orders/${order.id}`)} title="Click to open order detail">
-                    <td className="px-2.5 py-2 font-black text-white">{order.order_no}</td>
+                    <td className="whitespace-nowrap px-2.5 py-2 text-[#d8e3ee]">{formatDateTime(order.created_at)}</td>
+                    <td className="px-2.5 py-2 font-black leading-4 text-white">
+                      <div>{order.final_order_no || order.order_no}</div>
+                      {order.final_order_no ? <div className="text-[10px] font-semibold text-[#8fa1b5]">Temp {order.order_no}</div> : null}
+                    </td>
                     <td className="px-2.5 py-2 text-[#d8e3ee]">{order.branch}</td>
-                    <td className="px-2.5 py-2 text-[#d8e3ee]">{order.order_type}</td>
+                    <td className="px-2.5 py-2"><OrderTypeBadge type={order.order_type} /></td>
+                    <td className="max-w-[220px] truncate px-2.5 py-2 text-[#d8e3ee]" title={getOrderForLabel(order)}>{getOrderForLabel(order)}</td>
                     <td className="px-2.5 py-2 text-right font-black text-white">{totalQty}</td>
-                    <td className="px-2.5 py-2 text-right font-black text-white">{formatMoney(totalValue)}</td>
-                    <td className="px-2.5 py-2 text-[#d8e3ee]">{order.customer_name ?? '-'}</td>
-                    <td className="px-2.5 py-2 text-[#d8e3ee]">{order.machine_no ?? '-'}</td>
-                    <td className="px-2.5 py-2 text-[#d8e3ee]">{order.approver?.full_name ?? '-'}</td>
+                    <td className="whitespace-nowrap px-2.5 py-2 text-right font-black text-white">{formatMoney(totalValue)}</td>
+                    <td className="max-w-[190px] truncate px-2.5 py-2 text-[#d8e3ee]" title={order.approver?.full_name ?? '-'}>{order.approver?.full_name ?? '-'}</td>
                     <td className="px-2.5 py-2"><StatusBadge status={displayStatus} /></td>
                     <td className="relative px-2 py-1.5 text-center" onClick={(event) => event.stopPropagation()}>
                       <button
@@ -325,7 +405,7 @@ export function ApprovalsPage() {
             <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs text-[#c7d2df]">{reviewQuery.data.order.order_no} • {reviewQuery.data.order.branch} • edit qty before approval</p>
               <div className="flex gap-3">
-                <button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={isBlockingAction} onClick={() => void runReviewOrderAction('acceptEdits')}>Accept Edits</button>
+                <button className="text-xs font-black text-[#82C8E5] hover:underline disabled:opacity-40" disabled={isBlockingAction} onClick={() => void runReviewOrderAction('acceptEdits')}>Accept Edits & Approve</button>
                 <button className="text-xs font-black text-[#c7d2df] hover:underline disabled:opacity-40" disabled={isBlockingAction} onClick={() => void runReviewOrderAction('approveOriginal')}>Approve Original Qty</button>
               </div>
             </div>
