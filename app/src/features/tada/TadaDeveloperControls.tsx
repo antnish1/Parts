@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Pencil, Save, ShieldAlert, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { getTestBranches } from '../../services/testBranch.service';
 import {
   developerDeleteTadaDispatch,
   developerDeleteTadaSvr,
@@ -21,13 +22,13 @@ type Props = {
 
 const inputClass = 'h-9 w-full rounded-md border border-[#cbd5e1] bg-white px-2.5 text-xs font-semibold text-[#172033] outline-none focus:border-[#2563eb]';
 const labelClass = 'mb-1 block text-[9px] font-black uppercase tracking-[0.08em] text-[#64748b]';
-
 type DeleteTarget = { type: 'dispatch' } | { type: 'svr'; item: TadaSvrItem } | null;
 
 export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDeleted }: Props) {
   const [reason, setReason] = useState('');
   const [message, setMessage] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+  const [branch, setBranch] = useState(dispatch.branch_key);
   const [dispatchDate, setDispatchDate] = useState(dispatch.dispatch_date);
   const [dispatchedBy, setDispatchedBy] = useState(dispatch.dispatched_by);
   const [dispatchMode, setDispatchMode] = useState<TadaDispatch['dispatch_mode']>(dispatch.dispatch_mode);
@@ -43,8 +44,10 @@ export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDe
   const [customerName, setCustomerName] = useState(selectedItem?.customer_name ?? '');
 
   const { data: engineers = [] } = useQuery({ queryKey: ['tada-engineers'], queryFn: getTadaEngineers });
+  const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
 
   useEffect(() => {
+    setBranch(dispatch.branch_key);
     setDispatchDate(dispatch.dispatch_date);
     setDispatchedBy(dispatch.dispatched_by);
     setDispatchMode(dispatch.dispatch_mode);
@@ -62,7 +65,7 @@ export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDe
   }, [selectedItem]);
 
   const updateDispatch = useMutation({
-    mutationFn: () => developerUpdateTadaDispatch({ dispatchId: dispatch.id, dispatchDate, dispatchedBy, dispatchMode, referenceNo, reason }),
+    mutationFn: () => developerUpdateTadaDispatch({ dispatchId: dispatch.id, branch, dispatchDate, dispatchedBy, dispatchMode, referenceNo, reason }),
     onSuccess: async () => { setMessage('Dispatch details updated.'); await onChanged(); },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Could not update dispatch.'),
   });
@@ -72,10 +75,7 @@ export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDe
       if (!selectedItem) throw new Error('Select an SVR.');
       const engineer = engineers.find((item) => item.engineer_name.toUpperCase() === engineerName.trim().toUpperCase());
       if (!engineer) throw new Error('Select a Service Engineer from the predefined list.');
-      return developerUpdateTadaSvr({
-        itemId: selectedItem.id, svrNo, engineerId: engineer.id, engineerName: engineer.engineer_name,
-        dateFrom, dateTo, machineNo, customerName, reason,
-      });
+      return developerUpdateTadaSvr({ itemId: selectedItem.id, svrNo, engineerId: engineer.id, engineerName: engineer.engineer_name, dateFrom, dateTo, machineNo, customerName, reason });
     },
     onSuccess: async () => { setMessage('SVR details updated.'); await onChanged(); },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Could not update SVR.'),
@@ -115,10 +115,11 @@ export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDe
       <section className="rounded-lg border border-[#dbe3ec] bg-white p-2.5">
         <div className="mb-2 flex items-center gap-1.5"><Pencil className="h-3.5 w-3.5 text-[#1d4ed8]"/><p className="text-[11px] font-black text-[#172033]">Edit Dispatch Details</p></div>
         <div className="grid grid-cols-2 gap-2">
+          <div><label className={labelClass}>Office</label><select className={inputClass} value={branch} onChange={(e) => setBranch(e.target.value)}>{branches.map((item) => <option key={item.id} value={item.id}>{item.display_name ?? item.branch_name}</option>)}</select></div>
           <div><label className={labelClass}>Dispatch Date</label><input type="date" className={inputClass} value={dispatchDate} onChange={(e) => setDispatchDate(e.target.value)} /></div>
           <div><label className={labelClass}>Dispatch Mode</label><select className={inputClass} value={dispatchMode} onChange={(e) => setDispatchMode(e.target.value as TadaDispatch['dispatch_mode'])}><option>Bus</option><option>Transport</option><option>By Hand</option></select></div>
-          <div><label className={labelClass}>Dispatched By</label><input className={inputClass} value={dispatchedBy} onChange={(e) => setDispatchedBy(e.target.value)} /></div>
           <div><label className={labelClass}>Ref. No.</label><input className={inputClass} value={referenceNo} onChange={(e) => setReferenceNo(e.target.value)} /></div>
+          <div className="col-span-2"><label className={labelClass}>Dispatched By</label><input className={inputClass} value={dispatchedBy} onChange={(e) => setDispatchedBy(e.target.value)} /></div>
         </div>
         <button type="button" disabled={!reasonReady || updateDispatch.isPending} onClick={() => updateDispatch.mutate()} className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-md bg-[#0f5fa8] px-3 text-[11px] font-black text-white disabled:opacity-40"><Save className="h-3.5 w-3.5"/>Save Dispatch Changes</button>
       </section>
@@ -149,15 +150,6 @@ export function TadaDeveloperControls({ dispatch, items, onChanged, onDispatchDe
       <button type="button" disabled={!reasonReady} onClick={() => setDeleteTarget({ type: 'dispatch' })} className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-red-600 px-3 text-[11px] font-black text-white hover:bg-red-700 disabled:opacity-40"><Trash2 className="h-3.5 w-3.5"/>Delete List</button>
     </div>
 
-    <ConfirmDialog
-      open={Boolean(deleteTarget)}
-      title={deleteTarget?.type === 'dispatch' ? 'Delete complete TA/DA list?' : `Delete SVR ${deleteTarget?.type === 'svr' ? deleteTarget.item.svr_no : ''}?`}
-      message={deleteTarget?.type === 'dispatch' ? `This will permanently remove ${dispatch.dispatch_no} from the live TA/DA workflow. The audit snapshot will be retained.` : 'This SVR will be removed from the dispatch and receipt totals/status will be recalculated.'}
-      confirmLabel={deleteTarget?.type === 'dispatch' ? 'Delete TA/DA List' : 'Delete SVR'}
-      tone="danger"
-      busy={deleteMutation.isPending}
-      onCancel={() => setDeleteTarget(null)}
-      onConfirm={() => deleteMutation.mutate()}
-    />
+    <ConfirmDialog open={Boolean(deleteTarget)} title={deleteTarget?.type === 'dispatch' ? 'Delete complete TA/DA list?' : `Delete SVR ${deleteTarget?.type === 'svr' ? deleteTarget.item.svr_no : ''}?`} message={deleteTarget?.type === 'dispatch' ? `This will permanently remove ${dispatch.dispatch_no} from the live TA/DA workflow. The audit snapshot will be retained.` : 'This SVR will be removed from the dispatch and receipt totals/status will be recalculated.'} confirmLabel={deleteTarget?.type === 'dispatch' ? 'Delete TA/DA List' : 'Delete SVR'} tone="danger" busy={deleteMutation.isPending} onCancel={() => setDeleteTarget(null)} onConfirm={() => deleteMutation.mutate()} />
   </details>;
 }
