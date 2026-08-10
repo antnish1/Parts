@@ -57,18 +57,13 @@ if (!source.includes('reviewInventoryQuery.isLoading')) {
   source = source.replace(transitCellMarker, `${inventoryCell}${transitCellMarker}`);
 }
 
-const transitErrorMarker = 'In Transit quantity could not be loaded. Refresh the page before approving this order.';
 const inventoryErrorNotice = 'Inventory quantity could not be loaded. Refresh the page before approving this order.';
 if (!source.includes(inventoryErrorNotice)) {
-  const transitNoticePattern = /(<p className="mb-2 rounded-md border border-\[#f2c8c8\] bg-\[#fff7f7\] px-2\.5 py-1\.5 text-\[11px\] font-semibold text-\[#b42318\]">In Transit quantity could not be loaded\. Refresh the page before approving this order\.<\/p>)/;
-  const match = source.match(transitNoticePattern);
-  if (!match || !source.includes(transitErrorMarker)) throw new Error('Item Review In Transit error notice marker not found');
-  source = source.replace(match[1], `${match[1]}\n          {reviewInventoryQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">${inventoryErrorNotice}</p> : null}`);
+  const transitNoticeExpression = /\{reviewInTransitQuery\.isError \? <p className="mb-2 rounded-md border border-\[#f2c8c8\] bg-\[#fff7f7\] px-2\.5 py-1\.5 text-\[11px\] font-semibold text-\[#b42318\]">In Transit quantity could not be loaded\. Refresh the page before approving this order\.<\/p> : null\}/;
+  const match = source.match(transitNoticeExpression);
+  if (!match) throw new Error('Item Review In Transit error notice expression marker not found');
+  source = source.replace(match[0], `${match[0]}\n          {reviewInventoryQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">${inventoryErrorNotice}</p> : null}`);
 }
-
-const debugLines = source.split('\n');
-console.log('ITEM REVIEW GENERATED LINES 438-450');
-for (let i = 437; i < Math.min(450, debugLines.length); i += 1) console.log(`${i + 1}: ${debugLines[i]}`);
 
 fs.writeFileSync(filePath, source, 'utf8');
 console.log('Subtle Item Review In Transit highlight and branch inventory column applied.');
