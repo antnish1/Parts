@@ -4,12 +4,19 @@ const path = require('path');
 const filePath = path.join(__dirname, '..', 'src', 'features', 'approvals', 'ApprovalsPage.tsx');
 let content = fs.readFileSync(filePath, 'utf8');
 
-// The approval page now owns its dedicated review-route behavior directly.
-if (content.includes("const { reviewOrderId = '' } = useParams();")) process.exit(0);
-
 function replaceOnce(from, to) {
   if (!content.includes(from)) return;
   content = content.replace(from, to);
+}
+
+// Current React review route already exists. Keep its structure and apply only
+// the latest review-action wording/feedback before exiting.
+if (content.includes("const { reviewOrderId = '' } = useParams();")) {
+  replaceOnce("? 'Accepting edits'", "? 'Accepting edits and approving'");
+  replaceOnce("'Edited quantities saved and accepted.'", "'Edited quantities saved and approved.'");
+  replaceOnce("                  Accept Edits\n", "                  Accept Edits & Approve\n");
+  fs.writeFileSync(filePath, content, 'utf8');
+  process.exit(0);
 }
 
 replaceOnce("import { Link } from 'react-router-dom';", "import { Link, useParams } from 'react-router-dom';");
@@ -48,5 +55,8 @@ replaceOnce(
   "              onClick={() => setReviewId('')}\n            >\n              Close",
   "              onClick={() => isReviewPage ? window.history.back() : setReviewId('')}\n            >\n              {isReviewPage ? 'Back to Queue' : 'Close'}"
 );
+
+replaceOnce("                  Accept Edits\n", "                  Accept Edits & Approve\n");
+replaceOnce("'Edited quantities saved and accepted.'", "'Edited quantities saved and approved.'");
 
 fs.writeFileSync(filePath, content, 'utf8');
