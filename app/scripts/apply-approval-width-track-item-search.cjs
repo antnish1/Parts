@@ -17,8 +17,9 @@ const approvalsPath = path.resolve(__dirname, '../src/features/approvals/Approva
   const legacy = '<div className="overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full min-w-[1280px] border-collapse text-left text-xs">';
   const fixed = '<div className="approval-queue-table overflow-hidden rounded-lg border border-[#263244]">\n        <table className="w-full table-fixed border-collapse text-left text-xs">';
   const compactMenu = '<div className="rounded-lg border border-[#263244] md:overflow-visible max-md:overflow-x-auto">\n          <table className="w-full min-w-[1080px] border-collapse text-left text-xs">';
+  const trackStyleLayout = '<div className="hidden overflow-visible rounded-lg border border-[#263244] md:block">\n          <table className="w-full min-w-[980px] border-collapse text-left text-xs">';
 
-  if (!source.includes(fixed) && !source.includes(compactMenu)) {
+  if (!source.includes(fixed) && !source.includes(compactMenu) && !source.includes(trackStyleLayout)) {
     if (!source.includes(legacy)) throw new Error('approval queue fixed table marker not found');
     source = source.replace(legacy, fixed);
     fs.writeFileSync(approvalsPath, source);
