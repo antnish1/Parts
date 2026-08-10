@@ -38,7 +38,7 @@ const CreditCustomerProfilePage = lazyNamed(() => import('../features/credit-dis
 const CreditAgingPage = lazyNamed(() => import('../features/credit-dispatch/CreditAgingPage'), 'CreditAgingPage');
 const NewCreditDispatchPage = lazyNamed(() => import('../features/credit-dispatch/NewCreditDispatchPage'), 'NewCreditDispatchPage');
 const TadaTrackingPage = lazyNamed(() => import('../features/tada/TadaTrackingPage'), 'TadaTrackingPage');
-const TadaNewDispatchPage = lazyNamed(() => import('../features/tada/TadaNewDispatchPage'), 'TadaNewDispatchPage');
+const TadaNewDispatchPage = lazyNamed(() => import('../features/tada/TadaNewDispatchV2Page'), 'TadaNewDispatchV2Page');
 const TadaDispatchDetailPage = lazyNamed(() => import('../features/tada/TadaDispatchDetailPage'), 'TadaDispatchDetailPage');
 
 function RouteFallback() { return <div className="flex min-h-[120px] items-center justify-center rounded-lg border border-[#d8e0ea] bg-white text-xs font-semibold text-[#64748b]">Loading page…</div>; }
