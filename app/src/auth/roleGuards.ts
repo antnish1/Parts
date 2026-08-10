@@ -1,10 +1,10 @@
-export type UserRole = 'branch' | 'admin' | 'super' | 'manager' | 'viewer' | 'developer' | 'hq';
+export type UserRole = 'branch' | 'admin' | 'super' | 'manager' | 'viewer' | 'developer' | 'hq' | 'accounts';
 
 export type UserProfile = { id: string; fullName: string; branch: string; role: UserRole; isActive: boolean; };
 
 export const roleHomePath: Record<UserRole, string> = {
   branch: '/orders/new', admin: '/admin/approved', super: '/approvals/pending', manager: '/approvals/pending',
-  viewer: '/orders/track', developer: '/developer/workspace', hq: '/',
+  viewer: '/orders/track', developer: '/developer/workspace', hq: '/', accounts: '/ta-da',
 };
 
 function isOrderWorkspace(path: string) {
@@ -16,13 +16,15 @@ function isDocketWorkspace(path: string) { return path.startsWith('/docket-scann
 function isUploadsWorkspace(path: string) { return path.startsWith('/uploads'); }
 function isCreditDispatchWorkspace(path: string) { return path.startsWith('/credit-dispatch'); }
 function isInstallationWorkspace(path: string) { return path.startsWith('/installations'); }
+function isTadaWorkspace(path: string) { return path === '/ta-da' || path.startsWith('/ta-da/'); }
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  if (isTadaWorkspace(path)) return ['branch', 'manager', 'hq', 'developer', 'accounts'].includes(role);
   if (isInstallationWorkspace(path)) return true;
   if (path === '/orders/delayed-vor') return true;
   if (path === '/orders/pending-issue') return ['branch', 'admin', 'manager', 'developer', 'hq'].includes(role);
-  if (role === 'hq') return false;
+  if (role === 'hq' || role === 'accounts') return false;
   if (/^\/orders\/[^/]+\/correct$/.test(path)) return ['manager', 'developer'].includes(role);
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);

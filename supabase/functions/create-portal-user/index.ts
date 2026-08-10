@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const roles = ['branch', 'admin', 'super', 'manager', 'viewer', 'developer'];
+const roles = ['branch', 'admin', 'super', 'manager', 'viewer', 'developer', 'hq', 'accounts'];
 
 type Payload = {
   email?: string;

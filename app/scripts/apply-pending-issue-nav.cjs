@@ -16,7 +16,17 @@ source = source.replace(`  { to: '/orders/delayed-vor', label: 'Delayed VOR', ic
 
 replaceOnce(`  const branchCreditDispatchCount = creditDispatches.filter((row) =>\n    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,\n  ).length;`, `  const branchCreditDispatchCount = creditDispatches.filter((row) =>\n    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,\n  ).length;\n\n  const pendingIssueQuery = useQuery({\n    queryKey: ['pending-issue-nav-count', profile?.role, profile?.branch],\n    queryFn: getPendingIssueOrders,\n    enabled: ['branch', 'admin', 'manager', 'developer', 'hq'].includes(profile?.role ?? ''),\n    staleTime: 30000,\n    refetchOnWindowFocus: true,\n  });\n  const pendingIssueCount = pendingIssueQuery.data?.length ?? 0;`, 'pending issue query');
 replaceOnce(`      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };`, `      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };\n      if (item.to === '/orders/pending-issue') return { ...item, badge: pendingIssueCount };`, 'pending issue badge');
-replaceOnce(`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`, `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`, 'pending issue memo deps');
+
+const legacyDeps = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
+const legacyDepsWithPending = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`;
+const tadaDeps = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`;
+const tadaDepsWithPending = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`;
+
+if (source.includes(tadaDeps) || source.includes(tadaDepsWithPending)) {
+  replaceOnce(tadaDeps, tadaDepsWithPending, 'pending issue TA/DA memo deps');
+} else {
+  replaceOnce(legacyDeps, legacyDepsWithPending, 'pending issue memo deps');
+}
 
 fs.writeFileSync(filePath, source);
 console.log('Pending Issue navigation applied.');
