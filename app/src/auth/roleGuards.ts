@@ -21,10 +21,11 @@ function isTadaWorkspace(path: string) { return path === '/ta-da' || path.starts
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
   if (isTadaWorkspace(path)) return ['branch', 'manager', 'hq', 'developer', 'accounts'].includes(role);
+  if (role === 'accounts') return false;
   if (isInstallationWorkspace(path)) return true;
   if (path === '/orders/delayed-vor') return true;
   if (path === '/orders/pending-issue') return ['branch', 'admin', 'manager', 'developer', 'hq'].includes(role);
-  if (role === 'hq' || role === 'accounts') return false;
+  if (role === 'hq') return false;
   if (/^\/orders\/[^/]+\/correct$/.test(path)) return ['manager', 'developer'].includes(role);
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);
