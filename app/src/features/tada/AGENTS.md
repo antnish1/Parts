@@ -12,7 +12,7 @@ This module tracks physical TA/DA bill / SVR movement and chain of custody from 
 - `manager`: can view all TA/DA, create for any office, and record HQ receipt.
 - `hq`: can view all TA/DA and create for any office. HQ is not permitted to record HQ receipt unless product requirements explicitly change.
 - `developer`: can view/create for all offices and can record both HQ and Accounts receipt for support/admin purposes. Actions remain audited.
-- `accounts`: TA/DA-focused role. Can view TA/DA and record Accounts receipt.
+- `accounts`: TA/DA-focused role. Can view TA/DA and record Accounts receipt. Accounts must not see or directly access unrelated operational modules such as Delayed VOR or Engine & Breaker unless the user explicitly changes this requirement later.
 - Other portal roles do not receive TA/DA access by default.
 
 ## Entry rules
