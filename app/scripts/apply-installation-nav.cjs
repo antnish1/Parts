@@ -47,11 +47,13 @@ if (!source.includes(badgeLine)) {
 }
 
 const dependencyVariants = [
+  [`    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`,`    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, installationPendingCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`],
+  [`    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`,`    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, installationPendingCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`],
   [`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`,`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`],
   [`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`,`    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, installationPendingCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`],
   [`    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],`,`    [approvedOrdersCount, installationPendingCount, isAdmin, isManager, managerApprovalCount],`],
 ];
-if (!source.includes('installationPendingCount, isAdmin')) {
+if (!source.includes('installationPendingCount, isAccounts') && !source.includes('installationPendingCount, isAdmin')) {
   const match = dependencyVariants.find(([from]) => source.includes(from));
   if (!match) throw new Error('Installation memo dependency insertion point not found.');
   source = source.replace(match[0], match[1]);
