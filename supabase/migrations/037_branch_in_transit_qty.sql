@@ -52,6 +52,8 @@ as $$
       normalized_part_no,
       effective_qty,
       received_qty,
+      order_status,
+      approval_status,
       case
         when item_status <> '' then item_status
         when order_status <> '' then order_status
@@ -70,6 +72,10 @@ as $$
     'DISPATCHED',
     'PARTIALLY RECEIVED'
   )
+    and order_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
+    and approval_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
+    and order_status not like 'PENDING%'
+    and approval_status not like 'PENDING%'
   group by normalized_part_no
   order by normalized_part_no;
 $$;
