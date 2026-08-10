@@ -66,5 +66,9 @@ if (!source.includes(inventoryErrorNotice)) {
   source = source.replace(match[1], `${match[1]}\n          {reviewInventoryQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">${inventoryErrorNotice}</p> : null}`);
 }
 
+const debugLines = source.split('\n');
+console.log('ITEM REVIEW GENERATED LINES 438-450');
+for (let i = 437; i < Math.min(450, debugLines.length); i += 1) console.log(`${i + 1}: ${debugLines[i]}`);
+
 fs.writeFileSync(filePath, source, 'utf8');
 console.log('Subtle Item Review In Transit highlight and branch inventory column applied.');
