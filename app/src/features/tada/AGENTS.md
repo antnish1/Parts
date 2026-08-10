@@ -81,3 +81,12 @@ Do not let frontend role checks replace backend permission checks. Receipt and c
 - Preserve desktop and mobile usability.
 - Keep missing/not-received SVRs clearly visible.
 - Sidebar badges show actionable counts for Manager, Accounts, and Developer.
+- TA/DA status and physical-location stages use a consistent professional color language and subtle badges; do not make informational badges look like primary action buttons.
+- KPI cards on the tracking page are interactive filters on both desktop and mobile. Tapping the active KPI again clears that filter.
+- Role-actionable KPI cards must be ordered first: Accounts prioritizes Awaiting/Partial Accounts; Manager prioritizes Awaiting/Partial HQ.
+- Mobile is a first-class workflow surface because Accounts is expected to work primarily on phones. Do not simply shrink desktop tables.
+- Tracking lists use compact mobile cards; desktop may use tables.
+- Dispatch detail mobile summary uses dense multi-column metadata rather than one label/value per full row.
+- Receipt rows must show SVR, engineer, machine and customer compactly without forcing excessive vertical scrolling. Exception fields expand only for unchecked/not-received items.
+- The active receipt/submit action should remain easy to reach on mobile (sticky action area is acceptable) without obscuring content.
+- Traceability remains available but may be collapsed by default to protect mobile vertical space.
