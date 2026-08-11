@@ -60,6 +60,14 @@ async function fetchByIdBatches<T>(ids: string[], factory: (ids: string[], from:
   return rows;
 }
 
+function normalizeWorkflowStatus(value: unknown) {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function isIssuedHeader(order: Pick<OrderRow, 'status' | 'issued_at'>) {
+  return Boolean(order.issued_at) || normalizeWorkflowStatus(order.status) === 'ISSUED';
+}
+
 function ageInDays(value: string | null) {
   if (!value) return 0;
   const received = new Date(value); const today = new Date();
@@ -76,7 +84,14 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
     if (branchScope?.length) query = query.in('branch', branchScope);
     return query;
   });
-  const visibleOrders = branchScope === null ? orders : orders.filter((order) => branchScope.some((branch) => normalizeBranchKey(branch) === normalizeBranchKey(order.branch)));
+
+  // `issued_at` was added after older orders already existed, so it cannot be the
+  // only source of truth. A legacy order whose header already says ISSUED must
+  // never re-enter Pending Issue merely because issued_at is NULL.
+  const notIssuedOrders = orders.filter((order) => !isIssuedHeader(order));
+  const visibleOrders = branchScope === null
+    ? notIssuedOrders
+    : notIssuedOrders.filter((order) => branchScope.some((branch) => normalizeBranchKey(branch) === normalizeBranchKey(order.branch)));
   const orderIds = visibleOrders.map((order) => order.id);
   if (!orderIds.length) return [];
 
@@ -97,7 +112,14 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
 
   return visibleOrders.flatMap((order) => {
     const orderItems = itemsByOrder.get(order.id) ?? [];
-    if (!orderItems.length || getOrderStatusLabel(orderItems) !== 'RECEIVED') return [];
+    if (!orderItems.length) return [];
+
+    const resolvedStatus = getOrderStatusLabel(orderItems);
+    // Treat ISSUED as terminal at item level too. This protects against legacy or
+    // partially migrated records where header metadata and row_status disagree.
+    if (normalizeWorkflowStatus(resolvedStatus) === 'ISSUED') return [];
+    if (normalizeWorkflowStatus(resolvedStatus) !== 'RECEIVED') return [];
+
     const itemIdSet = new Set(orderItems.map((item) => item.id));
     const latestReceipt = billings.filter((chunk) => itemIdSet.has(chunk.item_id) && chunk.received_at).map((chunk) => chunk.received_at as string).sort().at(-1) ?? null;
     const receivedDate = order.received_date || latestReceipt;
