@@ -40,14 +40,11 @@ function write(relativePath, source) {
   let source = read(relativePath);
 
   if (!source.includes('Number(row.comment_count ?? 0) > 0')) {
-    const dispatchIdPattern = /<p className="([^"]*)">\{row\.dispatch_no \?\? 'Pending No\.'\}<\/p>/g;
-    let replacements = 0;
-    source = source.replace(dispatchIdPattern, (_match, className) => {
-      replacements += 1;
-      return `<div className="flex min-w-0 items-center gap-2"><p className="${className}">{row.dispatch_no ?? 'Pending No.'}</p>{Number(row.comment_count ?? 0) > 0 ? <span aria-label={String(row.comment_count) + ' comments'} title={String(row.comment_count) + ' comments'} className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">{row.comment_count}</span> : null}</div>`;
-    });
-
-    if (replacements < 2) throw new Error(`Expected dispatch ID markup in mobile and desktop views; found ${replacements}.`);
+    const target = "{row.dispatch_no ?? 'Pending No.'}";
+    const badge = "{row.dispatch_no ?? 'Pending No.'}{Number(row.comment_count ?? 0) > 0 ? <span aria-label={String(row.comment_count) + ' comments'} title={String(row.comment_count) + ' comments'} className=\"ml-2 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 align-middle text-[10px] font-bold leading-none text-white\">{row.comment_count}</span> : null}";
+    const occurrences = source.split(target).length - 1;
+    if (occurrences < 2) throw new Error(`Expected dispatch ID expressions in mobile and desktop views; found ${occurrences}.`);
+    source = source.split(target).join(badge);
   }
 
   write(relativePath, source);
