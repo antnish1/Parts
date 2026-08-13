@@ -22,7 +22,7 @@ function write(relativePath, source) {
     source = source.replace(typeAnchor, '  updated_at: string;\n  comment_count?: number;\n};');
   }
 
-  if (!source.includes("portal_credit_dispatch_events').select('dispatch_id')")) {
+  if (!source.includes('Credit Dispatch comment count lookup failed.')) {
     const oldFunction = `export async function getCreditDispatches() {\n  const { data, error } = await supabase\n    .from('portal_credit_dispatches')\n    .select('*')\n    .order('created_at', { ascending: false })\n    .limit(300);\n\n  if (error) throw error;\n  return ((data ?? []) as CreditDispatchRecord[]).map(withDerivedRecoveryStatus);\n}`;
 
     const newFunction = `export async function getCreditDispatches() {\n  const { data, error } = await supabase\n    .from('portal_credit_dispatches')\n    .select('*')\n    .order('created_at', { ascending: false })\n    .limit(300);\n\n  if (error) throw error;\n\n  const rows = ((data ?? []) as CreditDispatchRecord[]).map(withDerivedRecoveryStatus);\n  const dispatchIds = rows.map((row) => row.id);\n  if (!dispatchIds.length) return rows;\n\n  const { data: commentEvents, error: commentError } = await supabase\n    .from('portal_credit_dispatch_events')\n    .select('dispatch_id')\n    .eq('event_type', 'Comment')\n    .in('dispatch_id', dispatchIds);\n\n  if (commentError) {\n    console.warn('Credit Dispatch comment count lookup failed.', commentError.message);\n    return rows.map((row) => ({ ...row, comment_count: 0 }));\n  }\n\n  const commentCounts = new Map<string, number>();\n  for (const event of commentEvents ?? []) {\n    const dispatchId = String(event.dispatch_id ?? '');\n    if (!dispatchId) continue;\n    commentCounts.set(dispatchId, (commentCounts.get(dispatchId) ?? 0) + 1);\n  }\n\n  return rows.map((row) => ({ ...row, comment_count: commentCounts.get(row.id) ?? 0 }));\n}`;
@@ -39,12 +39,12 @@ function write(relativePath, source) {
   const relativePath = 'src/features/credit-dispatch/CreditDispatchListPage.tsx';
   let source = read(relativePath);
 
-  if (!source.includes('aria-label={`${row.comment_count} comments`}')) {
+  if (!source.includes('Number(row.comment_count ?? 0) > 0')) {
     const dispatchIdPattern = /<p className="([^"]*)">\{row\.dispatch_no \?\? 'Pending No\.'\}<\/p>/g;
     let replacements = 0;
     source = source.replace(dispatchIdPattern, (_match, className) => {
       replacements += 1;
-      return `<div className="flex min-w-0 items-center gap-2"><p className="${className}">{row.dispatch_no ?? 'Pending No.'}</p>{Number(row.comment_count ?? 0) > 0 ? <span aria-label={\`${'${row.comment_count}'} comments\`} title={\`${'${row.comment_count}'} comment${'${Number(row.comment_count) === 1 ? \'\' : \'s\'}'}\`} className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">{row.comment_count}</span> : null}</div>`;
+      return `<div className="flex min-w-0 items-center gap-2"><p className="${className}">{row.dispatch_no ?? 'Pending No.'}</p>{Number(row.comment_count ?? 0) > 0 ? <span aria-label={String(row.comment_count) + ' comments'} title={String(row.comment_count) + ' comments'} className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-none text-white">{row.comment_count}</span> : null}</div>`;
     });
 
     if (replacements < 2) throw new Error(`Expected dispatch ID markup in mobile and desktop views; found ${replacements}.`);
