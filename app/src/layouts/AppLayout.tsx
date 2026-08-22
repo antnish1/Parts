@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ListOrdered,
   LogOut,
+  MapPin,
   Menu,
   PackageSearch,
   ScanLine,
@@ -42,9 +43,10 @@ const navItems: NavItem[] = [
   { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert, desktopGroup: 'Orders', desktopOrder: 12 },
   { to: '/approvals/pending', label: 'Approvals', icon: ClipboardCheck, desktopGroup: 'Approvals', desktopOrder: 20 },
   { to: '/admin/approved', label: 'Admin', icon: Boxes, desktopLabel: 'Approved Orders', desktopIcon: ShieldCheck, desktopGroup: 'Approvals', desktopOrder: 21 },
-  { to: '/manager/dashboard', label: 'Inventory', icon: PackageSearch, desktopIcon: Warehouse, desktopGroup: 'Inventory', desktopOrder: 40 },
-  { to: '/uploads', label: 'Uploads', icon: Upload, desktopGroup: 'Inventory', desktopOrder: 41 },
-  { to: '/inventory/upload', label: 'Inventory Upload', icon: Boxes, desktopIcon: Database, desktopGroup: 'Inventory', desktopOrder: 42 },
+  { to: '/parts/location-finder', label: 'Part Location', icon: MapPin, desktopLabel: 'Part Location Finder', desktopGroup: 'Inventory', desktopOrder: 40 },
+  { to: '/manager/dashboard', label: 'Inventory', icon: PackageSearch, desktopIcon: Warehouse, desktopGroup: 'Inventory', desktopOrder: 41 },
+  { to: '/uploads', label: 'Uploads', icon: Upload, desktopGroup: 'Inventory', desktopOrder: 42 },
+  { to: '/inventory/upload', label: 'Inventory Upload', icon: Boxes, desktopIcon: Database, desktopGroup: 'Inventory', desktopOrder: 43 },
   { to: '/reports', label: 'Reports', icon: Users, desktopIcon: BarChart3, desktopGroup: 'Insights', desktopOrder: 50 },
   { to: '/docket-scanner', label: 'Docket', icon: ScanLine, desktopLabel: 'Docket Scanner', desktopGroup: 'Operations', desktopOrder: 32 },
   { to: '/developer/workspace', label: 'Developer', icon: Settings, desktopGroup: 'Administration', desktopOrder: 60 },
@@ -53,6 +55,7 @@ const navItems: NavItem[] = [
 function getDesktopPageTitle(pathname: string, items: NavItem[]) {
   if (pathname.startsWith('/approvals/review/')) return 'Approval Review';
   if (/^\/orders\/[^/]+$/.test(pathname)) return 'Order Details';
+  if (pathname === '/parts/location-finder/manage') return 'Manage Part Location';
   if (pathname.startsWith('/credit-dispatch/reports')) return 'Credit Dispatch Reports';
   if (pathname.startsWith('/credit-dispatch/aging')) return 'Credit Aging';
   if (pathname.startsWith('/credit-dispatch/customers')) return 'Credit Customers';
