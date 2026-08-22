@@ -40,6 +40,8 @@ const NewCreditDispatchPage = lazyNamed(() => import('../features/credit-dispatc
 const TadaTrackingPage = lazyNamed(() => import('../features/tada/TadaTrackingPage'), 'TadaTrackingPage');
 const TadaNewDispatchPage = lazyNamed(() => import('../features/tada/TadaNewDispatchV2Page'), 'TadaNewDispatchV2Page');
 const TadaDispatchDetailPage = lazyNamed(() => import('../features/tada/TadaDispatchDetailPage'), 'TadaDispatchDetailPage');
+const PartLocationFinderPage = lazyNamed(() => import('../features/part-location/PartLocationFinderPage'), 'PartLocationFinderPage');
+const ManagePartLocationPage = lazyNamed(() => import('../features/part-location/ManagePartLocationPage'), 'ManagePartLocationPage');
 
 function RouteFallback() { return <div className="flex min-h-[120px] items-center justify-center rounded-lg border border-[#d8e0ea] bg-white text-xs font-semibold text-[#64748b]">Loading page…</div>; }
 function RoleLanding() { const { role, isAuthenticated, isLoading } = useAuth(); if (isLoading) return null; if (!isAuthenticated || !role) return <Navigate to="/login" replace />; return <Navigate to={roleHomePath[role]} replace />; }
@@ -63,6 +65,8 @@ export function AppRouter() {
           <Route path="/ta-da" element={<TadaTrackingPage />} />
           <Route path="/ta-da/new" element={<TadaNewDispatchPage />} />
           <Route path="/ta-da/:dispatchId" element={<TadaDispatchDetailPage />} />
+          <Route path="/parts/location-finder" element={<PartLocationFinderPage />} />
+          <Route path="/parts/location-finder/manage" element={<ManagePartLocationPage />} />
           <Route path="/approvals/review/:reviewOrderId" element={<ApprovalsPage />} />
           <Route path="/approvals/:queue" element={<ApprovalsPage />} />
           <Route path="/admin/:queue" element={<AdminPage />} />
