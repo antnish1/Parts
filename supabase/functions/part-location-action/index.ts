@@ -41,11 +41,23 @@ serve(async (req) => {
     const user = userData.user;
     if (userError || !user) return fail('Unauthorized. Please logout and login again.', 'UNAUTHORIZED', 401);
 
-    const { data: profile } = await adminClient
+    let profile: { id?: string; role?: string | null; is_active?: boolean | null } | null = null;
+    const { data: authProfile } = await adminClient
       .from('portal_profiles')
       .select('id, role, is_active')
       .eq('auth_user_id', user.id)
       .maybeSingle();
+    profile = authProfile;
+
+    if (!profile && user.email?.endsWith('@portal.local')) {
+      const loginId = user.email.split('@')[0].trim().toUpperCase();
+      const { data: legacyProfile } = await adminClient
+        .from('portal_profiles')
+        .select('id, role, is_active')
+        .ilike('legacy_user_id', loginId)
+        .maybeSingle();
+      profile = legacyProfile;
+    }
 
     const body = await req.json().catch(() => ({}));
     const action = clean(body.action).toLowerCase() || 'lookup';
