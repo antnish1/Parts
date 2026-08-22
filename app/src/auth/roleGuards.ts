@@ -17,9 +17,12 @@ function isUploadsWorkspace(path: string) { return path.startsWith('/uploads'); 
 function isCreditDispatchWorkspace(path: string) { return path.startsWith('/credit-dispatch'); }
 function isInstallationWorkspace(path: string) { return path.startsWith('/installations'); }
 function isTadaWorkspace(path: string) { return path === '/ta-da' || path.startsWith('/ta-da/'); }
+function isPartLocationWorkspace(path: string) { return path === '/parts/location-finder' || path.startsWith('/parts/location-finder/'); }
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  if (path === '/parts/location-finder/manage') return ['manager', 'admin', 'developer'].includes(role);
+  if (isPartLocationWorkspace(path)) return true;
   if (isTadaWorkspace(path)) return ['branch', 'manager', 'hq', 'developer', 'accounts'].includes(role);
   if (role === 'accounts') return false;
   if (isInstallationWorkspace(path)) return true;

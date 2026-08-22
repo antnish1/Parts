@@ -18,14 +18,14 @@ function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label
 function primaryItems(items: NavItem[], role?: UserRole) {
   const visible = items.filter((item) => shouldShowNavItem(role, item));
   const preferred = role === 'branch'
-    ? ['/orders/new', '/orders/track', '/docket-scanner']
+    ? ['/orders/new', '/orders/track', '/parts/location-finder', '/docket-scanner']
     : role === 'admin'
-      ? ['/', '/admin/approved', '/orders/track', '/docket-scanner']
+      ? ['/', '/orders/track', '/parts/location-finder', '/docket-scanner']
       : role === 'manager'
-        ? ['/', '/approvals/pending', '/manager/dashboard', '/reports']
+        ? ['/', '/approvals/pending', '/parts/location-finder', '/manager/dashboard']
         : role === 'developer'
-          ? ['/', '/orders/track', '/developer/workspace', '/docket-scanner']
-          : ['/', '/orders/track', '/docket-scanner'];
+          ? ['/', '/orders/track', '/parts/location-finder', '/developer/workspace']
+          : ['/', '/orders/track', '/parts/location-finder', '/docket-scanner'];
   const selected = preferred.map((to) => visible.find((item) => item.to === to)).filter(Boolean) as NavItem[];
   const unique = [...new Map(selected.map((item) => [item.to, item])).values()];
   return { primary: unique.slice(0, 4), all: visible };
