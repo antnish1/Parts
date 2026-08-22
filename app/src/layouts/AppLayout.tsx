@@ -76,6 +76,8 @@ export function AppLayout() {
   const isManager = profile?.role === 'manager';
   const isAccounts = profile?.role === 'accounts';
   const isDeveloper = profile?.role === 'developer';
+  const normalizedBranch = (profile?.branch ?? '').trim().replace(/\s+/g, '_').toUpperCase();
+  const isJabalpurParts = normalizedBranch === 'JABALPUR_PARTS';
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const adminCounterQuery = useQuery({
@@ -100,15 +102,17 @@ export function AppLayout() {
   const developerTadaCount = managerTadaCount + accountsTadaCount;
 
   const roleNavItems = useMemo(
-    () => navItems.map((item) => {
-      if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
-      if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
-      if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
-      if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
-      if (item.to === '/ta-da' && isDeveloper && developerTadaCount > 0) return { ...item, badge: developerTadaCount };
-      return item;
-    }),
-    [accountsTadaCount, approvedOrdersCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isManager, managerApprovalCount, managerTadaCount],
+    () => navItems
+      .filter((item) => item.to !== '/parts/location-finder' || isJabalpurParts)
+      .map((item) => {
+        if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
+        if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
+        if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
+        if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
+        if (item.to === '/ta-da' && isDeveloper && developerTadaCount > 0) return { ...item, badge: developerTadaCount };
+        return item;
+      }),
+    [accountsTadaCount, approvedOrdersCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isJabalpurParts, isManager, managerApprovalCount, managerTadaCount],
   );
 
   const desktopPageTitle = useMemo(
