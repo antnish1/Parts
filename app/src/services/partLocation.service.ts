@@ -17,20 +17,28 @@ function normalizePartNo(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
 }
 
-async function invokePartLocationAction<T>(body: Record<string, unknown>): Promise<ActionResponse<T>> {
-  const { data, error } = await supabase.functions.invoke('part-location-action', { body });
-  if (error) {
-    const maybeResponse = error as { context?: Response; message?: string };
-    if (maybeResponse.context) {
+async function readFunctionError(error: unknown) {
+  const maybeError = error as { context?: unknown; message?: string };
+  const context = maybeError?.context;
+
+  if (context && typeof context === 'object') {
+    const json = (context as { json?: unknown }).json;
+    if (typeof json === 'function') {
       try {
-        const payload = await maybeResponse.context.clone().json();
-        throw new Error(String(payload?.error || maybeResponse.message || 'Part location action failed.'));
-      } catch (parseError) {
-        if (parseError instanceof Error && parseError.message !== 'Unexpected end of JSON input') throw parseError;
+        const payload = await (json as () => Promise<{ error?: unknown }>)();
+        if (payload?.error) return String(payload.error);
+      } catch {
+        // The response body may already be consumed or may not be JSON.
       }
     }
-    throw new Error(maybeResponse.message || 'Part location action failed.');
   }
+
+  return maybeError?.message || 'Part location action failed.';
+}
+
+async function invokePartLocationAction<T>(body: Record<string, unknown>): Promise<ActionResponse<T>> {
+  const { data, error } = await supabase.functions.invoke('part-location-action', { body });
+  if (error) throw new Error(await readFunctionError(error));
   if (data?.ok === false || data?.error) throw new Error(String(data.error || 'Part location action failed.'));
   return data as ActionResponse<T>;
 }
