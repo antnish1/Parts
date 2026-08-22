@@ -11,6 +11,12 @@ The feature lives in the active React app under `app/` and reuses the portal's e
 - `/parts/location-finder` — lookup screen. Available to authenticated portal roles.
 - `/parts/location-finder/manage` — location maintenance. Frontend access is restricted to Manager, Admin, and Developer roles; the backend independently enforces the same write-role rule.
 
+## Navigation visibility
+
+The **Part Location** menu option is shown only when the logged-in user's `portal_profiles.branch` normalizes to `JABALPUR_PARTS`. This rule is intentionally independent of role: any role assigned to the JABALPUR_PARTS branch can see the navigation item, while users assigned to other branches do not see it.
+
+The frontend normalizes branch text by trimming, converting whitespace to underscores, and uppercasing before comparison, so `JABALPUR PARTS` and `JABALPUR_PARTS` are treated equivalently for menu visibility.
+
 ## Data model
 
 Location data is stored separately from `part_master` in `public.part_locations`.
@@ -54,7 +60,7 @@ The finder is card-based rather than table-based. It provides:
 - description/DNP enrichment when available;
 - large touch-friendly location cards;
 - clear empty/error states;
-- a primary mobile navigation entry for key operational roles.
+- a primary mobile navigation entry only for users assigned to the JABALPUR_PARTS branch.
 
 The management page provides:
 
