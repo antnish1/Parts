@@ -4,6 +4,7 @@ import { PageCard } from '../../components/ui/PageCard';
 import { uploadInventoryExcel } from '../../services/inventoryUploadWriter';
 import { applyStatusReportRows, downloadStatusReportResultExcel, parseStatusReportFile, previewStatusReportRows, type StatusReportResult, type StatusReportRow } from '../../services/statusReport.service';
 import { readUploadMeta, saveUploadMeta, uploadProgress, type UploadMeta } from '../../lib/uploadMeta';
+import { DealerPriceListUploadSection } from './DealerPriceListUploadSection';
 
 export function UploadsPage() {
   const queryClient = useQueryClient();
@@ -157,7 +158,7 @@ export function UploadsPage() {
   const canDownloadStatusReport = !!statusResult?.reportRows?.length && !isStatusUploading;
 
   return (
-    <PageCard eyebrow="Uploads" title="Uploads" description="Central upload workspace for inventory and order status files.">
+    <PageCard eyebrow="Uploads" title="Uploads" description="Central upload workspace for inventory, order status, and controlled master-data files.">
       <div className="grid gap-3 xl:grid-cols-2">
         <section className="rounded-xl border border-[#263244] bg-[#0b1020] p-3">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -202,6 +203,8 @@ export function UploadsPage() {
           {previewRows.length ? <div className="mt-3 max-h-64 overflow-auto rounded-lg border border-[#d9dee7] bg-[#ffffff] text-[11px]"><table className="w-full min-w-[760px] border-collapse"><thead className="bg-[#f3f6fb] text-left uppercase tracking-[0.08em] text-[#667085]"><tr><th className="px-2 py-2">Result</th><th className="px-2 py-2">Order No</th><th className="px-2 py-2">Part No</th><th className="px-2 py-2">Billed</th><th className="px-2 py-2">Current</th><th className="px-2 py-2">Reason</th></tr></thead><tbody>{previewRows.slice(0, 50).map((row, index) => <tr key={`${row.orderNo}-${row.partNo}-${index}`} className="border-t border-[#edf1f6]"><td className="px-2 py-2 font-black text-[#101827]">{row.status}</td><td className="px-2 py-2">{row.orderNo}</td><td className="px-2 py-2 font-black">{row.partNo}</td><td className="px-2 py-2">{row.billedQty ?? '-'}</td><td className="px-2 py-2">{row.currentRowStatus ?? '-'} {row.currentBilledQty !== undefined ? `• billed ${row.currentBilledQty}` : ''}</td><td className="px-2 py-2">{row.warning || row.reason}</td></tr>)}</tbody></table>{previewRows.length > 50 ? <p className="border-t border-[#edf1f6] p-2 text-[#667085]">Showing first 50 preview rows out of {previewRows.length}.</p> : null}</div> : null}
           {statusResult?.errors.length ? <div className="mt-2 max-h-24 overflow-auto rounded-md border border-[#d9dee7] bg-[#f8fafc] p-2 text-[11px] text-[#475569]">{statusResult.errors.slice(0, 10).map((item) => <p key={item}>{item}</p>)}</div> : null}
         </section>
+
+        <DealerPriceListUploadSection />
       </div>
     </PageCard>
   );
