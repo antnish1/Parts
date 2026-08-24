@@ -1,4 +1,4 @@
 Parts Connect Portal release marker.
 
 Release marker updated: 2026-08-24.
-Purpose: deploy Dealer Price List uploader with staged preview and transactional publish workflow.
+Purpose: deploy Dealer Price List duplicate-resolution review before staging.
