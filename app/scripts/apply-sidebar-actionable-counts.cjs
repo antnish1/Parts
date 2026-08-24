@@ -24,10 +24,7 @@ replaceOnce(
 
 function isDelayedVorOrder(order: Awaited<ReturnType<typeof getOrderList>>[number], eligibleOrderIds: Set<string>) {
   const type = String(order.order_type ?? '').trim().toUpperCase();
-  if (type !== 'VOR' || !eligibleOrderIds.has(String(order.id)) || !order.processed_date) return false;
-  const processedAt = new Date(order.processed_date).getTime();
-  if (!Number.isFinite(processedAt)) return false;
-  return Math.floor((Date.now() - processedAt) / 86_400_000) > 3;
+  return type === 'VOR' && eligibleOrderIds.has(String(order.id));
 }
 
 export function AppLayout() {`,
@@ -48,7 +45,7 @@ replaceOnce(
 
 replaceOnce(
   `  const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
-  const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;`,
+  const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => \`${order.status} ${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;`,
   `  const delayedVorItemsQuery = useQuery({
     queryKey: ['delayed-vor-nav-item-status-orders'],
     queryFn: getDelayedVorEligibleOrderIds,
@@ -67,7 +64,7 @@ replaceOnce(
   const eligibleDelayedVorOrderIds = new Set(delayedVorItemsQuery.data ?? []);
   const creditDispatches = creditDispatchCounterQuery.data ?? [];
   const approvedOrdersCount = orders.filter((order) => order.status === 'approved').length;
-  const managerApprovalCount = orders.filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
+  const managerApprovalCount = orders.filter((order) => \`${order.status} ${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
   const delayedVorCount = orders.filter((order) => isDelayedVorOrder(order, eligibleDelayedVorOrderIds)).length;
   const managerCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Approval').length;
   const branchKey = normalizeBranch(profile?.branch);
