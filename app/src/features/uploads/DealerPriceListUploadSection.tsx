@@ -66,6 +66,7 @@ export function DealerPriceListUploadSection() {
   });
 
   const currentPublished = useMemo(() => historyQuery.data?.find((row) => row.status === 'published') ?? null, [historyQuery.data]);
+  const inputLocked = step === 'reading' || step === 'staging' || step === 'publishing' || Boolean(preview);
 
   if (!canManage) return null;
 
@@ -142,9 +143,9 @@ export function DealerPriceListUploadSection() {
       </div>
 
       <div className="grid gap-2 md:grid-cols-[160px_1fr_auto]">
-        <input type="month" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" value={month} onChange={(event) => setMonth(event.target.value)} disabled={step === 'staging' || step === 'publishing'} />
-        <input type="file" accept=".xlsx,.xls" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" onChange={(event) => setFile(event.target.files?.[0] ?? null)} disabled={step === 'staging' || step === 'publishing'} />
-        <button className="rounded-md bg-[#1677ff] px-4 py-2 text-xs font-black text-white hover:bg-[#0f5ed7] disabled:opacity-40" disabled={!file || !month || step === 'reading' || step === 'staging' || step === 'publishing'} onClick={() => void handlePreview()}>{step === 'reading' || step === 'staging' ? 'Preparing...' : 'Preview Price List'}</button>
+        <input type="month" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" value={month} onChange={(event) => setMonth(event.target.value)} disabled={inputLocked} />
+        <input type="file" accept=".xlsx,.xls" className="rounded-md border border-[#263244] bg-[#111827] px-2.5 py-2 text-xs text-white outline-none focus:border-[#82C8E5]" onChange={(event) => setFile(event.target.files?.[0] ?? null)} disabled={inputLocked} />
+        <button className="rounded-md bg-[#1677ff] px-4 py-2 text-xs font-black text-white hover:bg-[#0f5ed7] disabled:opacity-40" disabled={!file || !month || inputLocked} onClick={() => void handlePreview()}>{step === 'reading' || step === 'staging' ? 'Preparing...' : 'Preview Price List'}</button>
       </div>
 
       <p className="mt-2 text-[11px] text-[#6D8196]">Expected columns: Material, Description, DNP, RTL, MRP, HSN, GST, Cat 1, Cat 2.</p>
