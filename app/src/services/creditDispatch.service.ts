@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { ensureSalesEmployeeName } from './salesEmployee.service';
 
 export type CreditDispatchRecord = {
   id: string;
@@ -22,6 +23,7 @@ export type CreditDispatchRecord = {
   correction_note?: string | null;
   customer_signature_path: string | null;
   issuer_signature_path: string | null;
+  sales_employee_name: string | null;
   approved_by?: string | null;
   approved_at?: string | null;
   created_at: string;
@@ -39,6 +41,7 @@ export type CreditDispatchFormInput = {
   creditAmount: number;
   tentativeClosureDays: 7 | 15 | 30;
   remarks: string;
+  salesEmployeeName?: string;
   customerSignatureDataUrl: string;
   issuerSignatureDataUrl: string;
 };
@@ -111,6 +114,7 @@ function validateRequestInput(input: CreditDispatchFormInput) {
   if (!input.documentNo.trim()) throw new Error('Document no. is required.');
   if (!input.documentDate) throw new Error('Document date is required.');
   if (!input.creditAmount || input.creditAmount <= 0) throw new Error('Credit amount must be greater than zero.');
+  if (!(input.salesEmployeeName ?? '').trim()) throw new Error('Sales employee name is required.');
   if (!input.customerSignatureDataUrl) throw new Error('Customer signature is required.');
   if (!input.issuerSignatureDataUrl) throw new Error('Issuing official signature is required.');
 }
@@ -126,8 +130,71 @@ export async function getCreditDispatches() {
   return ((data ?? []) as CreditDispatchRecord[]).map(withDerivedRecoveryStatus);
 }
 
+export async function getCreditDispatchById(dispatchId: string) {
+  const { data, error } = await supabase
+    .from('portal_credit_dispatches')
+    .select('*')
+    .eq('id', dispatchId)
+    .single();
+  if (error) throw error;
+  return withDerivedRecoveryStatus(data as CreditDispatchRecord);
+}
+
+function normalizeBranch(value: string | null | undefined) {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+export async function resubmitCorrectedCreditDispatch(dispatchId: string, input: CreditDispatchFormInput, loggedInBranch: string) {
+  validateRequestInput(input);
+  const current = await getCreditDispatchById(dispatchId);
+  if (current.approval_status !== 'Correction Required') throw new Error('This request is no longer awaiting correction.');
+  if (normalizeBranch(current.branch) !== normalizeBranch(loggedInBranch)) throw new Error('This request belongs to another branch.');
+
+  const salesEmployeeName = await ensureSalesEmployeeName(input.salesEmployeeName ?? '');
+  const customerSignaturePath = await uploadSignature(input.customerSignatureDataUrl, 'customer');
+  const issuerSignaturePath = await uploadSignature(input.issuerSignatureDataUrl, 'issuer');
+  const nowIso = new Date().toISOString();
+  const dueDate = calculateDueDate(input.documentDate, input.tentativeClosureDays);
+
+  const { data, error } = await supabase
+    .from('portal_credit_dispatches')
+    .update({
+      customer_name: input.customerName.trim(),
+      customer_type: input.customerType,
+      mobile_no: input.mobileNo.trim(),
+      document_type: input.documentType,
+      document_no: input.documentNo.trim(),
+      document_date: input.documentDate,
+      credit_amount: input.creditAmount,
+      tentative_closure_days: input.tentativeClosureDays,
+      due_date: dueDate,
+      remarks: input.remarks.trim() || null,
+      sales_employee_name: salesEmployeeName,
+      customer_signature_path: customerSignaturePath,
+      issuer_signature_path: issuerSignaturePath,
+      customer_signed_at: nowIso,
+      issuer_signed_at: nowIso,
+      approval_status: 'Pending Approval',
+      correction_note: null,
+      rejection_reason: null,
+      approved_by: null,
+      approved_at: null,
+      updated_at: nowIso,
+    })
+    .eq('id', dispatchId)
+    .eq('approval_status', 'Correction Required')
+    .eq('branch', current.branch)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  await addEvent(dispatchId, 'Corrected and Resubmitted', 'Branch corrected the complete request, captured fresh customer and issuer signatures, and resubmitted it for manager approval.');
+  return data as CreditDispatchRecord;
+}
+
 export async function createCreditDispatch(input: CreditDispatchFormInput) {
   validateRequestInput(input);
+  const salesEmployeeName = await ensureSalesEmployeeName(input.salesEmployeeName ?? '');
   const customerSignaturePath = await uploadSignature(input.customerSignatureDataUrl, 'customer');
   const issuerSignaturePath = await uploadSignature(input.issuerSignatureDataUrl, 'issuer');
   const nowIso = new Date().toISOString();
@@ -147,6 +214,7 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
       due_date: new Date(new Date(input.documentDate).getTime() + input.tentativeClosureDays * 86400000).toISOString().slice(0, 10),
       approval_status: 'Pending Approval',
       remarks: input.remarks.trim() || null,
+      sales_employee_name: salesEmployeeName,
       customer_signature_path: customerSignaturePath,
       issuer_signature_path: issuerSignaturePath,
       customer_signed_at: nowIso,
