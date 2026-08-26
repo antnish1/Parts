@@ -69,6 +69,63 @@ if (!pageSource.includes("['Sales Employee', form.salesEmployeeName")) {
 }
 fs.writeFileSync(pagePath, pageSource);
 
+// The correction page is introduced by a separate prebuild patch. Keep the
+// Sales Employee field guaranteed here as well so correction/resubmit cannot
+// regress when the generated route or page is rebuilt from an older source.
+const editPagePath = path.resolve(__dirname, '../src/features/credit-dispatch/EditCreditDispatchPage.tsx');
+if (fs.existsSync(editPagePath)) {
+  let editPageSource = fs.readFileSync(editPagePath, 'utf8');
+
+  if (!editPageSource.includes("from './SalesEmployeeAutocomplete'")) {
+    editPageSource = replaceOnce(
+      editPageSource,
+      "import { SignaturePad } from './SignaturePad';",
+      "import { SignaturePad } from './SignaturePad';\nimport { SalesEmployeeAutocomplete } from './SalesEmployeeAutocomplete';",
+      'correction sales employee autocomplete import',
+    );
+  }
+
+  if (!editPageSource.includes("salesEmployeeName: row.sales_employee_name ?? ''")) {
+    editPageSource = replaceOnce(
+      editPageSource,
+      `      remarks: row.remarks ?? '',\n      customerSignatureDataUrl: '',`,
+      `      remarks: row.remarks ?? '',\n      salesEmployeeName: row.sales_employee_name ?? '',\n      customerSignatureDataUrl: '',`,
+      'correction sales employee initial value',
+    );
+  }
+
+  if (!editPageSource.includes("if (!form.salesEmployeeName?.trim())")) {
+    editPageSource = replaceOnce(
+      editPageSource,
+      `      if (!amount || amount <= 0) throw new Error('Credit amount must be greater than zero.');\n      if (!form.customerSignatureDataUrl || !form.issuerSignatureDataUrl)`,
+      `      if (!amount || amount <= 0) throw new Error('Credit amount must be greater than zero.');\n      if (!form.salesEmployeeName?.trim()) throw new Error('Sales employee name is required.');\n      if (!form.customerSignatureDataUrl || !form.issuerSignatureDataUrl)`,
+      'correction sales employee validation',
+    );
+  }
+
+  if (!editPageSource.includes('salesEmployeeName: form.salesEmployeeName.toUpperCase()')) {
+    editPageSource = replaceOnce(
+      editPageSource,
+      `        remarks: form.remarks.toUpperCase(),\n        creditAmount: amount,`,
+      `        remarks: form.remarks.toUpperCase(),\n        salesEmployeeName: (form.salesEmployeeName ?? '').toUpperCase(),\n        creditAmount: amount,`,
+      'correction sales employee submit value',
+    );
+  }
+
+  if (!editPageSource.includes('<SalesEmployeeAutocomplete')) {
+    const remarksMarker = `<label className="md:col-span-2"><span className="mb-1 block text-xs font-semibold text-slate-500">Remarks</span>`;
+    const correctionField = `<label className="md:col-span-2"><span className="mb-1 block text-xs font-semibold text-slate-500">Sales Employee Name</span><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></label>\n          `;
+    editPageSource = replaceOnce(
+      editPageSource,
+      remarksMarker,
+      `${correctionField}${remarksMarker}`,
+      'correction sales employee field',
+    );
+  }
+
+  fs.writeFileSync(editPagePath, editPageSource);
+}
+
 const servicePath = path.resolve(__dirname, '../src/services/creditDispatch.service.ts');
 let serviceSource = fs.readFileSync(servicePath, 'utf8');
 
