@@ -10,6 +10,7 @@ import {
   resubmitCorrectedCreditDispatch,
   type CreditDispatchFormInput,
 } from '../../services/creditDispatch.service';
+import { SalesEmployeeAutocomplete } from './SalesEmployeeAutocomplete';
 import { SignaturePad } from './SignaturePad';
 
 const customerTypes = ['Major Account', 'Retailer', 'Customer'] as const;
@@ -50,6 +51,7 @@ export function EditCreditDispatchPage() {
       creditAmount: String(row.credit_amount ?? ''),
       tentativeClosureDays: row.tentative_closure_days,
       remarks: row.remarks ?? '',
+      salesEmployeeName: row.sales_employee_name ?? '',
       customerSignatureDataUrl: '',
       issuerSignatureDataUrl: '',
     });
@@ -68,6 +70,7 @@ export function EditCreditDispatchPage() {
       if (!form.documentNo.trim()) throw new Error('Document number is required.');
       if (!form.documentDate) throw new Error('Document date is required.');
       if (!amount || amount <= 0) throw new Error('Credit amount must be greater than zero.');
+      if (!form.salesEmployeeName?.trim()) throw new Error('Sales employee name is required.');
       if (!form.customerSignatureDataUrl || !form.issuerSignatureDataUrl) throw new Error('Fresh customer and issuer signatures are required.');
       return resubmitCorrectedCreditDispatch(dispatchId, {
         ...form,
@@ -75,6 +78,7 @@ export function EditCreditDispatchPage() {
         customerName: form.customerName.toUpperCase(),
         documentNo: form.documentNo.toUpperCase(),
         remarks: form.remarks.toUpperCase(),
+        salesEmployeeName: form.salesEmployeeName.toUpperCase(),
         creditAmount: amount,
       }, profile?.branch ?? '');
     },
@@ -115,6 +119,7 @@ export function EditCreditDispatchPage() {
           <label><span className="mb-1 block text-xs font-semibold text-slate-500">Credit Amount</span><input className={inputClass} type="number" min="0" value={form.creditAmount} onChange={(e) => update('creditAmount', e.target.value)} /></label>
           <label><span className="mb-1 block text-xs font-semibold text-slate-500">Tentative Closure</span><select className={inputClass} value={form.tentativeClosureDays} onChange={(e) => update('tentativeClosureDays', Number(e.target.value) as EditState['tentativeClosureDays'])}>{closureOptions.map((x) => <option key={x} value={x}>Within {x} Days</option>)}</select></label>
           <label><span className="mb-1 block text-xs font-semibold text-slate-500">Due Date</span><input className={`${inputClass} bg-slate-50`} value={dueDate} readOnly /></label>
+          <label className="md:col-span-2"><span className="mb-1 block text-xs font-semibold text-slate-500">Sales Employee Name</span><SalesEmployeeAutocomplete inputClassName={inputClass} value={form.salesEmployeeName ?? ''} onChange={(value) => update('salesEmployeeName', value)} /></label>
           <label className="md:col-span-2"><span className="mb-1 block text-xs font-semibold text-slate-500">Remarks</span><textarea className={`${inputClass} min-h-24`} value={form.remarks} onChange={(e) => update('remarks', e.target.value)} /></label>
         </div>
       </section>
