@@ -1,11 +1,11 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { MapPin, Plus, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { findPartLocations, type PartLocation } from '../../services/partLocation.service';
-import { lookupTestPartByNo, type TestPart } from '../../services/testPart.service';
+import { lookupTestPartByNo, suggestTestParts, type TestPart } from '../../services/testPart.service';
 
 const RECENT_KEY = 'pc-part-location-recent';
 const WRITE_ROLES = new Set(['manager', 'admin', 'developer']);
@@ -40,8 +40,42 @@ export function PartLocationFinderPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [lookupWarning, setLookupWarning] = useState('');
   const [error, setError] = useState('');
+  const [suggestions, setSuggestions] = useState<TestPart[]>([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const canManage = useMemo(() => WRITE_ROLES.has(profile?.role ?? ''), [profile?.role]);
+
+  useEffect(() => {
+    const query = normalizePartNo(partNo);
+    if (query.length < 2 || query === searchedPartNo) {
+      setSuggestions([]);
+      setIsSuggesting(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSuggesting(true);
+    const timer = window.setTimeout(() => {
+      void suggestTestParts(query)
+        .then((items) => {
+          if (cancelled) return;
+          setSuggestions(items);
+          setShowSuggestions(true);
+        })
+        .catch(() => {
+          if (!cancelled) setSuggestions([]);
+        })
+        .finally(() => {
+          if (!cancelled) setIsSuggesting(false);
+        });
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [partNo, searchedPartNo]);
 
   async function searchForPart(rawPartNo: string) {
     const normalized = normalizePartNo(rawPartNo);
@@ -95,14 +129,50 @@ export function PartLocationFinderPage() {
               <input
                 id="part-location-search"
                 value={partNo}
-                onChange={(event) => setPartNo(event.target.value)}
+                onChange={(event) => {
+                  setPartNo(event.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => {
+                  if (suggestions.length > 0) setShowSuggestions(true);
+                }}
+                onBlur={() => window.setTimeout(() => setShowSuggestions(false), 120)}
                 placeholder="Enter part number"
                 autoCapitalize="characters"
                 autoComplete="off"
+                aria-autocomplete="list"
+                aria-expanded={showSuggestions && (isSuggesting || suggestions.length > 0)}
+                aria-controls="part-location-suggestions"
                 enterKeyHint="search"
                 className="h-11 w-full rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-9 text-sm font-bold text-[#0f172a] outline-none transition focus:border-[#0f4c81] focus:ring-2 focus:ring-[#0f4c81]/10"
               />
-              {partNo ? <button type="button" onClick={() => setPartNo('')} aria-label="Clear part number" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"><X className="h-4 w-4" /></button> : null}
+              {partNo ? <button type="button" onClick={() => { setPartNo(''); setSuggestions([]); setShowSuggestions(false); }} aria-label="Clear part number" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"><X className="h-4 w-4" /></button> : null}
+
+              {showSuggestions && (isSuggesting || suggestions.length > 0) ? (
+                <div id="part-location-suggestions" role="listbox" className="absolute left-0 right-0 top-[48px] z-30 max-h-72 overflow-y-auto rounded-xl border border-[#d9e2ec] bg-white p-1.5 shadow-xl">
+                  {isSuggesting && suggestions.length === 0 ? (
+                    <div className="px-3 py-2 text-xs font-semibold text-[#64748b]">Finding matching parts…</div>
+                  ) : null}
+                  {suggestions.map((item) => (
+                    <button
+                      key={item.part_no}
+                      type="button"
+                      role="option"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        setPartNo(item.part_no);
+                        setSuggestions([]);
+                        setShowSuggestions(false);
+                        void searchForPart(item.part_no);
+                      }}
+                      className="block w-full rounded-lg px-3 py-2 text-left hover:bg-[#eef8ff] focus:bg-[#eef8ff] focus:outline-none"
+                    >
+                      <span className="block text-sm font-black text-[#0f172a]">{item.part_no}</span>
+                      {item.description ? <span className="mt-0.5 block truncate text-xs font-semibold text-[#64748b]">{item.description}</span> : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
             <Button type="submit" disabled={isSearching} className="h-11 shrink-0 rounded-xl px-4">{isSearching ? 'Searching…' : 'Search'}</Button>
           </div>

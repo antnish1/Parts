@@ -119,6 +119,43 @@ async function lookupParts(adminClient: ReturnType<typeof createClient>, partNos
   return targets.map((partNo) => allFound.get(partNo)).filter(Boolean) as Part[];
 }
 
+async function suggestParts(adminClient: ReturnType<typeof createClient>, query: string) {
+  const term = normalizePartNo(query);
+  if (term.length < 2) return [];
+
+  const found = new Map<string, Part>();
+  const patterns = [`${term}%`, `%${term}%`];
+
+  for (const pattern of patterns) {
+    for (const column of PART_COLUMNS) {
+      if (found.size >= 12) break;
+
+      const { data, error } = await adminClient
+        .from('part_master')
+        .select('*')
+        .ilike(column, pattern)
+        .limit(12);
+
+      if (error) continue;
+
+      ((data ?? []) as RawRow[]).forEach((row) => {
+        const mapped = mapPartMasterRow(row);
+        if (!mapped || found.has(mapped.part_no)) return;
+        found.set(mapped.part_no, mapped);
+      });
+    }
+    if (found.size >= 12) break;
+  }
+
+  return [...found.values()]
+    .sort((a, b) => {
+      const aStarts = a.part_no.startsWith(term) ? 0 : 1;
+      const bStarts = b.part_no.startsWith(term) ? 0 : 1;
+      return aStarts - bStarts || a.part_no.localeCompare(b.part_no);
+    })
+    .slice(0, 12);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json({ ok: false, error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' }, 405);
@@ -135,6 +172,12 @@ serve(async (req) => {
     if (!userData.user) return fail('Unauthorized. Please logout and login again.', 'UNAUTHORIZED');
 
     const body = await req.json().catch(() => ({}));
+    const suggestQuery = clean(body.suggestQuery);
+    if (suggestQuery) {
+      const suggestions = await suggestParts(adminClient, suggestQuery);
+      return json({ ok: true, suggestions });
+    }
+
     const bodyPartNos = Array.isArray(body.partNos) ? body.partNos : [];
     const partNos = bodyPartNos.length ? bodyPartNos : [body.partNo];
     const parts = await lookupParts(adminClient, partNos);
