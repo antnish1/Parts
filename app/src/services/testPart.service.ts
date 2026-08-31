@@ -64,6 +64,19 @@ export async function lookupTestPartByNo(partNo: string): Promise<TestPart | nul
   return normalizePartResponse(data?.part);
 }
 
+export async function suggestTestParts(query: string): Promise<TestPart[]> {
+  const normalized = normalizePartNo(query);
+  if (normalized.length < 2) return [];
+
+  const { data, error } = await supabase.functions.invoke('lookup-part-action', {
+    body: { suggestQuery: normalized },
+  });
+
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.ok === false || data?.error) throw new Error(friendlyPartError(String(data.error || 'Part lookup failed.')));
+  return ((data?.suggestions ?? []) as unknown[]).map(normalizePartResponse).filter(Boolean) as TestPart[];
+}
+
 export async function lookupTestPartsByNos(partNos: string[]): Promise<TestPart[]> {
   const normalized = [...new Set(partNos.map(normalizePartNo).filter(Boolean))];
   if (!normalized.length) return [];
