@@ -43,6 +43,7 @@ export function PartLocationFinderPage() {
   const [suggestions, setSuggestions] = useState<TestPart[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [hasSuggested, setHasSuggested] = useState(false);
 
   const canManage = useMemo(() => WRITE_ROLES.has(profile?.role ?? ''), [profile?.role]);
 
@@ -51,20 +52,26 @@ export function PartLocationFinderPage() {
     if (query.length < 2 || query === searchedPartNo) {
       setSuggestions([]);
       setIsSuggesting(false);
+      setHasSuggested(false);
       return;
     }
 
     let cancelled = false;
     setIsSuggesting(true);
+    setHasSuggested(false);
     const timer = window.setTimeout(() => {
       void suggestTestParts(query)
         .then((items) => {
           if (cancelled) return;
           setSuggestions(items);
+          setHasSuggested(true);
           setShowSuggestions(true);
         })
         .catch(() => {
-          if (!cancelled) setSuggestions([]);
+          if (!cancelled) {
+            setSuggestions([]);
+            setHasSuggested(true);
+          }
         })
         .finally(() => {
           if (!cancelled) setIsSuggesting(false);
@@ -141,17 +148,20 @@ export function PartLocationFinderPage() {
                 autoCapitalize="characters"
                 autoComplete="off"
                 aria-autocomplete="list"
-                aria-expanded={showSuggestions && (isSuggesting || suggestions.length > 0)}
+                aria-expanded={showSuggestions && (isSuggesting || hasSuggested)}
                 aria-controls="part-location-suggestions"
                 enterKeyHint="search"
                 className="h-11 w-full rounded-xl border border-[#cbd5e1] bg-white pl-9 pr-9 text-sm font-bold text-[#0f172a] outline-none transition focus:border-[#0f4c81] focus:ring-2 focus:ring-[#0f4c81]/10"
               />
-              {partNo ? <button type="button" onClick={() => { setPartNo(''); setSuggestions([]); setShowSuggestions(false); }} aria-label="Clear part number" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"><X className="h-4 w-4" /></button> : null}
+              {partNo ? <button type="button" onClick={() => { setPartNo(''); setSuggestions([]); setHasSuggested(false); setShowSuggestions(false); }} aria-label="Clear part number" className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"><X className="h-4 w-4" /></button> : null}
 
-              {showSuggestions && (isSuggesting || suggestions.length > 0) ? (
+              {showSuggestions && (isSuggesting || hasSuggested) ? (
                 <div id="part-location-suggestions" role="listbox" className="absolute left-0 right-0 top-[48px] z-30 max-h-72 overflow-y-auto rounded-xl border border-[#d9e2ec] bg-white p-1.5 shadow-xl">
                   {isSuggesting && suggestions.length === 0 ? (
                     <div className="px-3 py-2 text-xs font-semibold text-[#64748b]">Finding matching parts…</div>
+                  ) : null}
+                  {!isSuggesting && hasSuggested && suggestions.length === 0 ? (
+                    <div className="px-3 py-2 text-xs font-semibold text-[#64748b]">No matching parts found.</div>
                   ) : null}
                   {suggestions.map((item) => (
                     <button
