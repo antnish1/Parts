@@ -123,37 +123,41 @@ async function suggestParts(adminClient: ReturnType<typeof createClient>, query:
   const term = normalizePartNo(query);
   if (term.length < 2) return [];
 
+  const selectColumns = 'PartNo,Description,DNP,Cat1,Cat2,PartNoNormalized';
   const found = new Map<string, Part>();
-  const patterns = [`${term}%`, `%${term}%`];
 
-  for (const pattern of patterns) {
-    for (const column of PART_COLUMNS) {
-      if (found.size >= 12) break;
+  const { data: prefixRows, error: prefixError } = await adminClient
+    .from('part_master')
+    .select(selectColumns)
+    .ilike('PartNoNormalized', `${term}%`)
+    .order('PartNo')
+    .limit(12);
 
-      const { data, error } = await adminClient
-        .from('part_master')
-        .select('*')
-        .ilike(column, pattern)
-        .limit(12);
+  if (prefixError) throw prefixError;
 
-      if (error) continue;
+  ((prefixRows ?? []) as RawRow[]).forEach((row) => {
+    const mapped = mapPartMasterRow(row);
+    if (mapped) found.set(mapped.part_no, mapped);
+  });
 
-      ((data ?? []) as RawRow[]).forEach((row) => {
-        const mapped = mapPartMasterRow(row);
-        if (!mapped || found.has(mapped.part_no)) return;
-        found.set(mapped.part_no, mapped);
-      });
-    }
-    if (found.size >= 12) break;
+  if (found.size < 12) {
+    const remaining = 12 - found.size;
+    const { data: containsRows, error: containsError } = await adminClient
+      .from('part_master')
+      .select(selectColumns)
+      .ilike('PartNoNormalized', `%${term}%`)
+      .order('PartNo')
+      .limit(Math.max(remaining * 2, remaining));
+
+    if (containsError) throw containsError;
+
+    ((containsRows ?? []) as RawRow[]).forEach((row) => {
+      const mapped = mapPartMasterRow(row);
+      if (mapped && !found.has(mapped.part_no)) found.set(mapped.part_no, mapped);
+    });
   }
 
-  return [...found.values()]
-    .sort((a, b) => {
-      const aStarts = a.part_no.startsWith(term) ? 0 : 1;
-      const bStarts = b.part_no.startsWith(term) ? 0 : 1;
-      return aStarts - bStarts || a.part_no.localeCompare(b.part_no);
-    })
-    .slice(0, 12);
+  return [...found.values()].slice(0, 12);
 }
 
 serve(async (req) => {
