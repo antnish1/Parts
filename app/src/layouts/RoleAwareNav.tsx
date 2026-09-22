@@ -82,11 +82,15 @@ function SubmenuItem({ item, role, collapsed }: { item: NavItem; role?: UserRole
       {open ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
     </button>
     {open ? <div className="ml-5 space-y-0.5 border-l border-[#314158] pl-2">
-      {children.map((child) => <NavLink
-        key={child.to}
-        to={child.to}
-        className={`block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isChildRouteActive(child.to, location.pathname) ? 'bg-white text-[#0b4d8a]' : '!text-white hover:bg-[#263244] hover:!text-white'}`}
-      >{child.label}</NavLink>)}
+      {children.map((child) => {
+        const active = isChildRouteActive(child.to, location.pathname);
+        return <NavLink
+          key={child.to}
+          to={child.to}
+          style={{ color: active ? '#0b4d8a' : '#ffffff' }}
+          className={`block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${active ? 'bg-white' : 'hover:bg-[#263244]'}`}
+        >{child.label}</NavLink>;
+      })}
     </div> : null}
   </div>;
 }

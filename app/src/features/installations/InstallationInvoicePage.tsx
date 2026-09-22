@@ -154,10 +154,22 @@ export function InstallationInvoicePage() {
           <input value={dbmsNo} onChange={(e) => setDbmsNo(e.target.value.toUpperCase())} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase" />
         </label>
         <label className="text-xs font-semibold text-[#334155]">JCB Invoice *
-          <span className="mt-1 flex h-10 cursor-pointer items-center rounded-md border border-[#cbd5e1] bg-white px-3 text-sm font-normal text-[#334155] hover:border-[#94a3b8]">
-            <span className="min-w-0 flex-1 truncate">{file?.name ?? 'Choose file'}</span>
-            <Upload className="ml-2 h-4 w-4 shrink-0 text-[#0f5fa8]" />
-            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <span className="relative mt-1 block">
+            <input
+              type="text"
+              readOnly
+              tabIndex={-1}
+              value={file?.name ?? ''}
+              placeholder="Choose file"
+              className="h-10 w-full cursor-pointer rounded-md border border-[#cbd5e1] bg-white px-3 pr-10 text-sm font-normal text-[#334155] placeholder:text-[#64748b]"
+            />
+            <Upload className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-[#0f5fa8]" />
+            <input
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            />
           </span>
         </label>
       </div>
