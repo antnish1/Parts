@@ -11,8 +11,10 @@ if (!source.includes(serviceImport)) {
 }
 
 const legacyItem = `  { to: '/installations', label: 'Installations', icon: Settings, desktopLabel: 'Engine Installations', desktopGroup: 'Operations', desktopOrder: 32 },`;
-const item = `  { to: '/installations', label: 'Engine & Breaker', icon: Settings, desktopLabel: 'Engine & Breaker', desktopGroup: 'Operations', desktopOrder: 32 },`;
+const flatItem = `  { to: '/installations', label: 'Engine & Breaker', icon: Settings, desktopLabel: 'Engine & Breaker', desktopGroup: 'Operations', desktopOrder: 32 },`;
+const item = `  { to: '/installations', label: 'Engine & Breaker', icon: Settings, desktopLabel: 'Engine & Breaker', desktopGroup: 'Operations', desktopOrder: 32, children: [{ to: '/installations/invoices', label: 'Invoice' }, { to: '/installations', label: 'Register' }] },`;
 if (source.includes(legacyItem)) source = source.replace(legacyItem, item);
+if (source.includes(flatItem)) source = source.replace(flatItem, item);
 if (!source.includes(item)) {
   const preferred = `  { to: '/credit-dispatch', label: 'Credit Dispatch', icon: FileSignature, desktopIcon: Truck, desktopGroup: 'Operations', desktopOrder: 30 },`;
   const fallback = `  { to: '/docket-scanner', label: 'Docket', icon: ScanLine, desktopLabel: 'Docket Scanner', desktopGroup: 'Operations', desktopOrder: 31 },`;
