@@ -12,6 +12,7 @@ import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerR
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
+import { getInTransitQtyByBranchParts } from '../../services/inTransit.service';
 import { getCommentAttachmentSignedUrl, uploadCommentAttachment } from '../../services/commentAttachment.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, getResolvedRowStatus, normalizePartNo } from '../../lib/orderLogic';
 import type { TestOrder } from '../../services/testData.service';
@@ -73,6 +74,12 @@ export function OrderDetailPage() {
     queryFn: () => getInventoryQtyByBranchParts(data!.order.branch, data!.items.map((item) => item.part_no)),
     enabled: !!data?.order.branch && data.items.length > 0,
   });
+  const inTransitQuery = useQuery({
+    queryKey: ['order-detail-in-transit', data?.order.branch, data?.items.map((item) => item.part_no).join('|')],
+    queryFn: () => getInTransitQtyByBranchParts(data!.order.branch, data!.items.map((item) => item.part_no)),
+    enabled: !!data?.order.branch && data.items.length > 0,
+    staleTime: 0,
+  });
   const commentMutation = useMutation({
     mutationFn: async () => {
       const comment = await addTestOrderComment(orderId, commentText);
@@ -95,6 +102,7 @@ export function OrderDetailPage() {
 
   const { order, items, events, comments } = data;
   const inventoryMap = inventoryQuery.data ?? {};
+  const inTransitMap = inTransitQuery.data ?? {};
   const status = getOrderStatusLabel({ ...order, items });
   const rawStatus = (order.status || '').toLowerCase();
   const workflowStatusKey = normalizeWorkflowStatus(`${order.status ?? ''} ${order.approval_status ?? ''} ${status ?? ''} ${items.map((item) => getResolvedRowStatus(item)).join(' ')}`);
@@ -613,10 +621,11 @@ export function OrderDetailPage() {
 
       <section className="mt-3 rounded-xl border border-[#d9dee7] bg-white p-3">
         <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-[#0f4c81]">Part Details</p>
+        {inTransitQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">In Transit quantity could not be loaded. Refresh the page or contact Developer support.</p> : null}
         <div className="overflow-hidden rounded-lg border border-[#d9dee7]">
           <table className="w-full min-w-[1540px] border-collapse text-left text-xs">
             <thead className="bg-[#f3f6fb] text-[10px] uppercase tracking-[0.12em] text-[#344054]">
-              <tr><th className="px-2 py-2">Chunks</th><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th><th className="px-2 py-2 text-right">PrevQty 30d</th></tr>
+              <tr><th className="px-2 py-2">Chunks</th><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2 text-right">In Transit</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th></tr>
             </thead>
             <tbody className="divide-y divide-[#e4e7ec] bg-white">
               {items.map((item) => {
@@ -635,7 +644,7 @@ export function OrderDetailPage() {
                           </button>
                         ) : <span className="text-[#94a3b8]">-</span>}
                       </td>
-                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td><td className="px-2 py-2 text-right text-[#0f172a]">{item.previous_30d_qty ?? 0}</td>
+                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-right">{inTransitQuery.isLoading ? <span className="text-[#8fa1b5]">...</span> : inTransitQuery.isError ? <span className="font-black text-[#b42318]">—</span> : (inTransitMap[normalizePartNo(item.part_no)] ?? 0) > 0 ? <span className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full border border-[#e7b94d] bg-[#fff7d6] px-2 py-0.5 font-black text-[#7a5200]" title="This part already has quantity in transit for this branch">⚠ {inTransitMap[normalizePartNo(item.part_no)] ?? 0}</span> : <span className="text-[#0f172a]">0</span>}</td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td>
                     </tr>
                     {isExpanded ? (
                       <tr>
