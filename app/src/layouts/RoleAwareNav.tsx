@@ -85,7 +85,7 @@ function SubmenuItem({ item, role, collapsed }: { item: NavItem; role?: UserRole
       {children.map((child) => <NavLink
         key={child.to}
         to={child.to}
-        className={`block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isChildRouteActive(child.to, location.pathname) ? 'bg-white text-[#0b4d8a]' : 'text-[#b8c7d9] hover:bg-[#263244] hover:text-white'}`}
+        className={`block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isChildRouteActive(child.to, location.pathname) ? 'bg-white text-[#0b4d8a]' : '!text-white hover:bg-[#263244] hover:!text-white'}`}
       >{child.label}</NavLink>)}
     </div> : null}
   </div>;
