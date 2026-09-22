@@ -153,8 +153,12 @@ export function InstallationInvoicePage() {
         <label className="text-xs font-semibold text-[#334155]">DBMS No.
           <input value={dbmsNo} onChange={(e) => setDbmsNo(e.target.value.toUpperCase())} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase" />
         </label>
-        <label className="text-xs font-semibold text-[#334155] md:col-span-2">JCB Invoice *
-          <span className="mt-1 flex h-10 cursor-pointer items-center gap-2 rounded-md border border-[#cbd5e1] bg-[#f8fafc] px-3 text-sm font-medium text-[#334155]"><Upload className="h-4 w-4 text-[#0f5fa8]" /><span className="min-w-0 flex-1 truncate">{file?.name ?? 'Upload PDF / JPG / PNG / WEBP'}</span><input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></span>
+        <label className="text-xs font-semibold text-[#334155]">JCB Invoice *
+          <span className="mt-1 flex h-10 cursor-pointer items-center rounded-md border border-[#cbd5e1] bg-white px-3 text-sm font-normal text-[#334155] hover:border-[#94a3b8]">
+            <span className="min-w-0 flex-1 truncate">{file?.name ?? 'Choose file'}</span>
+            <Upload className="ml-2 h-4 w-4 shrink-0 text-[#0f5fa8]" />
+            <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          </span>
         </label>
       </div>
       <div className="mt-4 flex justify-end"><button type="button" disabled={saveMutation.isPending} onClick={save} className="h-9 rounded-md bg-[#0f5fa8] px-6 text-xs font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? 'Saving…' : 'Save'}</button></div>
