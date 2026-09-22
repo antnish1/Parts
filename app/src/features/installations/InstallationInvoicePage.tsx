@@ -193,7 +193,7 @@ export function InstallationInvoicePage() {
           <td className="px-3 py-2">{row.serial_no}</td>
           <td className="px-3 py-2">{row.dbms_no || '-'}</td>
           <td className="px-3 py-2"><button type="button" onClick={async () => window.open(await getInstallationInvoiceDocumentUrl(row.document_path), '_blank', 'noopener,noreferrer')} className="inline-flex items-center gap-1 font-semibold text-[#075fb8]"><FileText className="h-3.5 w-3.5" />{row.document_name}</button></td>
-          <td className="px-3 py-2 text-right">{row.installation_id ? <button type="button" onClick={() => navigate(`/installations/${row.installation_id}`)} className="h-8 rounded-md border border-[#b9cee2] bg-[#eef7ff] px-3 text-[11px] font-semibold text-[#0b4d8a]">Registered</button> : <button type="button" onClick={() => navigate(`/installations/new?invoice=${row.id}`)} className="h-8 rounded-md bg-[#0f5fa8] px-3 text-[11px] font-semibold text-white">Register</button>}</td>
+          <td className="px-3 py-2 text-right">{row.installation_id ? <button type="button" onClick={() => navigate(`/installations/${row.installation_id}`)} className="h-8 rounded-md border border-[#b9cee2] bg-[#eef7ff] px-3 text-[11px] font-semibold text-[#0b4d8a]">Registered</button> : <button type="button" onClick={() => navigate('/installations/new', { state: { sourceInvoiceId: row.id } })} className="h-8 rounded-md bg-[#0f5fa8] px-3 text-[11px] font-semibold text-white">Register</button>}</td>
         </tr>)}</tbody>
       </table>{filtered.length === 0 ? <p className="p-5 text-center text-xs text-[#64748b]">No invoice details found.</p> : null}</div>}
     </section>
