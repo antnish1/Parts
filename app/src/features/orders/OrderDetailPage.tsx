@@ -707,13 +707,10 @@ export function OrderDetailPage() {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0f172a]/45 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-label="In Transit details" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedInTransit(null); }}>
           <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#d9dee7] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-[#e4e7ec] px-6 py-5">
-              <div>
-                <h2 className="text-xl font-black text-[#0f172a]">In Transit</h2>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#475569]">
-                  <span>Part No. <strong className="ml-1 text-[#0f172a]">{selectedInTransit.partNo}</strong></span>
-                  <span className="hidden h-4 w-px bg-[#cbd5e1] sm:block" />
-                  <span>Qty (In Transit) <strong className="ml-1 text-[#0f172a]">{selectedInTransit.qty}</strong></span>
-                </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#475569]">
+                <span>Part No. <strong className="ml-1 text-[#0f172a]">{selectedInTransit.partNo}</strong></span>
+                <span className="hidden h-4 w-px bg-[#cbd5e1] sm:block" />
+                <span>Qty In Transit <strong className="ml-1 text-[#0f172a]">{selectedInTransit.qty}</strong></span>
               </div>
               <button type="button" onClick={() => setSelectedInTransit(null)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a]" aria-label="Close In Transit details"><X className="h-5 w-5" /></button>
             </div>
@@ -725,20 +722,21 @@ export function OrderDetailPage() {
                 <div className="overflow-x-auto rounded-lg border border-[#d9dee7]">
                   <table className="w-full min-w-[760px] border-collapse text-left text-xs">
                     <thead className="bg-[#f3f6fb] text-[10px] uppercase tracking-[0.12em] text-[#475569]">
-                      <tr><th className="px-4 py-3">Branch</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">For</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Qty</th></tr>
+                      <tr><th className="px-4 py-3">Branch</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Order No.</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">For</th><th className="px-4 py-3">Status</th><th className="px-4 py-3 text-right">Qty</th></tr>
                     </thead>
                     <tbody className="divide-y divide-[#e4e7ec] bg-white">
                       {(inTransitDetailsQuery.data ?? []).map((detail) => (
                         <tr key={`${detail.order_id}-${detail.order_no ?? ''}-${detail.qty}`} className="hover:bg-[#f8fbff]">
                           <td className="px-4 py-3 font-semibold text-[#334155]">{detail.branch || '-'}</td>
                           <td className="px-4 py-3"><span className="inline-flex rounded-full border border-[#b9d5ef] bg-[#eef7ff] px-2.5 py-1 text-[10px] font-black uppercase text-[#1d4ed8]">{detail.order_type || '-'}</span></td>
+                          <td className="px-4 py-3"><button type="button" onClick={() => { setSelectedInTransit(null); navigate(`/orders/${detail.order_id}`); }} className="font-black text-[#0f5fa8] hover:underline">{detail.order_no || '-'}</button></td>
                           <td className="whitespace-nowrap px-4 py-3 text-[#475569]">{formatDateOnly(detail.order_date)}</td>
                           <td className="px-4 py-3 text-[#334155]">{detail.order_for || '-'}</td>
                           <td className="px-4 py-3"><StatusBadge status={detail.status || '-'} /></td>
                           <td className="px-4 py-3 text-right font-black text-[#0f172a]">{detail.qty}</td>
                         </tr>
                       ))}
-                      {(inTransitDetailsQuery.data ?? []).length === 0 ? <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#64748b]">No active In Transit rows found.</td></tr> : null}
+                      {(inTransitDetailsQuery.data ?? []).length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#64748b]">No active In Transit rows found.</td></tr> : null}
                     </tbody>
                   </table>
                 </div>
