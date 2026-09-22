@@ -15,8 +15,14 @@ function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label
   return role ? canAccessRoute(role, item.to) : true;
 }
 
+function expandItems(items: NavItem[]): NavItem[] {
+  return items.flatMap((item) => item.children?.length
+    ? item.children.map((child) => ({ ...item, to: child.to, label: child.label, desktopLabel: child.label, children: undefined }))
+    : [item]);
+}
+
 function primaryItems(items: NavItem[], role?: UserRole) {
-  const visible = items.filter((item) => shouldShowNavItem(role, item));
+  const visible = expandItems(items).filter((item) => shouldShowNavItem(role, item));
   const preferred = role === 'branch'
     ? ['/orders/new', '/orders/track', '/parts/location-finder', '/docket-scanner']
     : role === 'admin'
