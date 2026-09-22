@@ -12,7 +12,8 @@ import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerR
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
-import { getInTransitDetails, getInTransitQtyByBranchParts } from '../../services/inTransit.service';
+import { getInTransitQtyByBranchParts } from '../../services/inTransit.service';
+import { getInTransitDetails } from '../../services/inTransit.service';
 import { getCommentAttachmentSignedUrl, uploadCommentAttachment } from '../../services/commentAttachment.service';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getOrderStatusLabel, getResolvedRowStatus, normalizePartNo } from '../../lib/orderLogic';
 import type { TestOrder } from '../../services/testData.service';
@@ -704,7 +705,7 @@ export function OrderDetailPage() {
 
       {selectedInTransit ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0f172a]/45 p-4 backdrop-blur-[1px]" role="dialog" aria-modal="true" aria-label="In Transit details" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedInTransit(null); }}>
-          <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-[#d9dee7] bg-white shadow-2xl">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-[#d9dee7] bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-[#e4e7ec] px-6 py-5">
               <div>
                 <h2 className="text-xl font-black text-[#0f172a]">In Transit</h2>
@@ -717,7 +718,7 @@ export function OrderDetailPage() {
               <button type="button" onClick={() => setSelectedInTransit(null)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a]" aria-label="Close In Transit details"><X className="h-5 w-5" /></button>
             </div>
 
-            <div className="max-h-[55vh] overflow-auto px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-auto px-6 py-5">
               {inTransitDetailsQuery.isLoading ? <p className="py-6 text-center text-sm text-[#64748b]">Loading In Transit details...</p> : null}
               {inTransitDetailsQuery.isError ? <p className="rounded-lg border border-[#f2c8c8] bg-[#fff7f7] px-3 py-2 text-sm font-semibold text-[#b42318]">Unable to load In Transit details. Please refresh and try again.</p> : null}
               {!inTransitDetailsQuery.isLoading && !inTransitDetailsQuery.isError ? (
