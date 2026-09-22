@@ -154,16 +154,20 @@ export function InstallationInvoicePage() {
           <input value={dbmsNo} onChange={(e) => setDbmsNo(e.target.value.toUpperCase())} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase" />
         </label>
         <div className="text-xs font-semibold text-[#334155]">
-          <span className="mb-1 block">JCB Invoice *</span>
-          <label className="relative block cursor-pointer">
-            <div className="flex h-10 w-full items-center rounded-md border border-[#cbd5e1] bg-white px-3 text-sm font-normal text-[#334155]">
-              <span className="min-w-0 flex-1 truncate">{file?.name ?? ''}</span>
-              <Upload className="h-4 w-4 shrink-0 text-[#0f5fa8]" />
-            </div>
+          <span className="block">JCB Invoice *</span>
+          <label className="relative mt-1 block cursor-pointer">
+            <input
+              type="text"
+              readOnly
+              value={file?.name ?? ''}
+              aria-label="Selected JCB invoice file"
+              className="h-10 w-full cursor-pointer rounded-md border border-[#cbd5e1] bg-white px-3 pr-9 text-sm font-normal text-[#334155]"
+            />
+            <Upload className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-[#0f5fa8]" />
             <input
               type="file"
               accept="application/pdf,image/jpeg,image/png,image/webp"
-              className="hidden"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
           </label>
