@@ -38,12 +38,19 @@ function shouldShowNavItem(role: UserRole | undefined, item: NavItem) {
   return shouldShowRoute(role, item.to);
 }
 
+function isChildRouteActive(to: string, pathname: string) {
+  if (to === '/installations') {
+    return pathname === '/installations' || (pathname.startsWith('/installations/') && !pathname.startsWith('/installations/invoices'));
+  }
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
 function SubmenuItem({ item, role, collapsed }: { item: NavItem; role?: UserRole; collapsed: boolean }) {
   const location = useLocation();
   const Icon = item.desktopIcon ?? item.icon;
   const label = item.desktopLabel ?? item.label;
   const children = (item.children ?? []).filter((child) => shouldShowRoute(role, child.to));
-  const childActive = children.some((child) => location.pathname === child.to || (child.to !== '/installations' && location.pathname.startsWith(`${child.to}/`)));
+  const childActive = children.some((child) => isChildRouteActive(child.to, location.pathname));
   const [open, setOpen] = useState(childActive);
 
   useEffect(() => {
@@ -78,8 +85,7 @@ function SubmenuItem({ item, role, collapsed }: { item: NavItem; role?: UserRole
       {children.map((child) => <NavLink
         key={child.to}
         to={child.to}
-        end={child.to === '/installations'}
-        className={({ isActive }) => `block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isActive ? 'bg-white text-[#0b4d8a]' : 'text-[#b8c7d9] hover:bg-[#263244] hover:text-white'}`}
+        className={`block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isChildRouteActive(child.to, location.pathname) ? 'bg-white text-[#0b4d8a]' : 'text-[#b8c7d9] hover:bg-[#263244] hover:text-white'}`}
       >{child.label}</NavLink>)}
     </div> : null}
   </div>;
