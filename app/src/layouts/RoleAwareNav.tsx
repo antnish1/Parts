@@ -1,7 +1,13 @@
-import { Fragment } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Fragment, useEffect, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { canAccessRoute, type UserRole } from '../auth/roleGuards';
+
+export type NavChild = {
+  to: string;
+  label: string;
+};
 
 export type NavItem = {
   to: string;
@@ -12,6 +18,7 @@ export type NavItem = {
   desktopIcon?: LucideIcon;
   desktopGroup?: string;
   desktopOrder?: number;
+  children?: NavChild[];
 };
 
 type RoleAwareNavProps = {
@@ -20,10 +27,62 @@ type RoleAwareNavProps = {
   collapsed?: boolean;
 };
 
-function shouldShowNavItem(role: UserRole | undefined, item: { to: string; label: string }) {
-  if (role === 'admin' && item.to.startsWith('/admin')) return false;
-  if (role === 'super' && item.to.startsWith('/approvals')) return false;
-  return role ? canAccessRoute(role, item.to) : true;
+function shouldShowRoute(role: UserRole | undefined, to: string) {
+  if (role === 'admin' && to.startsWith('/admin')) return false;
+  if (role === 'super' && to.startsWith('/approvals')) return false;
+  return role ? canAccessRoute(role, to) : true;
+}
+
+function shouldShowNavItem(role: UserRole | undefined, item: NavItem) {
+  if (item.children?.length) return item.children.some((child) => shouldShowRoute(role, child.to));
+  return shouldShowRoute(role, item.to);
+}
+
+function SubmenuItem({ item, role, collapsed }: { item: NavItem; role?: UserRole; collapsed: boolean }) {
+  const location = useLocation();
+  const Icon = item.desktopIcon ?? item.icon;
+  const label = item.desktopLabel ?? item.label;
+  const children = (item.children ?? []).filter((child) => shouldShowRoute(role, child.to));
+  const childActive = children.some((child) => location.pathname === child.to || (child.to !== '/installations' && location.pathname.startsWith(`${child.to}/`)));
+  const [open, setOpen] = useState(childActive);
+
+  useEffect(() => {
+    if (childActive) setOpen(true);
+  }, [childActive]);
+
+  if (collapsed) {
+    const destination = children[0]?.to ?? item.to;
+    return <NavLink
+      to={destination}
+      title={label}
+      className={`pc-nav-link relative flex items-center justify-center rounded-md px-2.5 py-1.5 text-xs font-extrabold transition ${childActive ? 'bg-[#82C8E5] text-[#000080]' : 'text-[#d8e3ee] hover:bg-[#263244] hover:text-white'}`}
+    >
+      <Icon className="pc-nav-icon h-3.5 w-3.5 shrink-0" />
+      {typeof item.badge === 'number' ? <span className="pc-nav-badge absolute right-1 top-1 h-2 w-2 rounded-full bg-[#dc2626]" /> : null}
+    </NavLink>;
+  }
+
+  return <div className="space-y-0.5">
+    <button
+      type="button"
+      onClick={() => setOpen((value) => !value)}
+      className={`pc-nav-link relative flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs font-extrabold transition ${childActive ? 'bg-[#82C8E5] text-[#000080]' : 'text-[#d8e3ee] hover:bg-[#263244] hover:text-white'}`}
+      aria-expanded={open}
+    >
+      <Icon className="pc-nav-icon h-3.5 w-3.5 shrink-0" />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {typeof item.badge === 'number' ? <span className="pc-nav-badge rounded-full bg-[#dc2626] px-1.5 py-0.5 text-[10px] font-black leading-none text-white shadow-sm">{item.badge}</span> : null}
+      {open ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+    </button>
+    {open ? <div className="ml-5 space-y-0.5 border-l border-[#314158] pl-2">
+      {children.map((child) => <NavLink
+        key={child.to}
+        to={child.to}
+        end={child.to === '/installations'}
+        className={({ isActive }) => `block rounded-md px-2 py-1.5 text-[11px] font-bold transition ${isActive ? 'bg-white text-[#0b4d8a]' : 'text-[#b8c7d9] hover:bg-[#263244] hover:text-white'}`}
+      >{child.label}</NavLink>)}
+    </div> : null}
+  </div>;
 }
 
 export function RoleAwareNav({ items, role, collapsed = false }: RoleAwareNavProps) {
@@ -44,7 +103,7 @@ export function RoleAwareNav({ items, role, collapsed = false }: RoleAwareNavPro
         return (
           <Fragment key={item.to}>
             {showGroup ? <p className="pc-nav-group">{group}</p> : null}
-            <NavLink
+            {item.children?.length ? <SubmenuItem item={item} role={role} collapsed={collapsed} /> : <NavLink
               to={item.to}
               title={collapsed ? label : undefined}
               className={({ isActive }) =>
@@ -57,7 +116,7 @@ export function RoleAwareNav({ items, role, collapsed = false }: RoleAwareNavPro
               {!collapsed ? <span className="min-w-0 flex-1 truncate">{label}</span> : null}
               {typeof item.badge === 'number' && !collapsed ? <span className="pc-nav-badge rounded-full bg-[#dc2626] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#ffffff] shadow-sm">{item.badge}</span> : null}
               {typeof item.badge === 'number' && collapsed ? <span className="pc-nav-badge absolute right-1 top-1 h-2 w-2 rounded-full bg-[#dc2626]" /> : null}
-            </NavLink>
+            </NavLink>}
           </Fragment>
         );
       })}
