@@ -232,10 +232,11 @@ export async function getInstallationDocumentUrl(path: string): Promise<string> 
   return data.signedUrl;
 }
 
-export async function submitInstallationEntry(id: string, equipmentNo: string, dbmsInvoiceNo: string, svrNo: string) {
+export async function submitInstallationEntry(id: string, equipmentNo: string, jcbInvoiceNo: string, dbmsInvoiceNo: string, svrNo: string) {
   const { error } = await supabase.rpc('portal_submit_installation_entry', {
     p_installation_id: id,
     p_equipment_no: equipmentNo,
+    p_jcb_invoice_no: jcbInvoiceNo,
     p_dbms_invoice_no: dbmsInvoiceNo,
     p_svr_no: svrNo,
   });
