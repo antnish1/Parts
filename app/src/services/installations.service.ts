@@ -9,7 +9,7 @@ export type InstallationItem = { id?: string; part_no: string; description: stri
 export type InstallationDocument = { id: string; installation_id: string; document_type: InstallationDocumentType; storage_path: string; file_name: string; mime_type: string; file_size: number; uploaded_at: string; is_active: boolean };
 export type InstallationEntry = {
   id: string; entry_no: string; equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string;
-  customer_name: string; equipment_no: string | null; status: InstallationStatus; jcb_invoice_no: string | null; svr_no: string | null;
+  customer_name: string; equipment_no: string | null; status: InstallationStatus; jcb_invoice_no: string | null; dbms_no: string | null; dbms_invoice_no: string | null; svr_no: string | null;
   equipment_registration_no: string | null; created_at: string; branch_submitted_at: string | null; accepted_at: string | null;
   portal_installation_items?: InstallationItem[]; portal_installation_documents?: InstallationDocument[];
 };
@@ -34,7 +34,7 @@ export type InstallationInvoice = {
 type MessageError = { message: string } | null;
 function throwIfError(error: MessageError) { if (error) throw new Error(error.message); }
 
-const entrySelect = 'id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,equipment_no,status,jcb_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)';
+const entrySelect = 'id,entry_no,equipment_type,invoice_date,branch,invoice_no,customer_name,equipment_no,status,jcb_invoice_no,dbms_no,dbms_invoice_no,svr_no,equipment_registration_no,created_at,branch_submitted_at,accepted_at,portal_installation_items(id,part_no,description,quantity),portal_installation_documents(id,installation_id,document_type,storage_path,file_name,mime_type,file_size,uploaded_at,is_active)';
 
 export async function listInstallationEntries(): Promise<InstallationEntry[]> {
   const { data, error } = await supabase.from('portal_installation_entries').select(entrySelect).order('created_at', { ascending: false });
@@ -232,8 +232,13 @@ export async function getInstallationDocumentUrl(path: string): Promise<string> 
   return data.signedUrl;
 }
 
-export async function submitInstallationEntry(id: string, equipmentNo: string, jcbInvoiceNo: string, svrNo: string) {
-  const { error } = await supabase.rpc('portal_submit_installation_entry', { p_installation_id: id, p_equipment_no: equipmentNo, p_jcb_invoice_no: jcbInvoiceNo, p_svr_no: svrNo });
+export async function submitInstallationEntry(id: string, equipmentNo: string, dbmsInvoiceNo: string, svrNo: string) {
+  const { error } = await supabase.rpc('portal_submit_installation_entry', {
+    p_installation_id: id,
+    p_equipment_no: equipmentNo,
+    p_dbms_invoice_no: dbmsInvoiceNo,
+    p_svr_no: svrNo,
+  });
   throwIfError(error);
 }
 
