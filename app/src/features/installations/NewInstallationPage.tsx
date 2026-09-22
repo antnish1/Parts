@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Download, FileSpreadsheet, Search, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PageCard } from '../../components/ui/PageCard';
@@ -11,6 +11,7 @@ import {
   createInstallationEntry,
   findPartMasterMatches,
   getExistingInstallationInvoiceNos,
+  getInstallationInvoice,
   getPartMasterDescriptions,
   listInstallationBranches,
   type EquipmentType,
@@ -72,6 +73,8 @@ function norm(value: string) {
 
 export function NewInstallationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sourceInvoiceId = searchParams.get('invoice') ?? '';
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [equipmentType, setEquipmentType] = useState<EquipmentType>('ENGINE');
   const [invoiceDate, setInvoiceDate] = useState(today);
@@ -91,6 +94,12 @@ export function NewInstallationPage() {
   const [importMessage, setImportMessage] = useState('');
 
   const branches = useQuery({ queryKey: ['installation-branches'], queryFn: listInstallationBranches });
+  const sourceInvoice = useQuery({
+    queryKey: ['installation-invoice', sourceInvoiceId],
+    queryFn: () => getInstallationInvoice(sourceInvoiceId),
+    enabled: Boolean(sourceInvoiceId),
+    staleTime: 30000,
+  });
   const mutation = useMutation({
     mutationFn: createInstallationEntry,
     onSuccess: (id) => navigate(`/installations/${id}`, { replace: true }),
@@ -116,7 +125,20 @@ export function NewInstallationPage() {
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
+  useEffect(() => {
+    const source = sourceInvoice.data;
+    if (!source) return;
+    setEquipmentType(source.equipment_type);
+    setInvoiceDate(source.invoice_date);
+    setInvoiceNo(source.dbms_no || source.jcb_invoice_no);
+    setPartNo(source.part_no);
+    setDescription(source.description);
+    setMatches([]);
+    setDropdownOpen(false);
+  }, [sourceInvoice.data]);
+
   async function changePart(value: string) {
+    if (sourceInvoiceId) return;
     const next = norm(value);
     setPartNo(next);
     setDescription('');
@@ -160,6 +182,7 @@ export function NewInstallationPage() {
       invoice_no: norm(invoiceNo),
       customer_name: customerName.trim(),
       items: [{ part_no: partNo, description: description.trim(), quantity }],
+      source_invoice_id: sourceInvoiceId || undefined,
     });
   }
 
@@ -259,10 +282,13 @@ export function NewInstallationPage() {
   const dropdown = inputRef.current?.getBoundingClientRect();
 
   return <PageCard eyebrow="Installation Management" title="Add New Engine & Breaker Entry" description="Create one installation entry manually or upload multiple entries from Excel">
-    <div className="flex flex-wrap items-center justify-between gap-2"><div className="inline-flex rounded-lg border border-[#cbd5e1] bg-[#f8fafc] p-1">{(['ENGINE', 'ROCK_BREAKER'] as EquipmentType[]).map((type) => <button key={type} onClick={() => setEquipmentType(type)} className={`inline-flex h-9 items-center gap-2 rounded-md px-4 text-xs font-semibold ${equipmentType === type ? 'bg-[#0b1f3a] text-white shadow' : 'text-[#334155]'}`}>{equipmentType === type ? <Check className="h-4 w-4" /> : null}{type === 'ENGINE' ? 'Engine' : 'Rock Breaker'}</button>)}</div><div className="flex gap-2"><button onClick={downloadTemplate} className="inline-flex h-9 items-center gap-2 rounded-md border border-[#0f5fa8] bg-white px-3 text-xs font-semibold text-[#0f5fa8]"><Download className="h-4 w-4" />Template</button><label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#0f5fa8] px-3 text-xs font-semibold text-white"><Upload className="h-4 w-4" />Upload Excel<input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcel} /></label></div></div>
+    {sourceInvoiceId ? <div className="mb-3 rounded-lg border border-[#b9d5ef] bg-[#eef7ff] px-3 py-2 text-xs text-[#0b4d8a]">
+      {sourceInvoice.isLoading ? 'Loading selected invoice…' : sourceInvoice.error ? 'Could not load the selected invoice.' : <><strong>Prefilled from Invoice {sourceInvoice.data?.jcb_invoice_no}</strong><span className="ml-2">Part No., invoice details and equipment type are locked to the selected invoice.</span></>}
+    </div> : null}
+    <div className="flex flex-wrap items-center justify-between gap-2"><div className="inline-flex rounded-lg border border-[#cbd5e1] bg-[#f8fafc] p-1">{(['ENGINE', 'ROCK_BREAKER'] as EquipmentType[]).map((type) => <button key={type} onClick={() => !sourceInvoiceId && setEquipmentType(type)} disabled={Boolean(sourceInvoiceId)} className={`inline-flex h-9 items-center gap-2 rounded-md px-4 text-xs font-semibold ${equipmentType === type ? 'bg-[#0b1f3a] text-white shadow' : 'text-[#334155]'}`}>{equipmentType === type ? <Check className="h-4 w-4" /> : null}{type === 'ENGINE' ? 'Engine' : 'Rock Breaker'}</button>)}</div>{!sourceInvoiceId ? <div className="flex gap-2"><button onClick={downloadTemplate} className="inline-flex h-9 items-center gap-2 rounded-md border border-[#0f5fa8] bg-white px-3 text-xs font-semibold text-[#0f5fa8]"><Download className="h-4 w-4" />Template</button><label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md bg-[#0f5fa8] px-3 text-xs font-semibold text-white"><Upload className="h-4 w-4" />Upload Excel<input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleExcel} /></label></div> : null}</div>
     {importMessage ? <p className="mt-3 rounded-md border border-[#b9d5ef] bg-[#eef7ff] p-3 text-sm text-[#0b4d8a]">{importMessage}</p> : null}
-    <div className="mt-3 grid gap-3 rounded-xl border border-[#d8e0ea] bg-white p-4 md:grid-cols-2"><label className="text-xs font-semibold text-[#334155]">Invoice Date<input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm" /></label><label className="text-xs font-semibold text-[#334155]">Branch<select value={branch} onChange={(e) => setBranch(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm"><option value="">Select branch</option>{(branches.data ?? []).map((name) => <option key={name}>{name}</option>)}</select></label><label className="text-xs font-semibold text-[#334155]">Invoice No.<input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value.toUpperCase())} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase" /></label><label className="text-xs font-semibold text-[#334155]">Customer Name<input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm" /></label></div>
-    <div className="mt-3 rounded-xl border border-[#d8e0ea] bg-white p-4"><h3 className="text-xs font-semibold uppercase text-[#334155]">Part Details</h3><p className="mt-1 text-[10px] text-[#64748b]">Enter at least two characters to search Parts Master. One part is allowed per entry.</p><div className="mt-3 grid gap-3 md:grid-cols-[1fr_2fr_140px]"><label className="relative text-xs font-semibold">Part No.<div className="relative mt-1"><Search className="absolute left-2 top-3 h-3.5 w-3.5 text-[#64748b]" /><input ref={inputRef} value={partNo} onFocus={() => partNo.length >= 2 && setDropdownOpen(true)} onChange={(e) => changePart(e.target.value)} className="h-10 w-full rounded-md border pl-7 pr-2 uppercase" /></div></label><label className="text-xs font-semibold">Description<input value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 h-10 w-full rounded-md border bg-[#f8fafc] px-3" placeholder="Auto-filled or enter manually" /></label><label className="text-xs font-semibold">Quantity<input type="number" min="0.01" step="0.01" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="mt-1 h-10 w-full rounded-md border px-3" /></label></div></div>
+    <div className="mt-3 grid gap-3 rounded-xl border border-[#d8e0ea] bg-white p-4 md:grid-cols-2"><label className="text-xs font-semibold text-[#334155]">Invoice Date<input type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} readOnly={Boolean(sourceInvoiceId)} disabled={Boolean(sourceInvoiceId)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm disabled:bg-[#f1f5f9]" /></label><label className="text-xs font-semibold text-[#334155]">Branch<select value={branch} onChange={(e) => setBranch(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] bg-white px-3 text-sm"><option value="">Select branch</option>{(branches.data ?? []).map((name) => <option key={name}>{name}</option>)}</select></label><label className="text-xs font-semibold text-[#334155]">Invoice No.<input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value.toUpperCase())} readOnly={Boolean(sourceInvoiceId)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase read-only:bg-[#f1f5f9]" /></label><label className="text-xs font-semibold text-[#334155]">Customer Name<input value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm" /></label></div>
+    <div className="mt-3 rounded-xl border border-[#d8e0ea] bg-white p-4"><h3 className="text-xs font-semibold uppercase text-[#334155]">Part Details</h3><p className="mt-1 text-[10px] text-[#64748b]">Enter at least two characters to search Parts Master. One part is allowed per entry.</p><div className="mt-3 grid gap-3 md:grid-cols-[1fr_2fr_140px]"><label className="relative text-xs font-semibold">Part No.<div className="relative mt-1"><Search className="absolute left-2 top-3 h-3.5 w-3.5 text-[#64748b]" /><input ref={inputRef} value={partNo} readOnly={Boolean(sourceInvoiceId)} onFocus={() => !sourceInvoiceId && partNo.length >= 2 && setDropdownOpen(true)} onChange={(e) => changePart(e.target.value)} className="h-10 w-full rounded-md border pl-7 pr-2 uppercase read-only:bg-[#f1f5f9]" /></div></label><label className="text-xs font-semibold">Description<input value={description} onChange={(e) => setDescription(e.target.value)} readOnly={Boolean(sourceInvoiceId)} className="mt-1 h-10 w-full rounded-md border bg-[#f8fafc] px-3 read-only:bg-[#f1f5f9]" placeholder="Auto-filled or enter manually" /></label><label className="text-xs font-semibold">Quantity<input type="number" min="0.01" step="0.01" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="mt-1 h-10 w-full rounded-md border px-3" /></label></div></div>
     {dropdownOpen && dropdown ? createPortal(<div style={{ position: 'fixed', left: dropdown.left, top: dropdown.bottom + 4, width: Math.max(dropdown.width, 360), zIndex: 9999 }} className="max-h-72 overflow-y-auto rounded-lg border border-[#b9cee2] bg-white shadow-2xl">{partLoading ? <p className="px-3 py-3 text-xs text-[#64748b]">Searching Parts Master…</p> : matches.length ? matches.map((match) => <button type="button" key={match.part_no} onMouseDown={(e) => e.preventDefault()} onClick={() => choosePart(match)} className="block w-full border-b px-3 py-2 text-left last:border-0 hover:bg-[#eef7ff]"><strong className="block text-sm text-[#075fb8]">{match.part_no}</strong><span className="mt-0.5 block text-xs text-[#64748b]">{match.description || 'No description'}</span></button>) : <p className="px-3 py-3 text-xs text-[#64748b]">No matching part. Enter the description manually.</p>}</div>, document.body) : null}
     {error ? <p className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
     <div className="mt-3 flex justify-end gap-2"><button onClick={() => navigate('/installations')} className="h-9 rounded-md border border-[#cbd5e1] bg-white px-4 text-xs font-semibold text-[#334155]">Cancel</button><button disabled={mutation.isPending} onClick={submit} className="h-9 rounded-md bg-[#0f5fa8] px-5 text-xs font-semibold text-white disabled:opacity-50">{mutation.isPending ? 'Creating…' : 'Create Entry'}</button></div>
