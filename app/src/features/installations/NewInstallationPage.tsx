@@ -130,7 +130,7 @@ export function NewInstallationPage() {
     if (!source) return;
     setEquipmentType(source.equipment_type);
     setInvoiceDate(source.invoice_date);
-    setInvoiceNo(source.dbms_no || source.jcb_invoice_no);
+    setInvoiceNo(source.jcb_invoice_no);
     setPartNo(source.part_no);
     setDescription(source.description);
     setMatches([]);

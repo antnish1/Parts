@@ -427,6 +427,8 @@ The module now has two user-facing submenu destinations:
 
 Invoice intake is intentionally separate from `portal_installation_entries`. A saved invoice records JCB invoice/date, Parts Master part + description, Engine/Rock Breaker type, serial no., optional DBMS no., and the uploaded JCB invoice. The Invoice Details table exposes **Register** for unregistered rows.
 
+For Invoice → Register handoff, keep these values distinct: **JCB Invoice No.** and the uploaded **JCB Invoice** come from Invoice intake automatically; **DBMS No.** also comes from Invoice intake automatically; **DBMS Invoice No.** is a separate Stage Two value entered later by the branch. Do not ask for JCB Invoice No. again in Stage Two, and do not map DBMS No. into DBMS Invoice No.
+
 Registering from an invoice opens `/installations/new?invoice=<invoice-id>`; invoice-derived fields are prefilled/locked and the existing installation entry is created through the invoice-link RPC so one invoice row cannot silently create multiple installation entries. Preserve the existing Pending → Acceptance Pending → Accepted installation lifecycle and do not collapse invoice intake into the installation register.
 
 ---
