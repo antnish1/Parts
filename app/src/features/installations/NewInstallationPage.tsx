@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Check, Download, FileSpreadsheet, Search, Upload } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { PageCard } from '../../components/ui/PageCard';
@@ -73,8 +73,8 @@ function norm(value: string) {
 
 export function NewInstallationPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const sourceInvoiceId = searchParams.get('invoice') ?? '';
+  const location = useLocation();
+  const sourceInvoiceId = (location.state as { sourceInvoiceId?: string } | null)?.sourceInvoiceId ?? '';
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [equipmentType, setEquipmentType] = useState<EquipmentType>('ENGINE');
   const [invoiceDate, setInvoiceDate] = useState(today);
