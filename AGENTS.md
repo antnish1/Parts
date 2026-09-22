@@ -416,6 +416,19 @@ Do not rename this module back to generic Installation in user-facing navigation
 
 Excel imports must be handled carefully, especially dates (`dd/mm/yyyy` history) and description lookup from Parts Master.
 
+### Engine & Breaker Invoice → Register intake
+
+The module now has two user-facing submenu destinations:
+
+```text
+/installations/invoices   Invoice
+/installations            Register
+```
+
+Invoice intake is intentionally separate from `portal_installation_entries`. A saved invoice records JCB invoice/date, Parts Master part + description, Engine/Rock Breaker type, serial no., optional DBMS no., and the uploaded JCB invoice. The Invoice Details table exposes **Register** for unregistered rows.
+
+Registering from an invoice opens `/installations/new?invoice=<invoice-id>`; invoice-derived fields are prefilled/locked and the existing installation entry is created through the invoice-link RPC so one invoice row cannot silently create multiple installation entries. Preserve the existing Pending → Acceptance Pending → Accepted installation lifecycle and do not collapse invoice intake into the installation register.
+
 ---
 
 ## 13. Credit Dispatch module
