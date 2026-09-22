@@ -15,6 +15,22 @@ export type InstallationEntry = {
 };
 
 export type PartMasterMatch = { part_no: string; description: string };
+export type InstallationInvoice = {
+  id: string;
+  invoice_date: string;
+  jcb_invoice_no: string;
+  part_no: string;
+  description: string;
+  equipment_type: EquipmentType;
+  serial_no: string;
+  dbms_no: string | null;
+  document_path: string;
+  document_name: string;
+  document_mime_type: string;
+  document_size: number;
+  installation_id: string | null;
+  created_at: string;
+};
 type MessageError = { message: string } | null;
 function throwIfError(error: MessageError) { if (error) throw new Error(error.message); }
 
@@ -81,7 +97,93 @@ export async function getExistingInstallationInvoiceNos(invoiceNos: string[]): P
   return [...new Set(found)];
 }
 
-export async function createInstallationEntry(input: { equipment_type: EquipmentType; invoice_date: string; branch: string; invoice_no: string; customer_name: string; items: InstallationItem[] }): Promise<string> {
+export async function listInstallationInvoices(): Promise<InstallationInvoice[]> {
+  const { data, error } = await supabase
+    .from('portal_installation_invoices')
+    .select('id,invoice_date,jcb_invoice_no,part_no,description,equipment_type,serial_no,dbms_no,document_path,document_name,document_mime_type,document_size,installation_id,created_at')
+    .order('created_at', { ascending: false });
+  throwIfError(error);
+  return (data ?? []) as unknown as InstallationInvoice[];
+}
+
+export async function getInstallationInvoice(id: string): Promise<InstallationInvoice> {
+  const { data, error } = await supabase
+    .from('portal_installation_invoices')
+    .select('id,invoice_date,jcb_invoice_no,part_no,description,equipment_type,serial_no,dbms_no,document_path,document_name,document_mime_type,document_size,installation_id,created_at')
+    .eq('id', id)
+    .single();
+  throwIfError(error);
+  return data as unknown as InstallationInvoice;
+}
+
+export async function createInstallationInvoice(input: {
+  invoice_date: string;
+  jcb_invoice_no: string;
+  part_no: string;
+  description: string;
+  equipment_type: EquipmentType;
+  serial_no: string;
+  dbms_no: string;
+  file: File;
+}): Promise<string> {
+  if (input.file.size > 15 * 1024 * 1024) throw new Error('File size must not exceed 15 MB.');
+  const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  if (!allowed.includes(input.file.type)) throw new Error('Upload a PDF, JPG, PNG or WEBP file.');
+
+  const safe = input.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const random = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+  const path = `invoice-intake/${Date.now()}-${random}-${safe}`;
+  const { error: uploadError } = await supabase.storage.from('installation-documents').upload(path, input.file, {
+    upsert: false,
+    contentType: input.file.type,
+  });
+  throwIfError(uploadError);
+
+  const { data, error } = await supabase.rpc('portal_create_installation_invoice', {
+    p_invoice_date: input.invoice_date,
+    p_jcb_invoice_no: input.jcb_invoice_no,
+    p_part_no: input.part_no,
+    p_description: input.description,
+    p_equipment_type: input.equipment_type,
+    p_serial_no: input.serial_no,
+    p_dbms_no: input.dbms_no,
+    p_document_path: path,
+    p_document_name: input.file.name,
+    p_document_mime_type: input.file.type,
+    p_document_size: input.file.size,
+  });
+
+  if (error) {
+    await supabase.storage.from('installation-documents').remove([path]);
+    throw new Error(error.message);
+  }
+  return String(data);
+}
+
+export async function getInstallationInvoiceDocumentUrl(path: string): Promise<string> {
+  return getInstallationDocumentUrl(path);
+}
+
+export async function createInstallationEntry(input: {
+  equipment_type: EquipmentType;
+  invoice_date: string;
+  branch: string;
+  invoice_no: string;
+  customer_name: string;
+  items: InstallationItem[];
+  source_invoice_id?: string;
+}): Promise<string> {
+  if (input.source_invoice_id) {
+    const { data, error } = await supabase.rpc('portal_create_installation_from_invoice', {
+      p_invoice_id: input.source_invoice_id,
+      p_branch: input.branch,
+      p_customer_name: input.customer_name,
+      p_quantity: input.items[0]?.quantity ?? 1,
+    });
+    throwIfError(error);
+    return String(data);
+  }
+
   const { data, error } = await supabase.rpc('portal_create_installation_entry', {
     p_equipment_type: input.equipment_type, p_invoice_date: input.invoice_date, p_branch: input.branch,
     p_invoice_no: input.invoice_no, p_customer_name: input.customer_name, p_items: input.items,
