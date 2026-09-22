@@ -153,25 +153,21 @@ export function InstallationInvoicePage() {
         <label className="text-xs font-semibold text-[#334155]">DBMS No.
           <input value={dbmsNo} onChange={(e) => setDbmsNo(e.target.value.toUpperCase())} className="mt-1 h-10 w-full rounded-md border border-[#cbd5e1] px-3 text-sm uppercase" />
         </label>
-        <label className="text-xs font-semibold text-[#334155]">JCB Invoice *
-          <span className="relative mt-1 block">
-            <input
-              type="text"
-              readOnly
-              tabIndex={-1}
-              value={file?.name ?? ''}
-              placeholder="Choose file"
-              className="h-10 w-full cursor-pointer rounded-md border border-[#cbd5e1] bg-white px-3 pr-10 text-sm font-normal text-[#334155] placeholder:text-[#64748b]"
-            />
-            <Upload className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-[#0f5fa8]" />
+        <div className="text-xs font-semibold text-[#334155]">
+          <span className="mb-1 block">JCB Invoice *</span>
+          <label className="relative block cursor-pointer">
+            <div className="flex h-10 w-full items-center rounded-md border border-[#cbd5e1] bg-white px-3 text-sm font-normal text-[#334155]">
+              <span className="min-w-0 flex-1 truncate">{file?.name ?? ''}</span>
+              <Upload className="h-4 w-4 shrink-0 text-[#0f5fa8]" />
+            </div>
             <input
               type="file"
               accept="application/pdf,image/jpeg,image/png,image/webp"
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              className="hidden"
               onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             />
-          </span>
-        </label>
+          </label>
+        </div>
       </div>
       <div className="mt-4 flex justify-end"><button type="button" disabled={saveMutation.isPending} onClick={save} className="h-9 rounded-md bg-[#0f5fa8] px-6 text-xs font-semibold text-white disabled:opacity-50">{saveMutation.isPending ? 'Saving…' : 'Save'}</button></div>
     </section> : null}
