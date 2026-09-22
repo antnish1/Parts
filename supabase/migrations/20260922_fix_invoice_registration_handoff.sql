@@ -63,7 +63,7 @@ create or replace function public.portal_create_installation_entry(
   p_invoice_no text,
   p_customer_name text,
   p_items jsonb
-) returns uuid language plpgsql security definer set search_path=public as $
+) returns uuid language plpgsql security definer set search_path=public as $$
 declare
   v_profile public.portal_profiles;
   v_id uuid;
@@ -89,7 +89,7 @@ begin
   from jsonb_to_recordset(p_items) as x(part_no text, description text, quantity numeric);
 
   return v_id;
-end $;
+end $$;
 
 grant execute on function public.portal_create_installation_entry(text,date,text,text,text,jsonb) to authenticated;
 
