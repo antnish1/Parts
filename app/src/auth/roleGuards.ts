@@ -22,7 +22,7 @@ function isPartLocationWorkspace(path: string) { return path === '/parts/locatio
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
   if (path === '/parts/location-finder/manage') return ['manager', 'admin', 'developer'].includes(role);
-  if (isPartLocationWorkspace(path)) return true;
+  if (isPartLocationWorkspace(path)) return role !== 'accounts';
   if (isTadaWorkspace(path)) return ['branch', 'manager', 'hq', 'developer', 'accounts'].includes(role);
   if (isCreditDispatchWorkspace(path)) {
     if (path === '/credit-dispatch/new') return role === 'branch';
