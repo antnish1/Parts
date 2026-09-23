@@ -266,3 +266,64 @@ using (
       or portal_credit_dispatches.created_by = p.id
   )
 );
+
+
+-- New requests are Branch-originated. Approval roles review through the RPC above.
+drop policy if exists credit_dispatch_insert_policy on public.portal_credit_dispatches;
+create policy credit_dispatch_insert_policy
+on public.portal_credit_dispatches
+for insert
+to authenticated
+with check (
+  exists (
+    select 1
+    from public.portal_current_profile_for_rls() p
+    where p.role = 'branch'
+      and coalesce(public.resolve_portal_branch(portal_credit_dispatches.branch), portal_credit_dispatches.branch) = p.branch
+  )
+);
+
+-- Direct row edits are limited to the owning Branch (for correction) and Developer.
+-- Accounts and Manager approval changes go only through portal_review_credit_dispatch.
+drop policy if exists credit_dispatch_update_policy on public.portal_credit_dispatches;
+create policy credit_dispatch_update_policy
+on public.portal_credit_dispatches
+for update
+to authenticated
+using (
+  exists (
+    select 1
+    from public.portal_current_profile_for_rls() p
+    where p.role = 'developer'
+      or (p.role = 'branch' and (portal_credit_dispatches.branch = p.branch or portal_credit_dispatches.created_by = p.id))
+  )
+)
+with check (
+  exists (
+    select 1
+    from public.portal_current_profile_for_rls() p
+    where p.role = 'developer'
+      or (p.role = 'branch' and (portal_credit_dispatches.branch = p.branch or portal_credit_dispatches.created_by = p.id))
+  )
+);
+
+drop policy if exists credit_customers_select_policy on public.portal_credit_customers;
+create policy credit_customers_select_policy
+on public.portal_credit_customers
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.portal_current_profile_for_rls() p
+    where p.role in ('accounts', 'manager', 'admin', 'developer', 'super')
+      or portal_credit_customers.default_branch = p.branch
+      or portal_credit_customers.created_by = p.id
+      or exists (
+        select 1
+        from public.portal_credit_dispatches d
+        where d.customer_id = portal_credit_customers.id
+          and (d.branch = p.branch or d.created_by = p.id)
+      )
+  )
+);
