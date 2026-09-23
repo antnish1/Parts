@@ -13,19 +13,22 @@ import {
   type CreditDispatchPaymentInput,
   type CreditDispatchRecord,
 } from '../../services/creditDispatch.service';
+import { creditDispatchProgressStatuses, getCreditDispatchProgressStatus, isCreditDispatchOverdue, isCreditDispatchPaymentStage } from '../../services/creditDispatchProgress';
 
 const today = new Date().toISOString().slice(0, 10);
 const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as const;
 type PaymentMode = typeof paymentModes[number];
 
 function statusClass(status: string) {
-  if (status === 'Closed') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-  if (status.includes('Overdue')) return 'bg-red-100 text-red-700 border-red-200';
-  if (status.includes('Partial')) return 'bg-amber-100 text-amber-700 border-amber-200';
-  if (status === 'Approved') return 'bg-blue-100 text-blue-700 border-blue-200';
-  if (status === 'Rejected') return 'bg-rose-100 text-rose-700 border-rose-200';
-  if (status === 'Correction Required') return 'bg-orange-100 text-orange-700 border-orange-200';
-  return 'bg-slate-100 text-slate-700 border-slate-200';
+  if (status === 'Pending Accounts Approval' || status === 'Pending Manager Approval') return 'cd-status cd-status--pending-approval';
+  if (status.startsWith('Correction Requested')) return 'cd-status cd-status--correction';
+  if (status.startsWith('Rejected by')) return 'cd-status cd-status--rejected';
+  if (status === 'Payment Pending') return 'cd-status cd-status--pending-payment';
+  if (status === 'Partial Payment') return 'cd-status cd-status--partial';
+  if (status === 'Payment Overdue') return 'cd-status cd-status--overdue';
+  if (status === 'Partial Payment - Overdue') return 'cd-status cd-status--partial-overdue';
+  if (status === 'Closed') return 'cd-status cd-status--closed';
+  return 'cd-status cd-status--neutral';
 }
 
 function StatCard({ label, value, icon: Icon }: { label: string; value: string; icon: typeof CreditCard }) {
@@ -60,7 +63,8 @@ function Dialog({ title, description, children, onClose }: { title: string; desc
 }
 
 function ApprovalDialog({ row, action, isBusy, onClose, onSubmit }: { row: CreditDispatchRecord; action: CreditDispatchApprovalAction; isBusy: boolean; onClose: () => void; onSubmit: (note: string) => void }) {
-  const [note, setNote] = useState(action === 'Approved' ? 'Approved by manager.' : '');
+  const approvalStage = row.approval_status === 'Pending Accounts Approval' ? 'Accounts' : 'Manager';
+  const [note, setNote] = useState(action === 'Approved' ? `Approved by ${approvalStage}.` : '');
   const [error, setError] = useState('');
   const needsNote = action !== 'Approved';
   const actionText = action === 'Approved' ? 'Approve Request' : action === 'Rejected' ? 'Reject Request' : 'Send for Correction';
@@ -150,37 +154,67 @@ function PaymentDialog({ row, isBusy, onClose, onSubmit }: { row: CreditDispatch
   );
 }
 
-type ActionProps = { row: CreditDispatchRecord; canManage: boolean; canPay: boolean; isBusy: boolean; onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => void; onPayment: (row: CreditDispatchRecord) => void; compact?: boolean };
+type ActionProps = { row: CreditDispatchRecord; currentRole: string; canPay: boolean; canCorrect: boolean; currentBranch: string; isBusy: boolean; onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => void; onPayment: (row: CreditDispatchRecord) => void; compact?: boolean };
 
-function RowActions({ row, canManage, canPay, isBusy, onApproval, onPayment, compact }: ActionProps) {
-  const showApproval = canManage && row.approval_status === 'Pending Approval';
-  const showPayment = canPay && row.approval_status === 'Approved' && row.recovery_status !== 'Closed';
-  if (!showApproval && !showPayment) return <span className="text-xs font-bold text-slate-400">No action</span>;
-  if (showPayment) return <Button type="button" className={compact ? 'px-3 py-1.5 text-xs' : 'w-full rounded-2xl'} disabled={isBusy} onClick={() => onPayment(row)}><IndianRupee className="h-4 w-4" />Payment</Button>;
+function normalizeActionBranch(value: string | null | undefined) {
+  return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function canReviewStage(row: CreditDispatchRecord, role: string) {
+  if (role === 'developer') return row.approval_status === 'Pending Accounts Approval' || row.approval_status === 'Pending Manager Approval';
+  if (role === 'accounts') return row.approval_status === 'Pending Accounts Approval';
+  if (role === 'manager') return row.approval_status === 'Pending Manager Approval';
+  return false;
+}
+
+function RowActions({ row, currentRole, canPay, canCorrect, currentBranch, isBusy, onApproval, onPayment, compact }: ActionProps) {
+  const progressStatus = getCreditDispatchProgressStatus(row);
+  const showCorrection = canCorrect && ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(row.approval_status) && normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch);
+  const showApproval = canReviewStage(row, currentRole);
+  const showPayment = canPay && isCreditDispatchPaymentStage(progressStatus);
+
+  if (showCorrection) return <Link to={`/credit-dispatch/${row.id}/edit`}><Button type="button" className={compact ? 'cd-action cd-action--correct px-3 py-1.5 text-xs' : 'cd-action cd-action--correct w-full'}><RotateCcw className="h-4 w-4" />Edit & Resubmit</Button></Link>;
+  if (!showApproval && !showPayment) return <span className="text-xs font-medium text-slate-400">—</span>;
+  if (showPayment) return <Button type="button" className={compact ? 'cd-action cd-action--payment px-3 py-1.5 text-xs' : 'cd-action cd-action--payment w-full rounded-2xl'} disabled={isBusy} onClick={() => onPayment(row)}><IndianRupee className="h-4 w-4" />Add Payment</Button>;
+
+  if (compact) {
+    return (
+      <details className="cd-review-menu">
+        <summary className="cd-review-trigger" aria-label="Review approval actions">Review <span aria-hidden="true">▾</span></summary>
+        <div className="cd-review-panel">
+          <button type="button" className="cd-review-option cd-review-option--approve" disabled={isBusy} onClick={() => onApproval(row, 'Approved')}><Check className="h-3.5 w-3.5" />Approve</button>
+          <button type="button" className="cd-review-option cd-review-option--reject" disabled={isBusy} onClick={() => onApproval(row, 'Rejected')}><XCircle className="h-3.5 w-3.5" />Reject</button>
+          <button type="button" className="cd-review-option cd-review-option--correct" disabled={isBusy} onClick={() => onApproval(row, 'Correction Required')}><RotateCcw className="h-3.5 w-3.5" />Send for Correction</button>
+        </div>
+      </details>
+    );
+  }
+
   return (
-    <div className={compact ? 'flex flex-wrap gap-1.5' : 'grid grid-cols-3 gap-2'}>
-      <Button type="button" className="px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Approved')}><Check className="h-3.5 w-3.5" />Approve</Button>
-      <Button type="button" variant="danger" className="px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Rejected')}><XCircle className="h-3.5 w-3.5" />Reject</Button>
-      <Button type="button" variant="secondary" className="px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Correction Required')}><RotateCcw className="h-3.5 w-3.5" />Correct</Button>
+    <div className="cd-row-actions grid grid-cols-3 gap-2">
+      <Button type="button" className="cd-action cd-action--approve px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Approved')}><Check className="h-3.5 w-3.5" />Approve</Button>
+      <Button type="button" variant="danger" className="cd-action cd-action--reject px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Rejected')}><XCircle className="h-3.5 w-3.5" />Reject</Button>
+      <Button type="button" variant="secondary" className="cd-action cd-action--correct px-2 py-1.5 text-[11px]" disabled={isBusy} onClick={() => onApproval(row, 'Correction Required')}><RotateCcw className="h-3.5 w-3.5" />Correct</Button>
     </div>
   );
 }
 
 function DispatchCard(props: ActionProps) {
   const { row } = props;
-  const isOverdue = row.recovery_status.includes('Overdue');
+  const progressStatus = getCreditDispatchProgressStatus(row);
+  const isOverdue = isCreditDispatchOverdue(progressStatus);
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0"><p className="truncate text-sm font-black text-slate-950">{row.dispatch_no ?? 'Pending No.'}</p><p className="mt-1 truncate text-xs font-semibold text-slate-500">{row.branch} • {row.customer_type}</p></div>
-        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${statusClass(row.recovery_status)}`}>{row.recovery_status}</span>
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${statusClass(progressStatus)}`}>{progressStatus}</span>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Customer</p><p className="mt-1 truncate font-bold text-slate-800">{row.customer_name}</p><p className="text-xs font-semibold text-slate-500">{row.mobile_no}</p></div>
         <div><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Document</p><p className="mt-1 truncate font-bold text-slate-800">{row.document_type}</p><p className="text-xs font-semibold text-slate-500">{row.document_no || 'No document no.'}</p></div>
       </div>
       <div className="mt-4 rounded-2xl bg-slate-50 p-3"><div className="grid grid-cols-3 gap-2 text-center"><div><p className="text-[10px] font-black uppercase text-slate-400">Credit</p><p className="text-sm font-black text-slate-950">{formatMoney(row.credit_amount)}</p></div><div><p className="text-[10px] font-black uppercase text-slate-400">Received</p><p className="text-sm font-black text-emerald-700">{formatMoney(row.total_received_amount)}</p></div><div><p className="text-[10px] font-black uppercase text-slate-400">Balance</p><p className="text-sm font-black text-red-700">{formatMoney(row.balance_amount)}</p></div></div></div>
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"><div className="flex items-center gap-2 text-xs font-bold text-slate-500">{isOverdue ? <AlertTriangle className="h-4 w-4 text-red-500" /> : <Clock className="h-4 w-4 text-blue-500" />}Due {row.due_date}</div><span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${statusClass(row.approval_status)}`}>{row.approval_status}</span></div>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"><div className="flex items-center gap-2 text-xs font-bold text-slate-500">{isOverdue ? <AlertTriangle className="h-4 w-4 text-red-500" /> : <Clock className="h-4 w-4 text-blue-500" />}Due {row.due_date}</div><span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] ${statusClass(progressStatus)}`}>{progressStatus}</span></div>
       {row.rejection_reason ? <p className="mt-3 rounded-2xl bg-red-50 p-3 text-xs font-bold text-red-700">Rejected: {row.rejection_reason}</p> : null}
       {row.correction_note ? <p className="mt-3 rounded-2xl bg-orange-50 p-3 text-xs font-bold text-orange-700">Correction: {row.correction_note}</p> : null}
       <div className="mt-4 border-t border-slate-100 pt-3"><RowActions {...props} /></div>
@@ -216,30 +250,32 @@ export function CreditDispatchListPage() {
   const rows = dispatchQuery.data ?? [];
   const totalCredit = rows.reduce((sum, row) => sum + Number(row.credit_amount || 0), 0);
   const totalBalance = rows.reduce((sum, row) => sum + Number(row.balance_amount || 0), 0);
-  const overdueCount = rows.filter((row) => row.recovery_status.includes('Overdue')).length;
-  const closedCount = rows.filter((row) => row.recovery_status === 'Closed').length;
-  const canManage = ['manager', 'admin', 'developer', 'super'].includes(profile?.role ?? '');
-  const canPay = ['branch', 'manager', 'admin', 'developer', 'super'].includes(profile?.role ?? '');
+  const overdueCount = rows.filter((row) => isCreditDispatchOverdue(getCreditDispatchProgressStatus(row))).length;
+  const closedCount = rows.filter((row) => getCreditDispatchProgressStatus(row) === 'Closed').length;
+  const currentRole = profile?.role ?? '';
+  const canPay = ['branch', 'manager', 'admin', 'developer', 'super'].includes(currentRole);
+  const canCorrect = currentRole === 'branch';
   const isBusy = approvalMutation.isPending || paymentMutation.isPending;
 
   const filteredRows = useMemo(() => {
     const q = searchText.trim().toLowerCase();
     return rows.filter((row) => {
-      const matchesStatus = statusFilter === 'All' || row.approval_status === statusFilter || row.recovery_status === statusFilter;
-      const matchesSearch = !q || [row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, row.approval_status, row.recovery_status, row.credit_amount, row.balance_amount].some((value) => String(value ?? '').toLowerCase().includes(q));
+      const progressStatus = getCreditDispatchProgressStatus(row);
+      const matchesStatus = statusFilter === 'All' || progressStatus === statusFilter;
+      const matchesSearch = !q || [row.dispatch_no, row.branch, row.customer_name, row.customer_type, row.mobile_no, row.document_type, row.document_no, progressStatus, row.credit_amount, row.balance_amount].some((value) => String(value ?? '').toLowerCase().includes(q));
       return matchesStatus && matchesSearch;
     });
   }, [rows, searchText, statusFilter]);
 
-  const actionProps = { canManage, canPay, isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
+  const actionProps = { currentRole, canPay, canCorrect, currentBranch: profile?.branch ?? '', isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0">
-      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Credit Dispatch</p><h1 className="mt-1 text-xl font-black text-slate-950">Payment Recovery Tracker</h1><p className="mt-1 text-sm font-semibold text-slate-500">Approve requests, record payments, and track pending receipts.</p></div><Link to="/credit-dispatch/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" />New Request</Button></Link></div>
+      <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Credit Dispatch</p><h1 className="mt-1 text-xl font-black text-slate-950">Payment Recovery Tracker</h1><p className="mt-1 text-sm font-semibold text-slate-500">Approve requests, record payments, and track pending receipts.</p></div>{currentRole === 'branch' ? <Link to="/credit-dispatch/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" />New Request</Button></Link> : null}</div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><StatCard label="Total Credit" value={formatMoney(totalCredit)} icon={CreditCard} /><StatCard label="Pending Balance" value={formatMoney(totalBalance)} icon={AlertTriangle} /><StatCard label="Overdue" value={String(overdueCount)} icon={Clock} /><StatCard label="Closed" value={String(closedCount)} icon={CheckCircle2} /></div>
-      <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm"><div className="mb-3 grid gap-2 md:grid-cols-[1fr_220px]"><label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500"><Search className="h-4 w-4" /><input className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search dispatch, customer, mobile, branch, document..." /></label><select className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{['All', 'Pending Approval', 'Approved', 'Correction Required', 'Rejected', 'Pending Payment', 'Partial Payment', 'Partial Payment - Overdue', 'Payment Overdue', 'Closed'].map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
+      <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm"><div className="mb-3 grid gap-2 md:grid-cols-[1fr_220px]"><label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500"><Search className="h-4 w-4" /><input className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search dispatch, customer, mobile, branch, document..." /></label><select className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{['All', ...creditDispatchProgressStatuses].map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
         {approvalMutation.error || paymentMutation.error ? <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{((approvalMutation.error || paymentMutation.error) as Error).message || 'Could not complete action.'}</div> : null}
-        {dispatchQuery.isLoading ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-56 animate-pulse rounded-3xl bg-slate-100" />)}</div> : dispatchQuery.error ? <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">Could not load Credit Dispatch records.</div> : rows.length === 0 ? <div className="grid place-items-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center"><FileSignature className="h-10 w-10 text-blue-500" /><h2 className="mt-3 text-lg font-black text-slate-950">No credit dispatch yet</h2><p className="mt-1 max-w-md text-sm font-semibold text-slate-500">Create the first digitally signed credit dispatch request from branch login.</p><Link to="/credit-dispatch/new" className="mt-4"><Button><Plus className="h-4 w-4" />Create Request</Button></Link></div> : filteredRows.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-bold text-slate-500">No records match this search/filter.</div> : <><DesktopTable rows={filteredRows} actionProps={actionProps} /><div className="grid gap-3 md:grid-cols-2 xl:hidden">{filteredRows.map((row) => <DispatchCard key={row.id} row={row} {...actionProps} />)}</div></>}
+        {dispatchQuery.isLoading ? <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="h-56 animate-pulse rounded-3xl bg-slate-100" />)}</div> : dispatchQuery.error ? <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">Could not load Credit Dispatch records.</div> : rows.length === 0 ? <div className="grid place-items-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center"><FileSignature className="h-10 w-10 text-blue-500" /><h2 className="mt-3 text-lg font-black text-slate-950">No credit dispatch yet</h2><p className="mt-1 max-w-md text-sm font-semibold text-slate-500">Create the first digitally signed credit dispatch request from branch login.</p>{currentRole === 'branch' ? <Link to="/credit-dispatch/new" className="mt-4"><Button><Plus className="h-4 w-4" />Create Request</Button></Link> : null}</div> : filteredRows.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm font-bold text-slate-500">No records match this search/filter.</div> : <><DesktopTable rows={filteredRows} actionProps={actionProps} /><div className="grid gap-3 md:grid-cols-2 xl:hidden">{filteredRows.map((row) => <DispatchCard key={row.id} row={row} {...actionProps} />)}</div></>}
       </div>
       {approvalTarget ? <ApprovalDialog row={approvalTarget.row} action={approvalTarget.action} isBusy={isBusy} onClose={() => setApprovalTarget(null)} onSubmit={(note) => approvalMutation.mutate({ id: approvalTarget.row.id, action: approvalTarget.action, note })} /> : null}
       {paymentTarget ? <PaymentDialog row={paymentTarget} isBusy={isBusy} onClose={() => setPaymentTarget(null)} onSubmit={(input) => paymentMutation.mutate(input)} /> : null}
