@@ -222,13 +222,39 @@ function DispatchCard(props: ActionProps) {
   );
 }
 
+function formatCreatedAt(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: '-', time: '' };
+  return {
+    date: new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }).format(date),
+    time: new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' }).format(date),
+  };
+}
+
+function getDueInDays(row: CreditDispatchRecord) {
+  if (getCreditDispatchProgressStatus(row) === 'Closed') return { label: 'Closed', tone: 'text-emerald-700' };
+  const due = new Date(row.due_date + 'T00:00:00');
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const days = Math.round((due.getTime() - todayDate.getTime()) / 86400000);
+  if (days < 0) return { label: `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? '' : 's'}`, tone: 'text-red-700' };
+  if (days === 0) return { label: 'Due today', tone: 'text-orange-700' };
+  if (days <= 7) return { label: `Due in ${days} day${days === 1 ? '' : 's'}`, tone: 'text-amber-700' };
+  return { label: `Due in ${days} days`, tone: 'text-slate-600' };
+}
+
 function DesktopTable({ rows, actionProps }: { rows: CreditDispatchRecord[]; actionProps: Omit<ActionProps, 'row'> }) {
   return (
     <div className="hidden overflow-x-auto rounded-3xl border border-slate-200 xl:block">
       <table className="min-w-full divide-y divide-slate-100 text-left text-xs">
-        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Dispatch</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Document</th><th className="px-4 py-3 text-right">Credit</th><th className="px-4 py-3 text-right">Balance</th><th className="px-4 py-3">Due</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead>
+        <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-4 py-3">Dispatch</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Document</th><th className="px-4 py-3 text-right">Credit</th><th className="px-4 py-3 text-right">Balance</th><th className="px-4 py-3">Created On</th><th className="px-4 py-3">Due Date</th><th className="px-4 py-3">Due in Days</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Action</th></tr></thead>
         <tbody className="divide-y divide-slate-100 bg-white">
-          {rows.map((row) => <tr key={row.id} className="align-top hover:bg-slate-50/70"><td className="px-4 py-3"><p className="font-black text-slate-900">{row.dispatch_no ?? 'Pending No.'}</p><p className="mt-1 font-bold text-slate-500">{row.branch}</p></td><td className="px-4 py-3"><p className="font-black text-slate-800">{row.customer_name}</p><p className="mt-1 text-slate-500">{row.mobile_no} • {row.customer_type}</p></td><td className="px-4 py-3"><p className="font-bold text-slate-800">{row.document_type}</p><p className="mt-1 text-slate-500">{row.document_no || '-'}</p></td><td className="px-4 py-3 text-right font-black text-slate-900">{formatMoney(row.credit_amount)}</td><td className="px-4 py-3 text-right font-black text-red-700">{formatMoney(row.balance_amount)}</td><td className="px-4 py-3 font-bold text-slate-600">{row.due_date}</td><td className="px-4 py-3"><div className="space-y-1.5"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black ${statusClass(row.approval_status)}`}>{row.approval_status}</span><br /><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black ${statusClass(row.recovery_status)}`}>{row.recovery_status}</span></div></td><td className="min-w-[210px] px-4 py-3"><RowActions row={row} {...actionProps} compact /></td></tr>)}
+          {rows.map((row) => {
+            const created = formatCreatedAt(row.created_at);
+            const due = getDueInDays(row);
+            const status = getCreditDispatchProgressStatus(row);
+            return <tr key={row.id} className="align-top hover:bg-slate-50/70"><td className="px-4 py-3"><p className="font-black text-slate-900">{row.dispatch_no ?? 'Pending No.'}</p><p className="mt-1 font-bold text-slate-500">{row.branch}</p></td><td className="px-4 py-3"><p className="font-black text-slate-800">{row.customer_name}</p><p className="mt-1 text-slate-500">{row.mobile_no} • {row.customer_type}</p></td><td className="px-4 py-3"><p className="font-bold text-slate-800">{row.document_type}</p><p className="mt-1 text-slate-500">{row.document_no || '-'}</p></td><td className="px-4 py-3 text-right font-black text-slate-900">{formatMoney(row.credit_amount)}</td><td className="px-4 py-3 text-right font-black text-red-700">{formatMoney(row.balance_amount)}</td><td className="px-4 py-3"><p className="font-medium text-slate-700">{created.date}</p><p className="mt-1 text-[11px] text-slate-500">{created.time}</p></td><td className="px-4 py-3 font-medium text-slate-700">{row.due_date}</td><td className={`px-4 py-3 font-semibold whitespace-nowrap ${due.tone}`}>{due.label}</td><td className="px-4 py-3"><span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-black ${statusClass(status)}`}>{status}</span></td><td className="min-w-[118px] px-4 py-3"><RowActions row={row} {...actionProps} compact /></td></tr>;
+          })}
         </tbody>
       </table>
     </div>
@@ -270,7 +296,7 @@ export function CreditDispatchListPage() {
   const actionProps = { currentRole, canPay, canCorrect, currentBranch: profile?.branch ?? '', isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0">
+    <div data-cd-theme="tracker" className="cd-shell cd-tracker mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0">
       <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Credit Dispatch</p><h1 className="mt-1 text-xl font-black text-slate-950">Payment Recovery Tracker</h1><p className="mt-1 text-sm font-semibold text-slate-500">Approve requests, record payments, and track pending receipts.</p></div>{currentRole === 'branch' ? <Link to="/credit-dispatch/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" />New Request</Button></Link> : null}</div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><StatCard label="Total Credit" value={formatMoney(totalCredit)} icon={CreditCard} /><StatCard label="Pending Balance" value={formatMoney(totalBalance)} icon={AlertTriangle} /><StatCard label="Overdue" value={String(overdueCount)} icon={Clock} /><StatCard label="Closed" value={String(closedCount)} icon={CheckCircle2} /></div>
       <div className="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm"><div className="mb-3 grid gap-2 md:grid-cols-[1fr_220px]"><label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-500"><Search className="h-4 w-4" /><input className="min-w-0 flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400" value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search dispatch, customer, mobile, branch, document..." /></label><select className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 outline-none" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>{['All', ...creditDispatchProgressStatuses].map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
