@@ -59,7 +59,7 @@ replaceOnce(
   const creditDispatchCounterQuery = useQuery({
     queryKey: ['credit-dispatch-nav-counter', profile?.role, profile?.branch],
     queryFn: getCreditDispatches,
-    enabled: isManager || isBranch,
+    enabled: isManager || isBranch || isAccounts || isDeveloper,
     refetchInterval: 15000,
   });
 
@@ -69,10 +69,12 @@ replaceOnce(
   const approvedOrdersCount = orders.filter((order) => order.status === 'approved').length;
   const managerApprovalCount = orders.filter((order) => \`\${order.status} \${order.approval_status}\`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
   const delayedVorCount = orders.filter((order) => isDelayedVorOrder(order, eligibleDelayedVorOrderIds)).length;
-  const managerCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Approval').length;
+  const managerCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Manager Approval').length;
+  const accountsCreditDispatchCount = creditDispatches.filter((row) => row.approval_status === 'Pending Accounts Approval').length;
+  const developerCreditDispatchCount = managerCreditDispatchCount + accountsCreditDispatchCount;
   const branchKey = normalizeBranch(profile?.branch);
   const branchCreditDispatchCount = creditDispatches.filter((row) =>
-    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,
+    ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(row.approval_status) && normalizeBranch(row.branch) === branchKey,
   ).length;`,
   'counter calculations',
 );
@@ -88,6 +90,8 @@ const enhancedTadaNavigationBlock = `      if (isAdmin && item.to === '/') retur
       if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
       if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };
       if (isManager && item.to === '/credit-dispatch') return { ...item, badge: managerCreditDispatchCount };
+      if (isAccounts && item.to === '/credit-dispatch') return { ...item, badge: accountsCreditDispatchCount };
+      if (isDeveloper && item.to === '/credit-dispatch') return { ...item, badge: developerCreditDispatchCount };
       if (isBranch && item.to === '/credit-dispatch') return { ...item, badge: branchCreditDispatchCount };
       if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
       if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
@@ -112,9 +116,9 @@ if (source.includes(tadaNavigationBlock) || source.includes(enhancedTadaNavigati
 }
 
 const tadaMemoDeps = "    [accountsTadaCount, approvedOrdersCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isManager, managerApprovalCount, managerTadaCount],";
-const enhancedTadaMemoDeps = "    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],";
+const enhancedTadaMemoDeps = "    [accountsCreditDispatchCount, accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerCreditDispatchCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],";
 const legacyMemoDeps = "    [approvedOrdersCount, isAdmin, isManager, managerApprovalCount],";
-const enhancedLegacyMemoDeps = "    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],";
+const enhancedLegacyMemoDeps = "    [accountsCreditDispatchCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerCreditDispatchCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount],";
 
 if (source.includes(tadaMemoDeps) || source.includes(enhancedTadaMemoDeps)) {
   replaceOnce(tadaMemoDeps, enhancedTadaMemoDeps, 'TA/DA memo dependencies');
