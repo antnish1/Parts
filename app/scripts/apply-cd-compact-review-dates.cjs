@@ -3,6 +3,10 @@ const path = require('path');
 
 const filePath = path.resolve(__dirname, '../src/features/credit-dispatch/CreditDispatchListPage.tsx');
 let source = fs.readFileSync(filePath, 'utf8');
+if (source.includes('function canReviewStage')) {
+  console.log('Compact Credit Dispatch review menu already integrated with staged approval UI.');
+  process.exit(0);
+}
 
 const rowActionsPattern = /function RowActions\([\s\S]*?\n}\n\nfunction DispatchCard/;
 const rowActionsReplacement = `function RowActions({ row, canManage, canPay, isBusy, onApproval, onPayment, compact }: ActionProps) {
