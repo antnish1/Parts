@@ -16,7 +16,7 @@ export type CreditDispatchRecord = {
   due_date: string;
   total_received_amount: number;
   balance_amount: number;
-  approval_status: 'Draft' | 'Pending Approval' | 'Approved' | 'Rejected' | 'Correction Required';
+  approval_status: 'Draft' | 'Pending Accounts Approval' | 'Pending Manager Approval' | 'Approved' | 'Rejected by Accounts' | 'Rejected by Manager' | 'Correction Requested by Accounts' | 'Correction Requested by Manager';
   recovery_status: 'Pending Payment' | 'Partial Payment' | 'Partial Payment - Overdue' | 'Payment Overdue' | 'Closed';
   remarks: string | null;
   rejection_reason?: string | null;
@@ -147,7 +147,7 @@ function normalizeBranch(value: string | null | undefined) {
 export async function resubmitCorrectedCreditDispatch(dispatchId: string, input: CreditDispatchFormInput, loggedInBranch: string) {
   validateRequestInput(input);
   const current = await getCreditDispatchById(dispatchId);
-  if (current.approval_status !== 'Correction Required') throw new Error('This request is no longer awaiting correction.');
+  if (!['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(current.approval_status)) throw new Error('This request is no longer awaiting correction.');
   if (normalizeBranch(current.branch) !== normalizeBranch(loggedInBranch)) throw new Error('This request belongs to another branch.');
 
   const salesEmployeeName = await ensureSalesEmployeeName(input.salesEmployeeName ?? '');
@@ -174,7 +174,7 @@ export async function resubmitCorrectedCreditDispatch(dispatchId: string, input:
       issuer_signature_path: issuerSignaturePath,
       customer_signed_at: nowIso,
       issuer_signed_at: nowIso,
-      approval_status: 'Pending Approval',
+      approval_status: 'Pending Accounts Approval',
       correction_note: null,
       rejection_reason: null,
       approved_by: null,
@@ -182,13 +182,13 @@ export async function resubmitCorrectedCreditDispatch(dispatchId: string, input:
       updated_at: nowIso,
     })
     .eq('id', dispatchId)
-    .eq('approval_status', 'Correction Required')
+    .in('approval_status', ['Correction Requested by Accounts', 'Correction Requested by Manager'])
     .eq('branch', current.branch)
     .select('*')
     .single();
 
   if (error) throw error;
-  await addEvent(dispatchId, 'Corrected and Resubmitted', 'Branch corrected the complete request, captured fresh customer and issuer signatures, and resubmitted it for manager approval.');
+  await addEvent(dispatchId, 'Corrected and Resubmitted to Accounts', 'Branch corrected the complete request, captured fresh customer and issuer signatures, and resubmitted it for Accounts approval.');
   return data as CreditDispatchRecord;
 }
 
@@ -212,7 +212,7 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
       credit_amount: input.creditAmount,
       tentative_closure_days: input.tentativeClosureDays,
       due_date: new Date(new Date(input.documentDate).getTime() + input.tentativeClosureDays * 86400000).toISOString().slice(0, 10),
-      approval_status: 'Pending Approval',
+      approval_status: 'Pending Accounts Approval',
       remarks: input.remarks.trim() || null,
       sales_employee_name: salesEmployeeName,
       customer_signature_path: customerSignaturePath,
@@ -224,34 +224,17 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
     .single();
 
   if (error) throw error;
-  await addEvent(data.id, 'Submitted for Approval', 'Credit dispatch request submitted digitally with customer and issuer signatures.');
+  await addEvent(data.id, 'Submitted for Accounts Approval', 'Credit dispatch request submitted digitally with customer and issuer signatures for Accounts approval.');
   return data as CreditDispatchRecord;
 }
 
-export async function updateCreditDispatchApproval(dispatchId: string, action: CreditDispatchApprovalAction, note: string, approverProfileId?: string) {
-  const patch: Record<string, unknown> = {
-    approval_status: action,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (action === 'Approved') {
-    patch.approved_by = approverProfileId ?? null;
-    patch.approved_at = new Date().toISOString();
-    patch.rejection_reason = null;
-    patch.correction_note = null;
-  }
-
-  if (action === 'Rejected') {
-    patch.rejection_reason = note.trim() || 'Rejected by manager';
-  }
-
-  if (action === 'Correction Required') {
-    patch.correction_note = note.trim() || 'Correction required';
-  }
-
-  const { error } = await supabase.from('portal_credit_dispatches').update(patch).eq('id', dispatchId).eq('approval_status', 'Pending Approval');
+export async function updateCreditDispatchApproval(dispatchId: string, action: CreditDispatchApprovalAction, note: string, _approverProfileId?: string) {
+  const { error } = await supabase.rpc('portal_review_credit_dispatch', {
+    p_dispatch_id: dispatchId,
+    p_action: action,
+    p_note: note.trim() || null,
+  });
   if (error) throw error;
-  await addEvent(dispatchId, action, note || action);
 }
 
 export async function addCreditDispatchPayment(input: CreditDispatchPaymentInput) {
