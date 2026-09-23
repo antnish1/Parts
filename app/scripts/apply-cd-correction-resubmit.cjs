@@ -93,6 +93,7 @@ patchFile('src/routes/AppRouter.tsx', (source) => {
 });
 
 patchFile('src/features/credit-dispatch/CreditDispatchListPage.tsx', (source) => {
+  if (source.includes('function canReviewStage')) return source;
   if (source.includes('Edit & Resubmit')) return source;
 
   source = source.replace(
