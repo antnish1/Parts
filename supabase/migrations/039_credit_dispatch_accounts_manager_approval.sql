@@ -2,6 +2,9 @@
 -- Branch -> Accounts -> Manager -> Payment Recovery.
 -- Rejections are final. Any correction resubmission restarts at Accounts.
 
+alter table public.portal_credit_dispatches
+  drop constraint if exists portal_credit_dispatches_approval_status_check;
+
 update public.portal_credit_dispatches
 set approval_status = case approval_status
   when 'Pending Approval' then 'Pending Accounts Approval'
@@ -10,9 +13,6 @@ set approval_status = case approval_status
   else approval_status
 end
 where approval_status in ('Pending Approval', 'Correction Required', 'Rejected');
-
-alter table public.portal_credit_dispatches
-  drop constraint if exists portal_credit_dispatches_approval_status_check;
 
 alter table public.portal_credit_dispatches
   add constraint portal_credit_dispatches_approval_status_check
