@@ -175,6 +175,13 @@
     padding: 12px 14px !important;
   }
 
+  [data-theme='light-pro'] .pc-content[data-credit-dispatch-list='true'] {
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
   [data-theme='light-pro'] .pc-page-card {
     border-color: var(--pc-border) !important;
     border-radius: 10px !important;
