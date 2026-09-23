@@ -1,20 +1,26 @@
 import type { CreditDispatchRecord } from './creditDispatch.service';
 
 export type CreditDispatchProgressStatus =
-  | 'Pending Approval'
-  | 'Correction Required'
-  | 'Rejected'
-  | 'Pending Payment'
+  | 'Pending Accounts Approval'
+  | 'Pending Manager Approval'
+  | 'Correction Requested by Accounts'
+  | 'Correction Requested by Manager'
+  | 'Rejected by Accounts'
+  | 'Rejected by Manager'
+  | 'Payment Pending'
   | 'Partial Payment'
   | 'Payment Overdue'
   | 'Partial Payment - Overdue'
   | 'Closed';
 
 export const creditDispatchProgressStatuses: CreditDispatchProgressStatus[] = [
-  'Pending Approval',
-  'Correction Required',
-  'Rejected',
-  'Pending Payment',
+  'Pending Accounts Approval',
+  'Pending Manager Approval',
+  'Correction Requested by Accounts',
+  'Correction Requested by Manager',
+  'Rejected by Accounts',
+  'Rejected by Manager',
+  'Payment Pending',
   'Partial Payment',
   'Payment Overdue',
   'Partial Payment - Overdue',
@@ -24,9 +30,12 @@ export const creditDispatchProgressStatuses: CreditDispatchProgressStatus[] = [
 export function getCreditDispatchProgressStatus(
   row: Pick<CreditDispatchRecord, 'approval_status' | 'recovery_status' | 'credit_amount' | 'total_received_amount' | 'balance_amount' | 'due_date'>,
 ): CreditDispatchProgressStatus {
-  if (row.approval_status === 'Correction Required') return 'Correction Required';
-  if (row.approval_status === 'Rejected') return 'Rejected';
-  if (row.approval_status !== 'Approved') return 'Pending Approval';
+  if (row.approval_status === 'Pending Accounts Approval') return 'Pending Accounts Approval';
+  if (row.approval_status === 'Pending Manager Approval') return 'Pending Manager Approval';
+  if (row.approval_status === 'Correction Requested by Accounts') return 'Correction Requested by Accounts';
+  if (row.approval_status === 'Correction Requested by Manager') return 'Correction Requested by Manager';
+  if (row.approval_status === 'Rejected by Accounts') return 'Rejected by Accounts';
+  if (row.approval_status === 'Rejected by Manager') return 'Rejected by Manager';
 
   const credit = Number(row.credit_amount ?? 0);
   const received = Number(row.total_received_amount ?? 0);
@@ -38,11 +47,11 @@ export function getCreditDispatchProgressStatus(
   if (received > 0 && overdue) return 'Partial Payment - Overdue';
   if (received > 0) return 'Partial Payment';
   if (overdue) return 'Payment Overdue';
-  return 'Pending Payment';
+  return 'Payment Pending';
 }
 
 export function isCreditDispatchPaymentStage(status: CreditDispatchProgressStatus) {
-  return ['Pending Payment', 'Partial Payment', 'Payment Overdue', 'Partial Payment - Overdue'].includes(status);
+  return ['Payment Pending', 'Partial Payment', 'Payment Overdue', 'Partial Payment - Overdue'].includes(status);
 }
 
 export function isCreditDispatchOverdue(status: CreditDispatchProgressStatus) {
