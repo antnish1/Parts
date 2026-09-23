@@ -201,7 +201,7 @@ export function NewCreditDispatchPage() {
         {step === 2 ? (
           <div className="space-y-4">
             <SignaturePad title="Customer Signature" subtitle="Customer acceptance" agreement="I confirm receipt of goods/document on credit and agree to clear the pending amount within the selected closure period." value={form.customerSignatureDataUrl} onChange={(value) => update('customerSignatureDataUrl', value)} />
-            <SignaturePad title="Issuer Signature" subtitle="Issuing official confirmation" agreement="I confirm that this credit dispatch entry is correct and submitted for manager approval." value={form.issuerSignatureDataUrl} onChange={(value) => update('issuerSignatureDataUrl', value)} />
+            <SignaturePad title="Issuer Signature" subtitle="Issuing official confirmation" agreement="I confirm that this credit dispatch entry is correct and submitted for Accounts approval first." value={form.issuerSignatureDataUrl} onChange={(value) => update('issuerSignatureDataUrl', value)} />
           </div>
         ) : null}
 
@@ -211,7 +211,7 @@ export function NewCreditDispatchPage() {
               <div className="grid h-11 w-11 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><FileSignature className="h-5 w-5" /></div>
               <div>
                 <h2 className="text-lg font-black text-slate-950">Review & submit</h2>
-                <p className="text-sm font-semibold text-slate-500">This will be sent to manager-role users for approval.</p>
+                <p className="text-sm font-semibold text-slate-500">This will be sent to Accounts first. Manager approval becomes available only after Accounts approval.</p>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
