@@ -50,16 +50,19 @@ function KpiCard({ label, count, amount, icon: Icon, selected, onClick }: { labe
       type="button"
       aria-pressed={selected}
       onClick={onClick}
-      className={`w-full rounded-2xl border bg-white p-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selected ? 'border-blue-500 ring-2 ring-blue-100' : 'border-slate-200'}`}
+      className={`group relative flex min-w-[150px] flex-1 items-center gap-3 bg-white px-3 py-3 text-left transition hover:bg-slate-50 focus:outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:min-w-0 ${selected ? 'bg-blue-50/60' : ''}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className={`text-[10px] font-black uppercase tracking-[0.14em] ${selected ? 'text-blue-600' : 'text-slate-400'}`}>{label}</p>
-          <p className="mt-1 text-xl font-black text-slate-950">{count}</p>
-          <p className="mt-1 text-xs font-bold text-slate-500">{formatMoney(amount)}</p>
-        </div>
-        <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${selected ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}><Icon className="h-4 w-4" /></div>
-      </div>
+      {selected ? <span className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-600" aria-hidden="true" /> : null}
+      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${selected ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600'}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="flex items-baseline gap-1.5 whitespace-nowrap">
+          <span className={`text-[10px] font-black uppercase tracking-[0.12em] ${selected ? 'text-blue-600' : 'text-slate-500'}`}>{label}</span>
+          <span className="text-sm font-black text-slate-950">{count}</span>
+        </span>
+        <span className="mt-1 block whitespace-nowrap text-xs font-bold text-slate-500">{formatMoney(amount)}</span>
+      </span>
     </button>
   );
 }
@@ -323,15 +326,13 @@ export function CreditDispatchListPage() {
   const actionProps = { currentRole, canPay, canCorrect, currentBranch: profile?.branch ?? '', isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
 
   return (
-    <div data-cd-theme="tracker" className="cd-shell cd-tracker mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0">
+    <div data-cd-theme="tracker" className="cd-shell cd-tracker w-full max-w-none space-y-4 pb-20 xl:pb-0">
       <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Credit Dispatch</p><h1 className="mt-1 text-xl font-black text-slate-950">Payment Recovery Tracker</h1><p className="mt-1 text-sm font-semibold text-slate-500">Approve requests, record payments, and track pending receipts.</p></div>{currentRole === 'branch' ? <Link to="/credit-dispatch/new"><Button className="w-full sm:w-auto"><Plus className="h-4 w-4" />New Request</Button></Link> : null}</div>
-      <div className="space-y-2">
-        <div className="grid gap-2 sm:grid-cols-3">
+      <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex min-w-[1050px] divide-x divide-slate-200 sm:min-w-0">
           <KpiCard label="Pending Approval" count={kpiData['Pending Approval'].count} amount={kpiData['Pending Approval'].amount} icon={Clock} selected={kpiFilter === 'Pending Approval'} onClick={() => { setKpiFilter('Pending Approval'); setStatusFilter('All'); }} />
           <KpiCard label="Overdue" count={kpiData.Overdue.count} amount={kpiData.Overdue.amount} icon={AlertTriangle} selected={kpiFilter === 'Overdue'} onClick={() => { setKpiFilter('Overdue'); setStatusFilter('All'); }} />
           <KpiCard label="Pending Payment" count={kpiData['Pending Payment'].count} amount={kpiData['Pending Payment'].amount} icon={IndianRupee} selected={kpiFilter === 'Pending Payment'} onClick={() => { setKpiFilter('Pending Payment'); setStatusFilter('All'); }} />
-        </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard label="Rejected" count={kpiData.Rejected.count} amount={kpiData.Rejected.amount} icon={XCircle} selected={kpiFilter === 'Rejected'} onClick={() => { setKpiFilter('Rejected'); setStatusFilter('All'); }} />
           <KpiCard label="Closed" count={kpiData.Closed.count} amount={kpiData.Closed.amount} icon={CheckCircle2} selected={kpiFilter === 'Closed'} onClick={() => { setKpiFilter('Closed'); setStatusFilter('All'); }} />
           <KpiCard label="Correction" count={kpiData.Correction.count} amount={kpiData.Correction.amount} icon={RotateCcw} selected={kpiFilter === 'Correction'} onClick={() => { setKpiFilter('Correction'); setStatusFilter('All'); }} />
