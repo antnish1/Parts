@@ -252,6 +252,8 @@ The user explicitly requires Back buttons to return to the **actual previous pag
 
 ## 7. Roles and access
 
+> **Accounts navigation rule (2026-09-23):** Accounts users must not see or access Part Location Finder. Keep `/parts/location-finder` and its child routes hidden/blocked for the `accounts` role while preserving access for roles that already had it.
+
 The React router currently includes role-oriented surfaces for branch users, approval users, managers, admins, developers, and other operational users.
 
 Current route families include:
