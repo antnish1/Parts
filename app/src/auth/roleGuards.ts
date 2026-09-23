@@ -24,6 +24,11 @@ export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/parts/location-finder/manage') return ['manager', 'admin', 'developer'].includes(role);
   if (isPartLocationWorkspace(path)) return true;
   if (isTadaWorkspace(path)) return ['branch', 'manager', 'hq', 'developer', 'accounts'].includes(role);
+  if (isCreditDispatchWorkspace(path)) {
+    if (path === '/credit-dispatch/new') return role === 'branch';
+    if (/^\/credit-dispatch\/[^/]+\/edit$/.test(path)) return role === 'branch';
+    return ['branch', 'accounts', 'manager', 'admin', 'developer', 'super'].includes(role);
+  }
   if (role === 'accounts') return false;
   if (isInstallationWorkspace(path)) return true;
   if (path === '/orders/delayed-vor') return true;
@@ -33,7 +38,6 @@ export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'developer'].includes(role);
   if (isInventoryWorkspace(path)) return role === 'developer';
-  if (isCreditDispatchWorkspace(path)) return ['branch', 'manager', 'admin', 'developer', 'super'].includes(role);
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
   if (role === 'viewer') return isOrderWorkspace(path) || path.startsWith('/reports');

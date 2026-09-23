@@ -14,18 +14,42 @@ replaceOnce(`import { getOrderList } from '../services/orderList.service';`, `im
 replaceOnce(`  { to: '/orders/track', label: 'Track Orders', icon: PackageSearch, desktopIcon: ListOrdered, desktopGroup: 'Orders', desktopOrder: 11 },`, `  { to: '/orders/track', label: 'Track Orders', icon: PackageSearch, desktopIcon: ListOrdered, desktopGroup: 'Orders', desktopOrder: 11 },\n  { to: '/orders/pending-issue', label: 'Pending Issue', icon: FileCheck2, desktopGroup: 'Orders', desktopOrder: 12 },`, 'pending issue nav item');
 source = source.replace(`  { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert, desktopGroup: 'Orders', desktopOrder: 12 },`, `  { to: '/orders/delayed-vor', label: 'Delayed VOR', icon: ClockAlert, desktopGroup: 'Orders', desktopOrder: 13 },`);
 
-replaceOnce(`  const branchCreditDispatchCount = creditDispatches.filter((row) =>\n    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,\n  ).length;`, `  const branchCreditDispatchCount = creditDispatches.filter((row) =>\n    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,\n  ).length;\n\n  const pendingIssueQuery = useQuery({\n    queryKey: ['pending-issue-nav-count', profile?.role, profile?.branch],\n    queryFn: getPendingIssueOrders,\n    enabled: ['branch', 'admin', 'manager', 'developer', 'hq'].includes(profile?.role ?? ''),\n    staleTime: 30000,\n    refetchOnWindowFocus: true,\n  });\n  const pendingIssueCount = pendingIssueQuery.data?.length ?? 0;`, 'pending issue query');
+const stagedBranchCounter = `  const branchCreditDispatchCount = creditDispatches.filter((row) =>
+    ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(row.approval_status) && normalizeBranch(row.branch) === branchKey,
+  ).length;`;
+
+const legacyBranchCounter = `  const branchCreditDispatchCount = creditDispatches.filter((row) =>
+    row.approval_status === 'Correction Required' && normalizeBranch(row.branch) === branchKey,
+  ).length;`;
+
+const pendingIssueBlock = `
+
+  const pendingIssueQuery = useQuery({
+    queryKey: ['pending-issue-nav-count', profile?.role, profile?.branch],
+    queryFn: getPendingIssueOrders,
+    enabled: ['branch', 'admin', 'manager', 'developer', 'hq'].includes(profile?.role ?? ''),
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
+  });
+  const pendingIssueCount = pendingIssueQuery.data?.length ?? 0;`;
+
+if (!source.includes("queryKey: ['pending-issue-nav-count'")) {
+  if (source.includes(stagedBranchCounter)) source = source.replace(stagedBranchCounter, stagedBranchCounter + pendingIssueBlock);
+  else if (source.includes(legacyBranchCounter)) source = source.replace(legacyBranchCounter, legacyBranchCounter + pendingIssueBlock);
+  else throw new Error('pending issue query marker not found');
+}
+
 replaceOnce(`      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };`, `      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };\n      if (item.to === '/orders/pending-issue') return { ...item, badge: pendingIssueCount };`, 'pending issue badge');
 
-const legacyDeps = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount],`;
-const legacyDepsWithPending = `    [approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, isAdmin, isBranch, isManager, managerApprovalCount, managerCreditDispatchCount, pendingIssueCount],`;
-const tadaDeps = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`;
-const tadaDepsWithPending = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`;
+const stagedTadaDeps = `    [accountsCreditDispatchCount, accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerCreditDispatchCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`;
+const stagedTadaDepsWithPending = `    [accountsCreditDispatchCount, accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerCreditDispatchCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`;
+const oldTadaDeps = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount],`;
+const oldTadaDepsWithPending = `    [accountsTadaCount, approvedOrdersCount, branchCreditDispatchCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isBranch, isDeveloper, isManager, managerApprovalCount, managerCreditDispatchCount, managerTadaCount, pendingIssueCount],`;
 
-if (source.includes(tadaDeps) || source.includes(tadaDepsWithPending)) {
-  replaceOnce(tadaDeps, tadaDepsWithPending, 'pending issue TA/DA memo deps');
-} else {
-  replaceOnce(legacyDeps, legacyDepsWithPending, 'pending issue memo deps');
+if (source.includes(stagedTadaDeps) || source.includes(stagedTadaDepsWithPending)) {
+  replaceOnce(stagedTadaDeps, stagedTadaDepsWithPending, 'pending issue staged TA/DA memo deps');
+} else if (source.includes(oldTadaDeps) || source.includes(oldTadaDepsWithPending)) {
+  replaceOnce(oldTadaDeps, oldTadaDepsWithPending, 'pending issue TA/DA memo deps');
 }
 
 fs.writeFileSync(filePath, source);

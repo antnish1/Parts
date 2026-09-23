@@ -435,6 +435,9 @@ Registering from an invoice opens `/installations/new?invoice=<invoice-id>`; inv
 
 ## 13. Credit Dispatch module
 
+> **Current approval contract (2026-09-23):** Credit Dispatch is a strict two-stage workflow: Branch submits → Pending Accounts Approval → Accounts approves → Pending Manager Approval → Manager approves → payment recovery. Accounts may review only the Accounts stage; Manager may review only the Manager stage; Developer is the only override role for either review stage. Rejection by Accounts or Manager is final. Any correction, including one requested by Manager, must be corrected by the owning Branch and resubmitted back to Pending Accounts Approval so Accounts must approve again before Manager can act. Keep final database approval status as Approved after Manager approval so existing payment/ledger/aging logic continues; the user-facing progress label is Payment Pending.
+
+
 Current routes include list, detail, new request, reports, customers, profile, ledger, and aging pages.
 
 The codebase contains patch scripts for:

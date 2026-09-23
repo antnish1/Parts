@@ -59,7 +59,7 @@ export function EditCreditDispatchPage() {
 
   const dueDate = useMemo(() => form ? calculateDueDate(form.documentDate, form.tentativeClosureDays) : '', [form]);
   const ownsRequest = normalize(profile?.branch) === normalize(requestQuery.data?.branch);
-  const canEdit = profile?.role === 'branch' && ownsRequest && requestQuery.data?.approval_status === 'Correction Required';
+  const canEdit = profile?.role === 'branch' && ownsRequest && ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(requestQuery.data?.approval_status ?? '');
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -103,7 +103,7 @@ export function EditCreditDispatchPage() {
     <div className="mx-auto max-w-5xl space-y-4 pb-24">
       <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600"><ArrowLeft className="h-4 w-4" />Back</button>
       <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-orange-600" /><div><h1 className="font-semibold text-orange-900">Manager correction required</h1><p className="mt-1 text-sm text-orange-800">{requestQuery.data?.correction_note || 'Please review and correct the request.'}</p><p className="mt-2 text-xs text-orange-700">Both customer and issuer signatures must be captured again before resubmission.</p></div></div>
+        <div className="flex items-start gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 text-orange-600" /><div><h1 className="font-semibold text-orange-900">{requestQuery.data?.approval_status === 'Correction Requested by Manager' ? 'Manager correction requested' : 'Accounts correction requested'}</h1><p className="mt-1 text-sm text-orange-800">{requestQuery.data?.correction_note || 'Please review and correct the request.'}</p><p className="mt-2 text-xs text-orange-700">Both customer and issuer signatures must be captured again. Every corrected request restarts from Accounts approval.</p></div></div>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -125,7 +125,7 @@ export function EditCreditDispatchPage() {
       </section>
 
       <SignaturePad title="New Customer Signature" subtitle="Required after correction" agreement="I confirm the corrected credit dispatch details and agree to clear the pending amount within the selected closure period." value={form.customerSignatureDataUrl} onChange={(value) => update('customerSignatureDataUrl', value)} />
-      <SignaturePad title="New Issuer Signature" subtitle="Required after correction" agreement="I confirm that the corrected credit dispatch entry is complete and ready for manager approval." value={form.issuerSignatureDataUrl} onChange={(value) => update('issuerSignatureDataUrl', value)} />
+      <SignaturePad title="New Issuer Signature" subtitle="Required after correction" agreement="I confirm that the corrected credit dispatch entry is complete and ready to restart from Accounts approval." value={form.issuerSignatureDataUrl} onChange={(value) => update('issuerSignatureDataUrl', value)} />
 
       {mutation.error ? <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{(mutation.error as Error).message}</div> : null}
       <div className="sticky bottom-3 flex justify-end rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur"><Button onClick={() => mutation.mutate()} disabled={mutation.isPending}><RotateCcw className="h-4 w-4" />{mutation.isPending ? 'Resubmitting…' : 'Save Changes & Resubmit'}<Send className="h-4 w-4" /></Button></div>

@@ -18,6 +18,7 @@ function patch(relativePath, transforms) {
   if (changed) fs.writeFileSync(filePath, source);
 }
 
+if (!fs.readFileSync(path.join(root, 'src/features/credit-dispatch/CreditDispatchListPage.tsx'), 'utf8').includes('function canReviewStage')) {
 patch('src/features/credit-dispatch/CreditDispatchListPage.tsx', [
   [
     "} from '../../services/creditDispatch.service';",
@@ -56,6 +57,7 @@ patch('src/features/credit-dispatch/CreditDispatchListPage.tsx', [
     "<div data-cd-theme=\"tracker\" className=\"cd-shell cd-tracker mx-auto max-w-7xl space-y-4 pb-20 xl:pb-0\">",
   ],
 ]);
+}
 
 patch('src/features/credit-dispatch/RequestReportsPage.tsx', [
   [
