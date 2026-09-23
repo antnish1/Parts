@@ -20,7 +20,8 @@ const paymentModes = ['Cash', 'UPI', 'Bank', 'Cheque', 'Adjustment', 'Other'] as
 type PaymentMode = typeof paymentModes[number];
 
 function statusClass(status: string) {
-  if (status === 'Pending Accounts Approval' || status === 'Pending Manager Approval') return 'cd-status cd-status--pending-approval';
+  if (status === 'Pending Accounts Approval') return 'cd-status cd-status--pending-approval';
+  if (status === 'Pending Manager Approval') return 'cd-status cd-status--pending-manager';
   if (status.startsWith('Correction Requested')) return 'cd-status cd-status--correction';
   if (status.startsWith('Rejected by')) return 'cd-status cd-status--rejected';
   if (status === 'Payment Pending') return 'cd-status cd-status--pending-payment';
