@@ -20,7 +20,7 @@ async function scopedOrders(select: string) {
   if (!profile?.is_active) return [] as Record<string, unknown>[];
   let query = supabase.from('portal_orders').select(select).order('created_at', { ascending: false }).limit(1000);
   if (profile.role === 'branch') query = query.eq('branch', profile.branch ?? '__NO_BRANCH_SCOPE__');
-  const { data, error } = await query; if (error) throw error; return (data ?? []) as Record<string, unknown>[];
+  const { data, error } = await query; if (error) throw error; return (data ?? []) as unknown as Record<string, unknown>[];
 }
 async function getItemsAndBillings(orderIds: string[]) {
   if (!orderIds.length) return { items: [] as ItemRow[], billings: [] as BillingRow[] };
