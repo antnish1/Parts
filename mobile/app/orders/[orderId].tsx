@@ -2,113 +2,19 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/auth/AuthProvider';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getOrder, getOrderItems } from '@/services/orders';
 import { colors, radius, spacing } from '@/theme/tokens';
 
-export default function OrderDetailScreen() {
-  const params = useLocalSearchParams<{ orderId: string }>();
-  const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
-  const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId), enabled: Boolean(orderId) });
-  const items = useQuery({ queryKey: ['order-items', orderId], queryFn: () => getOrderItems(orderId), enabled: Boolean(orderId) });
-
-  if (order.isLoading) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.navy} /></SafeAreaView>;
-
-  if (order.isError || !order.data) {
-    return <SafeAreaView style={styles.center}><Text style={styles.error}>Unable to load this order.</Text><Pressable onPress={() => router.back()}><Text style={styles.link}>Go back</Text></Pressable></SafeAreaView>;
-  }
-
-  const row = order.data;
-  return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
-        <View style={styles.hero}>
-          <View style={styles.heroTop}>
-            <View style={styles.heroCopy}>
-              <Text style={styles.eyebrow}>ORDER</Text>
-              <Text style={styles.orderNo}>{row.order_no}</Text>
-              <Text numberOfLines={2} style={styles.customer}>{row.customer_name || 'Customer not available'}</Text>
-            </View>
-            <StatusChip status={row.status || row.approval_status} />
-          </View>
-          <View style={styles.summaryGrid}>
-            <Meta label="Branch" value={row.branch || '—'} />
-            <Meta label="Machine" value={row.machine_no || '—'} />
-            <Meta label="Order type" value={row.order_type || row.order_for || '—'} />
-            <Meta label="Created" value={formatDate(row.created_at)} />
-            <Meta label="Total qty" value={row.total_qty == null ? '—' : String(row.total_qty)} />
-            <Meta label="Total value" value={formatMoney(row.total_value)} />
-          </View>
-        </View>
-
-        <SectionTitle title={`Parts (${items.data?.length ?? 0})`} />
-        {(items.data ?? []).map((item) => (
-          <View key={item.id} style={styles.itemCard}>
-            <View style={styles.itemTop}><Text style={styles.partNo}>{item.part_no}</Text><Text style={styles.qty}>Qty {item.edited_qty ?? item.qty}</Text></View>
-            <Text style={styles.description}>{item.description || 'No description'}</Text>
-            <View style={styles.itemMeta}><Text style={styles.itemMetaText}>DNP {formatMoney(item.dnp)}</Text><Text style={styles.itemMetaText}>Value {formatMoney(item.value)}</Text>{item.billed_qty != null ? <Text style={styles.itemMetaText}>Billed {item.billed_qty}</Text> : null}</View>
-          </View>
-        ))}
-        {items.isError ? <Text style={styles.error}>Part details could not be loaded.</Text> : null}
-
-        <SectionTitle title="Processing & dispatch" />
-        <View style={styles.detailCard}>
-          <DetailRow label="Processing ref" value={row.processing_reference} />
-          <DetailRow label="Processed date" value={formatDate(row.processed_date)} />
-          <DetailRow label="Final order no." value={row.final_order_no} />
-          <DetailRow label="DBMS invoice" value={row.dbms_invoice_no} />
-          <DetailRow label="DBMS invoice date" value={formatDate(row.dbms_invoice_date)} />
-          <DetailRow label="Docket" value={row.docket_no} />
-          <DetailRow label="Transport" value={row.transport_name} />
-          <DetailRow label="Received" value={formatDate(row.received_date)} last />
-        </View>
-
-        <View style={styles.timelineNote}>
-          <Text style={styles.timelineTitle}>Workflow activity</Text>
-          <Text style={styles.timelineText}>The full audited event timeline and comments will be added in the next mobile slice. Status changes remain server-controlled; this screen is read-only.</Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+export default function OrderDetailScreen(){
+ const params=useLocalSearchParams<{orderId:string}>(); const orderId=Array.isArray(params.orderId)?params.orderId[0]:params.orderId; const {role}=useAuth();
+ const order=useQuery({queryKey:['order',orderId],queryFn:()=>getOrder(orderId),enabled:Boolean(orderId)}); const items=useQuery({queryKey:['order-items',orderId],queryFn:()=>getOrderItems(orderId),enabled:Boolean(orderId)});
+ if(order.isLoading)return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.navy}/></SafeAreaView>;
+ if(order.isError||!order.data)return <SafeAreaView style={styles.center}><Text style={styles.error}>Unable to load this order.</Text><Pressable onPress={()=>router.back()}><Text style={styles.link}>Go back</Text></Pressable></SafeAreaView>;
+ const row=order.data; const canCorrect=role==='manager'||role==='developer';
+ return <SafeAreaView style={styles.safe} edges={['top']}><ScrollView contentContainerStyle={styles.content}><Pressable onPress={()=>router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable><View style={styles.hero}><View style={styles.heroTop}><View style={styles.heroCopy}><Text style={styles.eyebrow}>ORDER</Text><Text style={styles.orderNo}>{row.final_order_no||row.order_no}</Text><Text numberOfLines={2} style={styles.customer}>{row.customer_name||'Customer not available'}</Text></View><StatusChip status={row.status||row.approval_status}/></View><View style={styles.summaryGrid}><Meta label="Branch" value={row.branch||'—'}/><Meta label="Machine" value={row.machine_no||'—'}/><Meta label="Order type" value={row.order_type||row.order_for||'—'}/><Meta label="Created" value={formatDate(row.created_at)}/><Meta label="Total qty" value={row.total_qty==null?'—':String(row.total_qty)}/><Meta label="Total value" value={formatMoney(row.total_value)}/></View></View>{canCorrect?<Pressable onPress={()=>router.push(`/orders/${orderId}/correct`)} style={styles.correct}><Text style={styles.correctTitle}>Order Data Correction</Text><Text style={styles.correctText}>Manager / Developer audited correction console</Text></Pressable>:null}<Text style={styles.sectionTitle}>Parts ({items.data?.length??0})</Text>{(items.data??[]).map(item=><View key={item.id} style={styles.itemCard}><View style={styles.itemTop}><Text style={styles.partNo}>{item.part_no}</Text><Text style={styles.qty}>Qty {item.edited_qty??item.qty}</Text></View><Text style={styles.description}>{item.description||'No description'}</Text><View style={styles.itemMeta}><Text style={styles.itemMetaText}>DNP {formatMoney(item.dnp)}</Text><Text style={styles.itemMetaText}>Value {formatMoney(item.value)}</Text>{item.billed_qty!=null?<Text style={styles.itemMetaText}>Billed {item.billed_qty}</Text>:null}</View></View>)}{items.isError?<Text style={styles.error}>Part details could not be loaded.</Text>:null}<Text style={styles.sectionTitle}>Processing & dispatch</Text><View style={styles.detailCard}><DetailRow label="Processing ref" value={row.processing_reference}/><DetailRow label="Processed date" value={formatDate(row.processed_date)}/><DetailRow label="Final order no." value={row.final_order_no}/><DetailRow label="DBMS invoice" value={row.dbms_invoice_no}/><DetailRow label="DBMS invoice date" value={formatDate(row.dbms_invoice_date)}/><DetailRow label="Docket" value={row.docket_no}/><DetailRow label="Transport" value={row.transport_name}/><DetailRow label="Received" value={formatDate(row.received_date)} last/></View></ScrollView></SafeAreaView>;
 }
-
-function SectionTitle({ title }: { title: string }) { return <Text style={styles.sectionTitle}>{title}</Text>; }
-function Meta({ label, value }: { label: string; value: string }) { return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaValue}>{value}</Text></View>; }
-function DetailRow({ label, value, last = false }: { label: string; value: string | null | undefined; last?: boolean }) { return <View style={[styles.detailRow, last && styles.detailRowLast]}><Text style={styles.detailLabel}>{label}</Text><Text style={styles.detailValue}>{value || '—'}</Text></View>; }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background },
-  content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 36 },
-  back: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' },
-  backText: { color: colors.blue, fontSize: 14, fontWeight: '800' },
-  hero: { padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
-  heroCopy: { flex: 1 },
-  eyebrow: { color: colors.blue, fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
-  orderNo: { color: colors.text, fontSize: 23, fontWeight: '900', marginTop: 3 },
-  customer: { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
-  meta: { width: '46%' },
-  metaLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
-  metaValue: { color: colors.text, fontSize: 12, fontWeight: '800', marginTop: 2 },
-  sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: spacing.xs },
-  itemCard: { padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  itemTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  partNo: { color: colors.text, fontSize: 14, fontWeight: '900' },
-  qty: { color: colors.navy, fontSize: 12, fontWeight: '900' },
-  description: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
-  itemMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
-  itemMetaText: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
-  detailCard: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, overflow: 'hidden' },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.lg, padding: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  detailRowLast: { borderBottomWidth: 0 },
-  detailLabel: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
-  detailValue: { flex: 1, textAlign: 'right', color: colors.text, fontSize: 11, fontWeight: '700' },
-  timelineNote: { padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.blueSoft },
-  timelineTitle: { color: colors.navy, fontSize: 13, fontWeight: '900' },
-  timelineText: { color: colors.navySoft, fontSize: 11, lineHeight: 17, marginTop: 4 },
-  error: { color: colors.danger, fontSize: 13, textAlign: 'center' },
-  link: { color: colors.blue, fontSize: 13, fontWeight: '800' },
-});
+function Meta({label,value}:{label:string;value:string}){return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaValue}>{value}</Text></View>}
+function DetailRow({label,value,last=false}:{label:string;value:string|null|undefined;last?:boolean}){return <View style={[styles.detailRow,last&&styles.detailRowLast]}><Text style={styles.detailLabel}>{label}</Text><Text style={styles.detailValue}>{value||'—'}</Text></View>}
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},center:{flex:1,alignItems:'center',justifyContent:'center',gap:spacing.md,padding:spacing.xl,backgroundColor:colors.background},content:{padding:spacing.lg,gap:spacing.md,paddingBottom:36},back:{alignSelf:'flex-start',minHeight:40,justifyContent:'center'},backText:{color:colors.blue,fontSize:14,fontWeight:'800'},hero:{padding:spacing.lg,borderRadius:radius.xl,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border},heroTop:{flexDirection:'row',justifyContent:'space-between',gap:spacing.md},heroCopy:{flex:1},eyebrow:{color:colors.blue,fontSize:10,fontWeight:'900',letterSpacing:1.3},orderNo:{color:colors.text,fontSize:23,fontWeight:'900',marginTop:3},customer:{color:colors.textMuted,fontSize:13,lineHeight:18,marginTop:4},summaryGrid:{flexDirection:'row',flexWrap:'wrap',gap:spacing.md,marginTop:spacing.lg},meta:{width:'46%'},metaLabel:{color:colors.textMuted,fontSize:10,fontWeight:'700'},metaValue:{color:colors.text,fontSize:12,fontWeight:'800',marginTop:2},correct:{padding:spacing.md,borderRadius:radius.lg,borderWidth:1,borderColor:'#F0C36A',backgroundColor:colors.warningSoft},correctTitle:{color:colors.warning,fontSize:12,fontWeight:'900'},correctText:{color:colors.text,fontSize:10,marginTop:2},sectionTitle:{color:colors.text,fontSize:14,fontWeight:'900',marginTop:spacing.xs},itemCard:{padding:spacing.md,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},itemTop:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm},partNo:{color:colors.text,fontSize:14,fontWeight:'900'},qty:{color:colors.navy,fontSize:12,fontWeight:'900'},description:{color:colors.textMuted,fontSize:12,lineHeight:17,marginTop:3},itemMeta:{flexDirection:'row',flexWrap:'wrap',gap:spacing.md,marginTop:spacing.sm},itemMetaText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},detailCard:{borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,overflow:'hidden'},detailRow:{flexDirection:'row',justifyContent:'space-between',gap:spacing.lg,padding:spacing.md,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:colors.border},detailRowLast:{borderBottomWidth:0},detailLabel:{color:colors.textMuted,fontSize:11,fontWeight:'700'},detailValue:{flex:1,textAlign:'right',color:colors.text,fontSize:11,fontWeight:'700'},error:{color:colors.danger,fontSize:13,textAlign:'center'},link:{color:colors.blue,fontSize:13,fontWeight:'800'}});
