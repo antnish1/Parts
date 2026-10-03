@@ -33,4 +33,4 @@ export const SignaturePad = forwardRef<SignaturePadHandle,{label:string}>(({labe
   </View>;
 });
 SignaturePad.displayName='SignaturePad';
-const styles=StyleSheet.create({wrap:{gap:spacing.sm},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},label:{color:colors.text,fontSize:12,fontWeight:'900'},clear:{color:colors.blue,fontSize:11,fontWeight:'900'},canvas:{height:170,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:'#fff',overflow:'hidden'},hintWrap:{...StyleSheet.absoluteFillObject,alignItems:'center',justifyContent:'center'},hint:{color:colors.textMuted,fontSize:12,fontWeight:'700'}});
+const styles=StyleSheet.create({wrap:{gap:spacing.sm},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},label:{color:colors.text,fontSize:12,fontWeight:'900'},clear:{color:colors.blue,fontSize:11,fontWeight:'900'},canvas:{height:170,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:'#fff',overflow:'hidden'},hintWrap:{...StyleSheet.absoluteFill,alignItems:'center',justifyContent:'center'},hint:{color:colors.textMuted,fontSize:12,fontWeight:'700'}});
