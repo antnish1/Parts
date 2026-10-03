@@ -12,6 +12,7 @@ const trackOrders: WorkAction = { key: 'track-orders', label: 'Track Orders', de
 const docket: WorkAction = { key: 'docket', label: 'Docket Scanner', description: 'Scan/search a docket and receive billed rows.', href: '/docket' };
 const credit: WorkAction = { key: 'credit', label: 'Credit Dispatch', description: 'Credit approvals, recovery status and customer requests.', href: '/credit-dispatch' };
 const tada: WorkAction = { key: 'tada', label: 'TA/DA Tracking', description: 'Track physical SVR custody through HQ and Accounts.', href: '/ta-da' };
+const installations: WorkAction = { key: 'installations', label: 'Engine & Breaker', description: 'Invoice intake, installation completion and acceptance.', href: '/installations' };
 
 export const roleWorkActions: Record<UserRole, WorkAction[]> = {
   branch: [
@@ -19,14 +20,16 @@ export const roleWorkActions: Record<UserRole, WorkAction[]> = {
     trackOrders,
     { key: 'pending-issue', label: 'Pending Issue', description: 'Review remaining issue quantities and inventory.' },
     docket,
+    installations,
     credit,
     tada,
   ],
-  admin: [trackOrders, { key: 'admin-queue', label: 'Approved Orders', description: 'Process approved orders and dispatch work.' }, docket, credit],
+  admin: [trackOrders, { key: 'admin-queue', label: 'Approved Orders', description: 'Process approved orders and dispatch work.' }, docket, installations, credit],
   super: [
     { key: 'approval-queue', label: 'Approval Queue', description: 'Review orders assigned for approval.', href: '/approvals', badgeKey: 'pendingApproval' },
     trackOrders,
     docket,
+    installations,
     credit,
   ],
   manager: [
@@ -34,19 +37,21 @@ export const roleWorkActions: Record<UserRole, WorkAction[]> = {
     trackOrders,
     { key: 'manager-dashboard', label: 'Manager Dashboard', description: 'Branch and operational performance.' },
     docket,
+    installations,
     credit,
     tada,
   ],
-  viewer: [trackOrders, { key: 'reports', label: 'Reports', description: 'Read-only operational reporting.' }],
+  viewer: [trackOrders, installations, { key: 'reports', label: 'Reports', description: 'Read-only operational reporting.' }],
   developer: [
     { key: 'approval-queue', label: 'Approval Queue', description: 'Privileged review access using audited backend functions.', href: '/approvals', badgeKey: 'pendingApproval' },
     trackOrders,
     docket,
+    installations,
     credit,
     tada,
     { key: 'developer', label: 'Developer Workspace', description: 'Privileged tools and audited overrides.' },
   ],
-  hq: [trackOrders, tada],
+  hq: [trackOrders, installations, tada],
   accounts: [
     { ...tada, label: 'TA/DA Receipts', description: 'Receive eligible SVRs at Accounts.' },
     { ...credit, description: 'Review Accounts-stage credit requests and recovery status.' },
