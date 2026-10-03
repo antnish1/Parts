@@ -6,7 +6,17 @@
     "orientation": "portrait",
     "scheme": "partsconnect",
     "userInterfaceStyle": "light",
-    "plugins": ["expo-router", "expo-secure-store"],
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Parts Connect to scan docket barcodes with the camera.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
     "experiments": { "typedRoutes": false },
     "android": {
       "package": "com.frontier.partsconnect",
