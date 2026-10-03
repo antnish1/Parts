@@ -10,7 +10,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 
 type Filter = 'all' | 'pending' | 'approved' | 'open' | 'closed';
 
-function matchesFilter(order: OrderSummary, filter: Filter) {
+function matchesFilter(order: OrderSummary, filter: Filter): boolean {
   const status = `${order.status ?? ''} ${order.approval_status ?? ''}`.toLowerCase();
   if (filter === 'pending') return status.includes('pending');
   if (filter === 'approved') return status.includes('approved');
