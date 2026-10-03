@@ -2,11 +2,12 @@ import { File } from 'expo-file-system';
 import type { DocumentPickerAsset } from 'expo-document-picker';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/lib/supabase';
-import { normalizePartNo, toNumber } from '@/lib/orderLogic';
 
 async function workbook(asset:DocumentPickerAsset){const file=new File(asset.uri);const bytes=await file.arrayBuffer();return XLSX.read(bytes,{cellDates:true});}
 function clean(value:unknown){return String(value??'').trim()}
 function normalizeHeader(value:string){return value.trim().toLowerCase().replace(/[^a-z0-9]/g,'')}
+function normalizePartNo(value:unknown){return clean(value).replace(/\s+/g,'').toUpperCase()}
+function toNumber(value:unknown){const parsed=Number(clean(value).replace(/,/g,'').replace(/₹/g,'').replace(/%/g,'').replace(/\s/g,''));return Number.isFinite(parsed)?parsed:0}
 function read(row:Record<string,unknown>,names:string[]){const accepted=names.map(normalizeHeader);const key=Object.keys(row).find((k)=>accepted.includes(normalizeHeader(k)));return key?row[key]:''}
 function num(value:unknown){const parsed=Number(clean(value).replace(/,/g,'').replace(/₹/g,'').replace(/%/g,'').replace(/\s/g,''));return Number.isFinite(parsed)?parsed:0}
 
