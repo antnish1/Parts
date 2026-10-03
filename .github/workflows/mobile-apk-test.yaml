@@ -1,0 +1,65 @@
+name: Mobile APK Test Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - agent/expo-android-foundation
+    paths:
+      - .github/workflows/mobile-apk-test.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://ilzhsfqqjyppzzvfscmh.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_78HNnIK6q-eBQuoRMGJlkA_oJYe9Ynj
+      EXPO_PUBLIC_APP_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --non-interactive
+
+      - name: Build installable release APK
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Collect APK
+        run: |
+          mkdir -p ../apk-out
+          cp android/app/build/outputs/apk/release/app-release.apk ../apk-out/Parts-Connect-Test.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Parts-Connect-Test-APK
+          path: apk-out/Parts-Connect-Test.apk
+          if-no-files-found: error
+          retention-days: 14
