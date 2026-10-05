@@ -28,6 +28,12 @@ function loginIdFromSession(session: Session | null) {
   return email.includes('@portal.local') ? email.split('@')[0].trim().toUpperCase() : '';
 }
 
+function normalizeLoginIdentifier(value: string) {
+  const text = value.trim();
+  if (text.includes('@')) return text.toLowerCase();
+  return `${text.replace(/\s+/g, '').toLowerCase()}@portal.local`;
+}
+
 async function loadProfile(session: Session | null): Promise<UserProfile | null> {
   if (!session?.user?.id) return null;
 
@@ -102,8 +108,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     isLoading,
     isAuthenticated: Boolean(session && profile?.isActive),
     signIn: async (loginId, password) => {
-      const trimmed = loginId.trim();
-      const email = trimmed.includes('@') ? trimmed.toLowerCase() : `${trimmed.toLowerCase()}@portal.local`;
+      const email = normalizeLoginIdentifier(loginId);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     },
