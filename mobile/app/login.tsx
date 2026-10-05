@@ -24,8 +24,8 @@ export default function LoginScreen() {
     try {
       await signIn(loginId, password);
       router.replace('/(tabs)/home');
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to sign in.');
+    } catch {
+      setError('Invalid User ID or password.');
     } finally {
       setBusy(false);
     }
@@ -56,8 +56,12 @@ export default function LoginScreen() {
         />
         <Text style={styles.label}>Password</Text>
         <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
           editable={!busy}
           secureTextEntry
+          textContentType="password"
+          autoComplete="current-password"
           placeholder="Password"
           placeholderTextColor={colors.textMuted}
           style={styles.input}
