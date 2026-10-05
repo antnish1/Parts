@@ -2,6 +2,7 @@
   "expo": {
     "name": "Parts Connect",
     "slug": "parts-connect",
+    "owner": "insureit_expo",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "partsconnect",
@@ -18,6 +19,11 @@
       ]
     ],
     "experiments": { "typedRoutes": false },
+    "extra": {
+      "eas": {
+        "projectId": "3026af5e-622e-48de-bb4f-1ca851373589"
+      }
+    },
     "android": {
       "package": "com.frontier.partsconnect",
       "adaptiveIcon": {
