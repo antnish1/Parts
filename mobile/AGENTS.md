@@ -2,6 +2,12 @@
 
 Read the repository root `AGENTS.md` first. These rules apply to all work under `mobile/`.
 
+Before any APK/AAB, native dependency, EAS Update, OTA, app-icon, splash-screen, permissions, notification, biometric, or release work, also read:
+
+- `docs/PARTS_CONNECT_MOBILE_NATIVE_BASELINE_AND_OTA_2026-10-05.md`
+
+That document is the source of truth for the current native baseline plan, OTA-first policy, correct Supabase backend, required assets, and the distinction between OTA-compatible changes and changes that require a new native build.
+
 ## Purpose
 
 `mobile/` is the native Expo/React Native Android client for Parts Connect Portal. It runs in parallel with the existing React/Vite web app under `app/` and must not replace or destabilize the web portal during migration.
@@ -37,4 +43,5 @@ Read the repository root `AGENTS.md` first. These rules apply to all work under 
 - Keep mobile CI separate from the existing web build.
 - Run mobile typecheck and Android bundle export checks before merge.
 - Do not add an automatic APK/AAB build-on-main workflow. Create installable Android builds only when the user explicitly requests them.
+- After the OTA-capable native baseline is installed, prefer EAS OTA updates for runtime-compatible JS/TS/UI/business-logic changes. Do not rebuild APKs unnecessarily.
 - Do not deploy mobile changes or alter production database objects merely to preview UI.
