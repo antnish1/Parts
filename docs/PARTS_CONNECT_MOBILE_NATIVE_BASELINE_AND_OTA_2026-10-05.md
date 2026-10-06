@@ -1106,3 +1106,257 @@ Continue the parity matrix with:
 
 Every next batch remains OTA-first. No APK/AAB without explicit user approval.
 
+
+
+---
+
+## 15. Parity implementation progress — Batch 3 published by OTA
+
+**Implementation date:** 06 October 2026
+
+### 15.1 Credit Dispatch parity
+
+Completed:
+- professional search/error/empty states on the dispatch list;
+- customer Outstanding / Overdue / All filtering;
+- Aging Overdue / 30+ / All filtering;
+- native payment-reminder sharing;
+- richer customer profile context in the ledger;
+- customer profile fields such as credit limit, GST, BP code, branch and active status;
+- professional customer/aging/ledger states.
+
+Protected workflow remains unchanged and server-authoritative:
+- Branch → Pending Accounts Approval;
+- Accounts approval → Pending Manager Approval;
+- Manager approval → Payment Recovery;
+- Accounts/Manager correction → Branch → resubmission restarts at Accounts;
+- payment entries, signatures, comments and events retain existing backend rules.
+
+### 15.2 TA/DA parity
+
+Added mobile wrappers for the existing audited developer override RPCs:
+- `portal_developer_update_tada_dispatch`;
+- `portal_developer_update_tada_svr`;
+- `portal_developer_delete_tada_svr`;
+- `portal_developer_delete_tada_dispatch`.
+
+Added:
+- `mobile/src/components/TadaDeveloperControls.tsx`.
+
+Developer controls:
+- visible only to Developer;
+- require an explicit human-entered reason;
+- edit dispatch business fields;
+- edit SVR business fields;
+- delete one SVR while preserving server recalculation rules;
+- delete complete TA/DA list through permanent developer audit;
+- never directly rewrite custody/status/receipt flags.
+
+Receipt-stage parity corrected:
+- Manager/Developer HQ receipt at `AWAITING_HQ_RECEIPT`;
+- Accounts/Developer Accounts receipt for `AWAITING_ACCOUNTS_RECEIPT` and HQ-received SVRs inside `PARTIALLY_RECEIVED_HQ`.
+
+Tracking improvements:
+- New Dispatch entry point restored for Branch/Manager/HQ/Developer;
+- professional search/error/empty states;
+- Developer override notice.
+
+### 15.3 Engine & Breaker parity
+
+Completed:
+- removed duplicate JCB Invoice No. from Stage Two Completion;
+- Stage Two now reuses invoice intake JCB Invoice No.;
+- DBMS Invoice No. remains a distinct later field;
+- added Part No. typeahead from Parts Master;
+- kept exact part lookup as fallback;
+- added Developer delete override for any installation stage;
+- delete requires a reason;
+- delete uses `portal_developer_delete_installation`;
+- linked storage cleanup runs after database deletion;
+- cleanup failure is surfaced explicitly while preserving the successful audited database delete.
+
+### 15.4 Verification and OTA
+
+Verified head:
+
+```text
+e1d2b9d0a570487b5304c0b457a46ba71de1062a
+```
+
+CI:
+- App CI #1806: **PASS**
+- Mobile CI #115: **PASS**
+
+OTA:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: 113ed1c4-da4b-4397-8ea8-0f859ff04f9b
+Android update: 01a10ff3-33bf-7a4d-bd69-4fa259bef84c
+Commit: e1d2b9d0a570487b5304c0b457a46ba71de1062a
+```
+
+Message:
+
+```text
+Mobile parity batch 3: Credit Dispatch, TA/DA developer overrides and Engine & Breaker parity
+```
+
+---
+
+## 16. Parity implementation progress — Batch 4 published by OTA
+
+**Implementation date:** 06 October 2026
+
+### 16.1 Docket backend-role alignment
+
+Corrected mobile action visibility to match the protected `docket-receive-action` backend:
+- Branch/Super/Manager can still scan/search visible docket rows;
+- Receive and Receive All are shown only to Admin/Developer;
+- other roles receive an explicit read-only message;
+- no frontend action is offered where the backend will reject it.
+
+Also added:
+- billing Delivery No. to mobile Docket row data and detail.
+
+### 16.2 Reports — complete dataset and export parity
+
+Removed the silent first-1,000 order report limitation.
+
+Added:
+- `getAllVisibleOrders()` with 1,000-row pagination until exhausted;
+- same Branch/Super visibility scoping as existing mobile order reads;
+- complete filtered dataset totals;
+- CSV export/share;
+- Excel XLSX export/share;
+- exports include all filtered orders even though the phone preview intentionally renders only the first 100 rows;
+- professional loading/error/empty states.
+
+### 16.3 Order Status Upload preview safety
+
+Fixed a safety mismatch where mobile previously:
+- previewed only the first 1,000 parsed rows;
+- then submitted every parsed row to `status-report-action`.
+
+Mobile now:
+- previews every parsed row before Apply;
+- caches order lookups by uploaded order number;
+- caches item lookups by order + part;
+- skips closed rows using Received / Issued / Rejected semantics;
+- keeps all actual writes inside the protected `status-report-action` Edge Function.
+
+There is no longer an unpreviewed tail beyond row 1,000.
+
+### 16.4 Admin / Order Activity polish
+
+Admin Approved Orders:
+- vector search treatment;
+- professional error/retry and empty states.
+
+Order Activity:
+- professional loading/error/retry/empty states;
+- attachment icon treatment;
+- existing events/comments/billing/signed-attachment behavior preserved.
+
+### 16.5 Accounts mobile isolation
+
+Corrected a mobile-shell leak.
+
+Before:
+- Work tab correctly showed only TA/DA + Credit Dispatch;
+- Home/Search/Activity still exposed generic Orders UI to Accounts.
+
+Now:
+- Accounts Home shows only TA/DA Receipts and Credit Dispatch;
+- Search tab is hidden for Accounts;
+- generic Activity tab is hidden for Accounts;
+- Accounts Work continues to contain only TA/DA + Credit Dispatch;
+- Part Location remains blocked for Accounts.
+
+### 16.6 Verification and OTA
+
+Verified head:
+
+```text
+88ed35d875af97bf843892792ffd484f313f0a44
+```
+
+CI:
+- App CI #1823: **PASS**
+- Mobile CI #132: **PASS**
+
+OTA:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: 736837bd-9eef-49b2-a969-f5905d4b3b47
+Android update: 01a10ffe-17b7-7189-b2f7-67668d40aded
+Commit: 88ed35d875af97bf843892792ffd484f313f0a44
+```
+
+Message:
+
+```text
+Mobile parity batch 4: Docket roles, complete reports, status preview safety and Accounts isolation
+```
+
+---
+
+## 17. Current remaining work after Batch 4
+
+The major functional parity gaps identified in the code audit are now closed. Remaining work is primarily **real Android device validation and release hardening**, not another broad feature rewrite.
+
+Required device smoke matrix:
+1. Branch:
+   - New Order;
+   - Track Order / Order Detail;
+   - In Transit contributing-order sheet;
+   - Pending Issue;
+   - Delayed VOR;
+   - Credit Dispatch create/correction;
+   - TA/DA create;
+   - Docket scan/search read-only behavior where backend receive is not allowed.
+2. Super:
+   - assigned Approval Queue;
+   - quantity review;
+   - approve/reject/forward behavior.
+3. Manager:
+   - approvals and audited override warning;
+   - Manager Inventory date/branch lookup + CSV sharing;
+   - TA/DA HQ receipt;
+   - Engine & Breaker management.
+4. Accounts:
+   - Home/Work isolation;
+   - TA/DA Accounts receipt including partial-HQ packets;
+   - Credit Dispatch Accounts review;
+   - confirm Search/Activity/Part Location are unavailable.
+5. Developer:
+   - user management;
+   - TA/DA audited edit/delete;
+   - Engine & Breaker audited delete;
+   - Docket receive;
+   - protected Uploads;
+   - exact diagnostics.
+6. Service CRM:
+   - Engine & Breaker Acceptance Pending → Accepted.
+
+Device/OS behavior still to verify:
+- camera permission denied → retry/recovery;
+- Document Picker cancel/retry;
+- keyboard covering form controls;
+- Android back behavior;
+- safe areas;
+- slow network;
+- expired session;
+- signed-document opening;
+- CSV/XLSX sharing targets;
+- OTA apply after fully closing/reopening app.
+
+No new APK/AAB is required for these Batch 1–4 changes because they are compatible with runtime `0.2.0`.
+
+PR #126 remains open, draft, and unmerged until explicitly requested.
+
