@@ -24,12 +24,12 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.navy,
         tabBarInactiveTintColor: '#8290A3',
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '800', marginTop: 1 },
-        tabBarItemStyle: { paddingTop: 5 },
+        tabBarLabelStyle: { fontSize: 9, fontWeight: '800', marginTop: 0 },
+        tabBarItemStyle: { paddingTop: 2 },
         tabBarStyle: {
-          minHeight: 68,
-          paddingTop: 4,
-          paddingBottom: 8,
+          minHeight: 58,
+          paddingTop: 2,
+          paddingBottom: 4,
           borderTopColor: '#E2E8F0',
           backgroundColor: '#FFFFFF',
           elevation: 12,
@@ -51,6 +51,6 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  iconWrap: { width: 34, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  iconWrap: { width: 30, height: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   iconWrapActive: { backgroundColor: colors.blueSoft },
 });
