@@ -19,6 +19,7 @@ export type DocketRow = {
   edited_qty: number | null;
   item_status: string | null;
   invoice_no: string | null;
+  delivery_no: string | null;
   billing_date: string | null;
   docket_no: string | null;
   transport_name: string | null;
@@ -53,7 +54,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
 
   let billingQuery = supabase
     .from('portal_order_item_billings')
-    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, invoice_no, docket_no, transport_name, order:portal_orders!inner(order_no, final_order_no, branch, order_type, customer_name, machine_no, status), item:portal_order_items!inner(part_no, description, qty, edited_qty, row_status)')
+    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, order:portal_orders!inner(order_no, final_order_no, branch, order_type, customer_name, machine_no, status), item:portal_order_items!inner(part_no, description, qty, edited_qty, row_status)')
     .ilike('docket_no', pattern)
     .limit(200);
   if (branchValues?.length) billingQuery = billingQuery.in('order.branch', branchValues);
@@ -78,7 +79,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
       branch: order?.branch ?? '-', order_type: order?.order_type ?? null, customer_name: order?.customer_name ?? null,
       machine_no: order?.machine_no ?? null, order_status: order?.status ?? '-', part_no: item?.part_no ?? raw.part_no,
       description: item?.description ?? null, ordered_qty: num(item?.qty), edited_qty: item?.edited_qty ?? null,
-      item_status: item?.row_status ?? null, invoice_no: raw.invoice_no ?? null, billing_date: raw.billing_date ?? null,
+      item_status: item?.row_status ?? null, invoice_no: raw.invoice_no ?? null, delivery_no: raw.delivery_no ?? null, billing_date: raw.billing_date ?? null,
       docket_no: raw.docket_no ?? null, transport_name: raw.transport_name ?? null, billed_qty: num(raw.billed_qty),
       received_qty: num(raw.received_qty), received_at: raw.received_at ?? null,
     };
@@ -95,7 +96,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
       branch: order?.branch ?? '-', order_type: order?.order_type ?? null, customer_name: order?.customer_name ?? null,
       machine_no: order?.machine_no ?? null, order_status: order?.status ?? '-', part_no: raw.part_no,
       description: raw.description ?? null, ordered_qty: num(raw.qty), edited_qty: raw.edited_qty ?? null,
-      item_status: raw.row_status ?? null, invoice_no: raw.dbms_invoice_no ?? null, billing_date: raw.dbms_invoice_date ?? null,
+      item_status: raw.row_status ?? null, invoice_no: raw.dbms_invoice_no ?? null, delivery_no: null, billing_date: raw.dbms_invoice_date ?? null,
       docket_no: raw.docket_no ?? null, transport_name: raw.transport_name ?? null, billed_qty: billed,
       received_qty: ['received', 'issued'].includes(normalizedStatus) ? billed : 0, received_at: raw.received_date ?? null,
     };
