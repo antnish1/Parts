@@ -10,7 +10,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Screen } from '@/components/Screen';
 import { formatMoney } from '@/services/orders';
 import { getInventoryBranches, getLatestInventoryReportDate, getManagerInventoryLookup, getManagerInventoryTransactions } from '@/services/managerInventory';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 function dateInput(value: Date) {
   const year = value.getFullYear();
@@ -77,7 +77,7 @@ export default function ManagerDashboardScreen() {
     issued: (txns.data ?? []).reduce((sum, row) => sum + Number(row.issued ?? 0), 0),
   }), [inventory.data, txns.data]);
 
-  if (!allowed) return <View style={styles.center}><StateView icon="alert" tone="error" title="Manager Dashboard unavailable" message="This workspace is available only to Manager and Developer roles." /></View>;
+  if (!allowed) return <View style={styles.center}><StateView icon="alert" tone="error" title="Manager Inventory unavailable" message="This workspace is available only to Manager and Developer roles." /></View>;
 
   function onDateChange(event: DateTimePickerEvent, value?: Date) {
     setShowDate(false);
@@ -105,79 +105,122 @@ export default function ManagerDashboardScreen() {
   }
 
   return (
-    <Screen title="Manager Dashboard" subtitle={`Inventory position and movement${reportDate ? ` • ${reportDate}` : ''}`}>
+    <Screen title="Inventory" subtitle="Stock position and movement">
       <View style={styles.toolbar}>
         <View style={styles.search}>
-          <AppIcon name="search" size={18} color={colors.textMuted} />
-          <TextInput value={search} onChangeText={setSearch} placeholder="Enter part number" autoCapitalize="characters" placeholderTextColor={colors.textMuted} style={styles.searchInput} />
+          <AppIcon name="search" size={16} color={colors.textMuted} />
+          <TextInput value={search} onChangeText={setSearch} placeholder="Part number" autoCapitalize="characters" placeholderTextColor={colors.textMuted} style={styles.searchInput} />
         </View>
         <Pressable onPress={() => setShowDate(true)} style={styles.dateButton}>
-          <AppIcon name="clock" size={17} color={colors.navy} />
-          <Text style={styles.dateText}>{reportDate || 'Select date'}</Text>
+          <AppIcon name="clock" size={15} color={colors.navy} />
+          <Text style={styles.dateText}>{reportDate || 'Date'}</Text>
         </Pressable>
       </View>
 
       {showDate ? <DateTimePicker value={parseDate(reportDate || latest.data || '')} mode="date" display="default" onChange={onDateChange} /> : null}
 
-      {hasSearch ? <View style={styles.exportRow}>
-        <Pressable disabled={!(inventory.data ?? []).length} onPress={() => void exportInventory()} style={[styles.exportButton, !(inventory.data ?? []).length && styles.disabled]}><AppIcon name="package" size={16} color={colors.navy}/><Text style={styles.exportText}>Export Inventory</Text></Pressable>
-        <Pressable disabled={!(txns.data ?? []).length} onPress={() => void exportTransactions()} style={[styles.exportButton, !(txns.data ?? []).length && styles.disabled]}><AppIcon name="truck" size={16} color={colors.navy}/><Text style={styles.exportText}>Export Movement</Text></Pressable>
-      </View> : null}
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <Pressable onPress={() => setBranch('all')} style={[styles.chip, branch === 'all' && styles.chipActive]}><Text style={[styles.chipText, branch === 'all' && styles.chipTextActive]}>All Branches</Text></Pressable>
+        <Pressable onPress={() => setBranch('all')} style={[styles.chip, branch === 'all' && styles.chipActive]}><Text style={[styles.chipText, branch === 'all' && styles.chipTextActive]}>All</Text></Pressable>
         {(branches.data ?? []).map((item) => <Pressable key={item.key} onPress={() => setBranch(item.key)} style={[styles.chip, branch === item.key && styles.chipActive]}><Text style={[styles.chipText, branch === item.key && styles.chipTextActive]}>{item.label}</Text></Pressable>)}
       </ScrollView>
 
-      {!hasSearch ? <StateView icon="package" title="Search inventory" message="Enter a part number to see stock, value and received/issued movement across branches." /> : null}
+      {!hasSearch ? <StateView icon="package" title="Search a part" message="Enter a part number to view current stock and movement." /> : null}
 
-      {hasSearch ? <View style={styles.metrics}><Metric label="Closing Qty" value={String(totals.qty)} /><Metric label="Inventory Value" value={formatMoney(totals.value)} /><Metric label="Received" value={String(totals.received)} /><Metric label="Issued" value={String(totals.issued)} /></View> : null}
+      {hasSearch ? (
+        <View style={styles.summaryStrip}>
+          <Summary label="Qty" value={String(totals.qty)} />
+          <Divider />
+          <Summary label="Value" value={formatMoney(totals.value)} />
+          <Divider />
+          <Summary label="In" value={String(totals.received)} />
+          <Divider />
+          <Summary label="Out" value={String(totals.issued)} />
+        </View>
+      ) : null}
 
-      {(inventory.isLoading || txns.isLoading) && hasSearch ? <View style={styles.loading}><ActivityIndicator color={colors.navy} /><Text style={styles.loadingText}>Loading inventory position…</Text></View> : null}
+      {hasSearch ? (
+        <View style={styles.exportRow}>
+          <Pressable disabled={!(inventory.data ?? []).length} onPress={() => void exportInventory()} style={[styles.exportButton, !(inventory.data ?? []).length && styles.disabled]}><AppIcon name="package" size={14} color={colors.navy}/><Text style={styles.exportText}>Inventory CSV</Text></Pressable>
+          <Pressable disabled={!(txns.data ?? []).length} onPress={() => void exportTransactions()} style={[styles.exportButton, !(txns.data ?? []).length && styles.disabled]}><AppIcon name="truck" size={14} color={colors.navy}/><Text style={styles.exportText}>Movement CSV</Text></Pressable>
+        </View>
+      ) : null}
 
-      {failed && hasSearch ? <StateView icon="alert" tone="error" title="Inventory could not be loaded" message="The inventory or movement request failed." actionLabel="Retry" onAction={() => { void inventory.refetch(); void txns.refetch(); }} /> : null}
+      {(inventory.isLoading || txns.isLoading) && hasSearch ? <View style={styles.loading}><ActivityIndicator color={colors.navy} /><Text style={styles.loadingText}>Loading inventory…</Text></View> : null}
+      {failed && hasSearch ? <StateView icon="alert" tone="error" title="Inventory could not be loaded" actionLabel="Retry" onAction={() => { void inventory.refetch(); void txns.refetch(); }} /> : null}
 
-      {!failed && (inventory.data ?? []).map((row) => <View key={row.id} style={styles.card}><View style={styles.top}><View style={styles.copy}><Text style={styles.part}>{row.item_code}</Text><Text style={styles.desc}>{row.item_name || 'No description'}</Text></View><Text style={styles.qty}>{Number(row.qty ?? 0)}</Text></View><View style={styles.grid}><Mini label="Branch" value={row.branch_name || row.branch_key || row.branch_code} /><Mini label="Group" value={row.item_group || '—'} /><Mini label="DNP" value={formatMoney(Number(row.dnp ?? 0))} /><Mini label="Value" value={formatMoney(Number(row.inv_value ?? 0))} /></View></View>)}
+      {!failed && (inventory.data ?? []).length ? <Text style={styles.section}>Stock</Text> : null}
+      {!failed && (inventory.data ?? []).map((row) => (
+        <View key={row.id} style={styles.row}>
+          <View style={styles.rowIcon}><AppIcon name="inventory" size={15} color={colors.navy}/></View>
+          <View style={styles.rowCopy}>
+            <View style={styles.rowTop}><Text style={styles.part}>{row.item_code}</Text><Text style={styles.qty}>{Number(row.qty ?? 0)}</Text></View>
+            <Text numberOfLines={1} style={styles.desc}>{row.item_name || 'No description'}</Text>
+            <Text numberOfLines={1} style={styles.meta}>{row.branch_name || row.branch_key || row.branch_code} · {row.item_group || '—'} · DNP {formatMoney(Number(row.dnp ?? 0))} · {formatMoney(Number(row.inv_value ?? 0))}</Text>
+          </View>
+        </View>
+      ))}
 
-      {hasSearch && !inventory.isLoading && !failed && (inventory.data ?? []).length === 0 ? <StateView icon="inbox" title="No inventory rows" message="No inventory position matches this part, date and branch selection." /> : null}
+      {hasSearch && !inventory.isLoading && !failed && (inventory.data ?? []).length === 0 ? <StateView icon="inbox" title="No stock rows" message="No inventory position matches this part, date and branch." /> : null}
 
-      {hasSearch && !failed && (txns.data ?? []).length ? <><Text style={styles.section}>Movement</Text>{(txns.data ?? []).map((row) => <View key={`txn-${row.id}`} style={styles.card}><View style={styles.movementTitle}><AppIcon name="truck" size={17} color={colors.blue} /><Text style={styles.part}>{row.item_code} • {row.branch_name || row.branch_code}</Text></View><View style={styles.grid}><Mini label="Received" value={String(Number(row.received ?? 0))} /><Mini label="Issued" value={String(Number(row.issued ?? 0))} /><Mini label="Closing" value={String(Number(row.closing_balance ?? 0))} /><Mini label="Value" value={formatMoney(Number(row.closing_value ?? 0))} /></View></View>)}</> : null}
+      {hasSearch && !failed && (txns.data ?? []).length ? <Text style={styles.section}>Movement</Text> : null}
+      {hasSearch && !failed && (txns.data ?? []).map((row) => (
+        <View key={`txn-${row.id}`} style={styles.row}>
+          <View style={styles.rowIcon}><AppIcon name="truck" size={15} color={colors.blue}/></View>
+          <View style={styles.rowCopy}>
+            <Text numberOfLines={1} style={styles.part}>{row.item_code} · {row.branch_name || row.branch_code}</Text>
+            <View style={styles.movementLine}>
+              <Text style={styles.moveIn}>In {Number(row.received ?? 0)}</Text>
+              <Text style={styles.moveOut}>Out {Number(row.issued ?? 0)}</Text>
+              <Text style={styles.moveClose}>Closing {Number(row.closing_balance ?? 0)}</Text>
+              <Text style={styles.moveValue}>{formatMoney(Number(row.closing_value ?? 0))}</Text>
+            </View>
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) { return <View style={styles.metric}><Text style={styles.metricLabel}>{label}</Text><Text style={styles.metricValue}>{value}</Text></View>; }
-function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>; }
+function Summary({ label, value }: { label: string; value: string }) {
+  return <View style={styles.summary}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} style={styles.summaryValue}>{value}</Text></View>;
+}
+function Divider(){ return <View style={styles.divider}/>; }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.background },
-  toolbar: { gap: spacing.sm },
-  search: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md },
-  searchInput: { flex: 1, minHeight: 46, color: colors.text, fontSize: 14, fontWeight: '700' },
-  dateButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  dateText: { color: colors.navy, fontSize: 11, fontWeight: '900' },
-  exportRow:{flexDirection:'row',gap:spacing.sm},exportButton:{flex:1,minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,paddingHorizontal:spacing.sm,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},exportText:{color:colors.navy,fontSize:10,fontWeight:'900'},disabled:{opacity:.4},
-  chips: { gap: spacing.sm, paddingRight: spacing.lg },
-  chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  chipActive: { backgroundColor: colors.navy, borderColor: colors.navy },
-  chipText: { color: colors.textMuted, fontSize: 11, fontWeight: '800' },
-  chipTextActive: { color: '#fff' },
-  metrics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  metric: { width: '48%', padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  metricLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
-  metricValue: { color: colors.text, fontSize: 17, fontWeight: '900', marginTop: 3 },
-  loading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
-  loadingText: { color: colors.textMuted, fontSize: 11, fontWeight: '700' },
-  card: { padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: spacing.sm },
-  top: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
-  copy: { flex: 1 },
-  part: { color: colors.text, fontWeight: '900', fontSize: 13 },
-  desc: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
-  qty: { color: colors.blue, fontWeight: '900', fontSize: 20 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  mini: { width: '47%' },
-  miniLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
-  miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 2 },
-  section: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: spacing.xs },
-  movementTitle: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
+  toolbar:{flexDirection:'row',gap:7},
+  search:{flex:1,minHeight:42,flexDirection:'row',alignItems:'center',gap:7,borderWidth:1,borderColor:'#E1E7EE',borderRadius:11,backgroundColor:'#fff',paddingHorizontal:10},
+  searchInput:{flex:1,minHeight:40,color:colors.text,fontSize:11,fontWeight:'700'},
+  dateButton:{minHeight:42,flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:9,borderRadius:11,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  dateText:{color:colors.navy,fontSize:9,fontWeight:'900'},
+  chips:{gap:6,paddingRight:10},
+  chip:{paddingHorizontal:10,paddingVertical:6,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  chipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
+  chipText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
+  chipTextActive:{color:'#fff'},
+  summaryStrip:{minHeight:48,flexDirection:'row',alignItems:'center',paddingHorizontal:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  summary:{flex:1,minWidth:0},
+  summaryLabel:{color:colors.textMuted,fontSize:7.5,fontWeight:'800'},
+  summaryValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
+  divider:{width:StyleSheet.hairlineWidth,height:26,backgroundColor:'#DDE4EC'},
+  exportRow:{flexDirection:'row',gap:7},
+  exportButton:{flex:1,minHeight:36,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,borderRadius:10,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  exportText:{color:colors.navy,fontSize:8.5,fontWeight:'900'},
+  disabled:{opacity:.4},
+  loading:{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:4},
+  loadingText:{color:colors.textMuted,fontSize:9,fontWeight:'700'},
+  section:{color:colors.text,fontSize:11,fontWeight:'900',marginTop:2},
+  row:{minHeight:58,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:9,paddingVertical:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  rowIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
+  rowCopy:{flex:1},
+  rowTop:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},
+  part:{flex:1,color:colors.text,fontSize:9.5,fontWeight:'900'},
+  qty:{color:colors.blue,fontSize:13,fontWeight:'900'},
+  desc:{color:colors.textMuted,fontSize:8.5,marginTop:2},
+  meta:{color:'#7B8796',fontSize:7.5,marginTop:3},
+  movementLine:{flexDirection:'row',flexWrap:'wrap',gap:8,marginTop:4},
+  moveIn:{color:colors.success,fontSize:8,fontWeight:'900'},
+  moveOut:{color:colors.danger,fontSize:8,fontWeight:'900'},
+  moveClose:{color:colors.navy,fontSize:8,fontWeight:'900'},
+  moveValue:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
 });
