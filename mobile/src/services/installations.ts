@@ -75,6 +75,16 @@ export async function findInstallationPart(partNo: string): Promise<PartMatch | 
   return { part_no: String(data.PartNo ?? '').trim(), description: String(data.Description ?? '').trim() };
 }
 
+export async function findInstallationParts(term: string): Promise<PartMatch[]> {
+  const value = term.trim();
+  if (value.length < 2) return [];
+  const { data, error } = await supabase.from('part_master').select('PartNo,Description').ilike('PartNo', `%${value}%`).limit(12);
+  if (error) throw error;
+  return ((data ?? []) as Array<{ PartNo?: string | null; Description?: string | null }>)
+    .map((row) => ({ part_no: String(row.PartNo ?? '').trim(), description: String(row.Description ?? '').trim() }))
+    .filter((row) => row.part_no);
+}
+
 function validateAsset(asset: DocumentPickerAsset, requireClearImage = false) {
   const mime = asset.mimeType || 'application/octet-stream';
   if (!allowedMime.includes(mime)) throw new Error('Upload a PDF, JPG, PNG or WEBP file.');
@@ -135,4 +145,22 @@ export async function submitInstallationEntry(id: string, equipmentNo: string, j
 export async function acceptInstallationEntry(id: string, registrationNo: string) {
   const { error } = await supabase.rpc('portal_accept_installation_entry', { p_installation_id: id, p_registration_no: registrationNo.trim() });
   if (error) throw error;
+}
+
+
+export async function developerDeleteInstallationEntry(installationId: string, reason: string) {
+  const cleanReason = reason.trim();
+  if (cleanReason.length < 3) throw new Error('Enter a clear deletion reason.');
+  const { data, error } = await supabase.rpc('portal_developer_delete_installation', {
+    p_installation_id: installationId,
+    p_reason: cleanReason,
+  });
+  if (error) throw error;
+
+  const paths = Array.isArray(data) ? data.map(String).filter(Boolean) : [];
+  if (!paths.length) return;
+  const { error: storageError } = await supabase.storage.from('installation-documents').remove(paths);
+  if (storageError) {
+    throw new Error(`Entry was deleted, but ${paths.length} stored document(s) could not be cleaned up automatically. ${storageError.message}`);
+  }
 }
