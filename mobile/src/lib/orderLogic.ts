@@ -1,5 +1,7 @@
 export type LegacyLikeOrderItem = {
   id?: string;
+  part_no?: string | null;
+  PartNo?: string | null;
   qty?: number | string | null;
   Qty?: number | string | null;
   edited_qty?: number | string | null;
@@ -17,6 +19,9 @@ export type LegacyLikeOrderItem = {
   ApprovalStatus?: string | null;
   billing_chunks?: Array<{ billed_qty?: number | string | null; received_qty?: number | string | null; received_at?: string | null }>;
 };
+
+export function normalizePartNo(partNo: string | null | undefined) { return (partNo || '').toString().replace(/\s/g, '').toUpperCase(); }
+export function getPendingQty(row: LegacyLikeOrderItem) { return Math.max(0, getEffectiveQty(row) - getBilledQty(row)); }
 
 function hasValue(value: unknown) { return value !== null && value !== undefined && value !== ''; }
 function toNumber(value: unknown) { const parsed = Number(value ?? 0); return Number.isFinite(parsed) ? parsed : 0; }
