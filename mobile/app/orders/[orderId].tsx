@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
+import { AppIcon } from '@/components/AppIcon';
+import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { approveOrderStage, rejectOrder } from '@/services/approvals';
 import { getInTransitDetails, getInTransitQtyByBranchParts, type InTransitDetailRow } from '@/services/inTransit';
@@ -88,8 +90,8 @@ export default function OrderDetailScreen() {
     },
   });
 
-  if (order.isLoading) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.navy} /></SafeAreaView>;
-  if (order.isError || !order.data) return <SafeAreaView style={styles.center}><Text style={styles.error}>Unable to load this order.</Text><Pressable onPress={() => router.back()}><Text style={styles.link}>Go back</Text></Pressable></SafeAreaView>;
+  if (order.isLoading) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color={colors.navy} /><Text style={styles.loadingText}>Loading order workspace…</Text></SafeAreaView>;
+  if (order.isError || !order.data) return <SafeAreaView style={styles.center}><StateView icon="alert" tone="error" title="Order could not be loaded" message="The order workspace request failed." actionLabel="Go back" onAction={() => router.back()} /></SafeAreaView>;
 
   const row = order.data;
   const canCorrect = role === 'manager' || role === 'developer';
@@ -108,10 +110,11 @@ export default function OrderDetailScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
+        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Track Orders</Text></Pressable>
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
+            <View style={styles.heroIcon}><AppIcon name="package" size={21} color="#fff" /></View>
             <View style={styles.heroCopy}>
               <Text style={styles.eyebrow}>ORDER</Text>
               <Text style={styles.orderNo}>{row.final_order_no || row.order_no}</Text>
@@ -139,7 +142,7 @@ export default function OrderDetailScreen() {
               </View>
               <StatusChip status={row.approval_status} />
             </View>
-            <Pressable onPress={() => router.push(`/approvals/${orderId}`)} style={styles.reviewButton}><Text style={styles.reviewButtonText}>Review quantities</Text></Pressable>
+            <Pressable onPress={() => router.push(`/approvals/${orderId}`)} style={styles.reviewButton}><AppIcon name="check" size={16} color={colors.navy}/><Text style={styles.reviewButtonText}>Review quantities</Text><AppIcon name="chevronRight" size={15} color={colors.navy}/></Pressable>
             <View style={styles.approvalActions}>
               <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('approve')} style={[styles.approveButton, action.isPending && styles.disabled]}><Text style={styles.approveButtonText}>{role === 'manager' ? 'Approve Order' : 'Approve / Send Forward'}</Text></Pressable>
               <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('reject')} style={[styles.rejectButton, action.isPending && styles.disabled]}><Text style={styles.rejectButtonText}>Reject</Text></Pressable>
@@ -148,11 +151,9 @@ export default function OrderDetailScreen() {
           </View>
         ) : null}
 
-        <Pressable onPress={() => router.push(`/orders/${orderId}/activity`)} style={styles.activity}>
-          <View><Text style={styles.activityTitle}>Activity, comments & billing</Text><Text style={styles.activityText}>Open the complete audited order history</Text></View><Text style={styles.activityArrow}>›</Text>
-        </Pressable>
+        <Pressable onPress={() => router.push(`/orders/${orderId}/activity`)} style={styles.activity}><View style={styles.shortcutIcon}><AppIcon name="activity" size={18} color={colors.navy}/></View><View style={styles.shortcutCopy}><Text style={styles.activityTitle}>Activity, comments & billing</Text><Text style={styles.activityText}>Open the complete audited order history</Text></View><AppIcon name="chevronRight" size={17} color={colors.blue}/></Pressable>
 
-        {canCorrect ? <Pressable onPress={() => router.push(`/orders/${orderId}/correct`)} style={styles.correct}><Text style={styles.correctTitle}>Order Data Correction</Text><Text style={styles.correctText}>Manager / Developer audited correction console</Text></Pressable> : null}
+        {canCorrect ? <Pressable onPress={() => router.push(`/orders/${orderId}/correct`)} style={styles.correct}><View style={styles.correctIcon}><AppIcon name="shield" size={18} color={colors.warning}/></View><View style={styles.shortcutCopy}><Text style={styles.correctTitle}>Order Data Correction</Text><Text style={styles.correctText}>Manager / Developer audited correction console</Text></View><AppIcon name="chevronRight" size={17} color={colors.warning}/></Pressable> : null}
 
         <Text style={styles.sectionTitle}>Order quantities</Text>
         <View style={styles.totals}>
@@ -195,7 +196,7 @@ export default function OrderDetailScreen() {
               <View style={styles.transitRow}>
                 <Text style={styles.transitLabel}>In Transit</Text>
                 {inTransit.isLoading ? <ActivityIndicator size="small" color={colors.navy} /> : transitQty > 0 ? (
-                  <Pressable onPress={() => setSelectedTransit({ partNo: item.part_no, qty: transitQty })} style={styles.transitBadge}><Text style={styles.transitBadgeText}>⚠ {transitQty} · View orders</Text></Pressable>
+                  <Pressable onPress={() => setSelectedTransit({ partNo: item.part_no, qty: transitQty })} style={styles.transitBadge}><AppIcon name="truck" size={14} color="#7A5200"/><Text style={styles.transitBadgeText}>{transitQty} · View orders</Text></Pressable>
                 ) : <Text style={styles.transitZero}>0</Text>}
               </View>
 
@@ -240,7 +241,7 @@ export default function OrderDetailScreen() {
                 <Text style={styles.sheetTitle}>{selectedTransit?.partNo}</Text>
                 <Text style={styles.sheetText}>Total quantity in transit: {selectedTransit?.qty ?? 0}</Text>
               </View>
-              <Pressable onPress={() => setSelectedTransit(null)} style={styles.closeButton}><Text style={styles.closeText}>×</Text></Pressable>
+              <Pressable onPress={() => setSelectedTransit(null)} style={styles.closeButton}><AppIcon name="x" size={20} color={colors.textMuted}/></Pressable>
             </View>
             <ScrollView contentContainerStyle={styles.sheetBody}>
               {transitDetails.isLoading ? <ActivityIndicator color={colors.navy} /> : null}
@@ -290,22 +291,23 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 44 },
   back: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' },
   backText: { color: colors.blue, fontSize: 14, fontWeight: '800' },
-  hero: { padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
+  hero: { padding: spacing.lg, borderRadius: 24, backgroundColor: colors.navy, overflow: 'hidden' },
+  heroTop: { flexDirection: 'row', alignItems:'flex-start', justifyContent: 'space-between', gap: spacing.sm },
+  heroIcon:{width:40,height:40,borderRadius:13,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.12)'},
   heroCopy: { flex: 1 },
-  eyebrow: { color: colors.blue, fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
-  orderNo: { color: colors.text, fontSize: 23, fontWeight: '900', marginTop: 3 },
-  customer: { color: colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 4 },
+  eyebrow: { color: '#9EB9D7', fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
+  orderNo: { color: '#fff', fontSize: 23, fontWeight: '900', marginTop: 3 },
+  customer: { color: '#C5D7EA', fontSize: 13, lineHeight: 18, marginTop: 4 },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.lg },
   meta: { width: '46%' },
-  metaLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
-  metaValue: { color: colors.text, fontSize: 12, fontWeight: '800', marginTop: 2 },
+  metaLabel: { color: '#91AAC5', fontSize: 10, fontWeight: '700' },
+  metaValue: { color: '#fff', fontSize: 12, fontWeight: '800', marginTop: 2 },
   approvalCard: { gap: spacing.md, padding: spacing.lg, borderRadius: radius.xl, borderWidth: 1, borderColor: '#A7C7E7', backgroundColor: colors.blueSoft },
   approvalHeader: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
   approvalEyebrow: { color: colors.blue, fontSize: 9, fontWeight: '900', letterSpacing: 1.1 },
   approvalTitle: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: 3 },
   approvalText: { color: colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 4 },
-  reviewButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.navy, backgroundColor: '#fff' },
+  reviewButton: { minHeight: 44, flexDirection:'row', gap:7, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.navy, backgroundColor: '#fff' },
   reviewButtonText: { color: colors.navy, fontSize: 12, fontWeight: '900' },
   approvalActions: { flexDirection: 'row', gap: spacing.sm },
   approveButton: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy },
@@ -313,11 +315,12 @@ const styles = StyleSheet.create({
   rejectButton: { minWidth: 92, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: '#fff' },
   rejectButtonText: { color: colors.danger, fontSize: 11, fontWeight: '900' },
   actionMessage: { color: colors.navy, fontSize: 11, fontWeight: '700' },
-  activity: { minHeight: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  activity: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap:spacing.md, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   activityTitle: { color: colors.text, fontSize: 12, fontWeight: '900' },
   activityText: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
-  activityArrow: { color: colors.blue, fontSize: 26, fontWeight: '700' },
-  correct: { padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: '#F0C36A', backgroundColor: colors.warningSoft },
+  shortcutIcon:{width:38,height:38,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:colors.blueSoft},shortcutCopy:{flex:1},
+  correct: { minHeight:70,flexDirection:'row',alignItems:'center',gap:spacing.md,padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: '#F0C36A', backgroundColor: colors.warningSoft },
+  correctIcon:{width:38,height:38,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},
   correctTitle: { color: colors.warning, fontSize: 12, fontWeight: '900' },
   correctText: { color: colors.text, fontSize: 10, marginTop: 2 },
   sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: spacing.xs },
@@ -337,7 +340,7 @@ const styles = StyleSheet.create({
   itemMetaText: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
   transitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   transitLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '800' },
-  transitBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#E7B94D' },
+  transitBadge: { flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#E7B94D' },
   transitBadgeText: { color: '#7A5200', fontSize: 10, fontWeight: '900' },
   transitZero: { color: colors.text, fontSize: 11, fontWeight: '800' },
   chunks: { marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, gap: spacing.sm },
@@ -362,7 +365,7 @@ const styles = StyleSheet.create({
   sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginTop: 3 },
   sheetText: { color: colors.textMuted, fontSize: 11, marginTop: 3 },
   closeButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: colors.textMuted, fontSize: 28, lineHeight: 30 },
+
   sheetBody: { padding: spacing.lg, gap: spacing.sm, paddingBottom: 36 },
   transitDetail: { flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   transitOrder: { color: colors.blue, fontSize: 12, fontWeight: '900' },
@@ -377,5 +380,6 @@ const styles = StyleSheet.create({
   confirmApprove: { minWidth: 96, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy },
   confirmReject: { minWidth: 96, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.danger },
   confirmText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},
   disabled: { opacity: .5 },
 });
