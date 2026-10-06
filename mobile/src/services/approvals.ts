@@ -37,8 +37,25 @@ export async function setEditedQuantity(itemId: string, qty: number) {
   return invoke('order-item-qty-action', { itemId, action: 'set', qty });
 }
 
+export async function resetEditedQuantity(itemId: string) {
+  return invoke('order-item-qty-action', { itemId, action: 'reset' });
+}
+
+export async function zeroReviewItem(itemId: string) {
+  return invoke('approval-qty-review-action', { itemId, action: 'zero_item' });
+}
+
 export async function approveReview(orderId: string, mode: 'accept_edits' | 'approve_original') {
   return invoke('approval-qty-review-action', { orderId, action: mode });
+}
+
+export async function approveOrderStage(orderId: string, role: 'super' | 'manager' | 'developer') {
+  const action = role === 'manager' ? 'manager_approve' : 'approve';
+  return invoke('approval-order-action', { orderId, action });
+}
+
+export async function forwardOrderToManager(orderId: string, managerName = 'Manager') {
+  return invoke('approval-order-action', { orderId, action: 'forward_manager', managerName });
 }
 
 export async function rejectOrder(orderId: string, role: 'super' | 'manager' | 'developer') {
