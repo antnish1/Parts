@@ -814,3 +814,154 @@ Start with this order:
 8. Run CI and publish the first parity OTA.
 
 This first OTA should be considered successful only when the user can open the installed baseline app and verify that the previously empty Pending Issue / Delayed VOR screens show the expected records and that an eligible Track Order exposes the same approval/In-Transit behavior as web.
+
+
+---
+
+## 13. Parity implementation progress — Batch 1 published by OTA
+
+**Implementation date:** 06 October 2026
+
+### 13.1 Completed in this batch
+
+#### Pending Issue
+Implemented:
+- removed invalid reads of nonexistent `portal_order_items.status` and `portal_order_items.approval_status`;
+- added paginated order/item fetching;
+- added batched billing reads;
+- added normalized branch-scope behavior;
+- protected legacy ISSUED headers from re-entering Pending Issue;
+- kept item-level resolved status based on shared order logic;
+- retained protected `mark_portal_order_issued` RPC.
+
+Production validation before OTA:
+- global customer/not-issued header candidates: 487;
+- global resolved Pending Issue orders using current production item/billing data: **239**;
+- displayed count remains role/branch scoped.
+
+#### Delayed VOR
+Implemented:
+- removed invalid item-column reads;
+- changed eligibility derivation to the web-style VOR item query;
+- paginates all VOR item rows rather than relying on the first 1,000 order headers;
+- batches billing reads;
+- derives eligibility using `getResolvedRowStatus`;
+- preserves role/branch visibility when loading eligible order headers.
+
+Production validation before OTA:
+- global resolved Delayed VOR orders: **22**;
+- displayed count remains role/branch scoped.
+
+#### Branch scope
+Added:
+- `mobile/src/services/branchScope.ts`
+- normalized branch-key matching aligned with web behavior.
+
+#### Order Detail expansion
+Implemented:
+- richer item model using real production columns;
+- billing/docket chunk loading;
+- effective quantity;
+- billed quantity;
+- pending quantity;
+- received quantity;
+- effective line/order value;
+- resolved item status;
+- per-item registration/invoice/docket/transport information;
+- improved order quantity totals.
+
+#### In Transit
+Added the same production RPC contracts used by the web:
+- `portal_get_in_transit_qty`;
+- `portal_get_in_transit_details`.
+
+Order Detail now:
+- shows per-part In-Transit quantity;
+- makes positive quantities actionable;
+- opens a mobile bottom sheet showing contributing Branch / Type / Order / Date / For / Status / Qty;
+- allows navigation directly into a contributing order;
+- distinguishes loading/error/zero states.
+
+#### Order approvals from Track Order → Order Detail
+Added mobile wrappers for existing protected Edge Functions:
+- Super/Developer approve;
+- Manager approve;
+- reject;
+- quantity review service reuse;
+- reset edited qty helper;
+- zero review item helper;
+- forward-to-manager helper.
+
+Order Detail now:
+- detects pending approval workflows;
+- respects selected Super approver;
+- exposes Manager/Developer/Super actions in context;
+- links directly into detailed quantity review;
+- provides approve/reject confirmation;
+- shows Manager override warning where the order is not already at Manager Approval stage.
+
+No protected workflow transition was reimplemented as a direct table write.
+
+### 13.2 Verification
+
+Exact functional head before OTA:
+
+```text
+9f3a1d8cd394c129c73a9d815bbec084ecb354a7
+```
+
+CI:
+- App CI #1759: **PASS**
+- Mobile CI #70: **PASS**
+- Mobile check included TypeScript + Android Expo export.
+
+Baseline binary:
+- app version: 0.2.0
+- Android build version: 2
+- runtime: 0.2.0
+- channel: preview
+- baseline EAS build ID: `68f94cbf-c540-40a2-be1d-19ec6a0545a6`
+- baseline build status: FINISHED
+
+### 13.3 OTA publication
+
+Published successfully without creating a new APK.
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: 2e42cd72-524e-42fa-a16d-70ef84387728
+Android update: 01a10fbf-14f1-7e9b-a5dd-d8cdcfd65941
+Commit: 9f3a1d8cd394c129c73a9d815bbec084ecb354a7
+```
+
+Message:
+
+```text
+Mobile parity batch 1: Pending Issue, Delayed VOR, Order Detail, In Transit and approvals
+```
+
+### 13.4 User/device verification still required
+
+On an installed 0.2.0 preview baseline:
+1. fully close and reopen the app so the update can download/apply;
+2. test Pending Issue and compare visible role-scoped records with web;
+3. test Delayed VOR and compare visible role-scoped records with web;
+4. open Track Orders → Order Detail;
+5. verify positive In-Transit quantities open the contributing-order sheet;
+6. test an eligible Super/Manager/Developer approval path;
+7. confirm approval audit/status matches web.
+
+Do not mark Batch 1 product-verified until this device check is completed.
+
+### 13.5 Next planned stage
+
+Continue with:
+1. professional reusable icon system and action icons;
+2. reusable EmptyState / ErrorState / loading skeleton components;
+3. improve Pending Issue / Delayed VOR / Order Detail visual hierarchy;
+4. complete Approval Queue parity including reset/zero/forward actions and any web-only review context;
+5. continue module-by-module parity matrix with Manager / Developer workspaces;
+6. publish only OTA updates on runtime 0.2.0 unless native runtime change is explicitly approved.
+
