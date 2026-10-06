@@ -82,6 +82,31 @@ export async function getVisibleOrders(limit = 250): Promise<OrderSummary[]> {
   return (data ?? []) as OrderSummary[];
 }
 
+export async function getAllVisibleOrders(): Promise<OrderSummary[]> {
+  const profile = await getCurrentPortalProfile();
+  if (!profile?.is_active) return [];
+
+  const rows: OrderSummary[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    let query = supabase
+      .from('portal_orders')
+      .select(ORDER_COLUMNS)
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (profile.role === 'branch') query = query.eq('branch', profile.branch ?? '__NO_BRANCH_SCOPE__');
+    if (profile.role === 'super') query = query.eq('approver_id', profile.id);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    const page = (data ?? []) as OrderSummary[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return rows;
+}
+
 export async function getOrder(orderId: string): Promise<OrderSummary> {
   const { data, error } = await supabase.from('portal_orders').select(ORDER_COLUMNS).eq('id', orderId).single();
   if (error) throw error;
