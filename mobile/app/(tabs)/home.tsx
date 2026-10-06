@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
+import { ManagerHomeDashboard } from '@/components/ManagerHomeDashboard';
 import { MetricCard } from '@/components/MetricCard';
 import { Screen } from '@/components/Screen';
 import { StatusChip } from '@/components/StatusChip';
@@ -20,6 +21,8 @@ export default function HomeScreen() {
     const pendingIssue = rows.filter((row) => !['received', 'issued', 'rejected'].includes((row.status ?? '').toLowerCase())).length;
     return { visible: rows.length, pending, pendingManager, pendingIssue };
   }, [orders.data]);
+
+  if (role === 'manager') return <ManagerHomeDashboard />;
 
   if (role === 'accounts') {
     return (
