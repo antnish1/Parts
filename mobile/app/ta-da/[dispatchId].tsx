@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
+import { TadaDeveloperControls } from '@/components/TadaDeveloperControls';
 import { getTadaDispatch, receiveTadaDispatch, tadaLocationLabel, tadaStatusLabel, type TadaSvrItem } from '@/services/tada';
 import { colors, radius, spacing } from '@/theme/tokens';
 
@@ -83,6 +84,18 @@ export default function TadaDetailScreen() {
         <View style={styles.journey}><Step label="Branch" done /><Step label="HQ" done={items.every((item) => item.hq_received === true)} active={dispatch.status.includes('HQ')} /><Step label="Accounts" done={items.every((item) => item.accounts_received === true)} active={dispatch.status.includes('ACCOUNTS')} /></View>
 
         <View style={styles.metaCard}><Row label="Dispatched by" value={dispatch.dispatched_by} /><Row label="Reference" value={dispatch.reference_no || '—'} last /></View>
+
+        {role === 'developer' ? <TadaDeveloperControls
+          dispatch={dispatch}
+          items={items}
+          onChanged={async () => {
+            await Promise.all([
+              detail.refetch(),
+              queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] }),
+            ]);
+          }}
+          onDispatchDeleted={() => router.replace('/ta-da')}
+        /> : null}
 
         <Text style={styles.sectionTitle}>SVR packet</Text>
         {items.map((item) => (
