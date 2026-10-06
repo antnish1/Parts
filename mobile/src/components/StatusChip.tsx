@@ -33,6 +33,6 @@ export function StatusChip({ status }: { status: string | null | undefined }) {
 }
 
 const styles = StyleSheet.create({
-  chip: { alignSelf: 'flex-start', maxWidth: 190, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  text: { fontSize: 10, fontWeight: '900' },
+  chip: { alignSelf: 'flex-start', maxWidth: 170, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
+  text: { fontSize: 8.5, fontWeight: '900' },
 });
