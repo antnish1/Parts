@@ -31,16 +31,6 @@ export default function WorkScreen() {
 
   return (
     <Screen title={role === 'manager' ? 'Manager Workbench' : 'Work'} subtitle={role === 'manager' ? 'Operational tools arranged around the decisions you make most often.' : 'Your operational tasks, arranged for mobile.'}>
-      {role === 'manager' ? (
-        <View style={styles.managerIntro}>
-          <View style={styles.managerIntroIcon}><AppIcon name="shield" size={20} color="#fff" /></View>
-          <View style={styles.copy}>
-            <Text style={styles.managerIntroTitle}>Manager control surface</Text>
-            <Text style={styles.managerIntroText}>Approvals, exceptions, inventory and operational monitoring in one place.</Text>
-          </View>
-        </View>
-      ) : null}
-
       <View style={styles.grid}>
         {actions.map((action) => (
           <Pressable
@@ -63,17 +53,13 @@ export default function WorkScreen() {
 }
 
 const styles = StyleSheet.create({
-  managerIntro: { minHeight: 84, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: 20, backgroundColor: colors.navy },
-  managerIntroIcon: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,.12)' },
-  managerIntroTitle: { color: '#fff', fontSize: 13, fontWeight: '900' },
-  managerIntroText: { color: '#BCD0E6', fontSize: 10, lineHeight: 15, marginTop: 3 },
-  grid: { gap: spacing.sm },
-  card: { minHeight: 76, flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: 18, borderWidth: 1, backgroundColor: colors.surface },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  card: { width: '49%', minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, paddingVertical: 7, borderRadius: 12, borderWidth: 1, backgroundColor: colors.surface },
   cardActive: { borderColor: '#E0E7EF' },
   cardPlanned: { borderColor: '#E7EBF0', opacity: 0.65 },
   pressed: { opacity: 0.8 },
-  iconWrap: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EDF3FA' },
+  iconWrap: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EDF3FA' },
   copy: { flex: 1 },
-  title: { color: colors.text, fontSize: 13, fontWeight: '900' },
-  description: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 3 },
+  title: { color: colors.text, fontSize: 9.5, fontWeight: '900' },
+  description: { color: colors.textMuted, fontSize: 8, lineHeight: 11, marginTop: 1 },
 });
