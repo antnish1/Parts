@@ -965,3 +965,144 @@ Continue with:
 5. continue module-by-module parity matrix with Manager / Developer workspaces;
 6. publish only OTA updates on runtime 0.2.0 unless native runtime change is explicitly approved.
 
+
+
+---
+
+## 14. Parity implementation progress — Batch 2 published by OTA
+
+**Implementation date:** 06 October 2026
+
+### 14.1 Professional mobile visual foundation
+
+Added reusable OTA-safe components based on the already compiled `react-native-svg` capability:
+
+- `mobile/src/components/AppIcon.tsx`
+- `mobile/src/components/StateView.tsx`
+
+The icon system currently includes semantic operational icons for:
+- search;
+- clock;
+- warning;
+- check;
+- close;
+- refresh;
+- package;
+- truck;
+- inbox/empty state;
+- chevron/navigation.
+
+The state component standardizes:
+- empty states;
+- query-failure states;
+- retry actions;
+- consistent icon treatment;
+- compact mobile typography.
+
+No new native package or APK was required.
+
+### 14.2 Pending Issue / Delayed VOR visual polish
+
+Both screens now use:
+- proper vector search icons;
+- reusable illustrated empty states;
+- explicit error states;
+- retry action;
+- clearer distinction between zero results and a failed query.
+
+### 14.3 Manager workspace parity
+
+Added:
+- report-date selection using the already compiled native date picker;
+- branch/date-aware inventory queries;
+- professional search/empty/error/loading states;
+- inventory and movement visual improvements;
+- CSV export/share for Inventory;
+- CSV export/share for Received/Issued Movement;
+- File System + Sharing reuse from baseline 0.2.0.
+
+This closes the main Manager Inventory differences identified against the web page:
+- latest or selected report date;
+- branch filtering;
+- current position;
+- transaction movement;
+- export capability.
+
+### 14.4 Developer workspace parity
+
+Corrected diagnostics:
+- removed the 1,000-order cap;
+- now uses exact database counts.
+
+Production reference values verified during implementation:
+
+```text
+Orders: 1041
+Pending: 55
+Processed: 29
+Parts: 85151
+Profiles: 21
+Active branches: 13
+```
+
+Also added:
+- reusable empty/error/retry states;
+- icon treatment;
+- restored Quick Navigation to New Order, Track Orders, Approvals, Admin, Docket and TA/DA.
+
+### 14.5 Approval Queue UX parity
+
+Added:
+- queue metrics;
+- Approver Stage count;
+- Manager Stage count;
+- search across order/branch/customer/machine/type/status;
+- richer order cards;
+- clear “Open quantity review” affordance;
+- professional empty and failed-query states.
+
+Protected approval actions remain in the existing mobile approval review/detail flows and continue to use the server Edge Functions.
+
+### 14.6 Verification
+
+Final Batch 2 head before OTA:
+
+```text
+bf988e5548e1e132fb6410eb154e5fe93ce4f2c2
+```
+
+CI:
+- App CI #1780: **PASS**
+- Mobile CI #90: **PASS**
+
+### 14.7 OTA publication
+
+Published successfully without creating a new APK:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: d6ec3ad2-e2cc-4ab2-8d7b-4d4c697db903
+Android update: 01a10fcb-3831-774f-aaaa-f688c4dfac93
+Commit: bf988e5548e1e132fb6410eb154e5fe93ce4f2c2
+```
+
+Message:
+
+```text
+Mobile parity batch 2: professional states, Manager inventory parity, Developer diagnostics and Approval Queue UX
+```
+
+### 14.8 Next stage
+
+Continue the parity matrix with:
+1. Credit Dispatch list/detail/actions/corrections/payment recovery parity;
+2. TA/DA list/detail/receipt/edit/delete parity;
+3. Engine & Breaker invoice/register/completion/acceptance parity;
+4. Admin Approved Orders and Docket operational parity;
+5. remaining Reports / Uploads / Part Location / activity gaps;
+6. continue visual-system rollout across each module as it is touched.
+
+Every next batch remains OTA-first. No APK/AAB without explicit user approval.
+
