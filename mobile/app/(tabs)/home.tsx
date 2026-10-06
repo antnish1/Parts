@@ -10,8 +10,8 @@ import { formatDate, getVisibleOrders } from '@/services/orders';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function HomeScreen() {
-  const { profile } = useAuth();
-  const orders = useQuery({ queryKey: ['orders', 'home'], queryFn: () => getVisibleOrders(120) });
+  const { profile, role } = useAuth();
+  const orders = useQuery({ queryKey: ['orders', 'home'], queryFn: () => getVisibleOrders(120), enabled: role !== 'accounts' });
 
   const metrics = useMemo(() => {
     const rows = orders.data ?? [];
@@ -20,6 +20,25 @@ export default function HomeScreen() {
     const pendingIssue = rows.filter((row) => !['received', 'issued', 'rejected'].includes((row.status ?? '').toLowerCase())).length;
     return { visible: rows.length, pending, pendingManager, pendingIssue };
   }, [orders.data]);
+
+  if (role === 'accounts') {
+    return (
+      <Screen title={`Hello${profile?.fullName ? `, ${profile.fullName.split(' ')[0]}` : ''}`} subtitle={`${profile?.branch ?? 'Accounts'} · accounts`}>
+        <Text style={styles.sectionTitle}>Accounts work</Text>
+        <Pressable style={styles.primaryAction} onPress={() => router.push('/ta-da')}>
+          <Text style={styles.primaryActionTitle}>TA/DA Receipts</Text>
+          <Text style={styles.primaryActionText}>Receive eligible SVRs at Accounts and review custody history.</Text>
+        </Pressable>
+        <Pressable style={styles.accountAction} onPress={() => router.push('/credit-dispatch')}>
+          <Text style={styles.accountActionTitle}>Credit Dispatch</Text>
+          <Text style={styles.accountActionText}>Review Accounts-stage credit requests and monitor recovery status.</Text>
+        </Pressable>
+        <View style={styles.accountNote}>
+          <Text style={styles.accountNoteText}>Accounts access is intentionally limited to TA/DA and Credit Dispatch workflows.</Text>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen title={`Hello${profile?.fullName ? `, ${profile.fullName.split(' ')[0]}` : ''}`} subtitle={`${profile?.branch ?? 'Unassigned'} · ${profile?.role ?? 'user'}`}>
@@ -72,6 +91,7 @@ const styles = StyleSheet.create({
   primaryAction: { flex: 1.4, minHeight: 96, justifyContent: 'flex-end', padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.navy },
   primaryActionTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   primaryActionText: { color: '#D6E7FF', fontSize: 11, marginTop: 4 },
+  accountAction:{minHeight:96,justifyContent:'flex-end',padding:spacing.lg,borderRadius:radius.lg,borderWidth:1,borderColor:colors.navy,backgroundColor:colors.surface},accountActionTitle:{color:colors.navy,fontSize:16,fontWeight:'900'},accountActionText:{color:colors.textMuted,fontSize:11,lineHeight:17,marginTop:4},accountNote:{padding:spacing.md,borderRadius:radius.md,backgroundColor:colors.blueSoft},accountNoteText:{color:colors.navySoft,fontSize:10,lineHeight:16,fontWeight:'700'},
   secondaryAction: { flex: 1, minHeight: 96, justifyContent: 'flex-end', padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   secondaryTitle: { color: colors.text, fontSize: 15, fontWeight: '800' },
   secondaryText: { color: colors.textMuted, fontSize: 11, marginTop: 4 },
