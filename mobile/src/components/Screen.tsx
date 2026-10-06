@@ -42,9 +42,9 @@ export function Screen({ children, title, subtitle, right, scroll = true, conten
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { padding: spacing.lg, gap: spacing.md },
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.md, marginBottom: spacing.xs },
+  content: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm, marginBottom: 2 },
   headingCopy: { flex: 1 },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
-  subtitle: { color: colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 3 },
+  title: { color: colors.text, fontSize: 20, fontWeight: '900', letterSpacing: -0.25 },
+  subtitle: { color: colors.textMuted, fontSize: 10, lineHeight: 15, marginTop: 2 },
 });
