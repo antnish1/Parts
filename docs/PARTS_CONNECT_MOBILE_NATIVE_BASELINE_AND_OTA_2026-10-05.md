@@ -1686,3 +1686,73 @@ Continue the same design system through:
 
 The installed runtime remains `0.2.0`. Continue OTA-only unless a native runtime change is explicitly approved.
 
+
+
+---
+
+## 20. Compact mobile design reset — explicit production rule
+
+**Feedback date:** 06 October 2026
+
+Physical-device review rejected the earlier Manager Home design direction because it used too much prime mobile space for:
+- large dark-navy hero panels;
+- 2×2 KPI cards;
+- oversized visual blocks;
+- excessive section spacing;
+- presentation-style dashboard composition.
+
+### 20.1 New mandatory design direction
+
+The mobile app must be **compact, modern, information-dense and operational**.
+
+Use:
+- compact identity/header rows;
+- horizontal attention chips;
+- joined counters where useful;
+- tight 2-column action cells;
+- 44–54px action rows;
+- roughly 54–64px operational list rows where content permits;
+- light surfaces;
+- navy as an accent/active state rather than a large background;
+- subtle borders instead of large decorative cards;
+- concise section headings;
+- dense status and context presentation;
+- semantic SVG icons.
+
+Avoid:
+- large KPI tiles for routine operational counts;
+- large dark hero sections;
+- oversized cards containing one number;
+- decorative empty space;
+- duplicated heading + subheading combinations that consume vertical space;
+- dashboard layouts designed like presentation slides;
+- emoji as operational icons.
+
+### 20.2 Compact reset implementation
+
+The Manager Home has been replaced with:
+- compact manager identity row;
+- small active-order pill;
+- horizontal attention strip for Approvals / Delayed VOR / Pending Issue / Credit / TA/DA;
+- compact 2-column My Work shortcuts;
+- dense Needs Attention list;
+- slim bottom shortcut bar.
+
+Removed from Manager Home:
+- large dark hero;
+- 2×2 KPI grid;
+- Branch Pulse chart;
+- oversized section spacing.
+
+Shared shell changes:
+- smaller Screen horizontal/top spacing;
+- page title reduced from 24px to 20px;
+- subtitles reduced;
+- bottom tab bar reduced from 68px to 58px;
+- smaller tab icon selection backgrounds;
+- smaller StatusChip padding/text;
+- Manager Work converted to compact 2-column cells;
+- More profile converted from dark hero to compact light profile row.
+
+Future agents must preserve this density direction and must not reintroduce the rejected large-card/hero style without explicit user approval.
+
