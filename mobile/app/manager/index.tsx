@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
@@ -15,6 +17,21 @@ function dateInput(value: Date) {
   const month = String(value.getMonth() + 1).padStart(2, '0');
   const day = String(value.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function escapeCsv(value: unknown) {
+  const text = String(value ?? '');
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+async function shareCsv(filename: string, header: string[], rows: unknown[][]) {
+  const available = await Sharing.isAvailableAsync();
+  if (!available) throw new Error('Sharing is not available on this device.');
+  const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n');
+  const file = new File(Paths.cache, `${Date.now()}-${filename}`);
+  file.create();
+  file.write(csv);
+  await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Share inventory export' });
 }
 
 function parseDate(value: string) {
@@ -71,6 +88,22 @@ export default function ManagerDashboardScreen() {
 
   const failed = inventory.isError || txns.isError;
 
+  async function exportInventory() {
+    await shareCsv(
+      `manager-inventory-${reportDate || 'latest'}.csv`,
+      ['Report Date','Branch Key','Branch Code','Branch Name','Part No','Item Name','Group','UOM','Qty','DNP','Value'],
+      (inventory.data ?? []).map((row) => [row.report_date,row.branch_key,row.branch_code,row.branch_name,row.item_code,row.item_name,row.item_group,row.uom,row.qty,row.dnp,row.inv_value]),
+    );
+  }
+
+  async function exportTransactions() {
+    await shareCsv(
+      `manager-inventory-transactions-${reportDate || 'latest'}.csv`,
+      ['Report Date','Branch Key','Branch Code','Branch Name','Part No','Item Name','Group','Received','Issued','Closing Balance','Value'],
+      (txns.data ?? []).map((row) => [row.report_date,row.branch_key,row.branch_code,row.branch_name,row.item_code,row.item_name,row.item_group,row.received,row.issued,row.closing_balance,row.closing_value]),
+    );
+  }
+
   return (
     <Screen title="Manager Dashboard" subtitle={`Inventory position and movement${reportDate ? ` • ${reportDate}` : ''}`}>
       <View style={styles.toolbar}>
@@ -85,6 +118,11 @@ export default function ManagerDashboardScreen() {
       </View>
 
       {showDate ? <DateTimePicker value={parseDate(reportDate || latest.data || '')} mode="date" display="default" onChange={onDateChange} /> : null}
+
+      {hasSearch ? <View style={styles.exportRow}>
+        <Pressable disabled={!(inventory.data ?? []).length} onPress={() => void exportInventory()} style={[styles.exportButton, !(inventory.data ?? []).length && styles.disabled]}><AppIcon name="package" size={16} color={colors.navy}/><Text style={styles.exportText}>Export Inventory</Text></Pressable>
+        <Pressable disabled={!(txns.data ?? []).length} onPress={() => void exportTransactions()} style={[styles.exportButton, !(txns.data ?? []).length && styles.disabled]}><AppIcon name="truck" size={16} color={colors.navy}/><Text style={styles.exportText}>Export Movement</Text></Pressable>
+      </View> : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <Pressable onPress={() => setBranch('all')} style={[styles.chip, branch === 'all' && styles.chipActive]}><Text style={[styles.chipText, branch === 'all' && styles.chipTextActive]}>All Branches</Text></Pressable>
@@ -118,6 +156,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, minHeight: 46, color: colors.text, fontSize: 14, fontWeight: '700' },
   dateButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   dateText: { color: colors.navy, fontSize: 11, fontWeight: '900' },
+  exportRow:{flexDirection:'row',gap:spacing.sm},exportButton:{flex:1,minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,paddingHorizontal:spacing.sm,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},exportText:{color:colors.navy,fontSize:10,fontWeight:'900'},disabled:{opacity:.4},
   chips: { gap: spacing.sm, paddingRight: spacing.lg },
   chip: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   chipActive: { backgroundColor: colors.navy, borderColor: colors.navy },
