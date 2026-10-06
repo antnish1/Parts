@@ -1,0 +1,80 @@
+name: Publish Android OTA
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: OTA release message
+        required: false
+        default: Manual Android preview OTA
+
+concurrency:
+  group: parts-connect-android-preview-ota
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Validate and publish preview OTA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://ubkwtjyvbdvepzbxoikq.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3
+      EXPO_PUBLIC_APP_ENV: test
+
+    steps:
+      - name: Require Expo token
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "::error::Missing repository secret EXPO_TOKEN."
+            echo "::error::Create an Expo personal access token and save it as GitHub Actions repository secret EXPO_TOKEN."
+            exit 1
+          fi
+
+      - name: Checkout selected commit
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Validate mobile bundle
+        working-directory: mobile
+        run: npm run check
+
+      - name: Publish Android preview OTA
+        working-directory: mobile
+        env:
+          UPDATE_MESSAGE: ${{ inputs.message }}
+        run: |
+          eas update             --channel preview             --platform android             --message "${UPDATE_MESSAGE}"             --non-interactive
+
+      - name: Publication summary
+        run: |
+          {
+            echo "## Parts Connect Android OTA"
+            echo ""
+            echo "- Channel: `preview`"
+            echo "- Runtime: `0.2.0`"
+            echo "- Platform: `android`"
+            echo "- Commit: `${GITHUB_SHA}`"
+            echo "- APK/AAB build: **not created**"
+          } >> "${GITHUB_STEP_SUMMARY}"
