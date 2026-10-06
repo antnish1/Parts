@@ -3,6 +3,10 @@ name: Publish Android OTA
 on:
   workflow_dispatch:
     inputs:
+      git_ref:
+        description: Git branch, tag, or commit SHA to publish
+        required: true
+        default: agent/expo-android-foundation
       message:
         description: OTA release message
         required: false
@@ -36,8 +40,10 @@ jobs:
             exit 1
           fi
 
-      - name: Checkout selected commit
+      - name: Checkout selected mobile ref
         uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.git_ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -75,6 +81,7 @@ jobs:
             echo "- Channel: `preview`"
             echo "- Runtime: `0.2.0`"
             echo "- Platform: `android`"
-            echo "- Commit: `${GITHUB_SHA}`"
+            echo "- Requested ref: `${{ inputs.git_ref }}`"
+            echo "- Workflow commit: `${GITHUB_SHA}`"
             echo "- APK/AAB build: **not created**"
           } >> "${GITHUB_STEP_SUMMARY}"
