@@ -1543,3 +1543,146 @@ Design rules for future agents:
 - distinguish query error, loading, and true empty states;
 - keep all normal visual improvements OTA-only on runtime 0.2.0.
 
+
+
+---
+
+## 19. Production design hardening — Operational workspace Batch 6 published by OTA
+
+**Implementation date:** 06 October 2026
+
+This batch extends the production design system from the Manager shell into the highest-frequency operational decision screens.
+
+### 19.1 Track Orders rebuilt as complete operational register
+
+Corrected:
+- removed the old 500-order screen cap;
+- now uses the paginated `getAllVisibleOrders()` loader.
+
+Redesigned:
+- joined All / Pending / Open / Closed filters;
+- complete result count;
+- vector search field;
+- denser order cards;
+- semantic order/type icon treatment;
+- branch + machine context;
+- quantity / value / created-date strip;
+- explicit Open Order Workspace action;
+- professional query error and true-empty states.
+
+### 19.2 Delayed VOR production redesign
+
+Added:
+- ageing-monitor hero;
+- joined Today / 1–2d / 3–5d / 5+d filters;
+- semantic warning/danger age colors;
+- compact search;
+- machine + processed-date context;
+- explicit Open Order action;
+- production empty/error/retry states.
+
+Existing corrected VOR data logic from Batch 1 remains unchanged.
+
+### 19.3 Pending Issue production redesign
+
+Added:
+- Ready to Issue hero;
+- joined age filters;
+- VOR/SOP type filters;
+- vector search;
+- compact issue-ready order cards;
+- age severity treatment;
+- received-date and order-value context;
+- redesigned Issue Order sheet;
+- received-part status cards;
+- document type chips;
+- protected Mark Order Issued action remains via `mark_portal_order_issued`.
+
+### 19.4 Approval Review — design + missing parity controls
+
+Redesigned the approval decision workspace around high-risk quantity review.
+
+Added the previously missing protected actions to the UI:
+- **Reset Edited Qty** via `resetEditedQuantity()`;
+- **Set 0 / Zero Review Row** via `zeroReviewItem()`.
+
+Existing protected actions retained:
+- Accept Edits & Approve;
+- Approve Original Qty;
+- Reject Order.
+
+UX additions:
+- dark manager-decision hero;
+- original vs review quantity summary;
+- edited-row visual marker;
+- per-row original/current/line-value context;
+- explicit Reset and Set 0 buttons;
+- audited-action explanatory copy;
+- clearer reject confirmation.
+
+No approval-state transition is implemented as a direct table write.
+
+### 19.5 Order Detail production polish
+
+Improved:
+- dark command-style order hero;
+- semantic order icon;
+- human-readable workflow status;
+- approval Review Quantities action with iconography;
+- Activity / Comments / Billing shortcut;
+- Manager / Developer correction shortcut;
+- In-Transit pill now uses the vector truck icon instead of emoji;
+- In-Transit sheet close control now uses SVG;
+- professional loading/error state.
+
+Existing functionality retained:
+- billing/docket chunks;
+- effective/billed/pending/received quantities;
+- In-Transit contributing-order sheet;
+- role-aware approval/rejection;
+- activity navigation;
+- Manager/Developer data correction.
+
+### 19.6 Verification
+
+Final Batch 6 head:
+
+```text
+ecc81d0ca8e46caa0de458032800e12afb9dbb6d
+```
+
+CI:
+- App CI #1856: **PASS**
+- Mobile CI #163: **PASS**
+
+### 19.7 OTA publication
+
+Published successfully without a new APK:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: e402e460-d684-4157-887e-16dee4104472
+Android update: 01a11030-64e8-7db8-beed-6d0b99631270
+Commit: ecc81d0ca8e46caa0de458032800e12afb9dbb6d
+```
+
+Message:
+
+```text
+Mobile production design batch 6: orders, exceptions, approval review and order workspace
+```
+
+### 19.8 Next production-design target
+
+Continue the same design system through:
+1. Manager Inventory;
+2. Credit Dispatch list/detail;
+3. TA/DA Tracking/detail;
+4. Engine & Breaker;
+5. Reports;
+6. Uploads / Part Location where visual hierarchy still differs.
+
+The installed runtime remains `0.2.0`. Continue OTA-only unless a native runtime change is explicitly approved.
+
