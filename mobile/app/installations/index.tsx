@@ -201,6 +201,7 @@ const styles=StyleSheet.create({
   date:{color:colors.textMuted,fontSize:7.5,fontWeight:'700'},
   meta:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   subMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',marginTop:3},
+  bottomLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:3},
   rowAction:{width:28,height:34,alignItems:'center',justifyContent:'center'},
   deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
   modalBackdrop:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:'rgba(2,6,23,.62)'},
