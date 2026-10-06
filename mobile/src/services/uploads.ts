@@ -22,7 +22,77 @@ function fuzzyCell(row:Record<string,unknown>,names:string[]){const normalized=n
 function textCell(row:Record<string,unknown>,names:string[]){return clean(fuzzyCell(row,names))}
 function parseDate(value:unknown){if(value==null||value==='')return null;if(value instanceof Date&&!Number.isNaN(value.getTime()))return value.toISOString().slice(0,10);if(typeof value==='number'&&value>20000)return new Date(Date.UTC(1899,11,30)+Math.round(value)*86400000).toISOString().slice(0,10);const t=clean(value);const d=new Date(t);if(!Number.isNaN(d.getTime()))return d.toISOString().slice(0,10);const p=t.split(/[/-]/);if(p.length===3){const [day,month,year0]=p;const year=year0.length===2?`20${year0}`:year0;return `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`}return null}
 export async function parseStatusReportAsset(asset:DocumentPickerAsset):Promise<StatusReportRow[]>{const wb=await workbook(asset);const sheet=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json<Record<string,unknown>>(sheet,{defval:'',raw:true});return rows.map((row)=>({finalOrderNo:textCell(row,['orderno','order']).toUpperCase(),partNo:normalizePartNo(textCell(row,['materialno','materialnumber','partno','partnumber','material','itemcode','itemno'])),billedQty:toNumber(textCell(row,['billedqty','billedquantity','billqty','qty','quantity','dispatchqty','invoiceqty'])),orderRegDate:parseDate(fuzzyCell(row,['orderregdt','orderregdate','regdt','regdate'])),invoiceNo:textCell(row,['billnoimage','billnoandimage','billno','invoiceno','invoicenumber','dbmsinvoice','dbmsinvoiceno','billingdoc']).toUpperCase(),invoiceDate:parseDate(fuzzyCell(row,['billingdt','billingdate','billdate','invoicedate','dbmsinvoicedate'])),docketNo:textCell(row,['docket','docketno','docketnumber','lrno','lrnumber','awb','awbno','waybill']).toUpperCase(),transportName:textCell(row,['transportname','transport','transporter','transportername','courier','carrier']),deliveryNo:textCell(row,['deliveryno','deliverynumber','challanno','challan','delivery']).toUpperCase(),transportMode:textCell(row,['transportmode','mode']).toUpperCase(),packingDetail:textCell(row,['packingdetail','packing','packaging']),ewayBillNo:textCell(row,['ewaybillno','ewaybill','eway']).toUpperCase(),gstInvoiceNo:textCell(row,['gstinvoiceno','gstinvoice','gstbillno']).toUpperCase(),rawStatus:textCell(row,['status','orderstatus','rowstatus']),branchName:textCell(row,['branch','branchname','plant','location','shiptoparty']),lineNo:textCell(row,['lineno','linenumber','line']),materialDescription:textCell(row,['materialdescription','partdescription','description']),customerPo:textCell(row,['custpo','customerpo','customerpurchaseorder']).toUpperCase(),dealerCode:textCell(row,['dealercode','dealer']).toUpperCase(),shipToParty:textCell(row,['shiptoparty','shipto']).toUpperCase(),shipToName:textCell(row,['nameofshiptopart','nameofshiptoparty','shiptoname']),orderType:textCell(row,['type','ordertype']).toUpperCase(),orderQty:toNumber(textCell(row,['orderqty','orderquantity']))})).filter((row)=>row.finalOrderNo&&row.partNo)}
-export async function previewStatusRows(rows:StatusReportRow[]):Promise<StatusPreview>{const out:StatusPreview['rows']=[];let matched=0,skipped=0,failed=0;for(const row of rows.slice(0,1000)){try{const {data:orders,error}=await supabase.from('portal_orders').select('id,order_no').or(`final_order_no.eq.${row.finalOrderNo},processing_reference.eq.${row.finalOrderNo},order_no.eq.${row.finalOrderNo}`).limit(2);if(error)throw error;if(!orders?.length){skipped++;out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Order not found'});continue}if(orders.length>1){skipped++;out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Multiple orders matched'});continue}const {data:items,error:itemError}=await supabase.from('portal_order_items').select('id,row_status').eq('order_id',orders[0].id).eq('part_no',row.partNo).limit(2);if(itemError)throw itemError;if(!items?.length){skipped++;out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Item row not found'});continue}matched++;out.push({status:'matched',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Matched. Preview only; no database write done.'});}catch(e){failed++;out.push({status:'failed',orderNo:row.finalOrderNo,partNo:row.partNo,reason:e instanceof Error?e.message:'Preview failed'})}}return{total:rows.length,matched,skipped,failed,rows:out};}
+export async function previewStatusRows(rows:StatusReportRow[]):Promise<StatusPreview>{
+  const out:StatusPreview['rows']=[];
+  let matched=0,skipped=0,failed=0;
+  const orderCache=new Map<string,Array<{id:string;order_no:string|null}>>();
+  const itemCache=new Map<string,Array<{id:string;row_status:string|null}>>();
+
+  for(const row of rows){
+    try{
+      let orders=orderCache.get(row.finalOrderNo);
+      if(!orders){
+        const {data,error}=await supabase.from('portal_orders')
+          .select('id,order_no')
+          .or(`final_order_no.eq.${row.finalOrderNo},processing_reference.eq.${row.finalOrderNo},order_no.eq.${row.finalOrderNo}`)
+          .limit(2);
+        if(error)throw error;
+        orders=(data??[]) as Array<{id:string;order_no:string|null}>;
+        orderCache.set(row.finalOrderNo,orders);
+      }
+      if(!orders.length){
+        skipped++;
+        out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Order not found'});
+        continue;
+      }
+      if(orders.length>1){
+        skipped++;
+        out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Multiple orders matched'});
+        continue;
+      }
+
+      const itemKey=`${orders[0].id}|${row.partNo}`;
+      let items=itemCache.get(itemKey);
+      if(!items){
+        const {data,error}=await supabase.from('portal_order_items')
+          .select('id,row_status')
+          .eq('order_id',orders[0].id)
+          .eq('part_no',row.partNo)
+          .order('created_at',{ascending:true});
+        if(error)throw error;
+        items=(data??[]) as Array<{id:string;row_status:string|null}>;
+        itemCache.set(itemKey,items);
+      }
+      if(!items.length){
+        skipped++;
+        out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Item row not found'});
+        continue;
+      }
+
+      const normalize=(value:unknown)=>String(value??'').trim().toLowerCase().replace(/[\s-]+/g,'_');
+      const active=items.filter((item)=>!['received','issued','rejected'].includes(normalize(item.row_status)));
+      if(!active.length){
+        skipped++;
+        out.push({status:'skipped',orderNo:row.finalOrderNo,partNo:row.partNo,reason:'Item is fully received, issued, or rejected'});
+        continue;
+      }
+
+      matched++;
+      out.push({
+        status:'matched',
+        orderNo:row.finalOrderNo,
+        partNo:row.partNo,
+        reason:active.length>1
+          ? 'Matched. More than one active row exists; apply uses the first active row.'
+          : 'Matched. Preview only; no database write done.',
+      });
+    }catch(e){
+      failed++;
+      out.push({status:'failed',orderNo:row.finalOrderNo,partNo:row.partNo,reason:e instanceof Error?e.message:'Preview failed'});
+    }
+  }
+  return{total:rows.length,matched,skipped,failed,rows:out};
+}
 export async function applyStatusRows(rows:StatusReportRow[]){const {data,error}=await supabase.functions.invoke('status-report-action',{body:{rows}});if(error)throw error;if(data?.error)throw new Error(String(data.error));return data as {total:number;updated:number;inserted:number;skipped:number;failed:number;errors?:string[]};}
 
 export type PartPriceRow={source_row:number;part_no:string;part_no_normalized:string;description:string|null;dnp:number|null;rtl:number|null;mrp:number|null;hsn:string|null;gst:number|null;cat1:string|null;cat2:string|null};
