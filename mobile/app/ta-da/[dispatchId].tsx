@@ -24,8 +24,8 @@ export default function TadaDetailScreen() {
 
   const stage = useMemo<Stage | null>(() => {
     const status = detail.data?.dispatch.status ?? '';
-    if ((role === 'manager' || role === 'developer') && ['AWAITING_HQ_RECEIPT', 'PARTIALLY_RECEIVED_HQ'].includes(status)) return 'HQ';
-    if ((role === 'accounts' || role === 'developer') && ['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_ACCOUNTS'].includes(status)) return 'ACCOUNTS';
+    if ((role === 'manager' || role === 'developer') && status === 'AWAITING_HQ_RECEIPT') return 'HQ';
+    if ((role === 'accounts' || role === 'developer') && ['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_HQ'].includes(status)) return 'ACCOUNTS';
     return null;
   }, [detail.data?.dispatch.status, role]);
 
