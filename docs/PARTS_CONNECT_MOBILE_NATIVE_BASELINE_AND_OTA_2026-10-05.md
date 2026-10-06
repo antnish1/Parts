@@ -1756,3 +1756,151 @@ Shared shell changes:
 
 Future agents must preserve this density direction and must not reintroduce the rejected large-card/hero style without explicit user approval.
 
+
+
+---
+
+## 21. Compact design Batch 7 — published by OTA
+
+**Implementation date:** 06 October 2026
+
+This batch replaced the rejected oversized Manager dashboard direction.
+
+### Published compact shell
+
+Manager Home:
+- removed large dark hero;
+- removed 2×2 KPI cards;
+- removed Branch Pulse chart;
+- compact manager identity row;
+- active-order pill;
+- horizontal attention chips;
+- tight 2-column My Work actions;
+- dense Needs Attention rows;
+- slim shortcut bar.
+
+Shared shell:
+- reduced screen padding and section gaps;
+- page titles reduced from 24px to 20px;
+- smaller subtitles;
+- bottom tab bar reduced from 68px to 58px;
+- compact tab icon selection treatment;
+- compact status chips;
+- Manager Work converted to tight 2-column cells;
+- More tab profile changed from navy hero to compact light row.
+
+Verification before OTA:
+- App CI #1870: **PASS**
+- Mobile CI #175: **PASS**
+
+OTA:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: e7d002a8-3976-4998-abd4-3f4675a6f859
+Android update: 01a1109a-7e1a-71d3-8ae2-b1fefaf1f913
+Commit: faa155eef3c600e0c985a3fa4bc4bdbffd5b3e67
+```
+
+Message:
+
+```text
+Mobile compact design batch 7: dense manager home and compact shell
+```
+
+---
+
+## 22. Compact operational Batch 8 — validated, OTA pending Expo quota
+
+**Implementation date:** 06 October 2026
+
+After Batch 7, the same compact-density system was extended through high-frequency operational workspaces.
+
+### Completed
+
+Manager Inventory:
+- removed four KPI cards;
+- added slim Qty / Value / In / Out summary strip;
+- compact search + date controls;
+- smaller branch chips;
+- compact CSV actions;
+- dense Stock rows;
+- dense Movement rows.
+
+Credit Dispatch:
+- removed MetricCard KPI carousel;
+- compact Pending / Overdue / Payment / Rejected / Correction / Closed / All count chips;
+- smaller create/customer actions;
+- dense credit request rows with amount, balance, due date and approval status.
+
+TA/DA:
+- removed MetricCard stage cards;
+- compact custody-stage count chips;
+- smaller search/New controls;
+- dense dispatch rows;
+- Developer override notice reduced to inline alert.
+
+Engine & Breaker:
+- removed KPI cards;
+- compact Register / Invoice segment;
+- compact stage count chips;
+- dense register rows;
+- dense invoice rows;
+- Developer audited delete retained.
+
+Reports:
+- removed 2×2 metric cards;
+- single compact Orders / Qty / Value / Branches strip;
+- smaller branch/status filters;
+- compact CSV/Excel actions;
+- compact top-branch/top-status summaries;
+- dense order rows.
+
+Part Location:
+- removed dark-navy result hero;
+- compact search;
+- light part-result row;
+- compact location rows;
+- compact manage-locations action.
+
+### Verification
+
+Current validated functional/design head:
+
+```text
+19ea2812e93e18133a83ba644b1e6fcbea76fa33
+```
+
+CI:
+- App CI #1884: **PASS**
+- Mobile CI #189: **PASS**
+
+An earlier Mobile CI run correctly caught one missing `bottomLine` style in the compact Engine & Breaker invoice row. It was fixed before the above green validation.
+
+### OTA status
+
+**Not published yet.**
+
+Expo rejected creation of the OTA publishing sandbox because the account has exhausted its free-plan 60-minute CI/CD allowance.
+
+Expo reported:
+
+```text
+Free plan CI/CD 60 minute limit reached.
+CI/CD minutes reset on November 1, 2026 at 12:00:00 AM UTC.
+```
+
+No new APK/AAB has been created.
+
+Do not work around this by creating a fresh APK. When Expo OTA capacity is available again, publish the latest green compact head to:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+```
+
+PR #126 remains open/draft/unmerged unless explicitly requested otherwise.
+
