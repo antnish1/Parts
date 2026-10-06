@@ -1360,3 +1360,186 @@ No new APK/AAB is required for these Batch 1–4 changes because they are compat
 
 PR #126 remains open, draft, and unmerged until explicitly requested.
 
+
+
+---
+
+## 18. Production design hardening — Manager shell Batch 5 published by OTA
+
+**Implementation date:** 06 October 2026
+
+This batch responds to physical-device feedback that the earlier Manager Home was functionally useful but still looked like a prototype. The redesign establishes a stronger production visual baseline for the Android app.
+
+### 18.1 Manager Home replaced with a dedicated command center
+
+Added:
+- `mobile/src/components/ManagerHomeDashboard.tsx`.
+
+The Manager role no longer uses the generic Home dashboard.
+
+New Manager Home structure:
+- branded dark-navy command-center hero;
+- Manager role badge;
+- manager greeting;
+- branch + date context;
+- complete Active Orders count;
+- direct Track Orders action;
+- Today's Priorities section;
+- Manager Workbench quick-action grid;
+- Branch Pulse attention concentration;
+- Approval Queue preview;
+- shortcut to all manager tools.
+
+Live workflow priorities now use the real service logic:
+- Manager Approvals;
+- Delayed VOR;
+- Pending Issue;
+- Credit Dispatch Pending Manager Approval;
+- TA/DA HQ-attention count;
+- complete visible order dataset.
+
+The dashboard no longer uses the previous hard cap of 120 orders as the main manager count.
+
+### 18.2 Production bottom-tab icons
+
+The old tab bar had no explicit `tabBarIcon` implementation, causing missing/fallback glyph boxes on Android.
+
+Corrected with the OTA-safe custom SVG icon system:
+- Home;
+- Work;
+- Search;
+- Activity;
+- More.
+
+Added:
+- selected icon background treatment;
+- clearer active/inactive states;
+- improved spacing and shadow/elevation.
+
+No icon-font dependency was introduced for the bottom navigation.
+
+### 18.3 Expanded reusable icon system
+
+`AppIcon` now includes:
+- home;
+- work;
+- activity;
+- more;
+- grid;
+- chart;
+- inventory;
+- shield;
+- wallet;
+- existing search/package/truck/clock/check/etc.
+
+These icons use the already compiled `react-native-svg` native capability and remain OTA-compatible.
+
+### 18.4 Human-readable workflow statuses
+
+`StatusChip` now converts raw backend values such as:
+
+```text
+pending_manager_approval
+```
+
+into:
+
+```text
+Pending Manager Approval
+```
+
+Underscores/hyphens are removed and operational acronyms such as HQ / SVR / DBMS / VOR remain uppercase.
+
+Status badges also use fully rounded compact pills.
+
+### 18.5 Manager Work tab redesigned
+
+For Manager:
+- title changed to Manager Workbench;
+- dedicated manager control-surface intro;
+- every workflow has a semantic vector icon;
+- compact professional task cards;
+- improved hierarchy and navigation affordance.
+
+Existing role-based action rules remain unchanged.
+
+### 18.6 Search / Activity / More redesigned
+
+Search:
+- vector search field;
+- professional empty/error/retry states;
+- compact result cards with icon + human-readable status.
+
+Activity:
+- operational timeline treatment;
+- vector activity markers;
+- human-readable statuses;
+- professional error/empty states.
+
+More:
+- professional profile hero;
+- role/branch/app/runtime information;
+- runtime now correctly displays `0.2.0 · OTA enabled`;
+- OTA-first explanation;
+- clearer secure sign-out control.
+
+### 18.7 Verification
+
+Final production-design head before OTA:
+
+```text
+98f672a5d492950d3a12f56e49870f70e36e199f
+```
+
+CI:
+- App CI #1844: **PASS**
+- Mobile CI #152: **PASS**
+
+A first CI attempt correctly caught a React Navigation `ColorValue` typing mismatch in the new tab icons. It was fixed before publication.
+
+### 18.8 OTA publication
+
+Published successfully without creating a new APK:
+
+```text
+Channel: preview
+Runtime: 0.2.0
+Platform: android
+Update group: ff407fd1-e202-436f-879e-70a499704a87
+Android update: 01a11025-b9ab-785b-a284-a2e2117f5fbd
+Commit: 98f672a5d492950d3a12f56e49870f70e36e199f
+```
+
+Message:
+
+```text
+Mobile production design batch 5: manager command center, real tab icons and polished shell
+```
+
+### 18.9 Next production-design stage
+
+After device validation of Batch 5, continue the same design system through the highest-frequency operational screens:
+
+1. Track Orders list;
+2. Order Detail;
+3. Approval quantity review;
+4. Delayed VOR;
+5. Pending Issue;
+6. Manager Inventory;
+7. Credit Dispatch;
+8. TA/DA;
+9. Engine & Breaker;
+10. Reports.
+
+Design rules for future agents:
+- do not return to raw backend status strings;
+- do not use emoji as primary action icons;
+- prefer `AppIcon` / SVG components;
+- make role actionability obvious;
+- use compact professional cards rather than oversized blank surfaces;
+- maintain the dark-navy Frontier/Parts Connect visual identity;
+- keep operational danger/warning/success colors semantic;
+- preserve at least practical ~48dp touch targets;
+- distinguish query error, loading, and true empty states;
+- keep all normal visual improvements OTA-only on runtime 0.2.0.
+
