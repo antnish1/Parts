@@ -194,7 +194,7 @@ function RowActions({ row, currentRole, canPay, canCorrect, currentBranch, isBus
   const progressStatus = getCreditDispatchProgressStatus(row);
   const showCorrection = canCorrect && ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(row.approval_status) && normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch);
   const showApproval = canReviewStage(row, currentRole);
-  const showPayment = canPay && isCreditDispatchPaymentStage(progressStatus);
+  const showPayment = canPay && (currentRole !== 'branch' || normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch)) && isCreditDispatchPaymentStage(progressStatus);
 
   if (showCorrection) return <Link to={`/credit-dispatch/${row.id}/edit`}><Button type="button" className={compact ? 'cd-action cd-action--correct px-3 py-1.5 text-xs' : 'cd-action cd-action--correct w-full'}><RotateCcw className="h-4 w-4" />Edit & Resubmit</Button></Link>;
   if (!showApproval && !showPayment) return <span className="text-xs font-medium text-slate-400">—</span>;
