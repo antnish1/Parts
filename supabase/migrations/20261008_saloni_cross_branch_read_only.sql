@@ -16,7 +16,7 @@ declare
   v_profile_id uuid;
   v_count integer;
 begin
-  select count(*), min(id) into v_count, v_profile_id
+  select count(*), (array_agg(id))[1] into v_count, v_profile_id
   from public.portal_profiles
   where lower(btrim(full_name)) = 'saloni patel'
     and role = 'branch'
