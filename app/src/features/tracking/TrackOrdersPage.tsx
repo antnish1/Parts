@@ -13,7 +13,7 @@ import type { TestOrder } from '../../services/testData.service';
 
 function CommentCountBadge({ count }: { count: number }) {
   if (count <= 0) return null;
-  return <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white" title={`${count} comment${count === 1 ? '' : 's'}`} aria-label={`${count} comments`}><MessageCircle aria-hidden="true" className="h-3 w-3 !text-white" style={{ color: "#fff", stroke: "#fff" }} /><span className="!text-white" style={{ color: "#fff" }}>{count}</span></span>;
+  return <span className="track-comment-count-badge inline-flex shrink-0 items-center gap-1 rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-black leading-none text-white" title={`${count} comment${count === 1 ? '' : 's'}`} aria-label={`${count} comments`}><MessageCircle aria-hidden="true" className="h-3 w-3 !text-white" style={{ color: "#fff", stroke: "#fff" }} /><span className="!text-white" style={{ color: "#fff" }}>{count}</span></span>;
 }
 
 const pageSize = 15;

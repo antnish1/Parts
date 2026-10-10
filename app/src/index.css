@@ -47,6 +47,13 @@ body {
   color: #111827 !important;
 }
 
+/* Exception: Track Orders red comment-count badges always use white foreground. */
+[data-theme='light-pro'] .track-comment-count-badge,
+[data-theme='light-pro'] .track-comment-count-badge * {
+  color: #ffffff !important;
+  stroke: #ffffff;
+}
+
 [data-theme='light-pro'] [class*='text-[#d8e3ee]'],
 [data-theme='light-pro'] [class*='text-[#c7d2df]'],
 [data-theme='light-pro'] [class*='text-pc-muted'],
