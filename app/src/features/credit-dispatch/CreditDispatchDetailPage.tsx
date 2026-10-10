@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuth } from '../../auth/useAuth';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, MessageSquarePlus, Printer, X } from 'lucide-react';
@@ -17,6 +18,7 @@ function SignatureBox({ label, url }: { label: string; url: string | null }) {
 export function CreditDispatchDetailPage() {
   const recordId = new URLSearchParams(window.location.search).get('id') ?? '';
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
@@ -57,6 +59,8 @@ export function CreditDispatchDetailPage() {
   if (query.error || !query.data) return <div className="rounded-3xl bg-red-50 p-6 font-bold text-red-700">Unable to load record.</div>;
 
   const { dispatch, payments, events, customerSignatureUrl, issuerSignatureUrl } = query.data;
+  const sameBranch = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const canComment = profile?.role !== 'branch' || sameBranch(dispatch.branch) === sameBranch(profile?.branch ?? '');
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 pb-20 print:max-w-none print:space-y-0 print:pb-0">
@@ -64,7 +68,7 @@ export function CreditDispatchDetailPage() {
       <div className="flex items-center justify-between gap-3 print:hidden">
         <Link to="/credit-dispatch" className="inline-flex items-center gap-2 text-sm font-black text-slate-600"><ArrowLeft className="h-4 w-4" />Back</Link>
         <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" onClick={openComment}><MessageSquarePlus className="h-4 w-4" />Add Comment</Button>
+          {canComment ? <Button type="button" variant="secondary" onClick={openComment}><MessageSquarePlus className="h-4 w-4" />Add Comment</Button> : null}
           <Button type="button" onClick={() => window.print()}><Printer className="h-4 w-4" />Print / PDF</Button>
         </div>
       </div>

@@ -28,6 +28,7 @@ export type CreditDispatchRecord = {
   approved_at?: string | null;
   created_at: string;
   updated_at: string;
+  comment_count?: number;
 };
 
 export type CreditDispatchFormInput = {
@@ -120,14 +121,41 @@ function validateRequestInput(input: CreditDispatchFormInput) {
 }
 
 export async function getCreditDispatches() {
-  const { data, error } = await supabase
-    .from('portal_credit_dispatches')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(300);
-
-  if (error) throw error;
-  return ((data ?? []) as CreditDispatchRecord[]).map(withDerivedRecoveryStatus);
+  // Fetch every RLS-visible dispatch, not just the newest 300.
+  const pageSize = 500;
+  const all: CreditDispatchRecord[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from('portal_credit_dispatches')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as CreditDispatchRecord[];
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+  const rows = all.map(withDerivedRecoveryStatus);
+  // Keep existing comment badges working without exceeding PostgREST IN limits.
+  const commentCounts = new Map<string, number>();
+  for (let start = 0; start < rows.length; start += 150) {
+    const ids = rows.slice(start, start + 150).map((row) => row.id);
+    const { data: events, error } = await supabase
+      .from('portal_credit_dispatch_events')
+      .select('dispatch_id')
+      .eq('event_type', 'Comment')
+      .in('dispatch_id', ids);
+    if (error) {
+      console.warn('Credit Dispatch comment count lookup failed.', error.message);
+      break;
+    }
+    for (const event of events ?? []) {
+      const id = String(event.dispatch_id ?? '');
+      commentCounts.set(id, (commentCounts.get(id) ?? 0) + 1);
+    }
+  }
+  return rows.map((row) => ({ ...row, comment_count: commentCounts.get(row.id) ?? 0 }));
 }
 
 export async function getCreditDispatchById(dispatchId: string) {
