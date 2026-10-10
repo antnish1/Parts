@@ -174,7 +174,7 @@ as $$
   candidates as (
     select
       o.id as order_id,
-      coalesce(nullif(trim(o.final_order_no), ''), nullif(trim(o.processing_reference), ''), o.order_no)::text as order_no
+      coalesce(nullif(trim(o.final_order_no), ''), nullif(trim(o.processing_reference), ''), o.order_no)::text as order_no,
       o.branch::text as branch,
       o.order_type::text as order_type,
       o.created_at as order_date,
