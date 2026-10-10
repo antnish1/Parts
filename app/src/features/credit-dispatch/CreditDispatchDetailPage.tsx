@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../auth/useAuth';
+import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, MessageSquarePlus, Printer, X } from 'lucide-react';
@@ -19,6 +20,15 @@ export function CreditDispatchDetailPage() {
   const recordId = new URLSearchParams(window.location.search).get('id') ?? '';
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const crossBranchCommentGrant = useQuery({
+    queryKey: ['credit-dispatch-cross-branch-read-grant', profile?.id],
+    enabled: profile?.role === 'branch',
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('portal_has_cross_branch_read', { p_module: 'credit_dispatch' });
+      if (error) throw error;
+      return data === true;
+    },
+  });
   const [commentOpen, setCommentOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [commentError, setCommentError] = useState('');
@@ -60,7 +70,7 @@ export function CreditDispatchDetailPage() {
 
   const { dispatch, payments, events, customerSignatureUrl, issuerSignatureUrl } = query.data;
   const sameBranch = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const canComment = profile?.role !== 'branch' || sameBranch(dispatch.branch) === sameBranch(profile?.branch ?? '');
+  const canComment = Boolean(profile && (profile.role !== 'branch' || sameBranch(dispatch.branch) === sameBranch(profile.branch) || crossBranchCommentGrant.data === true));
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 pb-20 print:max-w-none print:space-y-0 print:pb-0">
