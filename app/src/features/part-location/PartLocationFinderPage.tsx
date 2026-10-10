@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { MapPin, Plus, Search, X } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Camera, MapPin, Plus, Search, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
@@ -9,6 +9,21 @@ import { lookupTestPartByNo, suggestTestParts, type TestPart } from '../../servi
 
 const RECENT_KEY = 'pc-part-location-recent';
 const WRITE_ROLES = new Set(['manager', 'admin', 'developer']);
+
+type DetectedCode = { rawValue: string };
+type CodeDetector = { detect: (source: HTMLVideoElement) => Promise<DetectedCode[]> };
+type CodeDetectorConstructor = new (options?: { formats?: string[] }) => CodeDetector;
+
+function codeDetectorConstructor(): CodeDetectorConstructor | undefined {
+  return (window as Window & { BarcodeDetector?: CodeDetectorConstructor }).BarcodeDetector;
+}
+
+function validScannedPartNumber(value: string): string | null {
+  const normalized = normalizePartNo(value);
+  // Reject URL payloads, free text and unexpectedly long or unsafe values.
+  return normalized.length >= 3 && normalized.length <= 60 && /^[A-Z0-9][A-Z0-9/._-]*$/.test(normalized)
+    ? normalized : null;
+}
 
 function normalizePartNo(value: string) {
   return value.trim().replace(/\s+/g, '').toUpperCase();
@@ -46,6 +61,76 @@ export function PartLocationFinderPage() {
   const [hasSuggested, setHasSuggested] = useState(false);
 
   const canManage = useMemo(() => WRITE_ROLES.has(profile?.role ?? ''), [profile?.role]);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerError, setScannerError] = useState('');
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const scanLockedRef = useRef(false);
+  const searchSequenceRef = useRef(0);
+
+  function stopCamera() {
+    if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  useEffect(() => {
+    if (!scannerOpen) return;
+    let cancelled = false;
+    const Detector = codeDetectorConstructor();
+    if (!Detector || !navigator.mediaDevices?.getUserMedia) {
+      setScannerError('Camera scanning is not supported in this browser. Use a Chrome-based mobile browser or a USB/Bluetooth scanner.');
+      return;
+    }
+
+    async function beginScan() {
+      try {
+        const detector = new Detector!();
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        if (cancelled) { stream.getTracks().forEach((track) => track.stop()); return; }
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) { stopCamera(); return; }
+        video.srcObject = stream;
+        await video.play();
+        if (cancelled) return;
+        const scan = async () => {
+          if (cancelled || scanLockedRef.current) return;
+          try {
+            const codes = await detector.detect(video);
+            const value = codes.map((code) => validScannedPartNumber(code.rawValue)).find((code) => code != null);
+            if (value && !cancelled) {
+              scanLockedRef.current = true;
+              stopCamera();
+              setScannerOpen(false);
+              setShowSuggestions(false);
+              void searchForPart(value);
+              return;
+            }
+          } catch {
+            // One missed/unsupported frame should not stop the scanner.
+          }
+          if (!cancelled) frameRef.current = requestAnimationFrame(scan);
+        };
+        frameRef.current = requestAnimationFrame(scan);
+      } catch (cause) {
+        if (cancelled) return;
+        setScannerError(cause instanceof Error && cause.name === 'NotAllowedError'
+          ? 'Camera permission denied. Allow camera access in your browser settings or enter the part number manually.'
+          : 'Could not start the camera. Check camera availability and browser permissions.');
+        stopCamera();
+      }
+    }
+    void beginScan();
+    return () => { cancelled = true; stopCamera(); };
+  // searchForPart uses current React setters and service functions; scanning begins only when opened.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scannerOpen]);
+
+  useEffect(() => () => stopCamera(), []);
+
 
   useEffect(() => {
     const query = normalizePartNo(partNo);
@@ -91,7 +176,9 @@ export function PartLocationFinderPage() {
       return;
     }
 
+    const sequence = ++searchSequenceRef.current;
     setPartNo(normalized);
+    setShowSuggestions(false);
     setSearchedPartNo(normalized);
     setIsSearching(true);
     setError('');
@@ -103,6 +190,8 @@ export function PartLocationFinderPage() {
       findPartLocations(normalized),
       lookupTestPartByNo(normalized),
     ]);
+
+    if (sequence !== searchSequenceRef.current) return;
 
     if (locationResult.status === 'fulfilled') {
       setLocations(locationResult.value);
@@ -184,6 +273,7 @@ export function PartLocationFinderPage() {
                 </div>
               ) : null}
             </div>
+            <button type="button" disabled={isSearching} onClick={() => { scanLockedRef.current = false; setScannerError(''); setScannerOpen(true); }} aria-label="Scan part barcode or QR code" title="Scan part barcode or QR code" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#cbd5e1] bg-[#f8fbff] text-[#0f4c81] hover:bg-[#eef8ff] disabled:opacity-50"><Camera className="h-5 w-5" /></button>
             <Button type="submit" disabled={isSearching} className="h-11 shrink-0 rounded-xl px-4">{isSearching ? 'Searching…' : 'Search'}</Button>
           </div>
 
@@ -196,6 +286,22 @@ export function PartLocationFinderPage() {
             </div>
           ) : null}
         </form>
+
+        {scannerOpen ? (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#07182d]/80 p-3" role="dialog" aria-modal="true" aria-label="Scan part number">
+            <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#dbe4ee] px-4 py-3">
+                <div><p className="font-bold text-[#0f172a]">Scan Part Number</p><p className="text-xs text-[#64748b]">Align a barcode or QR code inside the camera view.</p></div>
+                <button type="button" onClick={() => setScannerOpen(false)} aria-label="Close scanner" className="rounded-lg p-2 text-[#475569] hover:bg-[#f1f5f9]"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="relative bg-[#07182d]">
+                <video ref={videoRef} autoPlay playsInline muted className="max-h-[65vh] w-full object-contain" />
+                <div aria-hidden="true" className="pointer-events-none absolute inset-[18%] rounded-xl border-2 border-[#83c9e6]" />
+              </div>
+              {scannerError ? <p role="alert" className="px-4 py-3 text-sm text-[#b91c1c]">{scannerError}</p> : <p className="px-4 py-3 text-center text-xs text-[#475569]">Successful scans automatically search the part location.</p>}
+            </div>
+          </div>
+        ) : null}
 
         {error ? <div className="rounded-xl border border-[#fecaca] bg-[#fff7f7] px-3 py-2.5 text-sm font-semibold text-[#b91c1c]">{error}</div> : null}
         {lookupWarning ? <div className="rounded-xl border border-[#fde68a] bg-[#fffbeb] px-3 py-2.5 text-xs font-semibold text-[#92400e]">{lookupWarning}</div> : null}
