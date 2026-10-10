@@ -56,10 +56,12 @@ serve(async (req) => {
     .eq('auth_user_id', userData.user.id)
     .maybeSingle();
   if (profileError) return json({ error: profileError.message }, 400);
-  if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can perform this action' }, 403);
+  if (!profile?.is_active) return json({ error: 'Only active users can perform this action' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
+  const allowedRoles = action === 'process' ? ['admin', 'developer', 'manager'] : ['admin', 'developer'];
+  if (!allowedRoles.includes(profile.role)) return json({ error: 'Your role is not permitted to perform this action' }, 403);
   const orderId = String(body.orderId ?? '');
   if (!orderId) return json({ error: 'Order id is required' }, 400);
 
