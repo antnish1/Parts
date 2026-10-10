@@ -125,7 +125,7 @@ export function OrderDetailPage() {
   const isSelectedSuperApprover = role === 'super' && order.approver_id === profile?.id;
   const canApprove = (role === 'developer' || isSelectedSuperApprover || role === 'manager') && isPendingWorkflow;
   const canAdmin = role === 'developer' || role === 'admin';
-  const canProcess = canAdmin && rawStatus === 'approved';
+  const canProcess = (canAdmin || role === 'manager') && rawStatus === 'approved';
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
   const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Posting comment' : attachmentBusy ? 'Opening attachment' : 'Working';
 
