@@ -111,7 +111,7 @@ as $$
     'DISPATCHED',
     'PARTIALLY RECEIVED'
   )
-    and order_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
+    and order_status not in ('PROCESSED', 'REJECTED', 'RECEIVED', 'ISSUED')
     and approval_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
     and order_status not like 'PENDING%'
     and approval_status not like 'PENDING%'
@@ -249,7 +249,7 @@ as $$
     'DISPATCHED',
     'PARTIALLY RECEIVED'
   )
-    and order_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
+    and order_status not in ('PROCESSED', 'REJECTED', 'RECEIVED', 'ISSUED')
     and approval_status not in ('REJECTED', 'RECEIVED', 'ISSUED')
     and order_status not like 'PENDING%'
     and approval_status not like 'PENDING%'
