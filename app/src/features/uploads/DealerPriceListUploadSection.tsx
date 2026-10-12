@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/useAuth';
 import {
@@ -80,11 +80,20 @@ export function DealerPriceListUploadSection() {
   const [message, setMessage] = useState('');
   const [step, setStep] = useState<'idle' | 'reading' | 'duplicate-review' | 'staging' | 'preview' | 'publishing' | 'complete' | 'failed'>('idle');
   const [progress, setProgress] = useState(0);
+  const [completedRows, setCompletedRows] = useState(0);
+  const [totalRows, setTotalRows] = useState(0);
+  const [publishingSeconds, setPublishingSeconds] = useState(0);
   const [preview, setPreview] = useState<PartPricePreview | null>(null);
   const [issues, setIssues] = useState<PartPriceValidationIssue[]>([]);
   const [parsedFile, setParsedFile] = useState<ParsedPartPriceFile | null>(null);
   const [duplicateSelections, setDuplicateSelections] = useState<Record<string, number>>({});
   const [confirmPublish, setConfirmPublish] = useState(false);
+
+  useEffect(() => {
+    if (step !== 'publishing') return;
+    const timer = window.setInterval(() => setPublishingSeconds((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [step]);
 
   const historyQuery = useQuery({ queryKey: ['part-master-upload-history'], queryFn: getRecentPartPriceUploads, enabled: canManage });
   const currentPublished = useMemo(() => historyQuery.data?.find((row) => row.status === 'published') ?? null, [historyQuery.data]);
@@ -102,6 +111,9 @@ export function DealerPriceListUploadSection() {
     setDuplicateSelections({});
     setIssues([]);
     setProgress(0);
+    setCompletedRows(0);
+    setTotalRows(0);
+    setPublishingSeconds(0);
     setMessage('');
     setStep('idle');
     setConfirmPublish(false);
@@ -110,8 +122,13 @@ export function DealerPriceListUploadSection() {
   async function stageAndPreview(parsed: ParsedPartPriceFile) {
     if (!file) return;
     setStep('staging');
+    setTotalRows(parsed.validRows.length);
+    setCompletedRows(0);
+    setProgress(0);
     setMessage(`Validated ${parsed.validRows.length.toLocaleString('en-IN')} unique parts. Staging them safely for comparison...`);
     const uploadId = await stagePartPriceFile(parsed, file.name, monthInputToDate(month), (done, total) => {
+      setCompletedRows(done);
+      setTotalRows(total);
       setProgress(total ? Math.round((done / total) * 100) : 0);
     });
     const nextPreview = await previewPartPriceUpload(uploadId);
@@ -179,8 +196,9 @@ export function DealerPriceListUploadSection() {
   async function handlePublish() {
     if (!preview?.uploadId || preview.publishBlocked) return;
     setConfirmPublish(false);
+    setPublishingSeconds(0);
     setStep('publishing');
-    setMessage('Publishing the validated snapshot in one server transaction. Existing lookups remain readable during the update.');
+    setMessage('All staged rows uploaded. Publishing the complete snapshot in one database transaction. Please keep this page open until the server confirms success.');
     try {
       const result = await publishPartPriceUpload(preview.uploadId);
       setStep('complete');
@@ -207,7 +225,12 @@ export function DealerPriceListUploadSection() {
       </div>
 
       <p className="mt-2 text-[11px] text-[#6D8196]">Expected columns: Material, Description, DNP, RTL, MRP, HSN, GST, Cat 1, Cat 2.</p>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#eef2f6]"><div className="h-full bg-[#1677ff] transition-all" style={{ width: `${progress}%` }} /></div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-[#d8e3ee]" aria-live="polite">
+        <span>{step === 'reading' ? 'Reading and validating Excel file...' : step === 'staging' ? `Uploading validated parts: ${completedRows.toLocaleString('en-IN')} / ${totalRows.toLocaleString('en-IN')}` : step === 'publishing' ? 'Database publication in progress (awaiting confirmation)' : step === 'complete' ? 'Published successfully' : preview ? 'Upload and comparison complete' : step === 'failed' ? 'Operation failed' : 'Ready to upload'}</span>
+        <span className="tabular-nums">{step === 'staging' ? `${progress}% uploaded` : step === 'publishing' ? `Elapsed: ${Math.floor(publishingSeconds / 60)}m ${String(publishingSeconds % 60).padStart(2, '0')}s` : (preview || step === 'complete') ? '100% staged' : ''}</span>
+      </div>
+      {step === 'publishing' ? <div role="status" className="mt-2 flex items-center gap-2 text-xs text-[#d8e3ee]"><span className="h-3 w-3 animate-spin rounded-full border-2 border-[#82C8E5] border-t-transparent" />Publishing is atomic. A verified database percentage is not available until completion.</div> : null}
+      <div role="progressbar" aria-label="Price list staging progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="mt-2 h-2 overflow-hidden rounded-full bg-[#eef2f6]"><div className="h-full bg-[#1677ff] transition-all" style={{ width: `${progress}%` }} /></div>
       {message ? <p className={`mt-2 whitespace-pre-wrap text-xs font-semibold ${step === 'failed' ? 'text-[#b42318]' : 'text-[#d8e3ee]'}`}>{message}</p> : null}
 
       {issues.length ? <div className="mt-3 rounded-lg border border-[#f4b4ae] bg-[#fff7f6] p-3"><p className="text-xs font-black text-[#b42318]">Validation issues ({issues.length})</p><div className="mt-2 max-h-36 overflow-auto text-[11px] text-[#7a271a]">{issues.slice(0, 100).map((issue) => <p key={`${issue.row}-${issue.partNo}`}>Row {issue.row} • {issue.partNo || 'No part'} • {issue.message}</p>)}</div></div> : null}
