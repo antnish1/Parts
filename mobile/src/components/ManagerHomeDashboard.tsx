@@ -142,6 +142,15 @@ export function ManagerHomeDashboard() {
         <AttentionChip icon="work" label="TA/DA" value={stats.tadaAttention} tone="blue" onPress={() => router.push('/ta-da')} />
       </ScrollView>
 
+      <Pressable onPress={() => router.push('/orders')} style={styles.primaryTrack}>
+        <View style={styles.primaryTrackIcon}><AppIcon name="search" size={21} color="#FFFFFF" /></View>
+        <View style={styles.primaryTrackText}>
+          <Text style={styles.primaryTrackTitle}>Track Orders</Text>
+          <Text style={styles.primaryTrackCaption}>Search, filter and open order details</Text>
+        </View>
+        <AppIcon name="chevronRight" size={18} color="#C5D9ED" />
+      </Pressable>
+
       <View style={styles.sectionHead}>
         <Text style={styles.sectionTitle}>My work</Text>
         <Pressable onPress={() => router.push('/(tabs)/work')}><Text style={styles.sectionLink}>All tools</Text></Pressable>
@@ -185,13 +194,7 @@ export function ManagerHomeDashboard() {
         {!busy && attention.length === 0 ? <StateView icon="check" title="Nothing urgent right now" message="Approval and exception items will appear here." /> : null}
       </View>
 
-      <View style={styles.quickBar}>
-        <CompactAction icon="search" label="Track Orders" onPress={() => router.push('/orders')} />
-        <View style={styles.quickDivider} />
-        <CompactAction icon="truck" label="Docket" onPress={() => router.push('/docket')} />
-        <View style={styles.quickDivider} />
-        <CompactAction icon="package" label="Engine & Breaker" onPress={() => router.push('/installations')} />
-      </View>
+
     </Screen>
   );
 }
@@ -233,6 +236,11 @@ function CompactAction({ icon, label, onPress }: { icon: AppIconName; label: str
 
 const styles = StyleSheet.create({
   screen: { paddingTop: 8, paddingBottom: 16, gap: 10 },
+  primaryTrack: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.navy, padding: 12, borderRadius: 14, gap: 10 },
+  primaryTrackIcon: { backgroundColor: '#2A527E', borderRadius: 10, width: 38, height: 38, justifyContent: 'center', alignItems: 'center' },
+  primaryTrackText: { flex: 1 },
+  primaryTrackTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
+  primaryTrackCaption: { color: '#CCDAEC', fontSize: 10, marginTop: 3 },
   topbar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   identity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.navy },
