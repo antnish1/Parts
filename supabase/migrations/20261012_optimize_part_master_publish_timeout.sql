@@ -82,3 +82,6 @@ exception when others then
 end;
 $$;
 
+
+-- Applies only to the admin/developer publication RPC, not a database-wide or role-wide timeout.
+ALTER FUNCTION public.portal_publish_part_master_upload(uuid) SET statement_timeout = '10min';
