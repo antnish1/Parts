@@ -24,3 +24,13 @@ Use `supabase/rollback/20261012_restore_part_master_publish_function.sql` to res
 
 ## Boundaries
 No global `statement_timeout` increase. No changes to browser uploader, preview code, tables, RLS, or production records. If the optimized publication is still slow, benchmark and consider a second separate change rather than lifting the global timeout.
+
+## Follow-up validation on 2026-10-12 (read-only production queries)
+- GitHub App CI #1972 passed.
+- Query planner for optimized comparison shows a merge join with index scans on both `idx_part_master_part_no_normalized` and `portal_part_master_staging_upload_id_part_no_normalized_key`.
+- October staged rows: **87,666**. Active physical rows: **85,152**, including **4 duplicate normalized keys**.
+- Matching physical rows: **85,143**; all **85,143 require an update** under full-field comparison. New staged rows **2,527**; active physical rows absent from staging **9**.
+- Per-column differences across matching rows: HSN **85,143**, GST **85,143**, Cat2 **84,675**, DNP **14,266**, RTL **14,259**, MRP **14,258**, Description **1,331**, Cat1 **6**, PartNo **6**.
+- **Important caveat:** unchanged-row elimination provides little/no benefit for October because every matched row changes in HSN and GST. Faster indexed matching alone has NOT been proven sufficient to resolve the two-minute publication timeout. Do not call this PR production-ready yet.
+- Remaining required gate: isolated transaction test at realistic volume with actual schema/indexes, verifying execution time, atomic rollback, history correctness and concurrent read behavior. Do not test by publishing real production data.
+- Check whether HSN/GST differences are intended before the October publication. Do not silently drop these fields to improve speed.
