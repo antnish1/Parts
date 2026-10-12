@@ -193,6 +193,29 @@ export function DealerPriceListUploadSection() {
     }
   }
 
+  async function handleResumePreview(row: { id: string; status: string; priceListMonth: string }) {
+    if (row.status !== 'previewed') return;
+    if (inputLocked) return;
+    setConfirmPublish(false);
+    setStep('reading');
+    setMessage('Loading saved price-list preview...');
+    try {
+      const restored = await previewPartPriceUpload(row.id);
+      if (restored.uploadId !== row.id) throw new Error('Unexpected upload session.');
+      setPreview(restored);
+      setMonth(row.priceListMonth.slice(0, 7));
+      setFile(null);
+      setProgress(100);
+      setCompletedRows(restored.stagedParts);
+      setTotalRows(restored.stagedParts);
+      setStep('preview');
+      setMessage(restored.publishBlocked ? 'Saved preview has safety warnings; publishing is blocked.' : 'Saved preview reopened. Review and confirm publication.');
+    } catch (error) {
+      setStep('failed');
+      setMessage(error instanceof Error ? error.message : 'Unable to reopen the price-list preview.');
+    }
+  }
+
   async function handlePublish() {
     if (!preview?.uploadId || preview.publishBlocked) return;
     setConfirmPublish(false);
@@ -252,7 +275,7 @@ export function DealerPriceListUploadSection() {
 
       {confirmPublish && preview ? <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"><div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-2xl"><p className="text-base font-black text-[#101827]">Publish {month || 'selected'} Dealer Price List?</p><p className="mt-2 text-sm text-[#475569]">This will make the staged list the active Parts Master used by part lookup. The previous published snapshot is retained in history and the publication runs inside one server transaction.</p><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><p>Active after publish: <b>{preview.stagedParts.toLocaleString('en-IN')}</b></p><p>Changed: <b>{preview.changedParts.toLocaleString('en-IN')}</b></p><p>New: <b>{preview.newParts.toLocaleString('en-IN')}</b></p><p>Removed: <b>{preview.removedParts.toLocaleString('en-IN')}</b></p></div><div className="mt-5 flex justify-end gap-2"><button className="rounded-md border border-[#d9dee7] px-4 py-2 text-xs font-black text-[#475569]" onClick={() => setConfirmPublish(false)}>Cancel</button><button className="rounded-md bg-[#16a34a] px-4 py-2 text-xs font-black text-white" onClick={() => void handlePublish()}>Publish Price List</button></div></div></div> : null}
 
-      {historyQuery.data?.length ? <div className="mt-4 border-t border-[#263244] pt-3"><p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#6D8196]">Recent price-list uploads</p><div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{historyQuery.data.map((row) => <div key={row.id} className="rounded-lg border border-[#263244] bg-[#111827] px-3 py-2 text-[11px] text-[#c7d2df]"><p className="font-black text-white">{row.priceListMonth} • {row.status}</p><p className="truncate">{row.filename}</p><p>{row.validRows.toLocaleString('en-IN')} rows • {row.publishedAt ? new Date(row.publishedAt).toLocaleString('en-IN') : 'Not published'}</p></div>)}</div></div> : null}
+      {historyQuery.data?.length ? <div className="mt-4 border-t border-[#263244] pt-3"><p className="text-[11px] font-black uppercase tracking-[0.08em] text-[#6D8196]">Recent price-list uploads</p><div className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-3">{historyQuery.data.map((row) => <div key={row.id} className="rounded-lg border border-[#263244] bg-[#111827] px-3 py-2 text-[11px] text-[#c7d2df]"><p className="font-black text-white">{row.priceListMonth} • {row.status}</p><p className="truncate">{row.filename}</p><p>{row.validRows.toLocaleString('en-IN')} rows • {row.publishedAt ? new Date(row.publishedAt).toLocaleString('en-IN') : 'Not published'}</p>{row.status === 'previewed' ? <button type="button" className="mt-2 rounded-md border border-[#1677ff] bg-[#eef6ff] px-3 py-1.5 text-[11px] font-black text-[#0f5ed7] disabled:opacity-40" disabled={inputLocked || step === 'reading'} onClick={() => void handleResumePreview(row)}>Review &amp; Publish</button> : null}</div>)}</div></div> : null}
     </section>
   );
 }
