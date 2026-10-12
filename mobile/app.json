@@ -1,0 +1,83 @@
+{
+  "expo": {
+    "name": "Parts Connect",
+    "slug": "parts-connect",
+    "owner": "insureit_expo",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "scheme": "partsconnect",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#0B2A52",
+    "primaryColor": "#0B2A52",
+    "icon": "./assets/native/icon.png",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/3026af5e-622e-48de-bb4f-1ca851373589",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B2A52",
+          "image": "./assets/native/splash.png",
+          "imageWidth": 220,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/native/notification-icon.png",
+          "color": "#D82528",
+          "defaultChannel": "operations"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Parts Connect to use biometric authentication for secure access."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Parts Connect to select photos and documents from your device.",
+          "cameraPermission": "Allow Parts Connect to take photos for operational records.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Parts Connect to scan docket barcodes with the camera.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3026af5e-622e-48de-bb4f-1ca851373589"
+      }
+    },
+    "android": {
+      "package": "com.frontier.partsconnect",
+      "versionCode": 2,
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/native/adaptive-foreground.png",
+        "monochromeImage": "./assets/native/adaptive-monochrome.png",
+        "backgroundColor": "#0B2A52"
+      }
+    }
+  }
+}
