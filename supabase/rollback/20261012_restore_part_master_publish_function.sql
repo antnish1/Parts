@@ -78,3 +78,5 @@ exception when others then
 end;
 $$;
 
+
+ALTER FUNCTION public.portal_publish_part_master_upload(uuid) RESET statement_timeout;
