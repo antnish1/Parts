@@ -34,3 +34,11 @@ No global `statement_timeout` increase. No changes to browser uploader, preview 
 - **Important caveat:** unchanged-row elimination provides little/no benefit for October because every matched row changes in HSN and GST. Faster indexed matching alone has NOT been proven sufficient to resolve the two-minute publication timeout. Do not call this PR production-ready yet.
 - Remaining required gate: isolated transaction test at realistic volume with actual schema/indexes, verifying execution time, atomic rollback, history correctness and concurrent read behavior. Do not test by publishing real production data.
 - Check whether HSN/GST differences are intended before the October publication. Do not silently drop these fields to improve speed.
+
+## Production-environment safe tests (2026-10-12)
+- App CI #1974: **success**.
+- Confirmed upload status remains `previewed`, staged rows **87,666**, active rows **85,152** and global timeout **2 minutes**.
+- Bounded `EXPLAIN (ANALYZE, BUFFERS, TIMING OFF)` of read-only production October join/update-selection predicate in a `BEGIN READ ONLY` transaction with `SET LOCAL statement_timeout='20s'`: **1,454.527 ms**. Query plan used parallel hash join with a staging index scan and part-master sequential scan. This validates selection cost, **not the write path**.
+- Temporary-table update test within an explicit transaction using 500 actual normalized-key matched samples, with `SET LOCAL statement_timeout='15s'`: **500 updated temporary rows**. `ROLLBACK` executed; no permanent business tables were changed.
+- Production October upload was NOT published and RPC was NOT invoked. No migration applied.
+- **Release gate unresolved:** full 85k-row production update, index maintenance, history insertion, locking and rollback behavior have not been benchmarked together. Neither a 1.45-second SELECT nor a 500-row TEMP update predicts whole-publication duration.
