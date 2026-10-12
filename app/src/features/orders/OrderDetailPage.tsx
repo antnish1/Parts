@@ -1,6 +1,6 @@
 import { ChangeEvent, Fragment, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Paperclip, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Paperclip, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx-js-style';
 import { PageCard } from '../../components/ui/PageCard';
@@ -8,7 +8,7 @@ import { StatusBadge } from '../../components/tables/StatusBadge';
 import { ApprovalOverrideConfirm } from '../../components/ui/ApprovalOverrideConfirm';
 import { BlockingActionOverlay } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
-import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected } from '../../services/testApproval.service';
+import { setTestOrderApproved, setTestOrderManagerApproved, setTestOrderManagerRejected, setTestOrderRejected, updateTestOrderItemQty, resetTestOrderItemQty } from '../../services/testApproval.service';
 import { setTestOrderProcessed } from '../../services/testAdmin.service';
 import { addTestOrderComment, getTestOrderView } from '../../services/testOrderView.service';
 import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';
@@ -73,6 +73,9 @@ export function OrderDetailPage() {
   const [showLogs, setShowLogs] = useState(false);
   const [showManagerOverride, setShowManagerOverride] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+  const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
+  const [editingQtyValue, setEditingQtyValue] = useState('');
+  const [qtySaving, setQtySaving] = useState(false);
   const [selectedInTransit, setSelectedInTransit] = useState<{ partNo: string; qty: number } | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['test-order-view', orderId], queryFn: () => getTestOrderView(orderId), enabled: !!orderId });
@@ -126,6 +129,10 @@ export function OrderDetailPage() {
   const canApprove = (role === 'developer' || isSelectedSuperApprover || role === 'manager') && isPendingWorkflow;
   const canAdmin = role === 'developer' || role === 'admin';
   const canProcess = (canAdmin || role === 'manager') && rawStatus === 'approved';
+  const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_super_approval', 'pending_manager_approval']);
+  const canEditQty = (role === 'developer' || role === 'manager' || isSelectedSuperApprover)
+    && pendingStatuses.has((order.status ?? '').toLowerCase().replace(/[\\s-]+/g, '_'))
+    && pendingStatuses.has((order.approval_status ?? '').toLowerCase().replace(/[\\s-]+/g, '_'));
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
   const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Posting comment' : attachmentBusy ? 'Opening attachment' : 'Working';
 
@@ -147,6 +154,42 @@ export function OrderDetailPage() {
     { label: 'Approved By', value: order.approver?.full_name || '-' },
     { label: 'Call ID', value: order.call_id || '-' },
   ];
+
+  async function saveEditedQty(itemId: string) {
+    const next = Number(editingQtyValue);
+    if (!/^\\d+$/.test(editingQtyValue.trim()) || !Number.isSafeInteger(next)) {
+      setActionMessage('Enter a valid whole-number quantity.');
+      return;
+    }
+    setQtySaving(true);
+    setActionMessage('');
+    try {
+      await updateTestOrderItemQty(itemId, next);
+      setEditingQtyId(null);
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
+      setActionMessage('Quantity updated for approval review.');
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : 'Could not update quantity.');
+    } finally {
+      setQtySaving(false);
+    }
+  }
+
+  async function clearEditedQty(itemId: string) {
+    setQtySaving(true);
+    try {
+      await resetTestOrderItemQty(itemId);
+      setEditingQtyId(null);
+      await refetch();
+      setActionMessage('Original quantity restored.');
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : 'Could not restore quantity.');
+    } finally {
+      setQtySaving(false);
+    }
+  }
 
   function toggleItem(itemId: string) {
     setExpandedItems((current) => ({ ...current, [itemId]: !current[itemId] }));
@@ -657,7 +700,21 @@ export function OrderDetailPage() {
                           </button>
                         ) : <span className="text-[#94a3b8]">-</span>}
                       </td>
-                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{getEffectiveQty(item)}</td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-right">{inTransitQuery.isLoading ? <span className="text-[#8fa1b5]">...</span> : inTransitQuery.isError ? <span className="font-black text-[#b42318]">—</span> : (inTransitMap[normalizePartNo(item.part_no)] ?? 0) > 0 ? <button type="button" onClick={() => setSelectedInTransit({ partNo: item.part_no, qty: inTransitMap[normalizePartNo(item.part_no)] ?? 0 })} className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full border border-[#e7b94d] bg-[#fff7d6] px-2 py-0.5 font-black text-[#7a5200] transition hover:bg-[#ffefb5] focus:outline-none focus:ring-2 focus:ring-[#e7b94d]/40" title="View orders contributing to this In Transit quantity">⚠ {inTransitMap[normalizePartNo(item.part_no)] ?? 0}</button> : <span className="text-[#0f172a]">0</span>}</td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td>
+                      <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">
+                        {canEditQty && editingQtyId === item.id ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <input aria-label={`Quantity for ${item.part_no}`} type="number" min="0" step="1" value={editingQtyValue} disabled={qtySaving} onChange={(event) => setEditingQtyValue(event.target.value)} className="h-8 w-16 rounded border border-[#94a3b8] px-1 text-right text-xs" />
+                            <button type="button" disabled={qtySaving} onClick={() => void saveEditedQty(item.id)} className="rounded bg-[#0f5fa8] px-2 py-1 text-xs text-white">Save</button>
+                            <button type="button" disabled={qtySaving} onClick={() => setEditingQtyId(null)} className="rounded border px-2 py-1 text-xs">Cancel</button>
+                            {item.edited_qty != null ? <button type="button" disabled={qtySaving} onClick={() => void clearEditedQty(item.id)} className="text-xs text-[#475569] underline">Reset</button> : null}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <span>{getEffectiveQty(item)}</span>
+                            {canEditQty ? <button type="button" aria-label={`Edit quantity for ${item.part_no}`} title="Edit quantity before approval" disabled={qtySaving || isBlockingAction} onClick={() => { setEditingQtyId(item.id); setEditingQtyValue(String(getEffectiveQty(item))); }} className="rounded p-1 text-[#0f5fa8] hover:bg-[#eef8ff]"><Pencil className="h-3.5 w-3.5" /></button> : null}
+                          </div>
+                        )}
+                      </td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-right">{inTransitQuery.isLoading ? <span className="text-[#8fa1b5]">...</span> : inTransitQuery.isError ? <span className="font-black text-[#b42318]">—</span> : (inTransitMap[normalizePartNo(item.part_no)] ?? 0) > 0 ? <button type="button" onClick={() => setSelectedInTransit({ partNo: item.part_no, qty: inTransitMap[normalizePartNo(item.part_no)] ?? 0 })} className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full border border-[#e7b94d] bg-[#fff7d6] px-2 py-0.5 font-black text-[#7a5200] transition hover:bg-[#ffefb5] focus:outline-none focus:ring-2 focus:ring-[#e7b94d]/40" title="View orders contributing to this In Transit quantity">⚠ {inTransitMap[normalizePartNo(item.part_no)] ?? 0}</button> : <span className="text-[#0f172a]">0</span>}</td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td>
                     </tr>
                     {isExpanded ? (
                       <tr>

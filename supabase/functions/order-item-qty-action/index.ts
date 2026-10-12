@@ -48,10 +48,18 @@ serve(async (req) => {
   const { data: item, error: itemError } = await adminClient.from('portal_order_items').select('id,order_id,dnp').eq('id', itemId).maybeSingle();
   if (itemError) return json({ error: itemError.message }, 400);
   if (!item) return json({ error: 'Item not found' }, 404);
-  const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status,approver_id').eq('id', item.order_id).maybeSingle();
+  const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status,approval_status,approver_id').eq('id', item.order_id).maybeSingle();
   if (orderError) return json({ error: orderError.message }, 400);
   if (!order) return json({ error: 'Order not found' }, 404);
   if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Selected approver only.' }, 403);
+  const normalizeStatus = (value: unknown) => String(value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const status = normalizeStatus(order.status);
+  const approvalStatus = normalizeStatus(order.approval_status);
+  const pending = new Set(['pending', 'pending_approval', 'pending_super_approval', 'pending_manager_approval']);
+  if (!pending.has(status) || !pending.has(approvalStatus)) {
+    return json({ error: 'Quantity cannot be edited after approval.' }, 409);
+  }
+
 
   try {
     if (action === 'set') {
