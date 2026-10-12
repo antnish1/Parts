@@ -131,8 +131,8 @@ export function OrderDetailPage() {
   const canProcess = (canAdmin || role === 'manager') && rawStatus === 'approved';
   const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_super_approval', 'pending_manager_approval']);
   const canEditQty = (role === 'developer' || role === 'manager' || isSelectedSuperApprover)
-    && pendingStatuses.has((order.status ?? '').toLowerCase().replace(/[\\s-]+/g, '_'))
-    && pendingStatuses.has((order.approval_status ?? '').toLowerCase().replace(/[\\s-]+/g, '_'));
+    && pendingStatuses.has((order.status ?? '').toLowerCase().replace(/[\s-]+/g, '_'))
+    && pendingStatuses.has((order.approval_status ?? '').toLowerCase().replace(/[\s-]+/g, '_'));
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
   const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Posting comment' : attachmentBusy ? 'Opening attachment' : 'Working';
 
@@ -157,7 +157,7 @@ export function OrderDetailPage() {
 
   async function saveEditedQty(itemId: string) {
     const next = Number(editingQtyValue);
-    if (!/^\\d+$/.test(editingQtyValue.trim()) || !Number.isSafeInteger(next)) {
+    if (!/^\d+$/.test(editingQtyValue.trim()) || !Number.isSafeInteger(next)) {
       setActionMessage('Enter a valid whole-number quantity.');
       return;
     }
