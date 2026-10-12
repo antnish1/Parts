@@ -74,7 +74,7 @@ function DuplicateRowCard({ row, selected, onSelect }: { row: ParsedPartPriceRow
 export function DealerPriceListUploadSection() {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const canManage = profile?.role === 'admin' || profile?.role === 'developer';
+  const canManage = profile?.role === 'admin' || profile?.role === 'developer' || profile?.role === 'manager';
   const [month, setMonth] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');
@@ -237,7 +237,7 @@ export function DealerPriceListUploadSection() {
   return (
     <section className="rounded-xl border border-[#263244] bg-[#0b1020] p-3 xl:col-span-2">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div><p className="text-xs font-black uppercase tracking-[0.12em] text-[#0f4c81]">Dealer Price List</p><p className="mt-1 text-[11px] text-[#6D8196]">Admin/Developer only. Validate → resolve conflicts → stage → compare → publish. The active Parts Master is untouched until Publish.</p></div>
+        <div><p className="text-xs font-black uppercase tracking-[0.12em] text-[#0f4c81]">Dealer Price List</p><p className="mt-1 text-[11px] text-[#6D8196]">Admin/Developer/Manager. Validate → resolve conflicts → stage → compare → publish. The active Parts Master is untouched until Publish.</p></div>
         {currentPublished ? <span className="rounded-full border border-[#d9dee7] px-2.5 py-1 text-[11px] font-black text-[#475569]">Last published: {currentPublished.priceListMonth} • {currentPublished.validRows.toLocaleString('en-IN')} parts</span> : null}
       </div>
 
