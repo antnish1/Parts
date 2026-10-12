@@ -42,3 +42,11 @@ No global `statement_timeout` increase. No changes to browser uploader, preview 
 - Temporary-table update test within an explicit transaction using 500 actual normalized-key matched samples, with `SET LOCAL statement_timeout='15s'`: **500 updated temporary rows**. `ROLLBACK` executed; no permanent business tables were changed.
 - Production October upload was NOT published and RPC was NOT invoked. No migration applied.
 - **Release gate unresolved:** full 85k-row production update, index maintenance, history insertion, locking and rollback behavior have not been benchmarked together. Neither a 1.45-second SELECT nor a 500-row TEMP update predicts whole-publication duration.
+
+## User-approved monthly upload approach — 2026-10-12
+- User accepts heavier once-monthly publication workload; chooses higher timeout and visible upload progress.
+- SQL migration now sets **function-scoped** `statement_timeout = '10min'` for `portal_publish_part_master_upload(uuid)`. This does not change global role/database timeouts. Rollback explicitly resets the function timeout and restores original body.
+- Frontend displays **actual completed/total staging rows and percentage** from successful chunk RPC acknowledgements. Publishing shows a separate atomic database phase with elapsed timer and indeterminate indicator. It deliberately does not invent an exact percentage for a one-transaction server-side publish. Completion is shown only after RPC acknowledgement.
+- Supabase documentation supports function-scoped timeout configuration for REST API RPCs (https://supabase.com/docs/guides/database/postgres/timeouts). API gateways/client/proxy request durations may still have distinct limits; end-to-end 10-minute REST availability **not yet established**.
+- Do not silently split publication into committed batches; doing so would change atomicity. True server-reported granular publish progress would require a different orchestration/reporting architecture.
+- No migration applied, no merge/deploy, no October publication initiated.
