@@ -1,6 +1,12 @@
 name: Publish Android OTA
 
 on:
+  push:
+    branches:
+      - agent/expo-android-foundation
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile-ota-publish.yaml'
   workflow_dispatch:
     inputs:
       git_ref:
@@ -21,6 +27,7 @@ permissions:
 
 jobs:
   publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/agent/expo-android-foundation')
     name: Validate and publish preview OTA
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -43,7 +50,7 @@ jobs:
       - name: Checkout selected mobile ref
         uses: actions/checkout@v5
         with:
-          ref: ${{ inputs.git_ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v6
@@ -67,7 +74,7 @@ jobs:
       - name: Publish Android preview OTA
         working-directory: mobile
         env:
-          UPDATE_MESSAGE: ${{ inputs.message }}
+          UPDATE_MESSAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.message || format('Automatic Android preview OTA {0}', github.sha) }}
         run: |
           eas update             --channel preview             --platform android             --message "${UPDATE_MESSAGE}"             --non-interactive
 
@@ -79,7 +86,7 @@ jobs:
             echo "- Channel: `preview`"
             echo "- Runtime: `0.2.0`"
             echo "- Platform: `android`"
-            echo "- Requested ref: `${{ inputs.git_ref }}`"
+            echo "- Requested ref: `${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || github.sha }}`"
             echo "- Workflow commit: `${GITHUB_SHA}`"
             echo "- APK/AAB build: **not created**"
           } >> "${GITHUB_STEP_SUMMARY}"
