@@ -35,7 +35,7 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.content, styles.flex, brandHeader && styles.pageBackground]}>
+        <View style={[styles.content, styles.flex, showBrand && styles.pageBackground]}>
           {showBrand ? <HomeBrandHeader /> : null}
           {header}
           {children}
@@ -48,7 +48,7 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  pageBackground: { backgroundColor: colors.background },
+  pageBackground: { backgroundColor: '#FFFFFF' },
   brandedSafe: { backgroundColor: '#082B5B' },
   content: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
   brandedContent: { paddingTop: 0 },
