@@ -104,6 +104,7 @@ export function ManagerHomeDashboard() {
   if (criticalError) {
     return (
       <Screen>
+        <HomeBrandHeader />
         <StateView
           icon="alert"
           tone="error"
