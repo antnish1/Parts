@@ -30,7 +30,7 @@ export default function WorkScreen() {
   const actions = role ? roleWorkActions[role] : [];
 
   return (
-    <Screen title={role === 'manager' ? 'Manager Workbench' : 'Work'} subtitle={role === 'manager' ? 'Operational tools arranged around the decisions you make most often.' : 'Your operational tasks, arranged for mobile.'}>
+    <Screen brandHeader title={role === 'manager' ? 'Manager Workbench' : 'Work'} subtitle={role === 'manager' ? 'Operational tools arranged around the decisions you make most often.' : 'Your operational tasks, arranged for mobile.'}>
       <View style={styles.grid}>
         {actions.map((action) => (
           <Pressable

@@ -28,7 +28,7 @@ export default function HomeScreen() {
 
   if (role === 'accounts') {
     return (
-      <Screen title={`Hello${profile?.fullName ? `, ${profile.fullName.split(' ')[0]}` : ''}`} subtitle={`${profile?.branch ?? 'Accounts'} · accounts`}>
+      <Screen brandHeader title={`Hello${profile?.fullName ? `, ${profile.fullName.split(' ')[0]}` : ''}`} subtitle={`${profile?.branch ?? 'Accounts'} · accounts`}>
         <Text style={styles.sectionTitle}>Accounts work</Text>
         <Pressable style={styles.primaryAction} onPress={() => router.push('/ta-da')}>
           <Text style={styles.primaryActionTitle}>TA/DA Receipts</Text>

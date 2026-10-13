@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { HomeBrandHeader } from '@/components/HomeBrandHeader';
+import { MetricsTicker, type TickerMetric } from '@/components/MetricsTicker';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -103,6 +104,7 @@ export function ManagerHomeDashboard() {
   if (criticalError) {
     return (
       <Screen>
+        <HomeBrandHeader />
         <StateView
           icon="alert"
           tone="error"
@@ -133,13 +135,13 @@ export function ManagerHomeDashboard() {
         <View style={styles.activePill}><Text style={styles.activePillValue}>{busy ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.attentionStrip}>
-        <AttentionChip icon="check" label="Approvals" value={stats.approvals} tone="blue" onPress={() => router.push('/approvals')} />
-        <AttentionChip icon="clock" label="Delayed VOR" value={stats.delayed} tone="red" onPress={() => router.push('/orders/delayed-vor')} />
-        <AttentionChip icon="inbox" label="Pending Issue" value={stats.pendingIssue} tone="amber" onPress={() => router.push('/orders/pending-issue')} />
-        <AttentionChip icon="wallet" label="Credit" value={stats.creditPending} tone="green" onPress={() => router.push('/credit-dispatch')} />
-        <AttentionChip icon="work" label="TA/DA" value={stats.tadaAttention} tone="blue" onPress={() => router.push('/ta-da')} />
-      </ScrollView>
+      <MetricsTicker items={[
+        { key: 'approvals', icon: 'check', label: 'Approvals', value: stats.approvals, tone: 'blue', onPress: () => router.push('/approvals') },
+        { key: 'delayed', icon: 'clock', label: 'Delayed VOR', value: stats.delayed, tone: 'red', onPress: () => router.push('/orders/delayed-vor') },
+        { key: 'issue', icon: 'inbox', label: 'Pending Issue', value: stats.pendingIssue, tone: 'amber', onPress: () => router.push('/orders/pending-issue') },
+        { key: 'credit', icon: 'wallet', label: 'Credit', value: stats.creditPending, tone: 'green', onPress: () => router.push('/credit-dispatch') },
+        { key: 'tada', icon: 'work', label: 'TA/DA', value: stats.tadaAttention, tone: 'blue', onPress: () => router.push('/ta-da') },
+      ] satisfies TickerMetric[]} />
 
       <Pressable onPress={() => router.push('/orders')} style={styles.primaryTrack}>
         <View style={styles.primaryTrackIcon}><AppIcon name="search" size={21} color="#FFFFFF" /></View>
@@ -187,7 +189,6 @@ export function ManagerHomeDashboard() {
                 <StatusChip status={item.status} />
               </View>
             </View>
-            <AppIcon name="chevronRight" size={15} color="#94A3B8" />
           </Pressable>
         ))}
         {!busy && attention.length === 0 ? <StateView icon="check" title="Nothing urgent right now" message="Approval and exception items will appear here." /> : null}
@@ -217,7 +218,7 @@ function AttentionChip({ icon, label, value, tone, onPress }: { icon: AppIconNam
 function WorkCell({ icon, title, onPress }: { icon: AppIconName; title: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.workCell, pressed && styles.pressed]}>
-      <View style={styles.workIcon}><AppIcon name={icon} size={16} color={colors.navy} /></View>
+      <View style={[styles.workIcon, icon === 'clock' ? styles.workIconRed : icon === 'inbox' ? styles.workIconAmber : icon === 'wallet' ? styles.workIconGreen : styles.workIconBlue]}><AppIcon name={icon} size={18} color="#FFFFFF" strokeWidth={2.7} /></View>
       <Text numberOfLines={1} style={styles.workTitle}>{title}</Text>
       <AppIcon name="chevronRight" size={14} color="#9BA7B5" />
     </Pressable>
@@ -266,7 +267,11 @@ const styles = StyleSheet.create({
 
   workGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   workCell: { width: '49%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', backgroundColor: '#fff' },
-  workIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEF3F8' },
+  workIcon: { width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  workIconBlue: { backgroundColor: '#225AB0' },
+  workIconRed: { backgroundColor: '#B9464B' },
+  workIconAmber: { backgroundColor: '#BC7D22' },
+  workIconGreen: { backgroundColor: '#1B8864' },
   workTitle: { flex: 1, color: colors.text, fontSize: 9, fontWeight: '900' },
 
   attentionList: { overflow: 'hidden', borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', backgroundColor: '#fff' },
