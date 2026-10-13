@@ -71,14 +71,7 @@ export default function PendingIssueScreen(){
     contentContainerStyle={styles.list}
     ListHeaderComponent={
       <View style={styles.header}>
-        <View style={styles.hero}>
-          <View style={styles.heroIcon}><AppIcon name="inbox" size={21} color="#A95D10"/></View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>Ready to issue</Text>
-            <Text style={styles.heroText}>These customer orders are fully received. Complete final issue with the correct document reference.</Text>
-          </View>
-          <Text style={styles.heroTotal}>{rows.length}</Text>
-        </View>
+        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search mobile or machine...', 'Search call ID...']}/>
 
         <View style={styles.summary}>
           <Filter label="All" value={counts.all} active={age==='all'&&type==='all'} onPress={()=>{setAge('all');setType('all')}}/>
@@ -93,7 +86,7 @@ export default function PendingIssueScreen(){
           <Pressable onPress={()=>setType(type==='sop'?'all':'sop')} style={[styles.typeChip,type==='sop'&&styles.typeChipActive]}><Text style={[styles.typeText,type==='sop'&&styles.typeTextActive]}>SOP {counts.sop}</Text></Pressable>
         </View>
 
-        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search mobile or machine...', 'Search call ID...']}/>
+        
         {message?<View style={styles.message}><AppIcon name="check" size={15} color={colors.success}/><Text style={styles.messageText}>{message}</Text></View>:null}
       </View>
     }
