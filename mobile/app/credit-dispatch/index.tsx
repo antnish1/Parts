@@ -82,20 +82,22 @@ export default function CreditDispatchListScreen(){
           </View>
         }
         renderItem={({item})=>
-          <Pressable style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
-            <View style={styles.rowIcon}><AppIcon name="wallet" size={15} color={colors.navy}/></View>
+          <Pressable accessibilityRole="button" style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
             <View style={styles.copy}>
               <View style={styles.topLine}>
-                <Text numberOfLines={1} style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
-                <Text style={styles.amount}>{formatCreditMoney(item.credit_amount)}</Text>
+                <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
+                <View style={{alignItems:'flex-end',gap:5,maxWidth:'49%'}}>
+                  <StatusChip status={item.approval_status}/>
+                  <Text style={styles.meta}>Due {item.due_date||'—'}</Text>
+                </View>
               </View>
               <Text numberOfLines={1} style={styles.customer}>{item.customer_name} · {item.branch}</Text>
-              <View style={styles.metaLine}>
-                <Text numberOfLines={1} style={styles.meta}>Bal {formatCreditMoney(item.balance_amount)} · Due {item.due_date||'—'}</Text>
-                <StatusChip status={item.approval_status}/>
+              <View style={styles.infoStrip}>
+                <View style={styles.infoCell}><Text style={styles.infoLabel}>Amount</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.credit_amount)}</Text></View>
+                <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Balance</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.balance_amount)}</Text></View>
+                <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Branch</Text><Text numberOfLines={1} style={styles.infoValue}>{item.branch||'—'}</Text></View>
               </View>
             </View>
-
           </Pressable>
         }
         ListEmptyComponent={!query.isLoading?(query.isError
@@ -130,7 +132,7 @@ const styles=StyleSheet.create({
   filterLabelActive:{color:'#fff'},
   search:{minHeight:42,flexDirection:'row',alignItems:'center',gap:7,borderRadius:11,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff',paddingHorizontal:10},
   searchInput:{flex:1,minHeight:40,color:colors.text,fontSize:11},
-  row:{minHeight:64,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:9,paddingVertical:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  row:{minHeight:70,padding:12,borderRadius:14,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
   pressed:{opacity:.8},
   rowIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
   copy:{flex:1},
