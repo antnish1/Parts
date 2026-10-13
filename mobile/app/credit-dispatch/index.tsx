@@ -68,6 +68,8 @@ export default function CreditDispatchListScreen(){
               <Pressable onPress={()=>router.push('/credit-dispatch/customers')} style={styles.secondary}><AppIcon name="wallet" size={14} color={colors.navy}/><Text style={styles.secondaryText}>Customers / Aging</Text></Pressable>
             </View>
 
+            <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer...', 'Search request number...', 'Search document...', 'Search branch...']}/>
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
               <FilterChip label="Pending" value={counts.pending} active={filter==='pending'} onPress={()=>toggle('pending')}/>
               <FilterChip label="Overdue" value={counts.overdue} active={filter==='overdue'} danger onPress={()=>toggle('overdue')}/>
@@ -78,7 +80,7 @@ export default function CreditDispatchListScreen(){
               <FilterChip label="All" value={counts.all} active={filter==='all'} onPress={()=>toggle('all')}/>
             </ScrollView>
 
-            <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer...', 'Search request number...', 'Search document...', 'Search branch...']}/>
+            
           </View>
         }
         renderItem={({item})=>
