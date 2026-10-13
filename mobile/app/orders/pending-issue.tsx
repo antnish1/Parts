@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatMoney } from '@/services/orders';
@@ -111,7 +112,7 @@ export default function PendingIssueScreen(){
         </View>
       </Pressable>
     }
-    ListEmptyComponent={!query.isLoading?(query.isError
+    ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
       ?<StateView icon="alert" tone="error" title="Pending Issue could not be loaded" message="The data request failed. Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
       :<StateView icon="inbox" title="Nothing pending here" message="No received customer orders match the selected filters."/>
     ):null}
