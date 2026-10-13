@@ -98,27 +98,23 @@ export default function PendingIssueScreen(){
       </View>
     }
     renderItem={({item})=>
-      <Pressable onPress={()=>setSelected(item)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
+      <Pressable accessibilityRole="button" onPress={()=>setSelected(item)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
         <View style={styles.top}>
-          <View style={styles.orderIcon}><AppIcon name="inbox" size={18} color={item.age_days>7?colors.danger:colors.warning}/></View>
           <View style={styles.copy}>
-            <Text numberOfLines={1} style={styles.no}>{item.final_order_no||item.order_no}</Text>
+            <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.final_order_no||item.order_no}</Text>
             <Text numberOfLines={1} style={styles.customer}>{item.customer_name||'Customer'} · {item.branch}</Text>
           </View>
-          <View style={[styles.age,item.age_days>7&&styles.ageDanger]}><Text style={[styles.ageText,item.age_days>7&&styles.ageDangerText]}>{item.age_days===0?'Today':`${item.age_days}d`}</Text></View>
+          <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
+            <StatusChip status="Received"/>
+            <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
+          </View>
         </View>
-
         <View style={styles.valueStrip}>
           <Mini label="Type" value={item.order_type}/>
           <Divider/>
           <Mini label="Qty" value={String(item.total_qty)}/>
           <Divider/>
           <Mini label="Value" value={formatMoney(item.total_value)}/>
-        </View>
-
-        <View style={styles.bottom}>
-          <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
-          <Text style={styles.openText}>Issue order</Text>
         </View>
       </Pressable>
     }
@@ -211,7 +207,7 @@ const styles=StyleSheet.create({
  ageText:{color:colors.warning,fontSize:9,fontWeight:'900'},
  ageDanger:{backgroundColor:colors.dangerSoft},
  ageDangerText:{color:colors.danger},
- valueStrip:{minHeight:54,flexDirection:'row',alignItems:'center',marginTop:spacing.md,paddingHorizontal:spacing.sm,borderRadius:14,backgroundColor:'#F6F8FB'},
+ valueStrip:{minHeight:54,flexDirection:'row',alignItems:'center',marginTop:0,paddingHorizontal:spacing.sm,borderRadius:9,backgroundColor:'#EEF5FC'},
  mini:{flex:1,minWidth:0},
  miniLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
  miniValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
