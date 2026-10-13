@@ -47,14 +47,7 @@ export default function DelayedVorScreen(){
     contentContainerStyle={styles.list}
     ListHeaderComponent={
       <View style={styles.header}>
-        <View style={styles.alertCard}>
-          <View style={styles.alertIcon}><AppIcon name="clock" size={20} color="#B83B3B"/></View>
-          <View style={styles.alertCopy}>
-            <Text style={styles.alertTitle}>VOR ageing monitor</Text>
-            <Text style={styles.alertText}>Prioritise older processed or partially dispatched VOR orders before they become customer escalations.</Text>
-          </View>
-          <Text style={styles.alertTotal}>{rows.length}</Text>
-        </View>
+        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
 
         <View style={styles.summary}>
           <BucketCard label="Today" value={counts.today} active={bucket==='today'} onPress={()=>setBucket('today')}/>
@@ -63,7 +56,7 @@ export default function DelayedVorScreen(){
           <BucketCard label="5+d" value={counts['5+']} active={bucket==='5+'} danger onPress={()=>setBucket('5+')}/>
         </View>
 
-        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
+        
 
         <View style={styles.resultBar}>
           <Text style={styles.resultCount}>{visible.length} in selected age bucket</Text>
