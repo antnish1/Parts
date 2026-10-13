@@ -27,7 +27,7 @@ export function HomeBrandHeader() {
   );
 }
 const styles = StyleSheet.create({
-  bar: { minHeight: 56, marginHorizontal: -12, marginTop: -8, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bar: { minHeight: 56, marginHorizontal: -12, marginTop: 0, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
   logo: { width: 34, height: 34, borderRadius: 8 },
   name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
