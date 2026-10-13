@@ -12,7 +12,6 @@ export function HomeBrandHeader() {
         <Image source={require('../../assets/native/icon.png')} style={styles.logo} resizeMode="contain" />
         <View>
           <Text style={styles.name}>Parts Connect</Text>
-          <Text style={styles.subtitle}>OPERATIONS PORTAL</Text>
         </View>
       </View>
       <View style={styles.actions}>
