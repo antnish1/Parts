@@ -178,6 +178,23 @@ export function OrderDetailPage() {
     }
   }
 
+  async function deleteItemFromReview(itemId: string) {
+    setQtySaving(true);
+    setActionMessage('');
+    try {
+      await updateTestOrderItemQty(itemId, 0);
+      setEditingQtyId(null);
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
+      setActionMessage('Item removed from this order review.');
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : 'Could not remove item.');
+    } finally {
+      setQtySaving(false);
+    }
+  }
+
   async function clearEditedQty(itemId: string) {
     setQtySaving(true);
     try {
@@ -705,9 +722,10 @@ export function OrderDetailPage() {
                         {canEditQty && editingQtyId === item.id ? (
                           <div className="flex items-center justify-end gap-1">
                             <input aria-label={`Quantity for ${item.part_no}`} type="number" min="0" step="1" value={editingQtyValue} disabled={qtySaving} onChange={(event) => setEditingQtyValue(event.target.value)} className="h-8 w-16 rounded border border-[#94a3b8] px-1 text-right text-xs" />
-                            <button type="button" disabled={qtySaving} onClick={() => void saveEditedQty(item.id)} className="rounded bg-[#0f5fa8] px-2 py-1 text-xs text-white">Save</button>
-                            <button type="button" disabled={qtySaving} onClick={() => setEditingQtyId(null)} className="rounded border px-2 py-1 text-xs">Cancel</button>
-                            {item.edited_qty != null ? <button type="button" disabled={qtySaving} onClick={() => void clearEditedQty(item.id)} className="text-xs text-[#475569] underline">Reset</button> : null}
+                            <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => void saveEditedQty(item.id)} className="rounded bg-[#0f5fa8] px-2 py-1 text-xs text-white disabled:opacity-50">Save</button>
+                            <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => setEditingQtyId(null)} className="rounded border px-2 py-1 text-xs disabled:opacity-50">Cancel</button>
+                            <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => void deleteItemFromReview(item.id)} className="rounded border border-[#f0b7b7] bg-[#fff5f5] px-2 py-1 text-xs font-semibold text-[#b42318] hover:bg-[#ffe8e8] disabled:opacity-50">Delete</button>
+                            {item.edited_qty != null ? <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => void clearEditedQty(item.id)} className="text-xs text-[#475569] underline">Reset</button> : null}
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1">
