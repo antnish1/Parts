@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { ManagerHomeDashboard } from '@/components/ManagerHomeDashboard';
-import { HomeBrandHeader } from '@/components/HomeBrandHeader';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { roleWorkActions } from '@/auth/roleNavigation';
 import { Screen } from '@/components/Screen';
@@ -59,8 +58,7 @@ export default function HomeScreen() {
   const firstName = profile?.fullName?.split(' ')[0] || 'there';
 
   return (
-    <Screen contentContainerStyle={styles.page}>
-      <HomeBrandHeader />
+    <Screen brandHeader contentContainerStyle={styles.page}>
       <View style={styles.hero}>
         <Text style={styles.greetingLabel}>Welcome back</Text>
         <Text style={styles.greeting}>Hello, {firstName}</Text>
