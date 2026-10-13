@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -62,10 +63,7 @@ export default function DelayedVorScreen(){
           <BucketCard label="5+d" value={counts['5+']} active={bucket==='5+'} danger onPress={()=>setBucket('5+')}/>
         </View>
 
-        <View style={styles.search}>
-          <AppIcon name="search" size={18} color={colors.textMuted}/>
-          <TextInput value={search} onChangeText={setSearch} placeholder="Order, branch, customer or machine…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
-        </View>
+        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
 
         <View style={styles.resultBar}>
           <Text style={styles.resultCount}>{visible.length} in selected age bucket</Text>
