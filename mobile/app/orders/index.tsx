@@ -81,7 +81,6 @@ export default function OrdersScreen() {
               ))}
             </View>
           </View>
-          </View>
         }
         renderItem={({ item }) => (
           <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={() => router.push(`/orders/${item.id}`)}>
