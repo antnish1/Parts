@@ -6,10 +6,11 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
-import { formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
+import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
 import { colors, spacing } from '@/theme/tokens';
 
 function escapeCsv(value: unknown) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
@@ -69,6 +70,7 @@ async function shareReport(orders: OrderSummary[], format: 'csv' | 'xlsx') {
 export default function ReportsScreen(){
   const [branch,setBranch]=useState('all');
   const [status,setStatus]=useState('all');
+  const [search,setSearch]=useState('');
   const [exporting,setExporting]=useState<'csv'|'xlsx'|''>('');
   const [message,setMessage]=useState('');
   const query=useQuery({queryKey:['mobile-reports-orders'],queryFn:getAllVisibleOrders});
@@ -76,7 +78,7 @@ export default function ReportsScreen(){
 
   const branches=useMemo(()=>[...new Set(orders.map((o)=>o.branch).filter((v):v is string=>Boolean(v)))].sort(),[orders]);
   const statuses=useMemo(()=>[...new Set(orders.map((o)=>o.status||o.approval_status).filter((v):v is string=>Boolean(v)))].sort(),[orders]);
-  const filtered=useMemo(()=>orders.filter((o)=>(branch==='all'||o.branch===branch)&&(status==='all'||(o.status||o.approval_status)===status)),[orders,branch,status]);
+  const filtered=useMemo(()=>orders.filter((o)=>(branch==='all'||o.branch===branch)&&(status==='all'||(o.status||o.approval_status)===status)&&(!search.trim()||[o.order_no,o.final_order_no,o.customer_name,o.branch,o.machine_no,o.order_type,o.status,o.approval_status].some(v=>String(v??'').toLowerCase().includes(search.trim().toLowerCase())))),[orders,branch,status,search]);
   const branchSummary=useMemo(()=>Object.entries(filtered.reduce<Record<string,number>>((acc,o)=>{const key=o.branch||'Unassigned';acc[key]=(acc[key]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]),[filtered]);
   const statusSummary=useMemo(()=>Object.entries(filtered.reduce<Record<string,number>>((acc,o)=>{const key=o.status||o.approval_status||'Unknown';acc[key]=(acc[key]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]),[filtered]);
   const totalValue=filtered.reduce((sum,o)=>sum+Number(o.total_value??0),0);
@@ -95,6 +97,7 @@ export default function ReportsScreen(){
     <Screen title="Reports" subtitle="Operational order register">
       {query.isLoading?<View style={styles.loading}><ActivityIndicator color={colors.navy}/><Text style={styles.loadingText}>Loading report…</Text></View>:null}
 
+      <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
       <View style={styles.summaryStrip}>
         <Summary label="Orders" value={String(filtered.length)} />
         <Divider />
@@ -140,16 +143,26 @@ export default function ReportsScreen(){
 
       <View style={styles.sectionHead}><Text style={styles.section}>Orders</Text><Text style={styles.previewCount}>{Math.min(filtered.length,100)} shown</Text></View>
       {filtered.slice(0,100).map((order)=>
-        <Pressable key={order.id} onPress={()=>router.push(`/orders/${order.id}`)} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
-          <View style={styles.rowIcon}><AppIcon name="package" size={14} color={colors.navy}/></View>
+        <Pressable key={order.id} accessibilityRole="button" onPress={()=>router.push(`/orders/${order.id}`)} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
           <View style={styles.copy}>
-            <View style={styles.topLine}><Text numberOfLines={1} style={styles.orderNo}>{order.final_order_no||order.order_no}</Text><Text style={styles.value}>{formatMoney(order.total_value)}</Text></View>
-            <Text numberOfLines={1} style={styles.meta}>{order.customer_name||order.order_for||'—'} · {order.branch||'—'} · Qty {Number(order.total_qty??0)}</Text>
+            <View style={styles.topLine}>
+              <View style={{flex:1,minWidth:0,gap:5}}>
+                <Text numberOfLines={1} ellipsizeMode="middle" style={styles.orderNo}>{order.final_order_no||order.order_no}</Text>
+                <Text numberOfLines={1} style={styles.meta}>{order.customer_name||order.order_for||'—'}</Text>
+              </View>
+              <View style={{maxWidth:'49%',alignItems:'flex-end',gap:5}}>
+                <StatusChip status={order.status||order.approval_status}/>
+                <Text style={styles.meta}>{formatDate(order.created_at)}</Text>
+              </View>
+            </View>
+            <View style={styles.infoStrip}>
+              <View style={styles.infoCell}><Text style={styles.infoLabel}>Branch</Text><Text numberOfLines={1} style={styles.infoValue}>{order.branch||'—'}</Text></View>
+              <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Qty</Text><Text style={styles.infoValue}>{Number(order.total_qty??0)}</Text></View>
+              <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Value</Text><Text numberOfLines={1} style={styles.infoValue}>{formatMoney(order.total_value)}</Text></View>
+            </View>
           </View>
-          <StatusChip status={order.status||order.approval_status}/>
         </Pressable>
       )}
-
       {!query.isLoading&&filtered.length===0?<StateView icon="inbox" title="No orders match these filters" message="Change the branch or status filter to view another report slice."/>:null}
       {filtered.length>100?<Text style={styles.previewNote}>Screen preview shows 100 rows. Exports include all {filtered.length.toLocaleString('en-IN')} filtered orders.</Text>:null}
     </Screen>
@@ -161,6 +174,11 @@ function Summary({label,value}:{label:string;value:string}){return <View style={
 function Divider(){return <View style={styles.divider}/>}
 
 const styles=StyleSheet.create({
+ infoStrip:{flexDirection:'row',backgroundColor:'#EEF5FC',borderRadius:9,paddingVertical:9,marginTop:9},
+ infoCell:{flex:1,minWidth:0,paddingHorizontal:8,gap:3},
+ infoBorder:{borderLeftWidth:1,borderLeftColor:'#CFDDED'},
+ infoLabel:{fontSize:9,color:'#748297',fontWeight:'700'},
+ infoValue:{fontSize:10,color:'#152740',fontWeight:'900'},
   loading:{flexDirection:'row',alignItems:'center',gap:7},
   loadingText:{color:colors.textMuted,fontSize:9,fontWeight:'700'},
   summaryStrip:{minHeight:48,flexDirection:'row',alignItems:'center',paddingHorizontal:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
@@ -189,7 +207,7 @@ const styles=StyleSheet.create({
   summaryCount:{color:colors.navy,fontSize:9,fontWeight:'900'},
   sectionHead:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   previewCount:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
-  row:{minHeight:56,flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:8,paddingVertical:7,borderRadius:11,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  row:{minHeight:72,padding:12,borderRadius:14,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
   pressed:{opacity:.8},
   rowIcon:{width:28,height:28,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
   copy:{flex:1},
