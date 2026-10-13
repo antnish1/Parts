@@ -12,7 +12,7 @@ export default function ActivityScreen() {
   const orders = useQuery({ queryKey: ['orders', 'activity'], queryFn: () => getVisibleOrders(120) });
 
   return (
-    <Screen title="Activity" subtitle="Recent operational movement visible to your account.">
+    <Screen brandHeader title="Activity" subtitle="Recent operational movement visible to your account.">
       {orders.isError ? <StateView icon="alert" tone="error" title="Activity could not be loaded" actionLabel="Retry" onAction={() => void orders.refetch()} /> : null}
 
       <View style={styles.timeline}>
