@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { MetricsTicker, type TickerMetric } from '@/components/MetricsTicker';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { getApprovalQueue } from '@/services/approvals';
@@ -169,6 +170,7 @@ export function ManagerHomeDashboard() {
       </View>
 
       <View style={styles.attentionList}>
+        {busy ? <SkeletonLoader rows={3} compact /> : null}
         {attention.map((item, index) => (
           <Pressable
             key={item.id}

@@ -5,6 +5,7 @@ import { Animated, Easing, FlatList, Pressable, StyleSheet, Text, TextInput, Vie
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { getApprovalQueue } from '@/services/approvals';
@@ -97,9 +98,9 @@ export default function ApprovalQueueScreen() {
             </View>
           </Pressable>
         )}
-        ListEmptyComponent={!queue.isLoading ? (queue.isError
+        ListEmptyComponent={queue.isLoading ? <SkeletonLoader rows={4} compact /> : (queue.isError
           ? <StateView icon="alert" tone="error" title="Approval Queue could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={() => void queue.refetch()} />
-          : <StateView icon="check" title={search ? 'No matching approvals' : 'Approval queue is clear'} message={search ? 'Try a different order, branch, customer or machine.' : 'Nothing is awaiting your approval stage.'} />) : null}
+          : <StateView icon="check" title={search ? 'No matching approvals' : 'Approval queue is clear'} message={search ? 'Try a different order, branch, customer or machine.' : 'Nothing is awaiting your approval stage.'} />)}
       />
     </Screen>
   );

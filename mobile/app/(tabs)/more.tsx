@@ -13,7 +13,7 @@ import { colors } from '@/theme/tokens';
 export default function MoreScreen() {
   const { profile, session, signOut, role } = useAuth();
   const actions = role ? roleWorkActions[role] : [];
-  const shortcuts = [{ key: 'approval-queue', icon: 'check' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'search' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'clock' as const, title: 'Delayed VOR' }].flatMap(item => {
+  const shortcuts = [{ key: 'approval-queue', icon: 'clipboardCheck' as const, tone: 'blue' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'route' as const, tone: 'green' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'timer' as const, tone: 'red' as const, title: 'Delayed VOR' }].flatMap(item => {
     const action = actions.find(a => a.key === item.key && a.href);
     return action?.href ? [{ ...item, href: action.href }] : [];
   });
@@ -107,7 +107,7 @@ export default function MoreScreen() {
 
       {shortcuts.length ? <>
         <Text style={styles.section}>MY OPERATIONS</Text>
-        <View style={styles.shortcuts}>{shortcuts.map(item => <Shortcut key={item.key} icon={item.icon} title={item.title} onPress={() => router.push(item.href)} />)}</View>
+        <View style={styles.shortcuts}>{shortcuts.map(item => <Shortcut key={item.key} icon={item.icon} tone={item.tone} title={item.title} onPress={() => router.push(item.href)} />)}</View>
       </> : null}
 
       <Text style={styles.section}>APP INFORMATION</Text>
@@ -124,8 +124,13 @@ export default function MoreScreen() {
 function Info({ icon, label, value, last = false }: { icon: 'work' | 'inventory' | 'package' | 'shield' | 'refresh'; label: string; value: string; last?: boolean }) {
   return <View style={[styles.info, last && { borderBottomWidth: 0 }]}><AppIcon name={icon} color="#245A95" size={17} /><Text style={styles.label}>{label}</Text><Text numberOfLines={1} style={styles.value}>{value}</Text></View>;
 }
-function Shortcut({ icon, title, onPress }: { icon: 'check' | 'search' | 'clock'; title: string; onPress: () => void }) {
-  return <Pressable onPress={onPress} style={styles.shortcut}><View style={styles.shortcutIcon}><AppIcon name={icon} color="#245A95" size={22} /></View><Text style={styles.shortcutTitle}>{title}</Text></Pressable>;
+function Shortcut({ icon, tone, title, onPress }: { icon: 'clipboardCheck' | 'route' | 'timer'; tone: 'blue' | 'green' | 'red'; title: string; onPress: () => void }) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={title} onPress={onPress} style={styles.shortcut}>
+    <View style={[styles.shortcutIcon, tone === 'blue' ? styles.shortcutBlue : tone === 'green' ? styles.shortcutGreen : styles.shortcutRed]}>
+      <AppIcon name={icon} color="#FFFFFF" size={22} strokeWidth={2.1} />
+    </View>
+    <Text style={styles.shortcutTitle}>{title}</Text>
+  </Pressable>;
 }
 const styles = StyleSheet.create({
   hero: { backgroundColor: '#082B5B', borderRadius: 16, padding: 18, alignItems: 'center', gap: 6 },
@@ -145,7 +150,10 @@ const styles = StyleSheet.create({
   value: { flex: 1, textAlign: 'right', color: '#15243B', fontWeight: '800', fontSize: 10 },
   shortcuts: { flexDirection: 'row', gap: 8 },
   shortcut: { flex: 1, minHeight: 88, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  shortcutIcon: { backgroundColor: '#EAF2FF', borderRadius: 10, padding: 9 },
+  shortcutIcon: { borderRadius: 10, width:44, height:44,alignItems:'center',justifyContent:'center' },
+  shortcutBlue: { backgroundColor:'#225AB0' },
+  shortcutGreen: { backgroundColor:'#1B8864' },
+  shortcutRed: { backgroundColor:'#B9464B' },
   shortcutTitle: { fontSize: 9, fontWeight: '800', color: '#203D62' },
   signOut: { borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8B8B8', padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   outText: { color: '#B83D46', fontWeight: '900', fontSize: 11 },

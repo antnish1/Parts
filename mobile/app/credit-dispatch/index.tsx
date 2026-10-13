@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatCreditMoney, getCreditDispatches, type CreditDispatch } from '@/services/creditDispatch';
@@ -104,10 +105,10 @@ export default function CreditDispatchListScreen(){
             </View>
           </Pressable>
         }
-        ListEmptyComponent={!query.isLoading?(query.isError
+        ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
           ?<StateView icon="alert" tone="error" title="Credit Dispatch could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
           :<StateView icon="truck" title="No requests in this view" message="No Credit Dispatch requests match the selected status and search."/>
-        ):null}
+        )}
       />
     </Screen>
   );
