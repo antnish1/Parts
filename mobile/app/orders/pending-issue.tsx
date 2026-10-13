@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -92,10 +93,7 @@ export default function PendingIssueScreen(){
           <Pressable onPress={()=>setType(type==='sop'?'all':'sop')} style={[styles.typeChip,type==='sop'&&styles.typeChipActive]}><Text style={[styles.typeText,type==='sop'&&styles.typeTextActive]}>SOP {counts.sop}</Text></Pressable>
         </View>
 
-        <View style={styles.search}>
-          <AppIcon name="search" size={18} color={colors.textMuted}/>
-          <TextInput value={search} onChangeText={setSearch} placeholder="Order, customer, mobile, machine, call ID…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
-        </View>
+        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search mobile or machine...', 'Search call ID...']}/>
         {message?<View style={styles.message}><AppIcon name="check" size={15} color={colors.success}/><Text style={styles.messageText}>{message}</Text></View>:null}
       </View>
     }
@@ -120,7 +118,7 @@ export default function PendingIssueScreen(){
 
         <View style={styles.bottom}>
           <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
-          <View style={styles.open}><Text style={styles.openText}>Issue order</Text><AppIcon name="chevronRight" size={16} color={colors.blue}/></View>
+          <Text style={styles.openText}>Issue order</Text>
         </View>
       </Pressable>
     }
