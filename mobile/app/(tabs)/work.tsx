@@ -6,6 +6,17 @@ import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
 import { colors, radius, spacing } from '@/theme/tokens';
 
+function iconColor(action: WorkAction): string {
+  if (action.key.includes('vor')) return '#B5474C';
+  if (action.key.includes('pending')) return '#B98020';
+  if (action.key.includes('credit')) return '#188467';
+  if (action.key.includes('tada')) return '#7456A7';
+  if (action.key.includes('docket')) return '#277C94';
+  if (action.key.includes('part-location')) return '#23836F';
+  if (action.key.includes('installations')) return '#6177A0';
+  return '#245BAD';
+}
+
 function iconFor(action: WorkAction): AppIconName {
   if (action.key.includes('approval')) return 'clipboardCheck';
   if (action.key.includes('track')) return 'route';
@@ -39,7 +50,7 @@ export default function WorkScreen() {
             onPress={() => action.href && router.push(action.href)}
             style={({ pressed }) => [styles.card, action.href ? styles.cardActive : styles.cardPlanned, pressed && action.href && styles.pressed]}
           >
-            <View style={styles.iconWrap}><AppIcon name={iconFor(action)} size={23} color={colors.navy} /></View>
+            <View style={[styles.iconWrap, { backgroundColor: iconColor(action) }]}><AppIcon name={iconFor(action)} size={25} color="#FFFFFF" strokeWidth={2.7} /></View>
             <View style={styles.copy}>
               <Text style={styles.title}>{action.label}</Text>
               <Text numberOfLines={2} style={styles.description}>{action.description}</Text>
@@ -58,7 +69,7 @@ const styles = StyleSheet.create({
   cardActive: { borderColor: '#E0E7EF' },
   cardPlanned: { borderColor: '#E7EBF0', opacity: 0.65 },
   pressed: { opacity: 0.8 },
-  iconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EDF3FA' },
+  iconWrap: { width: 48, height: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1 },
   title: { color: colors.text, fontSize: 13, fontWeight: '800' },
   description: { color: colors.textMuted, fontSize: 10.5, lineHeight: 15, marginTop: 3 },
