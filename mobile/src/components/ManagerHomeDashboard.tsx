@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
-import { HomeBrandHeader } from '@/components/HomeBrandHeader';
 import { MetricsTicker, type TickerMetric } from '@/components/MetricsTicker';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
@@ -103,9 +102,8 @@ export function ManagerHomeDashboard() {
 
   if (criticalError) {
     return (
-      <Screen>
-        <HomeBrandHeader />
-        <StateView
+      <Screen brandHeader>
+          <StateView
           icon="alert"
           tone="error"
           title="Manager dashboard could not be loaded"
@@ -125,7 +123,7 @@ export function ManagerHomeDashboard() {
   }
 
   return (
-    <Screen contentContainerStyle={styles.screen}>
+    <Screen brandHeader contentContainerStyle={styles.screen}>
       <HomeBrandHeader />
       <View style={styles.greetingRow}>
         <View style={styles.greetingCopy}>
