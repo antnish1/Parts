@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 
 export type TickerMetric = { key: string; label: string; value: number; icon: AppIconName; tone: 'blue' | 'red' | 'amber' | 'green'; onPress: () => void };
@@ -49,7 +49,7 @@ export function MetricsTicker({ items }: { items: TickerMetric[] }) {
   return (
     <View style={styles.clip} onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}
       onTouchCancel={() => setPaused(false)}>
-      {reduceMotion ? <View style={styles.line}>{chips('static')}</View> : (
+      {reduceMotion ? <ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={styles.line}>{chips('static')}</View></ScrollView> : (
         <Animated.View style={[styles.line, { transform: [{ translateX: x }] }]}>
           <View style={styles.line} onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>{chips('first')}</View>
           <View style={styles.line}>{chips('second')}</View>
