@@ -2,6 +2,7 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View, type ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeBrandHeader } from '@/components/HomeBrandHeader';
+import { useAuth } from '@/auth/AuthProvider';
 import { colors, spacing } from '@/theme/tokens';
 
 type ScreenProps = PropsWithChildren<{
@@ -14,27 +15,28 @@ type ScreenProps = PropsWithChildren<{
 }>;
 
 export function Screen({ children, title, subtitle, right, brandHeader = false, scroll = true, contentContainerStyle }: ScreenProps) {
+  const { isAuthenticated } = useAuth();
+  const showBrand = isAuthenticated || brandHeader;
   const header = title ? (
     <View style={styles.header}>
       <View style={styles.headingCopy}>
         <Text style={styles.title}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {right}
     </View>
   ) : null;
 
   return (
-    <SafeAreaView style={[styles.safe, brandHeader && styles.brandedSafe]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, showBrand && styles.brandedSafe]} edges={['top']}>
       {scroll ? (
-        <ScrollView style={brandHeader ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, brandHeader && styles.brandedContent, contentContainerStyle]}>
-          {brandHeader ? <HomeBrandHeader /> : null}
+        <ScrollView style={showBrand ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, showBrand && styles.brandedContent, contentContainerStyle]}>
+          {showBrand ? <HomeBrandHeader /> : null}
           {header}
           {children}
         </ScrollView>
       ) : (
         <View style={[styles.content, styles.flex, brandHeader && styles.pageBackground]}>
-          {brandHeader ? <HomeBrandHeader /> : null}
+          {showBrand ? <HomeBrandHeader /> : null}
           {header}
           {children}
         </View>
