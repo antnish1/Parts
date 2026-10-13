@@ -2,6 +2,7 @@ import { Redirect, Tabs } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { colors } from '@/theme/tokens';
 
 function TabIcon({ name, color, focused }: { name: AppIconName; color: string; focused: boolean }) {
@@ -15,7 +16,7 @@ function TabIcon({ name, color, focused }: { name: AppIconName; color: string; f
 export default function TabsLayout() {
   const { isAuthenticated, isLoading, role } = useAuth();
 
-  if (isLoading) return <View style={styles.center}><ActivityIndicator color={colors.navy} /></View>;
+  if (isLoading) return <View style={styles.skeleton}><SkeletonLoader rows={4} /></View>;
   if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
@@ -53,6 +54,7 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  skeleton: { flex: 1, backgroundColor: colors.background, padding: 16 },
   iconWrap: { width: 30, height: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
   iconWrapActive: { backgroundColor: '#315786' },
 });
