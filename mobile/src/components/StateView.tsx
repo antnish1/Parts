@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function StateView({ icon = 'inbox', title, message, actionLabel, onAction, tone = 'neutral' }: Props) {
+  if (/^(loading|fetching|preparing|retrieving)/i.test(title)) return <SkeletonLoader rows={4} />;
   const iconColor = tone === 'error' ? colors.danger : colors.navy;
   const iconBg = tone === 'error' ? colors.dangerSoft : colors.blueSoft;
   return (
