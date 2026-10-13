@@ -1,6 +1,5 @@
-import { StatusBar } from 'expo-status-bar';
 import { Redirect, Tabs } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StatusBar, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { colors } from '@/theme/tokens';
@@ -21,7 +20,7 @@ export default function TabsLayout() {
 
   return (
     <>
-      <StatusBar style="light" backgroundColor="#082B5B" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#082B5B" translucent={false} />
       <Tabs
       screenOptions={{
         headerShown: false,
