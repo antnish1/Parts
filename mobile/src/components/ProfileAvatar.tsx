@@ -15,7 +15,7 @@ export function ProfileAvatar({ size = 40 }: { size?: number }) {
       if (live) setUri(data?.signedUrl ?? null);
     });
     return () => { live = false; };
-  }, [path, session?.user?.id]);
+  }, [path, session?.user?.id, session?.user?.user_metadata?.avatar_updated_at]);
   const initials = (profile?.fullName || 'U').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
   return <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}>
     {uri ? <Image source={{ uri }} style={{ width: size, height: size, borderRadius: size / 2 }} /> :
