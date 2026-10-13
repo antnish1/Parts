@@ -97,6 +97,11 @@ function BucketCard({label,value,active,warning=false,danger=false,onPress}:{lab
 }
 
 const styles=StyleSheet.create({
+  infoStrip:{flexDirection:'row',backgroundColor:'#EEF5FC',borderRadius:9,paddingVertical:9,marginTop:5},
+  infoCell:{flex:1,minWidth:0,paddingHorizontal:8,gap:3},
+  infoBorder:{borderLeftWidth:1,borderLeftColor:'#CFDDED'},
+  infoLabel:{fontSize:9,color:'#748297',fontWeight:'700'},
+  infoValue:{fontSize:10,color:'#152740',fontWeight:'900'},
  center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
  list:{gap:spacing.sm,paddingBottom:spacing.xxl},
  header:{gap:10,marginBottom:8},
