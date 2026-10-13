@@ -87,7 +87,7 @@ export default function DelayedVorScreen(){
     ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
       ?<StateView icon="alert" tone="error" title="Delayed VOR could not be loaded" message="Check your connection and try again." actionLabel="Retry" onAction={()=>void query.refetch()}/>
       :<StateView icon="clock" title="No delayed VOR orders" message="There are no VOR orders in this ageing bucket."/>
-    ):null}
+    )}
    />
  </Screen>;
 }
