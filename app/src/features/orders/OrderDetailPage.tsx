@@ -1,6 +1,6 @@
 import { ChangeEvent, Fragment, FormEvent, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Paperclip, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Paperclip, X } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as XLSX from 'xlsx-js-style';
 import { PageCard } from '../../components/ui/PageCard';
@@ -702,32 +702,19 @@ export function OrderDetailPage() {
                         ) : <span className="text-[#94a3b8]">-</span>}
                       </td>
                       <td className="px-2 py-2 font-black text-[#0f4c81]">{item.part_no}</td><td className="px-2 py-2 text-[#0f172a]">{item.description || '-'}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">
-                        {canEditQty ? (
+                        {canEditQty && editingQtyId === item.id ? (
                           <div className="flex items-center justify-end gap-1">
-                            <input
-                              aria-label={`Quantity for ${item.part_no}`}
-                              title="Use the arrows to increase or decrease quantity before approval"
-                              type="number"
-                              min="0"
-                              max={Number.MAX_SAFE_INTEGER}
-                              step="1"
-                              value={editingQtyId === item.id ? editingQtyValue : String(getEffectiveQty(item))}
-                              disabled={qtySaving || isBlockingAction}
-                              onChange={(event) => {
-                                if (editingQtyId !== item.id) setEditingQtyId(item.id);
-                                setEditingQtyValue(event.target.value);
-                              }}
-                              className="h-8 w-16 rounded border border-[#94a3b8] bg-white px-1 text-right text-xs"
-                            />
-                            {editingQtyId === item.id ? (
-                              <>
-                                <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => void saveEditedQty(item.id)} className="rounded bg-[#0f5fa8] px-2 py-1 text-xs text-white">Save</button>
-                                <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => setEditingQtyId(null)} className="rounded border px-2 py-1 text-xs">Cancel</button>
-                              </>
-                            ) : null}
-                            {item.edited_qty != null ? <button type="button" disabled={qtySaving || isBlockingAction} onClick={() => void clearEditedQty(item.id)} className="text-xs text-[#475569] underline">Reset</button> : null}
+                            <input aria-label={`Quantity for ${item.part_no}`} type="number" min="0" step="1" value={editingQtyValue} disabled={qtySaving} onChange={(event) => setEditingQtyValue(event.target.value)} className="h-8 w-16 rounded border border-[#94a3b8] px-1 text-right text-xs" />
+                            <button type="button" disabled={qtySaving} onClick={() => void saveEditedQty(item.id)} className="rounded bg-[#0f5fa8] px-2 py-1 text-xs text-white">Save</button>
+                            <button type="button" disabled={qtySaving} onClick={() => setEditingQtyId(null)} className="rounded border px-2 py-1 text-xs">Cancel</button>
+                            {item.edited_qty != null ? <button type="button" disabled={qtySaving} onClick={() => void clearEditedQty(item.id)} className="text-xs text-[#475569] underline">Reset</button> : null}
                           </div>
-                        ) : <span>{getEffectiveQty(item)}</span>}
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <span>{getEffectiveQty(item)}</span>
+                            {canEditQty ? <button type="button" aria-label={`Edit quantity for ${item.part_no}`} title="Edit quantity before approval" disabled={qtySaving || isBlockingAction} onClick={() => { setEditingQtyId(item.id); setEditingQtyValue(String(getEffectiveQty(item))); }} className="rounded p-1 text-[#0f5fa8] hover:bg-[#eef8ff]"><Pencil className="h-3.5 w-3.5" /></button> : null}
+                          </div>
+                        )}
                       </td><td className="px-2 py-2 text-right text-[#0f172a]">{getBilledQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f4c81]">{getPendingQty(item)}</td><td className="px-2 py-2 text-right font-black text-[#0f172a]">{formatMoney(getEffectiveValue(item))}</td><td className="px-2 py-2"><StatusBadge status={rowDisplayStatus} /></td><td className="px-2 py-2 text-right">{inTransitQuery.isLoading ? <span className="text-[#8fa1b5]">...</span> : inTransitQuery.isError ? <span className="font-black text-[#b42318]">—</span> : (inTransitMap[normalizePartNo(item.part_no)] ?? 0) > 0 ? <button type="button" onClick={() => setSelectedInTransit({ partNo: item.part_no, qty: inTransitMap[normalizePartNo(item.part_no)] ?? 0 })} className="inline-flex min-w-[2.25rem] items-center justify-center rounded-full border border-[#e7b94d] bg-[#fff7d6] px-2 py-0.5 font-black text-[#7a5200] transition hover:bg-[#ffefb5] focus:outline-none focus:ring-2 focus:ring-[#e7b94d]/40" title="View orders contributing to this In Transit quantity">⚠ {inTransitMap[normalizePartNo(item.part_no)] ?? 0}</button> : <span className="text-[#0f172a]">0</span>}</td><td className="px-2 py-2 text-[#344054]">{order.processed_date || '-'}</td><td className="px-2 py-2 text-[#344054]">{item.order_reg_date || orderRegDateLabel}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.dbms_invoice_date || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.transport_name || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-[#344054]">{item.docket_no || (chunkCount > 1 ? 'Multiple' : '-')}</td><td className="px-2 py-2 text-right font-semibold text-[#0f172a]">{inventoryQuery.isLoading ? '...' : inventoryQty}</td>
                     </tr>
                     {isExpanded ? (
