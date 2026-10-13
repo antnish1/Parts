@@ -7,6 +7,7 @@ import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatMoney } from '@/services/orders';
@@ -131,7 +132,7 @@ export default function PendingIssueScreen(){
          <StatusChip status="Received"/>
        </View>:null}
 
-       {parts.isLoading?<View style={styles.loading}><ActivityIndicator color={colors.navy}/><Text style={styles.loadingText}>Loading received parts…</Text></View>:null}
+       {parts.isLoading?<SkeletonLoader rows={3} compact />:null}
        {parts.isError?<StateView icon="alert" tone="error" title="Parts could not be loaded" actionLabel="Retry" onAction={()=>void parts.refetch()}/>:null}
 
        {parts.data?.map(part=>
