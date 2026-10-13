@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
@@ -95,7 +96,7 @@ export default function ReportsScreen(){
 
   return (
     <Screen title="Reports" subtitle="Operational order register">
-      {query.isLoading?<View style={styles.loading}><ActivityIndicator color={colors.navy}/><Text style={styles.loadingText}>Loading report…</Text></View>:null}
+      {query.isLoading?<SkeletonLoader rows={5}/>:null}
 
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
       <View style={styles.summaryStrip}>
