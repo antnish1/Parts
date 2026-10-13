@@ -108,7 +108,7 @@ export default function CreditDispatchListScreen(){
         ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
           ?<StateView icon="alert" tone="error" title="Credit Dispatch could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
           :<StateView icon="truck" title="No requests in this view" message="No Credit Dispatch requests match the selected status and search."/>
-        ):null}
+        )}
       />
     </Screen>
   );
