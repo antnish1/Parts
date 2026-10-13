@@ -14,7 +14,7 @@ export default function MoreScreen() {
   }
 
   return (
-    <Screen title="More" subtitle="Profile, app information and session controls.">
+    <Screen brandHeader title="More" subtitle="Profile, app information and session controls.">
       <View style={styles.profileCard}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{(profile?.fullName || 'U').trim().charAt(0).toUpperCase()}</Text></View>
         <View style={styles.profileCopy}>
