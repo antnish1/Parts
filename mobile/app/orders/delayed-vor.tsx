@@ -72,26 +72,21 @@ export default function DelayedVorScreen(){
       </View>
     }
     renderItem={({item})=>
-      <Pressable onPress={()=>router.push(`/orders/${item.id}`)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
+      <Pressable accessibilityRole="button" onPress={()=>router.push(`/orders/${item.id}`)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
         <View style={styles.top}>
-          <View style={styles.orderIcon}><AppIcon name="clock" size={18} color={item.age_days>5?colors.danger:item.age_days>=3?colors.warning:colors.navy}/></View>
           <View style={styles.copy}>
-            <Text numberOfLines={1} style={styles.no}>{item.final_order_no||item.order_no}</Text>
+            <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.final_order_no||item.order_no}</Text>
             <Text numberOfLines={1} style={styles.customer}>{item.customer_name||'Customer'} · {item.branch}</Text>
           </View>
-          <View style={[styles.age,item.age_days>5&&styles.ageDanger,item.age_days>=3&&item.age_days<=5&&styles.ageWarn]}>
-            <Text style={[styles.ageText,item.age_days>5&&styles.ageDangerText]}>{item.age_days===0?'Today':`${item.age_days}d`}</Text>
+          <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
+            <StatusChip status={item.status}/>
+            <Text style={styles.contextText}>Processed {formatDate(item.processed_date)}</Text>
           </View>
         </View>
-
-        <View style={styles.contextRow}>
-          <View style={styles.context}><AppIcon name="package" size={13} color="#708096"/><Text style={styles.contextText}>{item.machine_no||'No machine'}</Text></View>
-          <View style={styles.context}><AppIcon name="clock" size={13} color="#708096"/><Text style={styles.contextText}>Processed {formatDate(item.processed_date)}</Text></View>
-        </View>
-
-        <View style={styles.bottom}>
-          <StatusChip status={item.status}/>
-          <View style={styles.open}><Text style={styles.openText}>Open order</Text><AppIcon name="chevronRight" size={16} color={colors.blue}/></View>
+        <View style={styles.infoStrip}>
+          <View style={styles.infoCell}><Text style={styles.infoLabel}>Machine</Text><Text numberOfLines={1} style={styles.infoValue}>{item.machine_no||'—'}</Text></View>
+          <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Age</Text><Text style={styles.infoValue}>{item.age_days===0?'Today':`${item.age_days} days`}</Text></View>
+          <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Branch</Text><Text numberOfLines={1} style={styles.infoValue}>{item.branch||'—'}</Text></View>
         </View>
       </Pressable>
     }
