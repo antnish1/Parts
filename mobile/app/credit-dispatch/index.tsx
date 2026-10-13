@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -67,6 +68,8 @@ export default function CreditDispatchListScreen(){
               <Pressable onPress={()=>router.push('/credit-dispatch/customers')} style={styles.secondary}><AppIcon name="wallet" size={14} color={colors.navy}/><Text style={styles.secondaryText}>Customers / Aging</Text></Pressable>
             </View>
 
+            <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer...', 'Search request number...', 'Search document...', 'Search branch...']}/>
+
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
               <FilterChip label="Pending" value={counts.pending} active={filter==='pending'} onPress={()=>toggle('pending')}/>
               <FilterChip label="Overdue" value={counts.overdue} active={filter==='overdue'} danger onPress={()=>toggle('overdue')}/>
@@ -77,27 +80,26 @@ export default function CreditDispatchListScreen(){
               <FilterChip label="All" value={counts.all} active={filter==='all'} onPress={()=>toggle('all')}/>
             </ScrollView>
 
-            <View style={styles.search}>
-              <AppIcon name="search" size={16} color={colors.textMuted}/>
-              <TextInput autoCorrect={false} placeholder="Customer, request, document, branch…" placeholderTextColor={colors.textMuted} value={search} onChangeText={setSearch} style={styles.searchInput}/>
-            </View>
+            
           </View>
         }
         renderItem={({item})=>
-          <Pressable style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
-            <View style={styles.rowIcon}><AppIcon name="wallet" size={15} color={colors.navy}/></View>
+          <Pressable accessibilityRole="button" style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
             <View style={styles.copy}>
               <View style={styles.topLine}>
-                <Text numberOfLines={1} style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
-                <Text style={styles.amount}>{formatCreditMoney(item.credit_amount)}</Text>
+                <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
+                <View style={{alignItems:'flex-end',gap:5,maxWidth:'49%'}}>
+                  <StatusChip status={item.approval_status}/>
+                  <Text style={styles.meta}>Due {item.due_date||'—'}</Text>
+                </View>
               </View>
               <Text numberOfLines={1} style={styles.customer}>{item.customer_name} · {item.branch}</Text>
-              <View style={styles.metaLine}>
-                <Text numberOfLines={1} style={styles.meta}>Bal {formatCreditMoney(item.balance_amount)} · Due {item.due_date||'—'}</Text>
-                <StatusChip status={item.approval_status}/>
+              <View style={styles.infoStrip}>
+                <View style={styles.infoCell}><Text style={styles.infoLabel}>Amount</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.credit_amount)}</Text></View>
+                <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Balance</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.balance_amount)}</Text></View>
+                <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Branch</Text><Text numberOfLines={1} style={styles.infoValue}>{item.branch||'—'}</Text></View>
               </View>
             </View>
-            <AppIcon name="chevronRight" size={15} color="#94A3B8"/>
           </Pressable>
         }
         ListEmptyComponent={!query.isLoading?(query.isError
@@ -114,6 +116,11 @@ function FilterChip({label,value,active,danger=false,onPress}:{label:string;valu
 }
 
 const styles=StyleSheet.create({
+  infoStrip:{flexDirection:'row',backgroundColor:'#EEF5FC',borderRadius:9,paddingVertical:9,marginTop:5},
+  infoCell:{flex:1,minWidth:0,paddingHorizontal:8,gap:3},
+  infoBorder:{borderLeftWidth:1,borderLeftColor:'#CFDDED'},
+  infoLabel:{fontSize:9,color:'#748297',fontWeight:'700'},
+  infoValue:{fontSize:10,color:'#152740',fontWeight:'900'},
   center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
   list:{gap:7,paddingBottom:spacing.xxl},
   header:{gap:8,marginBottom:8},
@@ -132,14 +139,14 @@ const styles=StyleSheet.create({
   filterLabelActive:{color:'#fff'},
   search:{minHeight:42,flexDirection:'row',alignItems:'center',gap:7,borderRadius:11,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff',paddingHorizontal:10},
   searchInput:{flex:1,minHeight:40,color:colors.text,fontSize:11},
-  row:{minHeight:64,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:9,paddingVertical:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+  row:{minHeight:70,padding:12,borderRadius:14,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
   pressed:{opacity:.8},
   rowIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
   copy:{flex:1},
-  topLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},
+  topLine:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:8},
   no:{flex:1,color:colors.text,fontSize:9.5,fontWeight:'900'},
   amount:{color:colors.navy,fontSize:9.5,fontWeight:'900'},
   customer:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   metaLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:4},
-  meta:{flex:1,color:'#7C8796',fontSize:7.5,fontWeight:'700'},
+  meta:{color:'#7C8796',fontSize:8,fontWeight:'700',textAlign:'right'},
 });

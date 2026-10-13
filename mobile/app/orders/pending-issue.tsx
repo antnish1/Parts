@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -70,14 +71,7 @@ export default function PendingIssueScreen(){
     contentContainerStyle={styles.list}
     ListHeaderComponent={
       <View style={styles.header}>
-        <View style={styles.hero}>
-          <View style={styles.heroIcon}><AppIcon name="inbox" size={21} color="#A95D10"/></View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>Ready to issue</Text>
-            <Text style={styles.heroText}>These customer orders are fully received. Complete final issue with the correct document reference.</Text>
-          </View>
-          <Text style={styles.heroTotal}>{rows.length}</Text>
-        </View>
+        <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search mobile or machine...', 'Search call ID...']}/>
 
         <View style={styles.summary}>
           <Filter label="All" value={counts.all} active={age==='all'&&type==='all'} onPress={()=>{setAge('all');setType('all')}}/>
@@ -92,35 +86,28 @@ export default function PendingIssueScreen(){
           <Pressable onPress={()=>setType(type==='sop'?'all':'sop')} style={[styles.typeChip,type==='sop'&&styles.typeChipActive]}><Text style={[styles.typeText,type==='sop'&&styles.typeTextActive]}>SOP {counts.sop}</Text></Pressable>
         </View>
 
-        <View style={styles.search}>
-          <AppIcon name="search" size={18} color={colors.textMuted}/>
-          <TextInput value={search} onChangeText={setSearch} placeholder="Order, customer, mobile, machine, call ID…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
-        </View>
+        
         {message?<View style={styles.message}><AppIcon name="check" size={15} color={colors.success}/><Text style={styles.messageText}>{message}</Text></View>:null}
       </View>
     }
     renderItem={({item})=>
-      <Pressable onPress={()=>setSelected(item)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
+      <Pressable accessibilityRole="button" onPress={()=>setSelected(item)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
         <View style={styles.top}>
-          <View style={styles.orderIcon}><AppIcon name="inbox" size={18} color={item.age_days>7?colors.danger:colors.warning}/></View>
           <View style={styles.copy}>
-            <Text numberOfLines={1} style={styles.no}>{item.final_order_no||item.order_no}</Text>
+            <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.final_order_no||item.order_no}</Text>
             <Text numberOfLines={1} style={styles.customer}>{item.customer_name||'Customer'} · {item.branch}</Text>
           </View>
-          <View style={[styles.age,item.age_days>7&&styles.ageDanger]}><Text style={[styles.ageText,item.age_days>7&&styles.ageDangerText]}>{item.age_days===0?'Today':`${item.age_days}d`}</Text></View>
+          <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
+            <StatusChip status="Received"/>
+            <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
+          </View>
         </View>
-
         <View style={styles.valueStrip}>
           <Mini label="Type" value={item.order_type}/>
           <Divider/>
           <Mini label="Qty" value={String(item.total_qty)}/>
           <Divider/>
           <Mini label="Value" value={formatMoney(item.total_value)}/>
-        </View>
-
-        <View style={styles.bottom}>
-          <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
-          <View style={styles.open}><Text style={styles.openText}>Issue order</Text><AppIcon name="chevronRight" size={16} color={colors.blue}/></View>
         </View>
       </Pressable>
     }
@@ -180,15 +167,15 @@ function Divider(){return <View style={styles.divider}/>}
 const styles=StyleSheet.create({
  center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
  list:{gap:spacing.sm,paddingBottom:spacing.xxl},
- header:{gap:spacing.md,marginBottom:spacing.md},
+ header:{gap:10,marginBottom:8},
  hero:{minHeight:88,flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.md,borderRadius:20,backgroundColor:'#FFF6E8',borderWidth:1,borderColor:'#F6E1BC'},
  heroIcon:{width:42,height:42,borderRadius:14,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},
  heroCopy:{flex:1},
  heroTitle:{color:'#815015',fontSize:12,fontWeight:'900'},
  heroText:{color:'#866C4C',fontSize:9,lineHeight:14,marginTop:3},
  heroTotal:{color:'#815015',fontSize:22,fontWeight:'900'},
- summary:{flexDirection:'row',gap:5,padding:4,borderRadius:18,backgroundColor:'#EAEFF5'},
- filter:{flex:1,minHeight:58,alignItems:'center',justifyContent:'center',borderRadius:14},
+ summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,borderWidth:1,borderColor:'#DFE6EF',backgroundColor:'#FFFFFF'},
+ filter:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9},
  filterValue:{color:colors.text,fontSize:16,fontWeight:'900'},
  filterValueActive:{color:'#fff'},
  filterLabel:{color:colors.textMuted,fontSize:8,fontWeight:'900',marginTop:2},
@@ -204,7 +191,7 @@ const styles=StyleSheet.create({
  messageText:{flex:1,color:colors.success,fontSize:9,fontWeight:'800'},
  card:{padding:spacing.md,borderWidth:1,borderColor:'#E1E7EE',borderRadius:20,backgroundColor:colors.surface},
  pressed:{opacity:.8},
- top:{flexDirection:'row',alignItems:'flex-start',gap:spacing.sm},
+ top:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',gap:8},
  orderIcon:{width:38,height:38,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#FFF7EB'},
  copy:{flex:1},
  no:{color:colors.text,fontSize:12,fontWeight:'900'},
@@ -213,7 +200,7 @@ const styles=StyleSheet.create({
  ageText:{color:colors.warning,fontSize:9,fontWeight:'900'},
  ageDanger:{backgroundColor:colors.dangerSoft},
  ageDangerText:{color:colors.danger},
- valueStrip:{minHeight:54,flexDirection:'row',alignItems:'center',marginTop:spacing.md,paddingHorizontal:spacing.sm,borderRadius:14,backgroundColor:'#F6F8FB'},
+ valueStrip:{minHeight:54,flexDirection:'row',alignItems:'center',marginTop:0,paddingHorizontal:spacing.sm,borderRadius:9,backgroundColor:'#EEF5FC'},
  mini:{flex:1,minWidth:0},
  miniLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
  miniValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
