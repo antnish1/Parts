@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { ManagerHomeDashboard } from '@/components/ManagerHomeDashboard';
+import { HomeBrandHeader } from '@/components/HomeBrandHeader';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { roleWorkActions } from '@/auth/roleNavigation';
 import { Screen } from '@/components/Screen';
@@ -59,17 +60,8 @@ export default function HomeScreen() {
 
   return (
     <Screen contentContainerStyle={styles.page}>
+      <HomeBrandHeader />
       <View style={styles.hero}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}><AppIcon name="package" color={colors.navy} size={21} /></View>
-          <View style={styles.brandText}>
-            <Text style={styles.brandTitle}>Parts Connect</Text>
-            <Text style={styles.brandCaption}>OPERATIONS HUB</Text>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Account details" onPress={() => router.push('/(tabs)/more')} style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
-          </Pressable>
-        </View>
         <Text style={styles.greetingLabel}>Welcome back</Text>
         <Text style={styles.greeting}>Hello, {firstName}</Text>
         <Text numberOfLines={1} style={styles.heroMeta}>{profile?.branch ?? 'Unassigned'} · {profile?.role ?? 'user'}</Text>
@@ -142,8 +134,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { gap: 12, paddingTop: 7, paddingBottom: 24 },
-  hero: { backgroundColor: colors.navy, borderRadius: 20, padding: 16, gap: 4 },
+  page: { gap: 9, paddingTop: 7, paddingBottom: 16 },
+  hero: { backgroundColor: colors.navy, borderRadius: 14, padding: 12, gap: 3 },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 9 },
   brandMark: { width: 35, height: 35, backgroundColor: '#FFFFFF', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   brandText: { flex: 1 },
@@ -153,7 +145,7 @@ const styles = StyleSheet.create({
   avatarText: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
   greetingLabel: { color: '#B7CBE4', fontSize: 11 },
   greeting: { color: '#FFFFFF', fontWeight: '900', fontSize: 22, letterSpacing: -0.4 },
-  heroMeta: { color: '#B7CBE4', fontSize: 10, marginBottom: 11 },
+  heroMeta: { color: '#B7CBE4', fontSize: 10, marginBottom: 6 },
   summaryBox: { backgroundColor: '#233F60', borderRadius: 14, padding: 11 },
   summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   summaryLabel: { color: '#D6E5F7', fontSize: 11, fontWeight: '800' },
@@ -162,7 +154,7 @@ const styles = StyleSheet.create({
   metricValue: { color: '#FFFFFF', fontSize: 23, fontWeight: '900' },
   metricLabel: { color: '#C6D7EA', fontSize: 9, fontWeight: '700' },
   metricDivider: { width: 1, height: 29, backgroundColor: '#54708D', marginHorizontal: 8 },
-  trackCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#102C4F', borderRadius: 17, padding: 14 },
+  trackCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#102C4F', borderRadius: 17, padding: 11 },
   trackIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: '#2A527E', alignItems: 'center', justifyContent: 'center' },
   trackCopy: { flex: 1, gap: 5 },
   trackTitle: { fontSize: 17, color: '#FFFFFF', fontWeight: '900' },
@@ -177,7 +169,7 @@ const styles = StyleSheet.create({
   shortcutIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: colors.blueSoft, justifyContent: 'center', alignItems: 'center' },
   shortcutLabel: { color: colors.text, fontWeight: '800', fontSize: 9, textAlign: 'center' },
   orderList: { borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, overflow: 'hidden' },
-  orderRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  orderRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   lastRow: { borderBottomWidth: 0 },
   orderCopy: { flex: 1, gap: 4 },
   orderNo: { color: colors.navy, fontSize: 12, fontWeight: '900' },

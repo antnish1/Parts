@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
+import { HomeBrandHeader } from '@/components/HomeBrandHeader';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -123,13 +124,11 @@ export function ManagerHomeDashboard() {
 
   return (
     <Screen contentContainerStyle={styles.screen}>
-      <View style={styles.topbar}>
-        <View style={styles.identity}>
-          <View style={styles.avatar}><Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text></View>
-          <View style={styles.identityCopy}>
-            <Text style={styles.name}>{firstName}</Text>
-            <Text numberOfLines={1} style={styles.role}>{profile?.branch || 'All Branches'} · Manager · {today}</Text>
-          </View>
+      <HomeBrandHeader />
+      <View style={styles.greetingRow}>
+        <View style={styles.greetingCopy}>
+          <Text style={styles.greetingName}>Good morning, {firstName}</Text>
+          <Text style={styles.greetingMeta}>{profile?.branch || 'All Branches'} · Manager · {today}</Text>
         </View>
         <View style={styles.activePill}><Text style={styles.activePillValue}>{busy ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View>
       </View>
@@ -235,8 +234,12 @@ function CompactAction({ icon, label, onPress }: { icon: AppIconName; label: str
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingTop: 8, paddingBottom: 16, gap: 10 },
-  primaryTrack: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.navy, padding: 12, borderRadius: 14, gap: 10 },
+  screen: { paddingTop: 8, paddingBottom: 12, gap: 8 },
+  greetingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 47, gap: 8 },
+  greetingCopy: { flex: 1 },
+  greetingName: { fontSize: 17, color: '#10233E', fontWeight: '900' },
+  greetingMeta: { marginTop: 2, color: '#667085', fontSize: 9, fontWeight: '700' },
+  primaryTrack: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.navy, padding: 10, borderRadius: 14, gap: 9 },
   primaryTrackIcon: { backgroundColor: '#2A527E', borderRadius: 10, width: 38, height: 38, justifyContent: 'center', alignItems: 'center' },
   primaryTrackText: { flex: 1 },
   primaryTrackTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '900' },
@@ -253,7 +256,7 @@ const styles = StyleSheet.create({
   activePillText: { color: colors.textMuted, fontSize: 8, fontWeight: '800' },
 
   attentionStrip: { gap: 7, paddingRight: 12 },
-  attentionChip: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, borderRadius: 11, borderWidth: 1 },
+  attentionChip: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, borderRadius: 11, borderWidth: 1 },
   attentionValue: { fontSize: 12, fontWeight: '900' },
   attentionLabel: { color: '#46566B', fontSize: 9, fontWeight: '800' },
 
@@ -262,12 +265,12 @@ const styles = StyleSheet.create({
   sectionLink: { color: colors.blue, fontSize: 9, fontWeight: '900' },
 
   workGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  workCell: { width: '49%', minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', backgroundColor: '#fff' },
+  workCell: { width: '49%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', backgroundColor: '#fff' },
   workIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EEF3F8' },
   workTitle: { flex: 1, color: colors.text, fontSize: 9, fontWeight: '900' },
 
   attentionList: { overflow: 'hidden', borderRadius: 12, borderWidth: 1, borderColor: '#E1E7EE', backgroundColor: '#fff' },
-  attentionRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E7ECF2' },
+  attentionRow: { minHeight: 53, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E7ECF2' },
   attentionRowLast: { borderBottomWidth: 0 },
   rowAccent: { width: 3, height: 32, borderRadius: 999 },
   rowAccentDanger: { backgroundColor: colors.danger },
