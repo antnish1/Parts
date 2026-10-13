@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
+import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -77,10 +78,7 @@ export default function CreditDispatchListScreen(){
               <FilterChip label="All" value={counts.all} active={filter==='all'} onPress={()=>toggle('all')}/>
             </ScrollView>
 
-            <View style={styles.search}>
-              <AppIcon name="search" size={16} color={colors.textMuted}/>
-              <TextInput autoCorrect={false} placeholder="Customer, request, document, branch…" placeholderTextColor={colors.textMuted} value={search} onChangeText={setSearch} style={styles.searchInput}/>
-            </View>
+            <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer...', 'Search request number...', 'Search document...', 'Search branch...']}/>
           </View>
         }
         renderItem={({item})=>
@@ -97,7 +95,7 @@ export default function CreditDispatchListScreen(){
                 <StatusChip status={item.approval_status}/>
               </View>
             </View>
-            <AppIcon name="chevronRight" size={15} color="#94A3B8"/>
+
           </Pressable>
         }
         ListEmptyComponent={!query.isLoading?(query.isError
