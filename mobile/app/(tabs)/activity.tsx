@@ -42,8 +42,8 @@ export default function ActivityScreen() {
                   <Text numberOfLines={1} style={styles.customer}>{order.customer_name || order.machine_no || 'Customer / machine unavailable'}</Text>
                 </View>
                 <View style={styles.right}>
-                  <Text numberOfLines={1} ellipsizeMode="tail" style={styles.meta}>{order.branch || order.order_type || '—'} · {formatDate(order.created_at)}</Text>
                   <StatusChip status={status} />
+                  <Text numberOfLines={1} ellipsizeMode="tail" style={styles.meta}>{order.branch || order.order_type || '—'} · {formatDate(order.created_at)}</Text>
                 </View>
               </Pressable>
             );
