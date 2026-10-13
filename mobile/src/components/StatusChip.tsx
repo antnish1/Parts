@@ -23,16 +23,17 @@ export function formatStatusLabel(status: string | null | undefined) {
     .join(' ');
 }
 
-export function StatusChip({ status }: { status: string | null | undefined }) {
+export function StatusChip({ status, align = 'left' }: { status: string | null | undefined; align?: 'left' | 'right' }) {
   const tone = toneFor(status);
   return (
-    <View style={[styles.chip, { backgroundColor: tone.bg }]}>
+    <View style={[styles.chip, align === 'right' && styles.alignRight, { backgroundColor: tone.bg }]}>
       <Text numberOfLines={1} style={[styles.text, { color: tone.fg }]}>{formatStatusLabel(status)}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  alignRight: { alignSelf: 'flex-end' },
   chip: { alignSelf: 'flex-start', maxWidth: 170, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
   text: { fontSize: 8.5, fontWeight: '900' },
 });

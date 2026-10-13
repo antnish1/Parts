@@ -87,13 +87,15 @@ export default function CreditDispatchListScreen(){
           <Pressable accessibilityRole="button" style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
             <View style={styles.copy}>
               <View style={styles.topLine}>
-                <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
-                <View style={{alignItems:'flex-end',gap:5,maxWidth:'49%'}}>
-                  <StatusChip status={item.approval_status}/>
+                <View style={styles.requestCopy}>
+                  <Text numberOfLines={1} ellipsizeMode="middle" style={styles.no}>{item.dispatch_no||'Credit Request'}</Text>
+                  <Text numberOfLines={1} style={styles.customer}>{item.customer_name} · {item.branch}</Text>
+                </View>
+                <View style={styles.statusSide}>
+                  <StatusChip status={item.approval_status} align="right"/>
                   <Text style={styles.meta}>Due {item.due_date||'—'}</Text>
                 </View>
               </View>
-              <Text numberOfLines={1} style={styles.customer}>{item.customer_name} · {item.branch}</Text>
               <View style={styles.infoStrip}>
                 <View style={styles.infoCell}><Text style={styles.infoLabel}>Amount</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.credit_amount)}</Text></View>
                 <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Balance</Text><Text numberOfLines={1} style={styles.infoValue}>{formatCreditMoney(item.balance_amount)}</Text></View>
@@ -144,9 +146,11 @@ const styles=StyleSheet.create({
   rowIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
   copy:{flex:1},
   topLine:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:8},
+  requestCopy:{flex:1,minWidth:0,gap:2},
+  statusSide:{maxWidth:'49%',alignItems:'flex-end',gap:5},
   no:{flex:1,color:colors.text,fontSize:9.5,fontWeight:'900'},
   amount:{color:colors.navy,fontSize:9.5,fontWeight:'900'},
-  customer:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
+  customer:{color:colors.textMuted,fontSize:8.5,fontWeight:'700'},
   metaLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:4},
   meta:{color:'#7C8796',fontSize:8,fontWeight:'700',textAlign:'right'},
 });

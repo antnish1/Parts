@@ -98,7 +98,7 @@ export default function PendingIssueScreen(){
             <Text numberOfLines={1} style={styles.customer}>{item.customer_name||'Customer'} · {item.branch}</Text>
           </View>
           <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
-            <StatusChip status="Received"/>
+            <StatusChip status="Received" align="right"/>
             <Text style={styles.received}>Received {item.received_date?new Date(item.received_date).toLocaleDateString('en-IN'):'—'}</Text>
           </View>
         </View>
