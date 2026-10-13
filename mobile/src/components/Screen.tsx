@@ -27,7 +27,7 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
   return (
     <SafeAreaView style={[styles.safe, brandHeader && styles.brandedSafe]} edges={['top']}>
       {scroll ? (
-        <ScrollView style={brandHeader ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, contentContainerStyle]}>
+        <ScrollView style={brandHeader ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, brandHeader && styles.brandedContent, contentContainerStyle]}>
           {brandHeader ? <HomeBrandHeader /> : null}
           {header}
           {children}
@@ -49,6 +49,7 @@ const styles = StyleSheet.create({
   pageBackground: { backgroundColor: colors.background },
   brandedSafe: { backgroundColor: '#082B5B' },
   content: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
+  brandedContent: { paddingTop: 0 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm, marginBottom: 2 },
   headingCopy: { flex: 1 },
   title: { color: colors.text, fontSize: 20, fontWeight: '900', letterSpacing: -0.25 },

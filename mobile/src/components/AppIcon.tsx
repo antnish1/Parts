@@ -2,6 +2,7 @@ import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 import { colors } from '@/theme/tokens';
 
 export type AppIconName =
+  | 'camera'
   | 'activity'
   | 'bell'
   | 'alert'
@@ -35,6 +36,7 @@ export function AppIcon({ name, size = 20, color = colors.navy, strokeWidth = 1.
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === 'bell' ? <><Path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" {...common} /><Path d="M10 21h4" {...common} /></> : null}
+      {name === 'camera' ? <><Rect x="3" y="7" width="18" height="13" rx="2" {...common} /><Path d="M8 7 9.5 4h5L16 7" {...common} /><Circle cx="12" cy="13" r="3" {...common} /></> : null}
       {name === 'search' ? <><Circle cx="11" cy="11" r="7" {...common} /><Line x1="16.3" y1="16.3" x2="21" y2="21" {...common} /></> : null}
       {name === 'clock' ? <><Circle cx="12" cy="12" r="9" {...common} /><Path d="M12 7v5l3.5 2" {...common} /></> : null}
       {name === 'alert' ? <><Path d="M10.2 4.2 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.8 4.2a2 2 0 0 0-3.6 0Z" {...common} /><Line x1="12" y1="9" x2="12" y2="13" {...common} /><Circle cx="12" cy="17" r=".7" fill={color} /></> : null}

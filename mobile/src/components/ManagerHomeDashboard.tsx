@@ -235,7 +235,7 @@ function CompactAction({ icon, label, onPress }: { icon: AppIconName; label: str
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingTop: 8, paddingBottom: 12, gap: 8 },
+  screen: { paddingTop: 0, paddingBottom: 12, gap: 8 },
   greetingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 47, gap: 8 },
   greetingCopy: { flex: 1 },
   greetingName: { fontSize: 17, color: '#10233E', fontWeight: '900' },

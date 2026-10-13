@@ -134,7 +134,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { gap: 9, paddingTop: 7, paddingBottom: 16 },
+  page: { gap: 9, paddingTop: 0, paddingBottom: 16 },
   hero: { backgroundColor: colors.navy, borderRadius: 14, padding: 12, gap: 3 },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 9 },
   brandMark: { width: 35, height: 35, backgroundColor: '#FFFFFF', borderRadius: 11, alignItems: 'center', justifyContent: 'center' },

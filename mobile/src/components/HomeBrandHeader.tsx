@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { AppIcon } from '@/components/AppIcon';
 import { useAuth } from '@/auth/AuthProvider';
 
@@ -19,14 +20,14 @@ export function HomeBrandHeader() {
           <AppIcon name="bell" size={19} color="#FFFFFF" />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open my profile" onPress={() => router.push('/(tabs)/more')} style={styles.profile}>
-          <Text style={styles.initial}>{initial}</Text>
+          <ProfileAvatar size={35} />
         </Pressable>
       </View>
     </View>
   );
 }
 const styles = StyleSheet.create({
-  bar: { minHeight: 56, marginHorizontal: -12, marginTop: -8, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bar: { minHeight: 56, marginHorizontal: -12, marginTop: 0, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
   logo: { width: 34, height: 34, borderRadius: 8 },
   name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
