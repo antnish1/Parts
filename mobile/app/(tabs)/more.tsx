@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Alert, Image, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/auth/AuthProvider';
+import { roleWorkActions } from '@/auth/roleNavigation';
 import { AppIcon } from '@/components/AppIcon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { Screen } from '@/components/Screen';
@@ -10,7 +11,12 @@ import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
 
 export default function MoreScreen() {
-  const { profile, session, signOut } = useAuth();
+  const { profile, session, signOut, role } = useAuth();
+  const actions = role ? roleWorkActions[role] : [];
+  const shortcuts = [{ key: 'approval-queue', icon: 'check' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'search' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'clock' as const, title: 'Delayed VOR' }].flatMap(item => {
+    const action = actions.find(a => a.key === item.key && a.href);
+    return action?.href ? [{ ...item, href: action.href }] : [];
+  });
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const email = session?.user?.email?.endsWith('@portal.local') ? null : session?.user?.email;
@@ -99,12 +105,10 @@ export default function MoreScreen() {
         <Info icon="shield" label="Session" value="Signed in" last={!email} />
       </View>
 
-      <Text style={styles.section}>MY OPERATIONS</Text>
-      <View style={styles.shortcuts}>
-        <Shortcut icon="check" title="Approvals" onPress={() => router.push('/approvals')} />
-        <Shortcut icon="search" title="Track Orders" onPress={() => router.push('/orders')} />
-        <Shortcut icon="clock" title="Delayed VOR" onPress={() => router.push('/orders/delayed-vor')} />
-      </View>
+      {shortcuts.length ? <>
+        <Text style={styles.section}>MY OPERATIONS</Text>
+        <View style={styles.shortcuts}>{shortcuts.map(item => <Shortcut key={item.key} icon={item.icon} title={item.title} onPress={() => router.push(item.href)} />)}</View>
+      </> : null}
 
       <Text style={styles.section}>APP INFORMATION</Text>
       <View style={styles.card}>
