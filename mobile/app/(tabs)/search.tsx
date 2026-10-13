@@ -22,7 +22,7 @@ export default function SearchScreen() {
   }, [orders.data, query]);
 
   return (
-    <Screen title="Search" subtitle="Find an order by number, machine, customer, branch or invoice.">
+    <Screen brandHeader title="Search" subtitle="Find an order by number, machine, customer, branch or invoice.">
       <View style={styles.searchBox}>
         <AppIcon name="search" size={19} color={colors.textMuted} />
         <TextInput autoCorrect={false} placeholder="Search orders…" placeholderTextColor={colors.textMuted} returnKeyType="search" style={styles.input} value={query} onChangeText={setQuery} />
