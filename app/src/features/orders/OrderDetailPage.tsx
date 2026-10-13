@@ -136,6 +136,7 @@ export function OrderDetailPage() {
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
   const blockingLabel = busyAction === 'approve' ? 'Approving order' : busyAction === 'reject' ? 'Rejecting order' : busyAction === 'process' ? 'Processing order' : commentMutation.isPending ? 'Posting comment' : attachmentBusy ? 'Opening attachment' : 'Working';
 
+  const displayItems = items.filter((item) => getEffectiveQty(item) > 0);
   const totalQty = items.reduce((sum, item) => sum + getEffectiveQty(item), 0);
   const totalBilled = items.reduce((sum, item) => sum + getBilledQty(item), 0);
   const totalPending = items.reduce((sum, item) => sum + getPendingQty(item), 0);
@@ -317,7 +318,7 @@ export function OrderDetailPage() {
     const partsColumnRow = rows.length;
     rows.push(['Part', 'Description', 'Qty', 'Billed', 'Pending', 'Value', 'Status', 'Processed', 'Registration Date', 'Bill No', 'Billing Date', 'Transport', 'Docket', 'Inventory', 'In Transit']);
     const partsStartRow = rows.length;
-    items.forEach((item) => rows.push([
+    displayItems.forEach((item) => rows.push([
       item.part_no,
       item.description || '-',
       getEffectiveQty(item),
@@ -556,7 +557,7 @@ export function OrderDetailPage() {
         <table className="print-table">
           <thead><tr><th>Part</th><th>Description</th><th>Qty</th><th>Billed</th><th>Pending</th><th>Value</th><th>Status</th><th>Processed</th><th>Reg Dt</th><th>Bill No</th><th>Billing Dt</th><th>Transport</th><th>Docket</th></tr></thead>
           <tbody>
-            {items.map((item) => (
+            {displayItems.map((item) => (
               <Fragment key={`print-item-${item.id}`}>
                 <tr>
                   <td>{item.part_no}</td><td>{item.description || '-'}</td>
@@ -684,7 +685,7 @@ export function OrderDetailPage() {
               <tr><th className="px-2 py-2">Chunks</th><th className="px-2 py-2">Part</th><th className="px-2 py-2">Description</th><th className="px-2 py-2 text-right">Qty</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Pending</th><th className="px-2 py-2 text-right">Value</th><th className="px-2 py-2">Status</th><th className="px-2 py-2 text-right">In Transit</th><th className="px-2 py-2">Processed</th><th className="px-2 py-2">Reg Dt</th><th className="px-2 py-2">Bill No</th><th className="px-2 py-2">Billing Dt</th><th className="px-2 py-2">Transport</th><th className="px-2 py-2">Docket</th><th className="px-2 py-2 text-right">Inv</th></tr>
             </thead>
             <tbody className="divide-y divide-[#e4e7ec] bg-white">
-              {items.map((item) => {
+              {displayItems.map((item) => {
                 const inventoryQty = inventoryMap[normalizePartNo(item.part_no)] ?? 0;
                 const isExpanded = !!expandedItems[item.id];
                 const chunkCount = item.billing_chunks.length;
