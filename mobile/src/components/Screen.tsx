@@ -27,13 +27,13 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
   return (
     <SafeAreaView style={[styles.safe, brandHeader && styles.brandedSafe]} edges={['top']}>
       {scroll ? (
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, contentContainerStyle]}>
+        <ScrollView style={brandHeader ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, contentContainerStyle]}>
           {brandHeader ? <HomeBrandHeader /> : null}
           {header}
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.content, styles.flex]}>
+        <View style={[styles.content, styles.flex, brandHeader && styles.pageBackground]}>
           {brandHeader ? <HomeBrandHeader /> : null}
           {header}
           {children}
@@ -46,6 +46,7 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
+  pageBackground: { backgroundColor: colors.background },
   brandedSafe: { backgroundColor: '#082B5B' },
   content: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm, marginBottom: 2 },
