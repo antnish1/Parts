@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
+import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate } from '@/services/orders';
@@ -83,7 +84,7 @@ export default function DelayedVorScreen(){
         </View>
       </Pressable>
     }
-    ListEmptyComponent={!query.isLoading?(query.isError
+    ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
       ?<StateView icon="alert" tone="error" title="Delayed VOR could not be loaded" message="Check your connection and try again." actionLabel="Retry" onAction={()=>void query.refetch()}/>
       :<StateView icon="clock" title="No delayed VOR orders" message="There are no VOR orders in this ageing bucket."/>
     ):null}
