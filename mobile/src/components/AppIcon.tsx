@@ -2,6 +2,12 @@ import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 import { colors } from '@/theme/tokens';
 
 export type AppIconName =
+  | 'clipboardCheck'
+  | 'route'
+  | 'timer'
+  | 'scan'
+  | 'mapPin'
+  | 'fileChart'
   | 'camera'
   | 'activity'
   | 'bell'
@@ -35,6 +41,12 @@ export function AppIcon({ name, size = 20, color = colors.navy, strokeWidth = 1.
   const common = { stroke: color, strokeWidth, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' as const };
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
+      {name === 'clipboardCheck' ? <><Rect x="5" y="4" width="14" height="18" rx="2" {...common}/><Path d="M9 4.5V3h6v1.5" {...common}/><Polyline points="8.5,13 11,15.5 16,10" {...common}/></> : null}
+      {name === 'route' ? <><Circle cx="6" cy="18" r="2" {...common}/><Circle cx="18" cy="6" r="2" {...common}/><Path d="M8 18h7a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8" {...common}/></> : null}
+      {name === 'timer' ? <><Circle cx="12" cy="13" r="8" {...common}/><Path d="M12 9v4l3 2M9 2h6M18 5l2 2" {...common}/></> : null}
+      {name === 'scan' ? <><Path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4M3 12h18" {...common}/><Path d="M8 9h8v6H8z" {...common}/></> : null}
+      {name === 'mapPin' ? <><Path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" {...common}/><Circle cx="12" cy="10" r="2.5" {...common}/></> : null}
+      {name === 'fileChart' ? <><Path d="M6 2h8l5 5v14a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" {...common}/><Path d="M14 2v5h5M8 17v-3M12 17v-6M16 17v-4" {...common}/></> : null}
       {name === 'bell' ? <><Path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" {...common} /><Path d="M10 21h4" {...common} /></> : null}
       {name === 'camera' ? <><Rect x="3" y="7" width="18" height="13" rx="2" {...common} /><Path d="M8 7 9.5 4h5L16 7" {...common} /><Circle cx="12" cy="13" r="3" {...common} /></> : null}
       {name === 'search' ? <><Circle cx="11" cy="11" r="7" {...common} /><Line x1="16.3" y1="16.3" x2="21" y2="21" {...common} /></> : null}
