@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { AppIcon } from '@/components/AppIcon';
 import { useAuth } from '@/auth/AuthProvider';
 
@@ -19,7 +20,7 @@ export function HomeBrandHeader() {
           <AppIcon name="bell" size={19} color="#FFFFFF" />
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open my profile" onPress={() => router.push('/(tabs)/more')} style={styles.profile}>
-          <Text style={styles.initial}>{initial}</Text>
+          <ProfileAvatar size={35} />
         </Pressable>
       </View>
     </View>
