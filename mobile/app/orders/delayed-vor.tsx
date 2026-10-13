@@ -72,7 +72,7 @@ export default function DelayedVorScreen(){
             <Text numberOfLines={1} style={styles.customer}>{item.customer_name||'Customer'} · {item.branch}</Text>
           </View>
           <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
-            <StatusChip status={item.status}/>
+            <StatusChip status={item.status} align="right"/>
             <Text style={styles.contextText}>Processed {formatDate(item.processed_date)}</Text>
           </View>
         </View>
