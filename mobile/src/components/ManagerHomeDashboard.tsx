@@ -124,7 +124,6 @@ export function ManagerHomeDashboard() {
 
   return (
     <Screen brandHeader contentContainerStyle={styles.screen}>
-      <HomeBrandHeader />
       <View style={styles.greetingRow}>
         <View style={styles.greetingCopy}>
           <Text style={styles.greetingName}>Good morning, {firstName}</Text>
