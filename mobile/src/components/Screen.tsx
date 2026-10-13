@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   pageBackground: { backgroundColor: colors.background },
   brandedSafe: { backgroundColor: '#082B5B' },
   content: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.lg, gap: spacing.sm },
-  brandedContent: { paddingTop: 8 },
+  brandedContent: { paddingTop: 0 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: spacing.sm, marginBottom: 2 },
   headingCopy: { flex: 1 },
   title: { color: colors.text, fontSize: 20, fontWeight: '900', letterSpacing: -0.25 },
