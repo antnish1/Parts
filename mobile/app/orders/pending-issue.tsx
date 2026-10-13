@@ -7,7 +7,6 @@ import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
-import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatMoney } from '@/services/orders';
