@@ -115,7 +115,7 @@ export default function PendingIssueScreen(){
     ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
       ?<StateView icon="alert" tone="error" title="Pending Issue could not be loaded" message="The data request failed. Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
       :<StateView icon="inbox" title="Nothing pending here" message="No received customer orders match the selected filters."/>
-    ):null}
+    )}
    />
 
    <Modal visible={Boolean(selected)} animationType="slide" onRequestClose={()=>setSelected(null)}>
