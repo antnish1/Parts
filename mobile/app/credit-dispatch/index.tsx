@@ -138,10 +138,10 @@ const styles=StyleSheet.create({
   pressed:{opacity:.8},
   rowIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
   copy:{flex:1},
-  topLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8},
+  topLine:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:8},
   no:{flex:1,color:colors.text,fontSize:9.5,fontWeight:'900'},
   amount:{color:colors.navy,fontSize:9.5,fontWeight:'900'},
   customer:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   metaLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:4},
-  meta:{flex:1,color:'#7C8796',fontSize:7.5,fontWeight:'700'},
+  meta:{color:'#7C8796',fontSize:8,fontWeight:'700',textAlign:'right'},
 });
