@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar';
 import { Redirect, Tabs } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
@@ -19,7 +20,9 @@ export default function TabsLayout() {
   if (!isAuthenticated) return <Redirect href="/login" />;
 
   return (
-    <Tabs
+    <>
+      <StatusBar style="light" backgroundColor="#082B5B" translucent={false} />
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#FFFFFF',
@@ -45,7 +48,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="search" options={{ title: 'Search', href: role === 'accounts' ? null : undefined, tabBarIcon: ({ color, focused }) => <TabIcon name="search" color={String(color)} focused={focused} /> }} />
       <Tabs.Screen name="activity" options={{ title: 'Activity', href: role === 'accounts' ? null : undefined, tabBarIcon: ({ color, focused }) => <TabIcon name="activity" color={String(color)} focused={focused} /> }} />
       <Tabs.Screen name="more" options={{ title: 'More', tabBarIcon: ({ color, focused }) => <TabIcon name="more" color={String(color)} focused={focused} /> }} />
-    </Tabs>
+      </Tabs>
+    </>
   );
 }
 
