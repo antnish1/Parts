@@ -130,11 +130,11 @@ export default function PendingIssueScreen(){
            <StatusChip status="Received"/>
          </View>
          <View style={styles.issueSummary}>
-           <MiniDark label="Branch" value={selected.branch||'—'}/>
+           <MiniDark label="Branch" value={selected.branch||'—'} centered/>
            <DividerDark/>
-           <MiniDark label="Order type" value={selected.order_type||'—'}/>
+           <MiniDark label="Order type" value={selected.order_type||'—'} centered/>
            <DividerDark/>
-           <MiniDark label="Qty" value={String(selected.total_qty)}/>
+           <MiniDark label="Qty" value={String(selected.total_qty)} centered/>
          </View>
        </View>:null}
 
@@ -145,11 +145,11 @@ export default function PendingIssueScreen(){
          <View key={part.id} style={styles.part}>
            <View style={styles.partTop}><View style={styles.partIcon}><AppIcon name="package" size={15} color={colors.navy}/></View><View style={styles.partCopy}><Text style={styles.partNo}>{part.part_no}</Text><Text numberOfLines={1} style={styles.partDesc}>{part.description||'No description'}</Text></View><StatusChip status={part.item_status}/></View>
            <View style={styles.partGrid}>
-             <Mini label="Required" value={String(part.effective_qty)}/>
+             <Mini label="Required" value={String(part.effective_qty)} centered/>
              <Divider/>
-             <Mini label="Billed" value={String(part.billed_qty)}/>
+             <Mini label="Billed" value={String(part.billed_qty)} centered/>
              <Divider/>
-             <Mini label="Received" value={String(part.received_qty)}/>
+             <Mini label="Received" value={String(part.received_qty)} centered/>
            </View>
          </View>
        )}
@@ -175,8 +175,8 @@ function Filter({label,value,active,warning=false,danger=false,onPress}:{label:s
  const accent=danger?colors.danger:warning?colors.warning:colors.navy;
  return <Pressable onPress={onPress} style={[styles.filter,active&&{backgroundColor:accent}]}><Text style={[styles.filterValue,active&&styles.filterValueActive]}>{value}</Text><Text style={[styles.filterLabel,active&&styles.filterLabelActive]}>{label}</Text></Pressable>;
 }
-function Mini({label,value}:{label:string;value:string}){return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>}
-function MiniDark({label,value}:{label:string;value:string}){return <View style={styles.mini}><Text style={styles.miniLabelDark}>{label}</Text><Text numberOfLines={1} style={styles.miniValueDark}>{value}</Text></View>}
+function Mini({label,value,centered=false}:{label:string;value:string;centered?:boolean}){return <View style={[styles.mini,centered&&styles.miniCentered]}><Text style={[styles.miniLabel,centered&&styles.miniCenteredText]}>{label}</Text><Text numberOfLines={1} style={[styles.miniValue,centered&&styles.miniCenteredText]}>{value}</Text></View>}
+function MiniDark({label,value,centered=false}:{label:string;value:string;centered?:boolean}){return <View style={[styles.mini,centered&&styles.miniCentered]}><Text style={[styles.miniLabelDark,centered&&styles.miniCenteredText]}>{label}</Text><Text numberOfLines={1} style={[styles.miniValueDark,centered&&styles.miniCenteredText]}>{value}</Text></View>}
 function Divider(){return <View style={styles.divider}/>}
 function DividerDark(){return <View style={styles.dividerDark}/>} 
 
@@ -217,7 +217,7 @@ const styles=StyleSheet.create({
  ageDanger:{backgroundColor:colors.dangerSoft},
  ageDangerText:{color:colors.danger},
  valueStrip:{minHeight:54,flexDirection:'row',alignItems:'center',marginTop:0,paddingHorizontal:spacing.sm,borderRadius:9,backgroundColor:'#EEF5FC'},
- mini:{flex:1,minWidth:0},
+ mini:{flex:1,minWidth:0},miniCentered:{alignItems:'center',justifyContent:'center'},miniCenteredText:{textAlign:'center'},
  miniLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
  miniValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
  miniLabelDark:{color:'#91AAC5',fontSize:8,fontWeight:'800'},

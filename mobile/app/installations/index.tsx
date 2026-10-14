@@ -65,7 +65,7 @@ export default function InstallationsScreen() {
   if (!allowed) return <View style={styles.center}><StateView icon="alert" tone="error" title="Engine & Breaker unavailable" message="This workflow is not available for your role." /></View>;
 
   return (
-    <Screen title="Engine & Breaker" subtitle="Invoice, registration, completion and acceptance" scroll={false}>
+    <Screen title="Engine & Breaker" subtitle="Invoice, registration, completion and acceptance" scroll={false} right={mode === 'invoice' && canManage ? <Pressable onPress={() => router.push('/installations/invoice')} style={styles.headerAdd}><Text style={styles.headerAddPlus}>+</Text><Text style={styles.headerAddText}>Add Invoice</Text></Pressable> : undefined}>
       <View style={styles.segment}>
         <Pressable onPress={() => setMode('register')} style={[styles.segmentButton, mode === 'register' && styles.segmentActive]}><Text style={[styles.segmentText, mode === 'register' && styles.segmentTextActive]}>Register</Text></Pressable>
         {canManage ? <Pressable onPress={() => setMode('invoice')} style={[styles.segmentButton, mode === 'invoice' && styles.segmentActive]}><Text style={[styles.segmentText, mode === 'invoice' && styles.segmentTextActive]}>Invoice</Text></Pressable> : null}
@@ -80,24 +80,23 @@ export default function InstallationsScreen() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.invoiceHeader}>
-              <Pressable onPress={() => router.push('/installations/invoice')} style={styles.addButton}><AppIcon name="package" size={14} color="#fff"/><Text style={styles.addText}>Add Invoice</Text></Pressable>
               <Text style={styles.countText}>{invoices.data?.length ?? 0} invoices</Text>
             </View>
           }
           renderItem={({ item, index }) => (
             <MotionView delay={Math.min(index * 24, 180)} trigger={mode}>
-            <View style={styles.row}>
+            <Pressable onPress={() => item.installation_id ? router.push(`/installations/${item.installation_id}`) : router.push({ pathname: '/installations/register', params: { invoiceId: item.id } })} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
               <View style={styles.rowIcon}><AppIcon name="package" size={15} color={colors.navy}/></View>
               <View style={styles.copy}>
-                <View style={styles.topLine}><Text numberOfLines={1} style={styles.no}>{item.jcb_invoice_no}</Text><Text style={styles.date}>{item.invoice_date}</Text></View>
+                <Text numberOfLines={1} style={styles.no}>{item.jcb_invoice_no}</Text>
                 <Text numberOfLines={1} style={styles.meta}>{item.part_no} · {equipmentTypeLabel(item.equipment_type)} · Serial {item.serial_no}</Text>
-                <View style={styles.bottomLine}>
-                  <Text numberOfLines={1} style={styles.subMeta}>DBMS {item.dbms_no || '—'}</Text>
-                  <StatusChip status={item.installation_id ? 'Registered' : 'Pending'} />
-                </View>
+                <Text numberOfLines={1} style={styles.subMeta}>{item.invoice_date}</Text>
               </View>
-              <Pressable onPress={() => item.installation_id ? router.push(`/installations/${item.installation_id}`) : router.push({ pathname: '/installations/register', params: { invoiceId: item.id } })} style={styles.rowAction}><AppIcon name="eye" size={17} color={colors.blue}/></Pressable>
-            </View>
+              <View style={styles.invoiceStatusCol}>
+                <StatusChip status={item.installation_id ? 'Registered' : 'Pending'} />
+                <Text numberOfLines={1} style={styles.dbmsMeta}>DBMS {item.dbms_no || '—'}</Text>
+              </View>
+            </Pressable>
             </MotionView>
           )}
           ListEmptyComponent={!invoices.isLoading ? <StateView icon="inbox" title="No installation invoices" message="Invoice intake records will appear here." /> : null}
@@ -160,7 +159,7 @@ function EntryRow({ item, onDelete }: { item: InstallationEntry; onDelete?: () =
         <Text numberOfLines={1} style={styles.meta}>{item.customer_name} · {item.branch}</Text>
         <Text numberOfLines={1} style={styles.subMeta}>{equipmentTypeLabel(item.equipment_type)} · JCB {item.jcb_invoice_no || item.invoice_no} · {item.equipment_no || 'Equipment pending'}</Text>
       </View>
-      {onDelete?<Pressable onPress={onDelete} style={styles.deleteInline}><AppIcon name="x" size={14} color={colors.danger}/></Pressable>:<View style={styles.viewIcon}><AppIcon name="eye" size={16} color={colors.blue}/></View>}
+      {onDelete?<Pressable onPress={onDelete} style={styles.deleteInline}><AppIcon name="x" size={14} color={colors.danger}/></Pressable>:null}
     </Pressable>
   );
 }
@@ -178,9 +177,8 @@ const styles=StyleSheet.create({
   segmentTextActive:{color:'#fff'},
   list:{gap:7,paddingBottom:spacing.xxl},
   header:{gap:8,marginBottom:8},
-  invoiceHeader:{minHeight:40,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:8},
-  addButton:{minHeight:36,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:12,borderRadius:10,backgroundColor:colors.navy},
-  addText:{color:'#fff',fontSize:9,fontWeight:'900'},
+  invoiceHeader:{minHeight:26,flexDirection:'row',alignItems:'center',justifyContent:'flex-end',marginBottom:6},
+  headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,paddingHorizontal:10,borderRadius:999,borderWidth:1.2,borderColor:colors.success,backgroundColor:'#fff'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
   countText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
   filters:{gap:6,paddingRight:10},
   stageChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
@@ -201,12 +199,11 @@ const styles=StyleSheet.create({
   copy:{flex:1},
   topLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6},
   no:{flex:1,color:colors.text,fontSize:9.5,fontWeight:'900'},
-  date:{color:colors.textMuted,fontSize:7.5,fontWeight:'700'},
+  
   meta:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   subMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',marginTop:3},
-  bottomLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:3},
-  rowAction:{width:34,height:34,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:'#EEF5FC'},
-  viewIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
+  
+  invoiceStatusCol:{minWidth:82,alignItems:'flex-end',justifyContent:'center',gap:5},dbmsMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',textAlign:'right'},deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
   modalBackdrop:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:'rgba(2,6,23,.62)'},
   dialog:{gap:spacing.md,padding:spacing.lg,borderRadius:16,backgroundColor:'#fff'},
   dialogTitle:{color:colors.text,fontSize:15,fontWeight:'900'},
