@@ -22,6 +22,8 @@ export default function ApprovalReviewScreen() {
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [rowAction, setRowAction] = useState<{ itemId: string; action: 'reset' | 'zero' } | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!items.data) return;
@@ -60,18 +62,42 @@ export default function ApprovalReviewScreen() {
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Approval failed.'),
   });
 
-  const itemAction = useMutation({
-    mutationFn: async ({ item, action }: { item: OrderItem; action: 'reset' | 'zero' }) => {
-      if (action === 'reset') await resetEditedQuantity(item.id);
-      else await zeroReviewItem(item.id);
-      return { item, action };
-    },
-    onSuccess: async ({ item, action }) => {
-      setMessage(action === 'reset' ? `${item.part_no}: edited quantity reset to original.` : `${item.part_no}: review quantity set to zero.`);
+
+  async function handleReset(item: OrderItem) {
+    const previous = quantities[item.id] ?? String(item.edited_qty ?? item.qty);
+    setRowErrors((current) => ({ ...current, [item.id]: '' }));
+    setQuantities((current) => ({ ...current, [item.id]: String(item.qty) }));
+
+    if (item.edited_qty == null) return;
+
+    setRowAction({ itemId: item.id, action: 'reset' });
+    try {
+      await resetEditedQuantity(item.id);
       await refreshItems();
-    },
-    onError: (error) => setMessage(error instanceof Error ? error.message : 'Quantity action failed.'),
-  });
+    } catch (error) {
+      setQuantities((current) => ({ ...current, [item.id]: previous }));
+      setRowErrors((current) => ({ ...current, [item.id]: error instanceof Error ? error.message : 'Reset failed.' }));
+    } finally {
+      setRowAction(null);
+    }
+  }
+
+  async function handleZero(item: OrderItem) {
+    const previous = quantities[item.id] ?? String(item.edited_qty ?? item.qty);
+    setRowErrors((current) => ({ ...current, [item.id]: '' }));
+    setQuantities((current) => ({ ...current, [item.id]: '0' }));
+    setRowAction({ itemId: item.id, action: 'zero' });
+    try {
+      await zeroReviewItem(item.id);
+      await refreshItems();
+    } catch (error) {
+      setQuantities((current) => ({ ...current, [item.id]: previous }));
+      setRowErrors((current) => ({ ...current, [item.id]: error instanceof Error ? error.message : 'Set 0 failed.' }));
+    } finally {
+      setRowAction(null);
+    }
+  }
+
 
   const reject = useMutation({
     mutationFn: () => rejectOrder(orderId, role === 'manager' ? 'manager' : role === 'developer' ? 'developer' : 'super'),
@@ -88,7 +114,7 @@ export default function ApprovalReviewScreen() {
   if (order.isLoading || items.isLoading) return <Screen title="Approval Review"><SkeletonLoader rows={5} /></Screen>;
   if (!order.data || order.isError) return <Screen title="Approval Review"><StateView icon="alert" tone="error" title="Order could not be loaded" actionLabel="Go back" onAction={() => router.back()} /></Screen>;
 
-  const busy = approve.isPending || reject.isPending || itemAction.isPending;
+  const busy = approve.isPending || reject.isPending;
   const currentQty = (items.data ?? []).reduce((sum, item) => sum + Number(quantities[item.id] ?? item.edited_qty ?? item.qty), 0);
   const originalQty = (items.data ?? []).reduce((sum, item) => sum + item.qty, 0);
 
@@ -122,9 +148,14 @@ export default function ApprovalReviewScreen() {
             item={item}
             value={quantities[item.id] ?? String(item.edited_qty ?? item.qty)}
             busy={busy}
-            onChange={(value) => setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }))}
-            onReset={() => itemAction.mutate({ item, action: 'reset' })}
-            onZero={() => itemAction.mutate({ item, action: 'zero' })}
+            rowAction={rowAction?.itemId === item.id ? rowAction.action : null}
+            rowError={rowErrors[item.id] || ''}
+            onChange={(value) => {
+              setRowErrors((current) => ({ ...current, [item.id]: '' }));
+              setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }));
+            }}
+            onReset={() => void handleReset(item)}
+            onZero={() => void handleZero(item)}
           />
         ))}
 
@@ -152,7 +183,7 @@ export default function ApprovalReviewScreen() {
   );
 }
 
-function ReviewItem({ item, value, busy, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
+function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
   const next = Number(value || 0);
   const changedFromOriginal = next !== item.qty || item.edited_qty != null;
   return (
@@ -173,9 +204,10 @@ function ReviewItem({ item, value, busy, onChange, onReset, onZero }: { item: Or
 
       <View style={styles.reviewRow}>
         <View style={styles.qtyInputWrap}><Text style={styles.qtyLabel}>Review Qty</Text><TextInput keyboardType="number-pad" value={value} onChangeText={onChange} style={styles.qtyInput} /></View>
-        <Pressable disabled={busy || item.edited_qty == null} onPress={onReset} style={[styles.rowButton, (busy || item.edited_qty == null) && styles.disabled]}><AppIcon name="refresh" size={14} color={colors.navy}/><Text style={styles.rowButtonText}>Reset</Text></Pressable>
-        <Pressable disabled={busy || next === 0} onPress={onZero} style={[styles.zeroButton, (busy || next === 0) && styles.disabled]}><Text style={styles.zeroText}>Set 0</Text></Pressable>
+        <Pressable disabled={busy || rowAction !== null || (next === item.qty && item.edited_qty == null)} onPress={onReset} style={[styles.rowButton, (busy || rowAction !== null || (next === item.qty && item.edited_qty == null)) && styles.disabled]}>{rowAction === 'reset' ? <ActivityIndicator size="small" color={colors.navy}/> : <><AppIcon name="refresh" size={14} color={colors.navy}/><Text style={styles.rowButtonText}>Reset</Text></>}</Pressable>
+        <Pressable disabled={busy || rowAction !== null || next === 0} onPress={onZero} style={[styles.zeroButton, (busy || rowAction !== null || next === 0) && styles.disabled]}>{rowAction === 'zero' ? <ActivityIndicator size="small" color={colors.danger}/> : <Text style={styles.zeroText}>Set 0</Text>}</Pressable>
       </View>
+      {rowError ? <View style={styles.rowError}><AppIcon name="alert" size={13} color={colors.danger}/><Text style={styles.rowErrorText}>{rowError}</Text></View> : null}
     </View>
   );
 }
@@ -227,6 +259,8 @@ const styles = StyleSheet.create({
   rowButtonText:{color:colors.navy,fontSize:9,fontWeight:'900'},
   zeroButton:{minHeight:42,alignItems:'center',justifyContent:'center',paddingHorizontal:13,borderRadius:12,borderWidth:1,borderColor:'#F1BABA',backgroundColor:'#fff'},
   zeroText:{color:colors.danger,fontSize:9,fontWeight:'900'},
+  rowError:{flexDirection:'row',alignItems:'flex-start',gap:5,marginTop:7,paddingHorizontal:8,paddingVertical:6,borderRadius:8,backgroundColor:colors.dangerSoft},
+  rowErrorText:{flex:1,color:colors.danger,fontSize:8.5,lineHeight:12,fontWeight:'700'},
   message:{flexDirection:'row',alignItems:'flex-start',gap:spacing.sm,padding:spacing.md,borderRadius:14,backgroundColor:colors.dangerSoft},
   messageText:{flex:1,color:colors.danger,fontSize:10,lineHeight:15,fontWeight:'700'},
   actions:{gap:8},
