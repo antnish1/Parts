@@ -430,5 +430,6 @@ const styles = StyleSheet.create({
   confirmReject: { backgroundColor: colors.danger },
   confirmText: { color: '#fff', fontSize: 13, fontWeight: '900' },
   loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},
+  pressed: { opacity: .72 },
   disabled: { opacity: .5 },
 });
