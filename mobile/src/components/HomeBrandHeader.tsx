@@ -1,13 +1,16 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { AppIcon } from '@/components/AppIcon';
 import { useAuth } from '@/auth/AuthProvider';
 
 export function HomeBrandHeader() {
   const { profile } = useAuth();
+  const insets = useSafeAreaInsets();
   const initial = (profile?.fullName || 'U').trim().charAt(0).toUpperCase();
   return (
+    <View style={[styles.shell, { paddingTop: insets.top }]}> 
     <View style={styles.bar}>
       <View style={styles.brand}>
         <Image source={require('../../assets/native/icon.png')} style={styles.logo} resizeMode="contain" />
@@ -24,10 +27,12 @@ export function HomeBrandHeader() {
         </Pressable>
       </View>
     </View>
+    </View>
   );
 }
 const styles = StyleSheet.create({
-  bar: { minHeight: 56, marginHorizontal: -12, marginTop: 0, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  shell: { marginHorizontal: -12, backgroundColor: '#082B5B' },
+  bar: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
   logo: { width: 34, height: 34, borderRadius: 8 },
   name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
