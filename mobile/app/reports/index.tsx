@@ -9,7 +9,6 @@ import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { MotionView } from '@/components/MotionView';
-import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
@@ -95,6 +94,8 @@ export default function ReportsScreen(){
 
   if(query.isError)return <Screen title="Reports" subtitle="Operational order summaries"><StateView icon="alert" tone="error" title="Reports could not be loaded" message="The complete order dataset could not be retrieved." actionLabel="Retry" onAction={()=>void query.refetch()}/></Screen>;
 
+  if(query.isLoading)return <Screen title="Reports" right={<View style={styles.titleActions}><View style={styles.loadingAction}/><View style={styles.loadingActionWide}/></View>}><ReportsLoadingSkeleton/></Screen>;
+
   const reportActions = <View style={styles.titleActions}>
     <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('csv')} style={[styles.titleAction,(!filtered.length||Boolean(exporting))&&styles.disabled]}><Text style={styles.titleActionText}>{exporting==='csv'?'...':'CSV'}</Text></Pressable>
     <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('xlsx')} style={[styles.titleAction,(!filtered.length||Boolean(exporting))&&styles.disabled]}><Text style={styles.titleActionText}>{exporting==='xlsx'?'...':'Excel'}</Text></Pressable>
@@ -102,8 +103,6 @@ export default function ReportsScreen(){
 
   return (
     <Screen title="Reports" subtitle="Operational order register" right={reportActions}>
-      {query.isLoading?<SkeletonLoader rows={5}/>:null}
-
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
       <MotionView trigger={`${branch}-${status}`} distance={5} duration={190}>
       <View style={styles.summaryStrip}>
@@ -178,12 +177,48 @@ export default function ReportsScreen(){
   );
 }
 
+function ReportsLoadingSkeleton(){
+  return <View style={styles.loadingScreen}>
+    <View style={styles.loadingSearch}><View style={styles.loadingCircle}/><View style={styles.loadingLineWide}/></View>
+    <View style={styles.loadingSummary}>
+      {[0,1,2,3].map((key)=><View key={key} style={styles.loadingSummaryCell}><View style={styles.loadingTiny}/><View style={styles.loadingShort}/></View>)}
+    </View>
+    <View style={styles.loadingFilterBlock}><View style={styles.loadingTiny}/><View style={styles.loadingChips}><View style={styles.loadingChip}/><View style={styles.loadingChipWide}/><View style={styles.loadingChipWide}/><View style={styles.loadingChip}/></View></View>
+    <View style={styles.loadingFilterBlock}><View style={styles.loadingTiny}/><View style={styles.loadingChips}><View style={styles.loadingChip}/><View style={styles.loadingChipWide}/><View style={styles.loadingChipWide}/></View></View>
+    <View style={styles.loadingSplit}><View style={styles.loadingBox}><View style={styles.loadingShort}/><View style={styles.loadingLineWide}/><View style={styles.loadingLineWide}/><View style={styles.loadingLineWide}/></View><View style={styles.loadingBox}><View style={styles.loadingShort}/><View style={styles.loadingLineWide}/><View style={styles.loadingLineWide}/><View style={styles.loadingLineWide}/></View></View>
+    <View style={styles.loadingSectionHead}><View style={styles.loadingShort}/><View style={styles.loadingTiny}/></View>
+    {[0,1,2].map((key)=><View key={key} style={styles.loadingOrder}><View style={styles.loadingOrderTop}><View style={{flex:1,gap:7}}><View style={styles.loadingLineWide}/><View style={styles.loadingShort}/></View><View style={styles.loadingBadge}/></View><View style={styles.loadingInfoStrip}><View style={styles.loadingInfoCell}/><View style={styles.loadingInfoCell}/><View style={styles.loadingInfoCell}/></View></View>)}
+  </View>
+}
+
 function Chip({label,active,onPress}:{label:string;active:boolean;onPress:()=>void}){return <Pressable onPress={onPress} style={[styles.chip,active&&styles.chipActive]}><Text style={[styles.chipText,active&&styles.chipTextActive]}>{label}</Text></Pressable>}
 function Summary({label,value}:{label:string;value:string}){return <View style={styles.summary}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} style={styles.summaryValue}>{value}</Text></View>}
 function Divider(){return <View style={styles.divider}/>}
 
 const styles=StyleSheet.create({
  titleActions:{flexDirection:'row',alignItems:'center',gap:6},
+ loadingScreen:{gap:10},
+ loadingAction:{width:48,height:30,borderRadius:8,backgroundColor:'#E5EAF0'},
+ loadingActionWide:{width:54,height:30,borderRadius:8,backgroundColor:'#E5EAF0'},
+ loadingSearch:{height:48,flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:12,borderRadius:12,borderWidth:1,borderColor:'#E5EAF0',backgroundColor:'#FFFFFF'},
+ loadingCircle:{width:18,height:18,borderRadius:9,backgroundColor:'#E3EAF3'},
+ loadingLineWide:{height:9,borderRadius:999,backgroundColor:'#E3EAF3',width:'70%'},
+ loadingShort:{height:9,borderRadius:999,backgroundColor:'#E3EAF3',width:'42%'},
+ loadingTiny:{height:7,borderRadius:999,backgroundColor:'#E3EAF3',width:42},
+ loadingSummary:{minHeight:48,flexDirection:'row',alignItems:'stretch',borderRadius:12,borderWidth:1,borderColor:'#E5EAF0',backgroundColor:'#FFFFFF',overflow:'hidden'},
+ loadingSummaryCell:{flex:1,justifyContent:'center',gap:5,paddingHorizontal:9,borderRightWidth:StyleSheet.hairlineWidth,borderRightColor:'#E5EAF0'},
+ loadingFilterBlock:{gap:6},
+ loadingChips:{flexDirection:'row',gap:6},
+ loadingChip:{width:40,height:28,borderRadius:999,backgroundColor:'#E8EEF5'},
+ loadingChipWide:{width:72,height:28,borderRadius:999,backgroundColor:'#E8EEF5'},
+ loadingSplit:{flexDirection:'row',gap:7},
+ loadingBox:{flex:1,minHeight:122,padding:10,gap:12,borderRadius:12,borderWidth:1,borderColor:'#E5EAF0',backgroundColor:'#FFFFFF'},
+ loadingSectionHead:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+ loadingOrder:{padding:12,gap:10,borderRadius:14,borderWidth:1,borderColor:'#E5EAF0',backgroundColor:'#FFFFFF'},
+ loadingOrderTop:{flexDirection:'row',alignItems:'flex-start',gap:10},
+ loadingBadge:{width:94,height:22,borderRadius:999,backgroundColor:'#E8EEF5'},
+ loadingInfoStrip:{height:50,flexDirection:'row',borderRadius:9,backgroundColor:'#EEF5FC',overflow:'hidden'},
+ loadingInfoCell:{flex:1,borderRightWidth:StyleSheet.hairlineWidth,borderRightColor:'#D8E2ED'},
  titleAction:{minHeight:30,justifyContent:'center',paddingHorizontal:10,borderRadius:8,borderWidth:1,borderColor:colors.navy,backgroundColor:colors.navy},
  titleActionText:{fontSize:9,fontWeight:'900',color:'#FFFFFF'},
  infoStrip:{flexDirection:'row',backgroundColor:'#EEF5FC',borderRadius:9,paddingVertical:9,marginTop:9},
