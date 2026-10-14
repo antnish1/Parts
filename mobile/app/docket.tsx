@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
+import { Screen } from '@/components/Screen';
+import { AppIcon } from '@/components/AppIcon';
 import { MotionView } from '@/components/MotionView';
 import { isDocketRowReceived, lookupDocketRows, normalizeDocketNo, receiveDocketRow, type DocketRow } from '@/services/docket';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -92,15 +94,17 @@ export default function DocketScannerScreen() {
 
   const pendingCount = rows.filter((row) => !isDocketRowReceived(row)).length;
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <Screen title="Docket Scanner" scroll={false}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
-        <View><Text style={styles.title}>Docket Scanner</Text><Text style={styles.subtitle}>Scan or search by Docket No. only.</Text></View>
-
         <MotionView>
         <View style={styles.scannerCard}>
-          <View style={styles.scanGraphic}><View style={styles.scanFrame}><Text style={styles.scanIcon}>▦</Text><Text style={styles.scanHint}>Native barcode scanner</Text></View></View>
-          <Pressable onPress={() => void openScanner()} style={styles.scanButton}><Text style={styles.scanButtonText}>Open Camera Scanner</Text></Pressable>
+          <View style={styles.scanGraphic}>
+            <View style={styles.scanFrame}>
+              <View style={styles.scanIconWrap}><AppIcon name="scan" size={24} color="#D6E7FF"/></View>
+              <Text style={styles.scanHint}>Scan docket barcode</Text>
+            </View>
+          </View>
+          <Pressable onPress={() => void openScanner()} style={styles.scanButton}><AppIcon name="camera" size={17} color={colors.navy}/><Text style={styles.scanButtonText}>Open Camera Scanner</Text></Pressable>
         </View>
         </MotionView>
 
@@ -145,16 +149,16 @@ export default function DocketScannerScreen() {
       <Modal visible={receiveAllOpen} transparent animationType="fade" onRequestClose={() => setReceiveAllOpen(false)}>
         <View style={styles.modalBackdrop}><View style={styles.dialog}><Text style={styles.dialogTitle}>Receive all pending rows?</Text><Text style={styles.dialogText}>This will mark {pendingCount} pending row(s) for docket {docketNo} as received using the existing server-side receive workflow.</Text><View style={styles.dialogActions}><Pressable onPress={() => setReceiveAllOpen(false)}><Text style={styles.cancel}>Cancel</Text></Pressable><Pressable onPress={() => void receiveAll()} style={styles.dialogPrimary}><Text style={styles.dialogPrimaryText}>Receive all</Text></Pressable></View></View></View>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>; }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background }, content: { padding: spacing.lg, gap: spacing.md, paddingBottom: 44 }, back: { minHeight: 38, justifyContent: 'center', alignSelf: 'flex-start' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: colors.text, fontSize: 24, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 12, marginTop: 3 },
-  scannerCard: { padding: spacing.md, gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.navy }, scanGraphic: { minHeight: 128, alignItems: 'center', justifyContent: 'center', borderRadius: radius.lg, backgroundColor: '#102D50' }, scanFrame: { height: 84, width: '72%', alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 2, borderColor: '#B7D8FF', borderStyle: 'dashed' }, scanIcon: { color: '#fff', fontSize: 30, fontWeight: '900' }, scanHint: { color: '#D6E7FF', fontSize: 10, marginTop: 5 }, scanButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: '#fff' }, scanButtonText: { color: colors.navy, fontSize: 13, fontWeight: '900' },
-  searchRow: { flexDirection: 'row', gap: spacing.sm }, input: { flex: 1, minHeight: 48, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', paddingHorizontal: spacing.md, color: colors.text, fontSize: 14 }, searchButton: { width: 78, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, searchText: { color: '#fff', fontSize: 12, fontWeight: '900' }, status: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.blueSoft }, statusText: { color: colors.navySoft, fontSize: 11, lineHeight: 17 }, resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, resultTitle: { color: colors.text, fontSize: 13, fontWeight: '900' }, receiveAll: { minHeight: 38, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: colors.success }, receiveAllText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  safe: { flex: 1, backgroundColor: colors.background }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background }, content: { gap: 10, paddingBottom: 36 },
+  scannerCard: { padding: 12, gap: 10, borderRadius: 18, backgroundColor: colors.navy }, scanGraphic: { minHeight: 92, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#12375F' }, scanFrame: { height: 64, width: '76%', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1.5, borderColor: '#B7D8FF', borderStyle: 'dashed' }, scanIconWrap:{marginBottom:4}, scanHint: { color: '#D6E7FF', fontSize: 9, fontWeight:'800' }, scanButton: { minHeight: 42, flexDirection:'row', gap:7, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#fff' }, scanButtonText: { color: colors.navy, fontSize: 11, fontWeight: '900' },
+  searchRow: { flexDirection: 'row', gap: 7 }, input: { flex: 1, minHeight: 42, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', paddingHorizontal: spacing.md, color: colors.text, fontSize: 14 }, searchButton: { width: 72, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, searchText: { color: '#fff', fontSize: 12, fontWeight: '900' }, status: { paddingHorizontal:10,paddingVertical:9, borderRadius: 10, backgroundColor: colors.blueSoft }, statusText: { color: colors.navySoft, fontSize: 11, lineHeight: 17 }, resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, resultTitle: { color: colors.text, fontSize: 13, fontWeight: '900' }, receiveAll: { minHeight: 38, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: colors.success }, receiveAllText: { color: '#fff', fontSize: 11, fontWeight: '900' },
   readOnlyNote:{color:colors.textMuted,fontSize:9,fontWeight:'700',marginTop:2},
   rowCard: { padding: spacing.lg, gap: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, receivedCard: { backgroundColor: colors.successSoft, borderColor: '#BFE8D8' }, rowTop: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' }, rowCopy: { flex: 1 }, partNo: { color: colors.text, fontSize: 14, fontWeight: '900' }, description: { color: colors.textMuted, fontSize: 11, lineHeight: 16, marginTop: 3 }, badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 5, borderRadius: radius.sm }, badgeOpen: { backgroundColor: colors.warningSoft }, badgeDone: { backgroundColor: '#D8F1E7' }, badgeText: { fontSize: 10, fontWeight: '900' }, badgeOpenText: { color: colors.warning }, badgeDoneText: { color: colors.success }, metaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, mini: { width: '31%', minWidth: 88 }, miniLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700' }, miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 2 }, receiveButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, receiveText: { color: '#fff', fontSize: 12, fontWeight: '900' }, disabled: { opacity: 0.45 },
   cameraPage: { flex: 1, backgroundColor: '#000' }, cameraOverlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between', padding: spacing.lg, backgroundColor: 'rgba(0,0,0,0.18)' }, cameraTop: { flexDirection: 'row', justifyContent: 'space-between' }, cameraControl: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: 'rgba(11,31,58,0.82)' }, cameraControlText: { color: '#fff', fontSize: 12, fontWeight: '900' }, cameraFrame: { flex: 1, alignItems: 'center', justifyContent: 'center' }, focusBox: { width: '82%', height: 180, borderRadius: radius.lg, borderWidth: 3, borderColor: '#fff' }, cameraHint: { alignSelf: 'center', color: '#fff', fontSize: 12, fontWeight: '800', marginBottom: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: 'rgba(0,0,0,0.5)' },
