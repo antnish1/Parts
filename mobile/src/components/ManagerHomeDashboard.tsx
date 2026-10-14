@@ -54,6 +54,9 @@ export function ManagerHomeDashboard() {
     };
   }, [approvals.data, credit.data, delayed.data, orders.data, pendingIssue.data, tada.data]);
 
+  const metricsLoading = approvals.isLoading || delayed.isLoading || pendingIssue.isLoading || orders.isLoading || credit.isLoading || tada.isLoading;
+  const attentionLoading = approvals.isLoading || delayed.isLoading || pendingIssue.isLoading;
+
   const attention = useMemo<AttentionItem[]>(() => {
     const rows: AttentionItem[] = [];
 
@@ -97,7 +100,6 @@ export function ManagerHomeDashboard() {
   }, [approvals.data, delayed.data, pendingIssue.data]);
 
   const criticalError = approvals.isError && delayed.isError && pendingIssue.isError && orders.isError;
-  const busy = approvals.isLoading || delayed.isLoading || pendingIssue.isLoading || orders.isLoading;
   const today = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(new Date());
   const firstName = profile?.fullName?.split(' ')[0] || 'Manager';
 
@@ -130,15 +132,15 @@ export function ManagerHomeDashboard() {
           <Text style={styles.greetingName}>Good morning, {firstName}</Text>
           <Text style={styles.greetingMeta}>{profile?.branch || 'All Branches'} · Manager · {today}</Text>
         </View>
-        <View style={styles.activePill}><Text style={styles.activePillValue}>{busy ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View>
+        <View style={styles.activePill}><Text style={styles.activePillValue}>{orders.isLoading ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View>
       </View>
 
-      <MetricsTicker items={[
-        { key: 'approvals', icon: 'check', label: 'Approvals', value: stats.approvals, tone: 'blue', onPress: () => router.push('/approvals') },
-        { key: 'delayed', icon: 'clock', label: 'Delayed VOR', value: stats.delayed, tone: 'red', onPress: () => router.push('/orders/delayed-vor') },
-        { key: 'issue', icon: 'inbox', label: 'Pending Issue', value: stats.pendingIssue, tone: 'amber', onPress: () => router.push('/orders/pending-issue') },
-        { key: 'credit', icon: 'wallet', label: 'Credit', value: stats.creditPending, tone: 'green', onPress: () => router.push('/credit-dispatch') },
-        { key: 'tada', icon: 'work', label: 'TA/DA', value: stats.tadaAttention, tone: 'blue', onPress: () => router.push('/ta-da') },
+      <MetricsTicker loading={metricsLoading} items={[
+        { key: 'approvals', icon: 'check', label: 'Approvals', value: approvals.isLoading ? '—' : stats.approvals, tone: 'blue', onPress: () => router.push('/approvals') },
+        { key: 'delayed', icon: 'clock', label: 'Delayed VOR', value: delayed.isLoading ? '—' : stats.delayed, tone: 'red', onPress: () => router.push('/orders/delayed-vor') },
+        { key: 'issue', icon: 'inbox', label: 'Pending Issue', value: pendingIssue.isLoading ? '—' : stats.pendingIssue, tone: 'amber', onPress: () => router.push('/orders/pending-issue') },
+        { key: 'credit', icon: 'wallet', label: 'Credit', value: credit.isLoading ? '—' : stats.creditPending, tone: 'green', onPress: () => router.push('/credit-dispatch') },
+        { key: 'tada', icon: 'work', label: 'TA/DA', value: tada.isLoading ? '—' : stats.tadaAttention, tone: 'blue', onPress: () => router.push('/ta-da') },
       ] satisfies TickerMetric[]} />
 
       <Pressable onPress={() => router.push('/orders')} style={styles.primaryTrack}>
@@ -166,31 +168,33 @@ export function ManagerHomeDashboard() {
 
       <View style={styles.sectionHead}>
         <Text style={styles.sectionTitle}>Needs attention</Text>
-        {busy ? <ActivityIndicator size="small" color={colors.navy} /> : <Pressable onPress={() => router.push('/approvals')}><Text style={styles.sectionLink}>View queue</Text></Pressable>}
+        {attentionLoading ? <ActivityIndicator size="small" color={colors.navy} /> : <Pressable onPress={() => router.push('/approvals')}><Text style={styles.sectionLink}>View queue</Text></Pressable>}
       </View>
 
       <View style={styles.attentionList}>
-        {busy ? <SkeletonLoader rows={3} compact /> : null}
-        {attention.map((item, index) => (
-          <Pressable
-            key={item.id}
-            onPress={() => router.push(item.href)}
-            style={({ pressed }) => [styles.attentionRow, index === attention.length - 1 && styles.attentionRowLast, pressed && styles.pressed]}
-          >
-            <View style={[styles.rowAccent, item.tone === 'danger' ? styles.rowAccentDanger : item.tone === 'warning' ? styles.rowAccentWarning : styles.rowAccentInfo]} />
-            <View style={styles.rowCopy}>
-              <View style={styles.rowTop}>
-                <Text numberOfLines={1} style={styles.rowTitle}>{item.title}</Text>
-                <Text style={styles.rowMeta}>{item.meta}</Text>
+        {attentionLoading ? (
+          <SkeletonLoader rows={3} compact />
+        ) : attention.length ? (
+          attention.map((item, index) => (
+            <Pressable
+              key={item.id}
+              onPress={() => router.push(item.href)}
+              style={({ pressed }) => [styles.attentionRow, index === attention.length - 1 && styles.attentionRowLast, pressed && styles.pressed]}
+            >
+              <View style={[styles.rowAccent, item.tone === 'danger' ? styles.rowAccentDanger : item.tone === 'warning' ? styles.rowAccentWarning : styles.rowAccentInfo]} />
+              <View style={styles.rowCopy}>
+                <View style={styles.rowTop}>
+                  <Text numberOfLines={1} style={styles.rowTitle}>{item.title}</Text>
+                  <Text style={styles.rowMeta}>{item.meta}</Text>
+                </View>
+                <View style={styles.rowBottom}>
+                  <Text numberOfLines={1} style={styles.rowSubtitle}>{item.subtitle}</Text>
+                  <StatusChip status={item.status} />
+                </View>
               </View>
-              <View style={styles.rowBottom}>
-                <Text numberOfLines={1} style={styles.rowSubtitle}>{item.subtitle}</Text>
-                <StatusChip status={item.status} />
-              </View>
-            </View>
-          </Pressable>
-        ))}
-        {!busy && attention.length === 0 ? <StateView icon="check" title="Nothing urgent right now" message="Approval and exception items will appear here." /> : null}
+            </Pressable>
+          ))
+        ) : <StateView icon="check" title="Nothing urgent right now" message="Approval and exception items will appear here." />}
       </View>
 
 
