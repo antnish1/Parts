@@ -66,7 +66,9 @@ export default function InstallationDetailScreen() {
           <View style={styles.heroIcon}><AppIcon name="package" size={20} color="#FFFFFF"/></View>
           <View style={styles.heroCopy}><Text style={styles.eyebrow}>ENGINE & BREAKER</Text><Text style={styles.entryNo}>{entry.entry_no}</Text><Text style={styles.heroMeta}>{equipmentTypeLabel(entry.equipment_type)} · {entry.branch}</Text></View>
           <View style={styles.status}><Text style={styles.statusText}>{installationStatusLabel(entry.status)}</Text></View>
-        </View><Text style={styles.eyebrow}>ENGINE & BREAKER</Text><Text style={styles.entryNo}>{entry.entry_no}</Text><Text style={styles.heroMeta}>{equipmentTypeLabel(entry.equipment_type)} · {entry.branch}</Text><View style={styles.status}><Text style={styles.statusText}>{installationStatusLabel(entry.status)}</Text></View><View style={styles.journey}><Step label="Registered" done /><Step label="Branch completion" done={step2} active={entry.status === 'PENDING'} /><Step label="Service CRM" done={entry.status === 'ACCEPTED'} active={entry.status === 'ACCEPTANCE_PENDING'} /></View></View>
+        </View>
+        <View style={styles.journey}><Step label="Registered" done /><Step label="Branch completion" done={step2} active={entry.status === 'PENDING'} /><Step label="Service CRM" done={entry.status === 'ACCEPTED'} active={entry.status === 'ACCEPTANCE_PENDING'} /></View>
+      </View>
       </MotionView>
 
       <Text style={styles.sectionTitle}>Entry information</Text>
@@ -88,7 +90,7 @@ export default function InstallationDetailScreen() {
     </ScrollView>
 
     <Modal visible={Boolean(confirm)} transparent animationType="fade" onRequestClose={() => setConfirm(null)}><View style={styles.modalBackdrop}><View style={styles.dialog}><Text style={styles.dialogTitle}>{confirm === 'submit' ? 'Submit installation?' : 'Accept installation?'}</Text><Text style={styles.dialogText}>{confirm === 'submit' ? 'This moves the entry to Acceptance Pending. The server will verify required documents and fields.' : 'This records the registration number and marks the entry Accepted.'}</Text><View style={styles.dialogActions}><Pressable onPress={() => setConfirm(null)}><Text style={styles.cancel}>Cancel</Text></Pressable><Pressable onPress={() => confirm === 'submit' ? submit.mutate() : accept.mutate()} style={styles.confirm}>{submit.isPending || accept.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmText}>Confirm</Text>}</Pressable></View></View></View></Modal>
-  </SafeAreaView>;
+  </Screen>;
 }
 function Row({ label, value, last = false }: { label: string; value: string; last?: boolean }) { return <View style={[styles.row, last && styles.rowLast]}><Text style={styles.rowLabel}>{label}</Text><Text style={styles.rowValue}>{value}</Text></View>; }
 function Step({ label, done = false, active = false }: { label: string; done?: boolean; active?: boolean }) { return <View style={styles.step}><View style={[styles.stepDot, done && styles.stepDone, active && styles.stepActive]} /><Text style={[styles.stepText, (done || active) && styles.stepTextStrong]}>{label}</Text></View>; }
