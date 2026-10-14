@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
@@ -104,6 +105,7 @@ export default function ReportsScreen(){
       {query.isLoading?<SkeletonLoader rows={5}/>:null}
 
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
+      <MotionView trigger={`${branch}-${status}`} distance={5} duration={190}>
       <View style={styles.summaryStrip}>
         <Summary label="Orders" value={String(filtered.length)} />
         <Divider />
@@ -113,6 +115,7 @@ export default function ReportsScreen(){
         <Divider />
         <Summary label="Branches" value={String(branchSummary.length)} />
       </View>
+      </MotionView>
 
       <View style={styles.filterBlock}>
         <Text style={styles.label}>Branch</Text>
@@ -132,6 +135,7 @@ export default function ReportsScreen(){
 
       {message?<Text style={styles.message}>{message}</Text>:null}
 
+      <MotionView trigger={`${branch}-${status}`} delay={60} distance={5} duration={190}>
       <View style={styles.split}>
         <View style={styles.summaryBox}>
           <Text style={styles.section}>Top branches</Text>
@@ -142,10 +146,12 @@ export default function ReportsScreen(){
           {statusSummary.slice(0,5).map(([label,count])=><View key={label} style={styles.summaryRow}><View style={styles.statusCopy}><StatusChip status={label}/></View><Text style={styles.summaryCount}>{count}</Text></View>)}
         </View>
       </View>
+      </MotionView>
 
       <View style={styles.sectionHead}><Text style={styles.section}>Orders</Text><Text style={styles.previewCount}>{Math.min(filtered.length,100)} shown</Text></View>
-      {filtered.slice(0,100).map((order)=>
-        <Pressable key={order.id} accessibilityRole="button" onPress={()=>router.push(`/orders/${order.id}`)} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
+      {filtered.slice(0,100).map((order,index)=>
+        <MotionView key={order.id} delay={Math.min(index*20,160)} trigger={`${branch}-${status}`}>
+        <Pressable accessibilityRole="button" onPress={()=>router.push(`/orders/${order.id}`)} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
           <View style={styles.copy}>
             <View style={styles.topLine}>
               <View style={{flex:1,minWidth:0,gap:5}}>
@@ -164,6 +170,7 @@ export default function ReportsScreen(){
             </View>
           </View>
         </Pressable>
+        </MotionView>
       )}
       {!query.isLoading&&filtered.length===0?<StateView icon="inbox" title="No orders match these filters" message="Change the branch or status filter to view another report slice."/>:null}
       {filtered.length>100?<Text style={styles.previewNote}>Screen preview shows 100 rows. Exports include all {filtered.length.toLocaleString('en-IN')} filtered orders.</Text>:null}
