@@ -135,7 +135,6 @@ function HeroMini({ label, value }: { label: string; value: string }) { return <
 function HeroDivider(){return <View style={styles.heroDivider}/>;}
 function MetaMini({label,value}:{label:string;value:string}){return <View style={styles.metaMini}><Text style={styles.metaMiniLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaMiniValue}>{value}</Text></View>;}
 function DataMini({ label, value }: { label: string; value: string }) { return <View style={styles.dataMini}><Text style={styles.dataMiniLabel}>{label}</Text><Text numberOfLines={1} style={styles.dataMiniValue}>{value || '—'}</Text></View>; }
-function Row({ label, value, last = false }: { label: string; value: string; last?: boolean }) { return <View style={[styles.row, last && styles.rowLast]}><Text style={styles.rowLabel}>{label}</Text><Text style={styles.rowValue}>{value}</Text></View>; }
 function Step({ label, done = false, active = false }: { label: string; done?: boolean; active?: boolean }) { return <View style={styles.step}><View style={[styles.stepDot, done && styles.stepDone, active && styles.stepActive]} /><Text style={[styles.stepText, (done || active) && styles.stepTextStrong]}>{label}</Text></View>; }
 
 const styles = StyleSheet.create({
