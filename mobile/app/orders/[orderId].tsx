@@ -118,7 +118,7 @@ export default function OrderDetailScreen() {
   return (
     <Screen title="Track Order" scroll={false}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Track Orders</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back to Track Orders" onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹</Text></Pressable>
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
@@ -189,17 +189,24 @@ export default function OrderDetailScreen() {
                 <StatusChip status={getResolvedRowStatus(item)} />
               </View>
 
-              <View style={styles.qtyGrid}>
-                <Mini label="Qty" value={String(getEffectiveQty(item))} />
-                <Mini label="Billed" value={String(getBilledQty(item))} />
-                <Mini label="Pending" value={String(getPendingQty(item))} />
-                <Mini label="Received" value={String(getReceivedQty(item))} />
-              </View>
-
-              <View style={styles.itemMeta}>
-                <Text style={styles.itemMetaText}>DNP {formatMoney(item.dnp)}</Text>
-                <Text style={styles.itemMetaText}>Value {formatMoney(getEffectiveValue(item))}</Text>
-                <Text style={styles.itemMetaText}>Reg {formatDate(item.order_reg_date)}</Text>
+              <View style={styles.partMetrics}>
+                <View style={styles.partMetricRow}>
+                  <PartMetric label="Qty" value={String(getEffectiveQty(item))} />
+                  <PartDivider />
+                  <PartMetric label="Billed" value={String(getBilledQty(item))} />
+                  <PartDivider />
+                  <PartMetric label="Pending" value={String(getPendingQty(item))} />
+                  <PartDivider />
+                  <PartMetric label="Received" value={String(getReceivedQty(item))} />
+                </View>
+                <View style={styles.partMetricSeparator} />
+                <View style={styles.partMetricRow}>
+                  <PartMetric label="DNP" value={formatMoney(item.dnp)} />
+                  <PartDivider />
+                  <PartMetric label="Value" value={formatMoney(getEffectiveValue(item))} />
+                  <PartDivider />
+                  <PartMetric label="Reg" value={formatDate(item.order_reg_date)} />
+                </View>
               </View>
 
               <View style={styles.transitRow}>
@@ -291,25 +298,27 @@ export default function OrderDetailScreen() {
 
 function Meta({ label, value }: { label: string; value: string }) { return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaValue}>{value}</Text></View>; }
 function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text style={styles.miniValue}>{value}</Text></View>; }
+function PartMetric({ label, value }: { label: string; value: string }) { return <View style={styles.partMetric}><Text style={styles.partMetricLabel}>{label}</Text><Text numberOfLines={1} style={styles.partMetricValue}>{value}</Text></View>; }
+function PartDivider(){ return <View style={styles.partDivider}/>; }
 function MiniMetric({ label, value, active, onPress }: { label: string; value: string; active: boolean; onPress: () => void }) { return <Pressable accessibilityRole="button" onPress={onPress} style={[styles.metric, active && styles.metricActive]}><Text style={[styles.metricLabel, active && styles.metricLabelActive]}>{label}</Text><Text style={[styles.metricValue, active && styles.metricValueActive]}>{value}</Text></Pressable>; }
 function DetailRow({ label, value, last = false }: { label: string; value: string | null | undefined; last?: boolean }) { return <View style={[styles.detailRow, last && styles.detailRowLast]}><Text style={styles.detailLabel}>{label}</Text><Text style={styles.detailValue}>{value || '—'}</Text></View>; }
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background },
   content: { paddingBottom: 44, gap: spacing.md },
-  back: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' },
-  backText: { color: colors.blue, fontSize: 14, fontWeight: '800' },
+  back: { alignSelf: 'flex-start', width: 28, minHeight: 30, alignItems:'center', justifyContent: 'center' },
+  backText: { color: colors.blue, fontSize: 22, fontWeight: '800', lineHeight: 24 },
   hero: { padding: 14, borderRadius: 18, backgroundColor: colors.navy, overflow: 'hidden' },
   heroTop: { flexDirection: 'row', alignItems:'flex-start', justifyContent: 'space-between', gap: spacing.sm },
   heroIcon:{width:40,height:40,borderRadius:13,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.12)'},
   heroCopy: { flex: 1 },
-  orderNo: { color: '#fff', fontSize: 17, lineHeight: 21, fontWeight: '900' },
+  orderNo: { color: '#fff', fontSize: 14.5, lineHeight: 18, fontWeight: '900' },
   customer: { color: '#C5D7EA', fontSize: 11, lineHeight: 16, marginTop: 3 },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, marginTop: 12 },
   meta: { width: '33.33%', paddingRight: 6 },
   metaLabel: { color: '#91AAC5', fontSize: 8, fontWeight: '700' },
   metaValue: { color: '#fff', fontSize: 10, fontWeight: '800', marginTop: 2 },
-  approvalCard: { gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#A7C7E7', backgroundColor: colors.blueSoft },
+  approvalCard: { gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#D8E0E8', backgroundColor: '#FFFFFF' },
   approvalHeader: { flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between' },
   approvalIdentity: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' },
   approvalIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
@@ -318,8 +327,8 @@ const styles = StyleSheet.create({
   reviewButton: { minHeight: 34, flexDirection:'row', gap:5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: '#B7C6D8', backgroundColor: '#fff' },
   reviewButtonText: { color: colors.navy, fontSize: 9, fontWeight: '900' },
   approvalActions: { flexDirection: 'row', gap: spacing.sm },
-  approveButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.success },
-  approveButtonText: { color: '#fff', fontSize: 11, fontWeight: '900', textAlign: 'center' },
+  approveButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.success, backgroundColor: '#FFFFFF' },
+  approveButtonText: { color: colors.success, fontSize: 11, fontWeight: '900', textAlign: 'center' },
   rejectButton: { minWidth: 86, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: '#fff' },
   rejectButtonText: { color: colors.danger, fontSize: 11, fontWeight: '900' },
   overrideText: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
@@ -328,7 +337,7 @@ const styles = StyleSheet.create({
   activityTitle: { color: colors.text, fontSize: 12, fontWeight: '900' },
   activityText: { color: colors.textMuted, fontSize: 10, marginTop: 2 },
   shortcutIcon:{width:38,height:38,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:colors.blueSoft},shortcutCopy:{flex:1},
-  correct: { minHeight:70,flexDirection:'row',alignItems:'center',gap:spacing.md,padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: '#F0C36A', backgroundColor: colors.warningSoft },
+  correct: { minHeight:70,flexDirection:'row',alignItems:'center',gap:spacing.md,padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: '#E3D4B3', backgroundColor: '#FFFFFF' },
   correctIcon:{width:38,height:38,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},
   correctTitle: { color: colors.warning, fontSize: 12, fontWeight: '900' },
   correctText: { color: colors.text, fontSize: 10, marginTop: 2 },
@@ -350,8 +359,13 @@ const styles = StyleSheet.create({
   mini: { flex: 1, minWidth: 0 },
   miniLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '700' },
   miniValue: { color: colors.text, fontSize: 12, fontWeight: '900', marginTop: 2 },
-  itemMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
-  itemMetaText: { color: colors.textMuted, fontSize: 10, fontWeight: '700' },
+  partMetrics:{marginTop:spacing.md,borderRadius:10,backgroundColor:'#EEF5FC',overflow:'hidden'},
+  partMetricRow:{flexDirection:'row',alignItems:'stretch',minHeight:48},
+  partMetric:{flex:1,minWidth:0,paddingHorizontal:8,paddingVertical:8,justifyContent:'center'},
+  partMetricLabel:{color:'#748297',fontSize:8,fontWeight:'700'},
+  partMetricValue:{color:'#152740',fontSize:10,fontWeight:'900',marginTop:3},
+  partDivider:{width:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED',marginVertical:7},
+  partMetricSeparator:{height:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED'},
   transitRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   transitLabel: { color: colors.textMuted, fontSize: 10, fontWeight: '800' },
   transitBadge: { flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#E7B94D' },
