@@ -207,52 +207,47 @@ function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset,
         </View>
 
         <View style={styles.qtyControls}>
-          <View style={styles.qtyTopLine}>
-            {editing ? (
-              <TextInput
-                autoFocus
-                keyboardType="number-pad"
-                value={value}
-                onChangeText={onChange}
-                onBlur={() => setEditing(false)}
-                selectTextOnFocus
-                style={styles.inlineQtyInput}
-              />
-            ) : (
-              <Text style={styles.inlineQtyValue}>{value || '0'}</Text>
-            )}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={editing ? `Finish editing review quantity for ${item.part_no}` : `Edit review quantity for ${item.part_no}`}
-              disabled={busy || rowAction !== null}
-              hitSlop={8}
-              onPress={() => setEditing((current) => !current)}
-              style={({ pressed }) => [styles.editQtyButton, pressed && styles.pressed, (busy || rowAction !== null) && styles.disabled]}
-            >
-              <AppIcon name="pencil" size={14} color={colors.navy}/>
-            </Pressable>
-          </View>
-
-          <View style={styles.compactActions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Reset quantity for ${item.part_no}`}
-              disabled={resetDisabled}
-              onPress={onReset}
-              style={({ pressed }) => [styles.compactReset, pressed && styles.pressed, resetDisabled && styles.disabled]}
-            >
-              {rowAction === 'reset' ? <ActivityIndicator size="small" color={colors.navy}/> : <><AppIcon name="refresh" size={12} color={colors.navy}/><Text style={styles.compactResetText}>Reset</Text></>}
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Set quantity to zero for ${item.part_no}`}
-              disabled={zeroDisabled}
-              onPress={onZero}
-              style={({ pressed }) => [styles.compactZero, pressed && styles.pressed, zeroDisabled && styles.disabled]}
-            >
-              {rowAction === 'zero' ? <ActivityIndicator size="small" color={colors.danger}/> : <Text style={styles.compactZeroText}>Set 0</Text>}
-            </Pressable>
-          </View>
+          {editing ? (
+            <TextInput
+              autoFocus
+              keyboardType="number-pad"
+              value={value}
+              onChangeText={onChange}
+              onBlur={() => setEditing(false)}
+              selectTextOnFocus
+              style={styles.inlineQtyInput}
+            />
+          ) : (
+            <Text style={styles.inlineQtyValue}>{value || '0'}</Text>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={editing ? `Finish editing review quantity for ${item.part_no}` : `Edit review quantity for ${item.part_no}`}
+            disabled={busy || rowAction !== null}
+            hitSlop={8}
+            onPress={() => setEditing((current) => !current)}
+            style={({ pressed }) => [styles.editQtyButton, pressed && styles.pressed, (busy || rowAction !== null) && styles.disabled]}
+          >
+            <AppIcon name="pencil" size={13} color={colors.navy}/>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Reset quantity for ${item.part_no}`}
+            disabled={resetDisabled}
+            onPress={onReset}
+            style={({ pressed }) => [styles.compactReset, pressed && styles.pressed, resetDisabled && styles.disabled]}
+          >
+            {rowAction === 'reset' ? <ActivityIndicator size="small" color={colors.navy}/> : <><AppIcon name="refresh" size={11} color={colors.navy}/><Text style={styles.compactResetText}>Reset</Text></>}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Set quantity to zero for ${item.part_no}`}
+            disabled={zeroDisabled}
+            onPress={onZero}
+            style={({ pressed }) => [styles.compactZero, pressed && styles.pressed, zeroDisabled && styles.disabled]}
+          >
+            {rowAction === 'zero' ? <ActivityIndicator size="small" color={colors.danger}/> : <Text style={styles.compactZeroText}>Set 0</Text>}
+          </Pressable>
         </View>
       </View>
 
@@ -307,12 +302,10 @@ const styles = StyleSheet.create({
   description:{color:colors.textMuted,fontSize:9,lineHeight:14,marginTop:3},
   changedBadge:{alignSelf:'flex-start',marginTop:5,paddingHorizontal:6,paddingVertical:3,borderRadius:999,backgroundColor:colors.warningSoft},
   changedText:{color:colors.warning,fontSize:7,fontWeight:'900'},
-  qtyControls:{minWidth:118,alignItems:'flex-end',gap:7},
-  qtyTopLine:{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:5},
-  inlineQtyValue:{minWidth:34,textAlign:'right',color:colors.text,fontSize:15,fontWeight:'900'},
-  inlineQtyInput:{width:58,minHeight:34,paddingHorizontal:8,paddingVertical:4,borderRadius:9,borderWidth:1,borderColor:'#B7C6D8',backgroundColor:'#fff',color:colors.text,fontSize:14,fontWeight:'900',textAlign:'right'},
-  editQtyButton:{width:32,height:32,alignItems:'center',justifyContent:'center',borderRadius:9,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
-  compactActions:{flexDirection:'row',alignItems:'center',gap:5},
+  qtyControls:{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:5},
+  inlineQtyValue:{minWidth:20,textAlign:'right',color:colors.text,fontSize:14,fontWeight:'900'},
+  inlineQtyInput:{width:46,minHeight:32,paddingHorizontal:8,paddingVertical:4,borderRadius:9,borderWidth:1,borderColor:'#B7C6D8',backgroundColor:'#fff',color:colors.text,fontSize:14,fontWeight:'900',textAlign:'right'},
+  editQtyButton:{width:30,height:30,alignItems:'center',justifyContent:'center',borderRadius:9,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
   compactReset:{minHeight:30,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:3,paddingHorizontal:7,borderRadius:9,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
   compactResetText:{color:colors.navy,fontSize:7.5,fontWeight:'900'},
   compactZero:{minHeight:30,alignItems:'center',justifyContent:'center',paddingHorizontal:8,borderRadius:9,borderWidth:1,borderColor:'#F1BABA',backgroundColor:'#fff'},
