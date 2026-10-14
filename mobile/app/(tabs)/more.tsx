@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/auth/AuthProvider';
@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
 
 export default function MoreScreen() {
+  const params = useLocalSearchParams<{ openSwitch?: string }>();
   const { profile, session, signOut, role, savedAccounts, switchAccount, removeSavedAccount, signIn } = useAuth();
   const actions = role ? roleWorkActions[role] : [];
   const shortcuts = [{ key: 'approval-queue', icon: 'clipboardCheck' as const, tone: 'blue' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'route' as const, tone: 'green' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'timer' as const, tone: 'red' as const, title: 'Delayed VOR' }].flatMap(item => {
@@ -28,6 +29,13 @@ export default function MoreScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const email = session?.user?.email?.endsWith('@portal.local') ? null : session?.user?.email;
+
+  useEffect(() => {
+    if (params.openSwitch !== '1') return;
+    setSwitchError('');
+    setSwitchOpen(true);
+    router.setParams({ openSwitch: '' });
+  }, [params.openSwitch]);
 
   async function savePhoto(uri: string) {
     const userId = session?.user?.id;
