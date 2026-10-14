@@ -84,7 +84,13 @@ export default function TadaDetailScreen() {
 
         <Text style={styles.sectionTitle}>Custody journey</Text>
         <MotionView delay={70}>
-        <View style={styles.journey}><Step label="Branch" done /><Step label="HQ" done={items.every((item) => item.hq_received === true)} active={dispatch.status.includes('HQ')} /><Step label="Accounts" done={items.every((item) => item.accounts_received === true)} active={dispatch.status.includes('ACCOUNTS')} /></View>
+        <View style={styles.journey}>
+          <Step label="Branch" done />
+          <JourneyLine active={items.some((item) => item.hq_received === true) || dispatch.status.includes('HQ') || dispatch.status.includes('ACCOUNTS') || dispatch.status === 'COMPLETED'} />
+          <Step label="HQ" done={items.every((item) => item.hq_received === true)} active={dispatch.status.includes('HQ')} />
+          <JourneyLine active={items.some((item) => item.accounts_received === true) || dispatch.status.includes('ACCOUNTS') || dispatch.status === 'COMPLETED'} />
+          <Step label="Accounts" done={items.every((item) => item.accounts_received === true)} active={dispatch.status.includes('ACCOUNTS')} />
+        </View>
         </MotionView>
 
         <MotionView delay={100}>
@@ -134,7 +140,15 @@ function SvrCard({ item, receiptStage, eligible, checked, reason, remark, onTogg
   return (
     <View style={[styles.svrCard, eligible && styles.svrActionable]}>
       <View style={styles.svrTop}><View style={styles.svrCopy}><Text style={styles.svrNo}>{item.svr_no}</Text><Text style={styles.engineer}>{item.engineer_name_snapshot}</Text></View><View style={styles.location}><Text style={styles.locationText}>{tadaLocationLabel(item.current_location)}</Text></View></View>
-      <View style={styles.svrGrid}><DataMini label="Machine" value={item.machine_no} /><DataMini label="Customer" value={item.customer_name} /><DataMini label="From" value={item.date_from} /><DataMini label="To" value={item.date_to} /></View>
+      <View style={styles.svrGrid}>
+        <DataMini label="Machine" value={item.machine_no} />
+        <SvrDivider />
+        <DataMini label="Customer" value={item.customer_name} />
+        <SvrDivider />
+        <DataMini label="From" value={item.date_from} />
+        <SvrDivider />
+        <DataMini label="To" value={item.date_to} />
+      </View>
       {eligible && receiptStage ? <View style={styles.receiptBox}><View style={styles.receiptRow}><View style={styles.receiptCopy}><Text style={styles.receiptLabel}>Received at {receiptStage === 'HQ' ? 'HQ' : 'Accounts'}</Text><Text style={styles.receiptHelp}>Uncheck only if this physical SVR is missing.</Text></View><Switch value={checked} onValueChange={onToggle} trackColor={{ false: '#F2C5C5', true: '#BFE8D8' }} thumbColor={checked ? colors.success : colors.danger} /></View>{!checked ? <TextInput value={reason} onChangeText={onReason} placeholder="Reason required for not received" placeholderTextColor={colors.textMuted} style={styles.reasonInput} /> : null}<TextInput value={remark} onChangeText={onRemark} placeholder="Optional remark" placeholderTextColor={colors.textMuted} style={styles.remarkInput} /></View> : null}
     </View>
   );
@@ -144,6 +158,8 @@ function HeroDivider(){return <View style={styles.heroDivider}/>;}
 function MetaMini({label,value}:{label:string;value:string}){return <View style={styles.metaMini}><Text style={styles.metaMiniLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaMiniValue}>{value}</Text></View>;}
 function DataMini({ label, value }: { label: string; value: string }) { return <View style={styles.dataMini}><Text style={styles.dataMiniLabel}>{label}</Text><Text numberOfLines={1} style={styles.dataMiniValue}>{value || '—'}</Text></View>; }
 function Step({ label, done = false, active = false }: { label: string; done?: boolean; active?: boolean }) { return <View style={styles.step}><View style={[styles.stepDot, done && styles.stepDone, active && styles.stepActive]} /><Text style={[styles.stepText, (done || active) && styles.stepTextStrong]}>{label}</Text></View>; }
+function JourneyLine({ active }: { active: boolean }) { return <View style={[styles.journeyLine, active && styles.journeyLineActive]} />; }
+function SvrDivider(){ return <View style={styles.svrDivider}/>; }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.background }, error: { color: colors.danger, fontSize: 13 }, content: { gap: spacing.md, paddingBottom: spacing.xl },
