@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
+import { MotionView } from '@/components/MotionView';
 import { isDocketRowReceived, lookupDocketRows, normalizeDocketNo, receiveDocketRow, type DocketRow } from '@/services/docket';
 import { colors, radius, spacing } from '@/theme/tokens';
 
@@ -96,26 +97,32 @@ export default function DocketScannerScreen() {
         <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
         <View><Text style={styles.title}>Docket Scanner</Text><Text style={styles.subtitle}>Scan or search by Docket No. only.</Text></View>
 
+        <MotionView>
         <View style={styles.scannerCard}>
           <View style={styles.scanGraphic}><View style={styles.scanFrame}><Text style={styles.scanIcon}>▦</Text><Text style={styles.scanHint}>Native barcode scanner</Text></View></View>
           <Pressable onPress={() => void openScanner()} style={styles.scanButton}><Text style={styles.scanButtonText}>Open Camera Scanner</Text></Pressable>
         </View>
+        </MotionView>
 
+        <MotionView delay={70}>
         <View style={styles.searchRow}>
           <TextInput autoCapitalize="characters" autoCorrect={false} value={docketNo} onChangeText={(value) => setDocketNo(normalizeDocketNo(value))} onSubmitEditing={() => void search()} returnKeyType="search" placeholder="Docket number" placeholderTextColor={colors.textMuted} style={styles.input} />
           <Pressable disabled={loading || Boolean(busyId)} onPress={() => void search()} style={styles.searchButton}>{loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchText}>Search</Text>}</Pressable>
         </View>
+        </MotionView>
+        <MotionView trigger={status} distance={4} duration={170}>
         <View style={styles.status}><Text style={styles.statusText}>{status}</Text></View>
+        </MotionView>
 
         {rows.length ? <View style={styles.resultHeader}><View><Text style={styles.resultTitle}>{rows.length} row(s)</Text>{!canReceive?<Text style={styles.readOnlyNote}>Read-only for this role. Receiving is restricted to Admin / Developer.</Text>:null}</View>{canReceive?<Pressable disabled={!pendingCount || Boolean(busyId)} onPress={() => setReceiveAllOpen(true)} style={[styles.receiveAll, (!pendingCount || Boolean(busyId)) && styles.disabled]}><Text style={styles.receiveAllText}>{pendingCount ? `Receive All (${pendingCount})` : 'All Received'}</Text></Pressable>:null}</View> : null}
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           const key = `${row.source_type}-${row.id}`;
           const received = isDocketRowReceived(row);
-          return <View key={key} style={[styles.rowCard, received && styles.receivedCard]}>
+          return <MotionView key={key} delay={Math.min(index * 28, 200)} trigger={`${docketNo}-${received}`}><View style={[styles.rowCard, received && styles.receivedCard]}>
             <View style={styles.rowTop}><View style={styles.rowCopy}><Text style={styles.partNo}>{row.part_no}</Text><Text numberOfLines={2} style={styles.description}>{row.description || 'No description'}</Text></View><View style={[styles.badge, received ? styles.badgeDone : styles.badgeOpen]}><Text style={[styles.badgeText, received ? styles.badgeDoneText : styles.badgeOpenText]}>{received ? 'Received' : 'Pending'}</Text></View></View>
             <View style={styles.metaGrid}><Mini label="Order" value={row.final_order_no || row.order_no} /><Mini label="Branch" value={row.branch} /><Mini label="Billed" value={String(row.billed_qty)} /><Mini label="Received" value={String(row.received_qty)} /><Mini label="Invoice" value={row.invoice_no || '—'} /><Mini label="Delivery" value={row.delivery_no || '—'} /><Mini label="Transport" value={row.transport_name || '—'} /></View>
             {!received && canReceive ? <Pressable disabled={Boolean(busyId)} onPress={() => void receive(row)} style={[styles.receiveButton, Boolean(busyId) && styles.disabled]}>{busyId === key ? <ActivityIndicator color="#fff" /> : <Text style={styles.receiveText}>Mark Received</Text>}</Pressable> : null}
-          </View>;
+          </View></MotionView>;
         })}
       </ScrollView>
 
