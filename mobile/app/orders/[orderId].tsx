@@ -116,8 +116,9 @@ export default function OrderDetailScreen() {
   }
 
   return (
-    <Screen title="Track Order">
-      <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Track Orders</Text></Pressable>
+    <Screen title="Track Order" scroll={false}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Track Orders</Text></Pressable>
 
         <View style={styles.hero}>
           <View style={styles.heroTop}>
@@ -284,7 +285,7 @@ export default function OrderDetailScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
@@ -295,6 +296,7 @@ function DetailRow({ label, value, last = false }: { label: string; value: strin
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background },
+  content: { paddingBottom: 44, gap: spacing.md },
   back: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center' },
   backText: { color: colors.blue, fontSize: 14, fontWeight: '800' },
   hero: { padding: 14, borderRadius: 18, backgroundColor: colors.navy, overflow: 'hidden' },
