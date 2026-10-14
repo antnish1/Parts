@@ -1,6 +1,8 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
+import { queryClient } from '@/lib/queryClient';
+import { getSavedAccountTokens, listSavedAccounts, removeSavedAccount, saveAccountSession, type SavedAccount } from '@/auth/accountVault';
 import type { UserProfile, UserRole } from '@/types/auth';
 
 type ProfileRow = {
@@ -17,6 +19,10 @@ type AuthContextValue = {
   role: UserRole | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  savedAccounts: SavedAccount[];
+  switchAccount: (userId: string) => Promise<void>;
+  removeSavedAccount: (userId: string) => Promise<void>;
+  refreshSavedAccounts: () => Promise<void>;
   signIn: (loginId: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -78,6 +84,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -88,8 +95,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSession(nextSession);
       setProfile(nextProfile);
       setIsLoading(false);
+      if (nextSession && nextProfile?.isActive) {
+        try { setSavedAccounts(await saveAccountSession(nextSession, nextProfile)); } catch { /* active auth must not fail if vault write fails */ }
+      }
     }
 
+    void listSavedAccounts().then((accounts) => { if (active) setSavedAccounts(accounts); });
     supabase.auth.getSession().then(({ data }) => refresh(data.session ?? null));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       void refresh(nextSession);
@@ -107,16 +118,63 @@ export function AuthProvider({ children }: PropsWithChildren) {
     role: profile?.role ?? null,
     isLoading,
     isAuthenticated: Boolean(session && profile?.isActive),
+    savedAccounts,
+    refreshSavedAccounts: async () => {
+      setSavedAccounts(await listSavedAccounts());
+    },
+    removeSavedAccount: async (userId) => {
+      if (session?.user.id === userId) throw new Error('Switch to another account before removing the active account.');
+      setSavedAccounts(await removeSavedAccount(userId));
+    },
+    switchAccount: async (userId) => {
+      if (session?.user.id === userId) return;
+      const previous = session ? { access_token: session.access_token, refresh_token: session.refresh_token } : null;
+      setIsLoading(true);
+      queryClient.clear();
+      try {
+        const target = await getSavedAccountTokens(userId);
+        const { data, error } = await supabase.auth.setSession({ access_token: target.accessToken, refresh_token: target.refreshToken });
+        if (error || !data.session) throw error ?? new Error('Saved account session could not be restored.');
+        const nextProfile = await loadProfile(data.session);
+        if (!nextProfile?.isActive) throw new Error('This account is inactive or no longer available.');
+        setSession(data.session);
+        setProfile(nextProfile);
+        setSavedAccounts(await saveAccountSession(data.session, nextProfile));
+      } catch (error) {
+        if (previous) {
+          const restored = await supabase.auth.setSession(previous);
+          if (restored.data.session) {
+            const restoredProfile = await loadProfile(restored.data.session);
+            setSession(restored.data.session);
+            setProfile(restoredProfile);
+          }
+        }
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
     signIn: async (loginId, password) => {
       const email = normalizeLoginIdentifier(loginId);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      queryClient.clear();
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      if (!data.session) throw new Error('Sign in did not return a session.');
+      const nextProfile = await loadProfile(data.session);
+      if (!nextProfile?.isActive) {
+        await supabase.auth.signOut();
+        throw new Error('This account is inactive.');
+      }
+      setSession(data.session);
+      setProfile(nextProfile);
+      setSavedAccounts(await saveAccountSession(data.session, nextProfile));
     },
     signOut: async () => {
+      queryClient.clear();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     },
-  }), [isLoading, profile, session]);
+  }), [isLoading, profile, savedAccounts, session]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
