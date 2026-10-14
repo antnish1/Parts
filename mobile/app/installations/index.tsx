@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Modal, Pressable, ScrollView, StyleSheet, 
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { canManageInstallations, canViewInstallations, developerDeleteInstallationEntry, equipmentTypeLabel, installationStatusLabel, listInstallationEntries, listInstallationInvoices, type InstallationEntry } from '@/services/installations';
@@ -83,7 +84,8 @@ export default function InstallationsScreen() {
               <Text style={styles.countText}>{invoices.data?.length ?? 0} invoices</Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
+            <MotionView delay={Math.min(index * 24, 180)} trigger={mode}>
             <View style={styles.row}>
               <View style={styles.rowIcon}><AppIcon name="package" size={15} color={colors.navy}/></View>
               <View style={styles.copy}>
@@ -96,6 +98,7 @@ export default function InstallationsScreen() {
               </View>
               <Pressable onPress={() => item.installation_id ? router.push(`/installations/${item.installation_id}`) : router.push({ pathname: '/installations/register', params: { invoiceId: item.id } })} style={styles.rowAction}><AppIcon name="chevronRight" size={15} color={colors.blue}/></Pressable>
             </View>
+            </MotionView>
           )}
           ListEmptyComponent={!invoices.isLoading ? <StateView icon="inbox" title="No installation invoices" message="Invoice intake records will appear here." /> : null}
         />
@@ -124,7 +127,7 @@ export default function InstallationsScreen() {
               </View>
             </View>
           }
-          renderItem={({ item }) => <EntryRow item={item} onDelete={isDeveloper ? () => { setDeleteReason(''); setDeleteMessage(''); setDeleteEntry(item); } : undefined} />}
+          renderItem={({ item, index }) => <MotionView delay={Math.min(index * 24, 180)} trigger={`${mode}-${filter}`}><EntryRow item={item} onDelete={isDeveloper ? () => { setDeleteReason(''); setDeleteMessage(''); setDeleteEntry(item); } : undefined} /></MotionView>}
           ListEmptyComponent={!entries.isLoading ? (
             entries.isError
               ? <StateView icon="alert" tone="error" title="Engine & Breaker could not be loaded" actionLabel="Retry" onAction={()=>void entries.refetch()}/>
