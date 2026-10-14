@@ -94,8 +94,13 @@ export default function ReportsScreen(){
 
   if(query.isError)return <Screen title="Reports" subtitle="Operational order summaries"><StateView icon="alert" tone="error" title="Reports could not be loaded" message="The complete order dataset could not be retrieved." actionLabel="Retry" onAction={()=>void query.refetch()}/></Screen>;
 
+  const reportActions = <View style={styles.titleActions}>
+    <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('csv')} style={[styles.titleAction,(!filtered.length||Boolean(exporting))&&styles.disabled]}><Text style={styles.titleActionText}>{exporting==='csv'?'...':'CSV'}</Text></Pressable>
+    <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('xlsx')} style={[styles.titleAction,(!filtered.length||Boolean(exporting))&&styles.disabled]}><Text style={styles.titleActionText}>{exporting==='xlsx'?'...':'Excel'}</Text></Pressable>
+  </View>;
+
   return (
-    <Screen title="Reports" subtitle="Operational order register">
+    <Screen title="Reports" subtitle="Operational order register" right={reportActions}>
       {query.isLoading?<SkeletonLoader rows={5}/>:null}
 
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
@@ -125,10 +130,6 @@ export default function ReportsScreen(){
         </ScrollView>
       </View>
 
-      <View style={styles.exportRow}>
-        <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('csv')} style={[styles.exportButton,(!filtered.length||Boolean(exporting))&&styles.disabled]}><AppIcon name="package" size={14} color={colors.navy}/><Text style={styles.exportText}>{exporting==='csv'?'Preparing…':'CSV'}</Text></Pressable>
-        <Pressable disabled={!filtered.length||Boolean(exporting)} onPress={()=>void runExport('xlsx')} style={[styles.exportButton,(!filtered.length||Boolean(exporting))&&styles.disabled]}><AppIcon name="package" size={14} color={colors.navy}/><Text style={styles.exportText}>{exporting==='xlsx'?'Preparing…':'Excel'}</Text></Pressable>
-      </View>
       {message?<Text style={styles.message}>{message}</Text>:null}
 
       <View style={styles.split}>
@@ -175,6 +176,9 @@ function Summary({label,value}:{label:string;value:string}){return <View style={
 function Divider(){return <View style={styles.divider}/>}
 
 const styles=StyleSheet.create({
+ titleActions:{flexDirection:'row',alignItems:'center',gap:6},
+ titleAction:{minHeight:30,justifyContent:'center',paddingHorizontal:10,borderRadius:8,borderWidth:1,borderColor:'#C9D5E3',backgroundColor:'#FFFFFF'},
+ titleActionText:{fontSize:9,fontWeight:'900',color:colors.navy},
  infoStrip:{flexDirection:'row',backgroundColor:'#EEF5FC',borderRadius:9,paddingVertical:9,marginTop:9},
  infoCell:{flex:1,minWidth:0,paddingHorizontal:8,gap:3},
  infoBorder:{borderLeftWidth:1,borderLeftColor:'#CFDDED'},
