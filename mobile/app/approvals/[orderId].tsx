@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { StateView } from '@/components/StateView';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StatusChip } from '@/components/StatusChip';
 import { approveReview, rejectOrder, resetEditedQuantity, setEditedQuantity, zeroReviewItem } from '@/services/approvals';
@@ -121,6 +122,7 @@ export default function ApprovalReviewScreen() {
   return (
     <Screen title="Approval Review" scroll={false}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <MotionView>
         <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}><AppIcon name="clipboardCheck" size={20} color="#fff" /></View>
@@ -139,12 +141,13 @@ export default function ApprovalReviewScreen() {
             <ReviewMeta label="Value" value={formatMoney(order.data.total_value)} dark />
           </View>
         </View>
+        </MotionView>
 
         <View style={styles.sectionHeading}><Text style={styles.sectionTitle}>Parts & quantities</Text><Text style={styles.sectionCount}>{items.data?.length ?? 0} rows</Text></View>
 
-        {(items.data ?? []).map((item) => (
+        {(items.data ?? []).map((item, index) => (
+          <MotionView key={item.id} delay={Math.min(index * 32, 220)}>
           <ReviewItem
-            key={item.id}
             item={item}
             value={quantities[item.id] ?? String(item.edited_qty ?? item.qty)}
             busy={busy}
@@ -157,10 +160,12 @@ export default function ApprovalReviewScreen() {
             onReset={() => void handleReset(item)}
             onZero={() => void handleZero(item)}
           />
+          </MotionView>
         ))}
 
         {message ? <View style={styles.message}><AppIcon name="alert" size={15} color={colors.danger}/><Text style={styles.messageText}>{message}</Text></View> : null}
 
+        <MotionView delay={100}>
         <View style={styles.actions}>
           <Pressable disabled={busy} onPress={() => approve.mutate('accept_edits')} style={[styles.primary, busy && styles.disabled]}>
             {approve.isPending ? <ActivityIndicator color={colors.success} /> : <><AppIcon name="clipboardCheck" size={15} color={colors.success}/><Text style={styles.primaryText}>{hasEdits ? 'Accept Edits & Approve' : 'Approve Current Qty'}</Text></>}
@@ -168,6 +173,7 @@ export default function ApprovalReviewScreen() {
           <Pressable disabled={busy} onPress={() => approve.mutate('approve_original')} style={[styles.secondary, busy && styles.disabled]}><AppIcon name="refresh" size={14} color={colors.navy}/><Text style={styles.secondaryText}>Approve Original Qty</Text></Pressable>
           <Pressable disabled={busy} onPress={() => setRejectOpen(true)} style={[styles.reject, busy && styles.disabled]}><AppIcon name="x" size={14} color={colors.danger}/><Text style={styles.rejectText}>Reject</Text></Pressable>
         </View>
+        </MotionView>
       </ScrollView>
 
       <Modal visible={rejectOpen} transparent animationType="fade" onRequestClose={() => setRejectOpen(false)}>
