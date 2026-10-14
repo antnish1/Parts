@@ -5,6 +5,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { getTadaDispatches, TADA_STATUSES, tadaStatusLabel, type TadaDispatch } from '@/services/tada';
@@ -71,7 +72,7 @@ export default function TadaTrackingScreen() {
             </ScrollView>
           </View>
         }
-        renderItem={({ item }) => <TadaRow item={item} />}
+        renderItem={({ item, index }) => <MotionView delay={Math.min(index * 26, 180)} trigger={filter}><TadaRow item={item} /></MotionView>}
         ListEmptyComponent={!query.isLoading ? (
           query.isError
             ? <StateView icon="alert" tone="error" title="TA/DA tracking could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
