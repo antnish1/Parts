@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/auth/AuthProvider';
 import { roleWorkActions } from '@/auth/roleNavigation';
@@ -12,7 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
 
 export default function MoreScreen() {
-  const { profile, session, signOut, role, savedAccounts, switchAccount, removeSavedAccount, signIn } = useAuth();
+  const { profile, session, signOut, role, savedAccounts, switchAccount, removeSavedAccount } = useAuth();
   const actions = role ? roleWorkActions[role] : [];
   const shortcuts = [{ key: 'approval-queue', icon: 'clipboardCheck' as const, tone: 'blue' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'route' as const, tone: 'green' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'timer' as const, tone: 'red' as const, title: 'Delayed VOR' }].flatMap(item => {
     const action = actions.find(a => a.key === item.key && a.href);
@@ -21,12 +21,8 @@ export default function MoreScreen() {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [switchOpen, setSwitchOpen] = useState(false);
-  const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [switchBusyId, setSwitchBusyId] = useState<string | null>(null);
   const [switchError, setSwitchError] = useState('');
-  const [newLoginId, setNewLoginId] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const email = session?.user?.email?.endsWith('@portal.local') ? null : session?.user?.email;
 
   async function savePhoto(uri: string) {
@@ -100,27 +96,6 @@ export default function MoreScreen() {
       router.replace('/(tabs)/home');
     } catch (error) {
       setSwitchError(error instanceof Error ? error.message : 'Could not switch account.');
-    } finally {
-      setSwitchBusyId(null);
-    }
-  }
-
-  async function handleAddAccount() {
-    if (!newLoginId.trim() || !newPassword) {
-      setSwitchError('Enter the User ID and password for the account you want to add.');
-      return;
-    }
-    setSwitchBusyId('add');
-    setSwitchError('');
-    try {
-      await signIn(newLoginId, newPassword);
-      setNewLoginId('');
-      setNewPassword('');
-      setAddAccountOpen(false);
-      setSwitchOpen(false);
-      router.replace('/(tabs)/home');
-    } catch (error) {
-      setSwitchError(error instanceof Error ? error.message : 'Could not add account.');
     } finally {
       setSwitchBusyId(null);
     }
@@ -218,25 +193,20 @@ export default function MoreScreen() {
                 );
               })}
 
-              {!addAccountOpen ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Add account" onPress={() => { setSwitchError(''); setAddAccountOpen(true); }} style={styles.addAccountRow}>
-                  <View style={styles.addAccountIcon}><Text style={styles.addAccountPlus}>+</Text></View>
-                  <Text style={styles.addAccountText}>Add account</Text>
-                </Pressable>
-              ) : (
-                <View style={styles.addForm}>
-                  <Text style={styles.addFormTitle}>Add another Parts Connect account</Text>
-                  <TextInput autoCapitalize="characters" autoCorrect={false} editable={switchBusyId !== 'add'} placeholder="User ID" placeholderTextColor="#94A3B8" value={newLoginId} onChangeText={setNewLoginId} style={styles.switchInput} />
-                  <View style={styles.switchPasswordField}>
-                    <TextInput autoCapitalize="none" autoCorrect={false} editable={switchBusyId !== 'add'} secureTextEntry={!newPasswordVisible} placeholder="Password" placeholderTextColor="#94A3B8" value={newPassword} onChangeText={setNewPassword} onSubmitEditing={() => void handleAddAccount()} style={[styles.switchInput, styles.switchPasswordInput]} />
-                    <Pressable onPress={() => setNewPasswordVisible((value) => !value)} style={styles.switchEye}><AppIcon name={newPasswordVisible ? 'eyeOff' : 'eye'} size={20} color="#64748B" /></Pressable>
-                  </View>
-                  <View style={styles.addFormActions}>
-                    <Pressable disabled={switchBusyId === 'add'} onPress={() => { setAddAccountOpen(false); setNewLoginId(''); setNewPassword(''); setSwitchError(''); }} style={styles.addCancel}><Text style={styles.addCancelText}>Cancel</Text></Pressable>
-                    <Pressable disabled={switchBusyId === 'add'} onPress={() => void handleAddAccount()} style={styles.addSubmit}>{switchBusyId === 'add' ? <ActivityIndicator color="#fff" /> : <Text style={styles.addSubmitText}>Add & switch</Text>}</Pressable>
-                  </View>
-                </View>
-              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Add account"
+                onPress={() => {
+                  setSwitchError('');
+                  setSwitchOpen(false);
+                  router.push({ pathname: '/login', params: { mode: 'add-account' } });
+                }}
+                style={styles.addAccountRow}
+              >
+                <View style={styles.addAccountIcon}><Text style={styles.addAccountPlus}>+</Text></View>
+                <Text style={styles.addAccountText}>Add account</Text>
+                <AppIcon name="chevronRight" size={17} color="#94A3B8" />
+              </Pressable>
               {switchError ? <MotionView trigger={switchError} distance={4} duration={160}><Text style={styles.switchError}>{switchError}</Text></MotionView> : null}
             </ScrollView>
           </View>
@@ -305,17 +275,6 @@ const styles = StyleSheet.create({
   addAccountRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
   addAccountIcon: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#082B5B' },
   addAccountPlus: { color: '#fff', fontSize: 32, lineHeight: 34, fontWeight: '300' },
-  addAccountText: { color: '#12223A', fontSize: 14, fontWeight: '900' },
-  addForm: { gap: 10, paddingTop: 14, paddingBottom: 8 },
-  addFormTitle: { color: '#12223A', fontSize: 13, fontWeight: '900' },
-  switchInput: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#D8E0E8', backgroundColor: '#fff', paddingHorizontal: 12, color: '#12223A', fontSize: 13 },
-  switchPasswordField: { position: 'relative', justifyContent: 'center' },
-  switchPasswordInput: { paddingRight: 50 },
-  switchEye: { position: 'absolute', right: 4, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' },
-  addFormActions: { flexDirection: 'row', gap: 10 },
-  addCancel: { flex: 1, minHeight: 46, borderRadius: 12, borderWidth: 1, borderColor: '#D8E0E8', alignItems: 'center', justifyContent: 'center' },
-  addCancelText: { color: '#64748B', fontSize: 11, fontWeight: '900' },
-  addSubmit: { flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: '#082B5B', alignItems: 'center', justifyContent: 'center' },
-  addSubmitText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  addAccountText: { flex: 1, color: '#12223A', fontSize: 14, fontWeight: '900' },
   switchError: { color: '#B83D46', fontSize: 10, lineHeight: 15, fontWeight: '700', marginTop: 6 },
 });

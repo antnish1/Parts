@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Redirect, router } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
 import { MotionView } from '@/components/MotionView';
@@ -9,13 +9,15 @@ import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function LoginScreen() {
   const { isAuthenticated, isLoading, signIn } = useAuth();
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const addAccountMode = (Array.isArray(params.mode) ? params.mode[0] : params.mode) === 'add-account';
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState('');
 
-  if (!isLoading && isAuthenticated) return <Redirect href="/(tabs)/home" />;
+  if (!isLoading && isAuthenticated && !addAccountMode) return <Redirect href="/(tabs)/home" />;
 
   async function submit() {
     if (!loginId.trim() || !password) {
@@ -46,8 +48,8 @@ export default function LoginScreen() {
 
       <MotionView delay={70} distance={8} duration={240}>
       <View style={styles.card}>
-        <Text style={styles.heading}>Sign in</Text>
-        <Text style={styles.help}>Use the same User ID and password as the Parts Connect portal.</Text>
+        <Text style={styles.heading}>{addAccountMode ? 'Add account' : 'Sign in'}</Text>
+        <Text style={styles.help}>{addAccountMode ? 'Sign in with another Parts Connect User ID. Your current account stays saved on this device.' : 'Use the same User ID and password as the Parts Connect portal.'}</Text>
         <Text style={styles.label}>User ID</Text>
         <TextInput
           autoCapitalize="characters"
@@ -87,7 +89,7 @@ export default function LoginScreen() {
         {error ? <MotionView trigger={error} distance={4} duration={170}><Text style={styles.error}>{error}</Text></MotionView> : null}
         {!isSupabaseConfigured() ? <Text style={styles.warning}>Mobile Supabase environment is not configured on this build.</Text> : null}
         <Pressable disabled={busy} onPress={() => void submit()} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonPressed]}>
-          {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Sign in</Text>}
+          {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>{addAccountMode ? 'Add & switch' : 'Sign in'}</Text>}
         </Pressable>
       </View>
       </MotionView>
