@@ -184,14 +184,70 @@ export default function ApprovalReviewScreen() {
 }
 
 function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
+  const [editing, setEditing] = useState(false);
   const next = Number(value || 0);
   const changedFromOriginal = next !== item.qty || item.edited_qty != null;
+  const resetDisabled = busy || rowAction !== null || (next === item.qty && item.edited_qty == null);
+  const zeroDisabled = busy || rowAction !== null || next === 0;
+
   return (
     <View style={[styles.itemCard, changedFromOriginal && styles.itemChanged]}>
       <View style={styles.itemTop}>
         <View style={styles.partIcon}><AppIcon name="package" size={17} color={changedFromOriginal ? colors.warning : colors.navy}/></View>
-        <View style={styles.itemCopy}><Text style={styles.partNo}>{item.part_no}</Text><Text numberOfLines={2} style={styles.description}>{item.description || 'No description'}</Text></View>
-        {changedFromOriginal ? <View style={styles.changedBadge}><Text style={styles.changedText}>EDITED</Text></View> : null}
+        <View style={styles.itemCopy}>
+          <Text style={styles.partNo}>{item.part_no}</Text>
+          <Text numberOfLines={2} style={styles.description}>{item.description || 'No description'}</Text>
+          {changedFromOriginal ? <View style={styles.changedBadge}><Text style={styles.changedText}>EDITED</Text></View> : null}
+        </View>
+
+        <View style={styles.qtyControls}>
+          <View style={styles.qtyTopLine}>
+            {editing ? (
+              <TextInput
+                autoFocus
+                keyboardType="number-pad"
+                value={value}
+                onChangeText={onChange}
+                onBlur={() => setEditing(false)}
+                selectTextOnFocus
+                style={styles.inlineQtyInput}
+              />
+            ) : (
+              <Text style={styles.inlineQtyValue}>{value || '0'}</Text>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={editing ? `Finish editing review quantity for ${item.part_no}` : `Edit review quantity for ${item.part_no}`}
+              disabled={busy || rowAction !== null}
+              hitSlop={8}
+              onPress={() => setEditing((current) => !current)}
+              style={({ pressed }) => [styles.editQtyButton, pressed && styles.pressed, (busy || rowAction !== null) && styles.disabled]}
+            >
+              <AppIcon name="fileChart" size={14} color={colors.navy}/>
+            </Pressable>
+          </View>
+
+          <View style={styles.compactActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Reset quantity for ${item.part_no}`}
+              disabled={resetDisabled}
+              onPress={onReset}
+              style={({ pressed }) => [styles.compactReset, pressed && styles.pressed, resetDisabled && styles.disabled]}
+            >
+              {rowAction === 'reset' ? <ActivityIndicator size="small" color={colors.navy}/> : <><AppIcon name="refresh" size={12} color={colors.navy}/><Text style={styles.compactResetText}>Reset</Text></>}
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Set quantity to zero for ${item.part_no}`}
+              disabled={zeroDisabled}
+              onPress={onZero}
+              style={({ pressed }) => [styles.compactZero, pressed && styles.pressed, zeroDisabled && styles.disabled]}
+            >
+              {rowAction === 'zero' ? <ActivityIndicator size="small" color={colors.danger}/> : <Text style={styles.compactZeroText}>Set 0</Text>}
+            </Pressable>
+          </View>
+        </View>
       </View>
 
       <View style={styles.qtyStrip}>
@@ -202,11 +258,6 @@ function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset,
         <ReviewMeta label="Line value" value={formatMoney((item.dnp ?? 0) * next)} />
       </View>
 
-      <View style={styles.reviewRow}>
-        <View style={styles.qtyInputWrap}><Text style={styles.qtyLabel}>Review Qty</Text><TextInput keyboardType="number-pad" value={value} onChangeText={onChange} style={styles.qtyInput} /></View>
-        <Pressable disabled={busy || rowAction !== null || (next === item.qty && item.edited_qty == null)} onPress={onReset} style={[styles.rowButton, (busy || rowAction !== null || (next === item.qty && item.edited_qty == null)) && styles.disabled]}>{rowAction === 'reset' ? <ActivityIndicator size="small" color={colors.navy}/> : <><AppIcon name="refresh" size={14} color={colors.navy}/><Text style={styles.rowButtonText}>Reset</Text></>}</Pressable>
-        <Pressable disabled={busy || rowAction !== null || next === 0} onPress={onZero} style={[styles.zeroButton, (busy || rowAction !== null || next === 0) && styles.disabled]}>{rowAction === 'zero' ? <ActivityIndicator size="small" color={colors.danger}/> : <Text style={styles.zeroText}>Set 0</Text>}</Pressable>
-      </View>
       {rowError ? <View style={styles.rowError}><AppIcon name="alert" size={13} color={colors.danger}/><Text style={styles.rowErrorText}>{rowError}</Text></View> : null}
     </View>
   );
@@ -245,20 +296,22 @@ const styles = StyleSheet.create({
   itemChanged:{borderColor:'#E1E7EE',backgroundColor:'#FFFFFF'},
   itemTop:{flexDirection:'row',alignItems:'flex-start',gap:spacing.sm},
   partIcon:{width:36,height:36,borderRadius:12,alignItems:'center',justifyContent:'center',backgroundColor:'#F0F4F8'},
-  itemCopy:{flex:1},
+  itemCopy:{flex:1,minWidth:0},
   partNo:{color:colors.text,fontSize:12,fontWeight:'900'},
   description:{color:colors.textMuted,fontSize:9,lineHeight:14,marginTop:3},
-  changedBadge:{paddingHorizontal:7,paddingVertical:5,borderRadius:999,backgroundColor:colors.warningSoft},
-  changedText:{color:colors.warning,fontSize:8,fontWeight:'900'},
+  changedBadge:{alignSelf:'flex-start',marginTop:5,paddingHorizontal:6,paddingVertical:3,borderRadius:999,backgroundColor:colors.warningSoft},
+  changedText:{color:colors.warning,fontSize:7,fontWeight:'900'},
+  qtyControls:{minWidth:118,alignItems:'flex-end',gap:7},
+  qtyTopLine:{flexDirection:'row',alignItems:'center',justifyContent:'flex-end',gap:5},
+  inlineQtyValue:{minWidth:34,textAlign:'right',color:colors.text,fontSize:15,fontWeight:'900'},
+  inlineQtyInput:{width:58,minHeight:34,paddingHorizontal:8,paddingVertical:4,borderRadius:9,borderWidth:1,borderColor:'#B7C6D8',backgroundColor:'#fff',color:colors.text,fontSize:14,fontWeight:'900',textAlign:'right'},
+  editQtyButton:{width:32,height:32,alignItems:'center',justifyContent:'center',borderRadius:9,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
+  compactActions:{flexDirection:'row',alignItems:'center',gap:5},
+  compactReset:{minHeight:30,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:3,paddingHorizontal:7,borderRadius:9,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
+  compactResetText:{color:colors.navy,fontSize:7.5,fontWeight:'900'},
+  compactZero:{minHeight:30,alignItems:'center',justifyContent:'center',paddingHorizontal:8,borderRadius:9,borderWidth:1,borderColor:'#F1BABA',backgroundColor:'#fff'},
+  compactZeroText:{color:colors.danger,fontSize:7.5,fontWeight:'900'},
   qtyStrip:{flexDirection:'row',alignItems:'stretch',marginTop:10,borderRadius:9,backgroundColor:'#EEF5FC',overflow:'hidden'},
-  reviewRow:{flexDirection:'row',alignItems:'flex-end',gap:8,marginTop:10},
-  qtyInputWrap:{flex:1,minWidth:90},
-  qtyLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
-  qtyInput:{minHeight:44,marginTop:4,paddingHorizontal:spacing.md,borderRadius:12,borderWidth:1,borderColor:'#D8E0E8',backgroundColor:'#fff',color:colors.text,fontSize:15,fontWeight:'900'},
-  rowButton:{minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:11,borderRadius:12,borderWidth:1,borderColor:'#D6E0EA',backgroundColor:'#fff'},
-  rowButtonText:{color:colors.navy,fontSize:9,fontWeight:'900'},
-  zeroButton:{minHeight:42,alignItems:'center',justifyContent:'center',paddingHorizontal:13,borderRadius:12,borderWidth:1,borderColor:'#F1BABA',backgroundColor:'#fff'},
-  zeroText:{color:colors.danger,fontSize:9,fontWeight:'900'},
   rowError:{flexDirection:'row',alignItems:'flex-start',gap:5,marginTop:7,paddingHorizontal:8,paddingVertical:6,borderRadius:8,backgroundColor:colors.dangerSoft},
   rowErrorText:{flex:1,color:colors.danger,fontSize:8.5,lineHeight:12,fontWeight:'700'},
   message:{flexDirection:'row',alignItems:'flex-start',gap:spacing.sm,padding:spacing.md,borderRadius:14,backgroundColor:colors.dangerSoft},
@@ -270,6 +323,7 @@ const styles = StyleSheet.create({
   secondaryText:{color:colors.navy,fontSize:11,fontWeight:'900'},
   reject:{minHeight:40,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,borderRadius:11,borderWidth:1,borderColor:colors.danger,backgroundColor:'#fff'},
   rejectText:{color:colors.danger,fontSize:11,fontWeight:'900'},
+  pressed:{opacity:.72},
   disabled:{opacity:.4},
   modalBackdrop:{flex:1,justifyContent:'center',backgroundColor:'rgba(2,6,23,.65)'},
   dialog:{alignSelf:'center',width:'78%',maxWidth:310,padding:16,gap:14,borderRadius:16,backgroundColor:colors.surface},
