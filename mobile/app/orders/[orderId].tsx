@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { StateView } from '@/components/StateView';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StatusChip } from '@/components/StatusChip';
 import { approveOrderStage, rejectOrder } from '@/services/approvals';
@@ -118,7 +119,8 @@ export default function OrderDetailScreen() {
   return (
     <Screen title="Track Order" scroll={false}>
       <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.hero}>
+        <MotionView>
+        <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}><AppIcon name="package" size={21} color="#fff" /></View>
             <View style={styles.heroCopy}>
@@ -136,8 +138,10 @@ export default function OrderDetailScreen() {
             <Meta label="Effective value" value={formatMoney(totalValue)} />
           </View>
         </View>
+        </MotionView>
 
         {canApprove ? (
+          <MotionView delay={70}>
           <View style={styles.approvalCard}>
             <View style={styles.approvalHeader}>
               <View style={styles.approvalIdentity}>
@@ -156,29 +160,35 @@ export default function OrderDetailScreen() {
             </View>
             {actionMessage ? <Text style={styles.actionMessage}>{actionMessage}</Text> : null}
           </View>
+          </MotionView>
         ) : null}
 
+        <MotionView delay={110}>
         <Pressable onPress={() => router.push(`/orders/${orderId}/activity`)} style={styles.activity}><View style={styles.shortcutIcon}><AppIcon name="activity" size={18} color={colors.navy}/></View><View style={styles.shortcutCopy}><Text style={styles.activityTitle}>Activity, comments & billing</Text><Text style={styles.activityText}>Open the complete audited order history</Text></View><AppIcon name="chevronRight" size={17} color={colors.blue}/></Pressable>
+        </MotionView>
 
-        {canCorrect ? <Pressable onPress={() => router.push(`/orders/${orderId}/correct`)} style={styles.correct}><View style={styles.correctIcon}><AppIcon name="shield" size={18} color={colors.warning}/></View><View style={styles.shortcutCopy}><Text style={styles.correctTitle}>Order Data Correction</Text><Text style={styles.correctText}>Manager / Developer audited correction console</Text></View><AppIcon name="chevronRight" size={17} color={colors.warning}/></Pressable> : null}
+        {canCorrect ? <MotionView delay={140}><Pressable onPress={() => router.push(`/orders/${orderId}/correct`)} style={styles.correct}><View style={styles.correctIcon}><AppIcon name="shield" size={18} color={colors.warning}/></View><View style={styles.shortcutCopy}><Text style={styles.correctTitle}>Order Data Correction</Text><Text style={styles.correctText}>Manager / Developer audited correction console</Text></View><AppIcon name="chevronRight" size={17} color={colors.warning}/></Pressable></MotionView> : null}
 
         <Text style={styles.sectionTitle}>Order quantities</Text>
+        <MotionView trigger={quantityFilter} distance={4} duration={180}>
         <View style={styles.totals}>
           <MiniMetric label="Ordered" value={String(totalQty)} active={quantityFilter==='ordered'} onPress={()=>setQuantityFilter('ordered')} />
           <MiniMetric label="Billed" value={String(totalBilled)} active={quantityFilter==='billed'} onPress={()=>setQuantityFilter('billed')} />
           <MiniMetric label="Pending" value={String(totalPending)} active={quantityFilter==='pending'} onPress={()=>setQuantityFilter('pending')} />
           <MiniMetric label="Received" value={String(totalReceived)} active={quantityFilter==='received'} onPress={()=>setQuantityFilter('received')} />
         </View>
+        </MotionView>
 
         {inTransit.isError ? <View style={styles.errorBox}><Text style={styles.errorBoxText}>In-Transit quantities could not be loaded. Pull back and reopen this order, or retry later.</Text></View> : null}
         {billings.isError ? <View style={styles.errorBox}><Text style={styles.errorBoxText}>Billing/docket chunks could not be loaded.</Text></View> : null}
 
         <View style={styles.sectionHead}><Text style={styles.sectionTitle}>Parts ({visibleItems.length})</Text><Text style={styles.filterHint}>{quantityFilter}</Text></View>
-        {visibleItems.map((item) => {
+        {visibleItems.map((item, index) => {
           const chunks = billingMap.get(item.id) ?? [];
           const transitQty = transitMap[normalizePartNo(item.part_no)] ?? 0;
           return (
-            <View key={item.id} style={styles.itemCard}>
+            <MotionView key={item.id} delay={Math.min(index * 26, 180)} trigger={quantityFilter}>
+            <View style={styles.itemCard}>
               <View style={styles.itemTop}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.partNo}>{item.part_no}</Text>
@@ -229,6 +239,7 @@ export default function OrderDetailScreen() {
                 </View>
               ) : null}
             </View>
+            </MotionView>
           );
         })}
         {items.isError ? <Text style={styles.error}>Part details could not be loaded.</Text> : null}
