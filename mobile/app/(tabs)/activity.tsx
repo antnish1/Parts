@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, getVisibleOrders } from '@/services/orders';
@@ -29,8 +30,8 @@ export default function ActivityScreen() {
           {visible.map((order, index) => {
             const status = order.approval_status || order.status;
             return (
+              <MotionView key={order.id} delay={Math.min(index * 28, 220)}>
               <Pressable
-                key={order.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Open order ${order.final_order_no || order.order_no}`}
                 onPress={() => router.push(`/orders/${order.id}`)}
@@ -46,6 +47,7 @@ export default function ActivityScreen() {
                   <Text numberOfLines={1} ellipsizeMode="tail" style={styles.meta}>{order.branch || order.order_type || '—'} · {formatDate(order.created_at)}</Text>
                 </View>
               </Pressable>
+              </MotionView>
             );
           })}
         </View>
