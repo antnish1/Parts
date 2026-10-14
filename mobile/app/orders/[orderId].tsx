@@ -118,9 +118,7 @@ export default function OrderDetailScreen() {
   return (
     <Screen title="Track Order" scroll={false}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Back to Track Orders" onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹</Text></Pressable>
-
-        <View style={styles.hero}>
+                <View style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}><AppIcon name="package" size={21} color="#fff" /></View>
             <View style={styles.heroCopy}>
@@ -281,8 +279,7 @@ export default function OrderDetailScreen() {
       <Modal visible={Boolean(confirmAction)} transparent animationType="fade" onRequestClose={() => setConfirmAction(null)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.dialog}>
-            <Text style={styles.dialogTitle}>{confirmAction === 'approve' ? 'Approve this order?' : 'Reject this order?'}</Text>
-            <Text style={styles.dialogText}>{confirmAction === 'approve' && managerOverride ? 'This uses the audited Manager override path because the order is not currently at Manager Approval stage.' : 'This action uses the same protected server workflow as the web portal.'}</Text>
+            <View style={styles.dialogHeading}><AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={18} color={confirmAction === 'approve' ? colors.success : colors.danger}/><Text style={styles.dialogTitle}>{confirmAction === 'approve' ? 'Approve order?' : 'Reject order?'}</Text></View>
             <View style={styles.dialogActions}>
               <Pressable disabled={action.isPending} onPress={() => setConfirmAction(null)}><Text style={styles.cancel}>Cancel</Text></Pressable>
               <Pressable disabled={action.isPending} onPress={() => confirmAction && action.mutate(confirmAction)} style={confirmAction === 'reject' ? styles.confirmReject : styles.confirmApprove}>
@@ -329,7 +326,7 @@ const styles = StyleSheet.create({
   approvalActions: { flexDirection: 'row', gap: spacing.sm },
   approveButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.success, backgroundColor: '#FFFFFF' },
   approveButtonText: { color: colors.success, fontSize: 11, fontWeight: '900', textAlign: 'center' },
-  rejectButton: { minWidth: 86, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: '#fff' },
+  rejectButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: '#fff' },
   rejectButtonText: { color: colors.danger, fontSize: 11, fontWeight: '900' },
   overrideText: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
   actionMessage: { color: colors.navy, fontSize: 11, fontWeight: '700' },
@@ -400,14 +397,14 @@ const styles = StyleSheet.create({
   transitMeta: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   transitQty: { color: colors.text, fontSize: 11, fontWeight: '900' },
   empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.xl },
-  dialog: { margin: spacing.xl, marginBottom: 'auto', marginTop: 'auto', padding: spacing.xl, gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.surface },
-  dialogTitle: { color: colors.text, fontSize: 18, fontWeight: '900' },
-  dialogText: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
-  dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: spacing.lg },
-  cancel: { color: colors.textMuted, fontSize: 12, fontWeight: '800' },
-  confirmApprove: { minWidth: 96, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy },
-  confirmReject: { minWidth: 96, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.danger },
-  confirmText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  dialog: { alignSelf:'center', width:'78%', maxWidth:310, padding:16, gap:14, borderRadius:16, backgroundColor: colors.surface },
+  dialogHeading:{flexDirection:'row',alignItems:'center',gap:8},
+  dialogTitle: { color: colors.text, fontSize: 14, fontWeight: '900' },
+    dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 14 },
+  cancel: { color: colors.textMuted, fontSize: 10, fontWeight: '800' },
+  confirmApprove: { minWidth: 88, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.success },
+  confirmReject: { minWidth: 88, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.danger },
+  confirmText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},
   disabled: { opacity: .5 },
 });
