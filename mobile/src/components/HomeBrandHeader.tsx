@@ -1,14 +1,14 @@
+import { useState } from 'react';
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { AppIcon } from '@/components/AppIcon';
-import { useAuth } from '@/auth/AuthProvider';
+import { SwitchAccountModal } from '@/components/SwitchAccountModal';
 
 export function HomeBrandHeader() {
-  const { profile } = useAuth();
+  const [switchOpen, setSwitchOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const initial = (profile?.fullName || 'U').trim().charAt(0).toUpperCase();
   return (
     <View style={[styles.shell, { paddingTop: insets.top }]}> 
     <View style={styles.bar}>
@@ -22,11 +22,12 @@ export function HomeBrandHeader() {
         <Pressable accessibilityRole="button" accessibilityLabel="View activity and alerts" onPress={() => router.push('/(tabs)/activity')} style={styles.bell}>
           <AppIcon name="bell" size={19} color="#FFFFFF" />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Switch account" onPress={() => router.push({ pathname: '/(tabs)/more', params: { openSwitch: '1' } })} style={styles.profile}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Switch account" onPress={() => setSwitchOpen(true)} style={styles.profile}>
           <ProfileAvatar size={35} />
         </Pressable>
       </View>
     </View>
+    <SwitchAccountModal visible={switchOpen} onClose={() => setSwitchOpen(false)} />
     </View>
   );
 }
