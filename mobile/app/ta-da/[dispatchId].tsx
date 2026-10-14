@@ -85,8 +85,11 @@ export default function TadaDetailScreen() {
         <Text style={styles.sectionTitle}>Custody journey</Text>
         <MotionView delay={70}>
         <View style={styles.journey}><Step label="Branch" done /><Step label="HQ" done={items.every((item) => item.hq_received === true)} active={dispatch.status.includes('HQ')} /><Step label="Accounts" done={items.every((item) => item.accounts_received === true)} active={dispatch.status.includes('ACCOUNTS')} /></View>
+        </MotionView>
 
+        <MotionView delay={100}>
         <View style={styles.metaCard}><MetaMini label="Dispatched by" value={dispatch.dispatched_by}/><View style={styles.metaDivider}/><MetaMini label="Reference" value={dispatch.reference_no || '—'}/></View>
+        </MotionView>
 
         {role === 'developer' ? <TadaDeveloperControls
           dispatch={dispatch}
