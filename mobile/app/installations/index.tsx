@@ -96,7 +96,7 @@ export default function InstallationsScreen() {
                   <StatusChip status={item.installation_id ? 'Registered' : 'Pending'} />
                 </View>
               </View>
-              <Pressable onPress={() => item.installation_id ? router.push(`/installations/${item.installation_id}`) : router.push({ pathname: '/installations/register', params: { invoiceId: item.id } })} style={styles.rowAction}><AppIcon name="chevronRight" size={15} color={colors.blue}/></Pressable>
+              <Pressable onPress={() => item.installation_id ? router.push(`/installations/${item.installation_id}`) : router.push({ pathname: '/installations/register', params: { invoiceId: item.id } })} style={styles.rowAction}><AppIcon name="eye" size={17} color={colors.blue}/></Pressable>
             </View>
             </MotionView>
           )}
@@ -160,7 +160,7 @@ function EntryRow({ item, onDelete }: { item: InstallationEntry; onDelete?: () =
         <Text numberOfLines={1} style={styles.meta}>{item.customer_name} · {item.branch}</Text>
         <Text numberOfLines={1} style={styles.subMeta}>{equipmentTypeLabel(item.equipment_type)} · JCB {item.jcb_invoice_no || item.invoice_no} · {item.equipment_no || 'Equipment pending'}</Text>
       </View>
-      {onDelete?<Pressable onPress={onDelete} style={styles.deleteInline}><AppIcon name="x" size={14} color={colors.danger}/></Pressable>:<AppIcon name="chevronRight" size={15} color="#94A3B8"/>}
+      {onDelete?<Pressable onPress={onDelete} style={styles.deleteInline}><AppIcon name="x" size={14} color={colors.danger}/></Pressable>:<View style={styles.viewIcon}><AppIcon name="eye" size={16} color={colors.blue}/></View>}
     </Pressable>
   );
 }
@@ -205,8 +205,8 @@ const styles=StyleSheet.create({
   meta:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   subMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',marginTop:3},
   bottomLine:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:6,marginTop:3},
-  rowAction:{width:28,height:34,alignItems:'center',justifyContent:'center'},
-  deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
+  rowAction:{width:34,height:34,alignItems:'center',justifyContent:'center',borderRadius:10,backgroundColor:'#EEF5FC'},
+  viewIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
   modalBackdrop:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:'rgba(2,6,23,.62)'},
   dialog:{gap:spacing.md,padding:spacing.lg,borderRadius:16,backgroundColor:'#fff'},
   dialogTitle:{color:colors.text,fontSize:15,fontWeight:'900'},

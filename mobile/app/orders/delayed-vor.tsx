@@ -9,7 +9,6 @@ import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
-import { formatDate } from '@/services/orders';
 import { getDelayedVorOrders } from '@/services/operations';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -61,7 +60,6 @@ export default function DelayedVorScreen(){
 
         <View style={styles.resultBar}>
           <Text style={styles.resultCount}>{visible.length} in selected age bucket</Text>
-          <Text style={styles.resultHint}>Pull to refresh</Text>
         </View>
       </View>
     }
@@ -74,7 +72,6 @@ export default function DelayedVorScreen(){
           </View>
           <View style={{alignItems:'flex-end',gap:5,maxWidth:'48%'}}>
             <StatusChip status={item.status} align="right"/>
-            <Text style={styles.contextText}>Processed {formatDate(item.processed_date)}</Text>
           </View>
         </View>
         <View style={styles.infoStrip}>
