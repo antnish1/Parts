@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Redirect, router } from 'expo-router';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
+import { MotionView } from '@/components/MotionView';
 import { useAuth } from '@/auth/AuthProvider';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -35,12 +36,15 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
+      <MotionView distance={10} duration={260}>
       <View style={styles.brand}>
         <Image source={require('../assets/native/icon.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
         <Text style={styles.title}>Parts Connect</Text>
         <Text style={styles.subtitle}>Frontier parts operations</Text>
       </View>
+      </MotionView>
 
+      <MotionView delay={70} distance={8} duration={240}>
       <View style={styles.card}>
         <Text style={styles.heading}>Sign in</Text>
         <Text style={styles.help}>Use the same User ID and password as the Parts Connect portal.</Text>
@@ -80,12 +84,13 @@ export default function LoginScreen() {
         <Pressable accessibilityRole="button" accessibilityLabel="Forgot password?" style={styles.forgotPassword} onPress={() => Alert.alert('Password assistance', 'Your Parts Connect User ID uses an internal account. Please contact your Parts Connect administrator to reset your password. Email-based self-service reset is not available for these accounts.')}>
           <Text style={styles.forgotText}>Forgot password?</Text>
         </Pressable>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <MotionView trigger={error} distance={4} duration={170}><Text style={styles.error}>{error}</Text></MotionView> : null}
         {!isSupabaseConfigured() ? <Text style={styles.warning}>Mobile Supabase environment is not configured on this build.</Text> : null}
         <Pressable disabled={busy} onPress={() => void submit()} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonPressed]}>
           {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Sign in</Text>}
         </Pressable>
       </View>
+      </MotionView>
     </KeyboardAvoidingView>
   );
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { roleWorkActions } from '@/auth/roleNavigation';
 import { AppIcon } from '@/components/AppIcon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { MotionView } from '@/components/MotionView';
 import { Screen } from '@/components/Screen';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
@@ -135,6 +136,7 @@ export default function MoreScreen() {
 
   return (
     <Screen brandHeader title="My Profile" subtitle="Account, work shortcuts and app information.">
+      <MotionView trigger={session?.user?.id}>
       <View style={styles.hero}>
         <View style={styles.photoWrap}>
           {preview ? <Image source={{ uri: preview }} style={styles.photo} /> : <ProfileAvatar size={104} />}
@@ -147,8 +149,10 @@ export default function MoreScreen() {
         {preview ? <View style={styles.photoActions}><Pressable disabled={busy} onPress={() => void savePhoto(preview)} style={styles.save}><Text style={styles.saveText}>Save photo</Text></Pressable><Pressable onPress={() => setPreview(null)} style={styles.cancel}><Text>Cancel</Text></Pressable></View> : null}
         {busy ? <ActivityIndicator color="#FFFFFF" /> : null}
       </View>
+      </MotionView>
 
       <Text style={styles.section}>MY ACCOUNT</Text>
+      <MotionView delay={60} trigger={session?.user?.id}>
       <View style={styles.card}>
         <Info icon="work" label="Role" value={profile?.role || '—'} />
         <Info icon="inventory" label="Branch" value={profile?.branch || '—'} />
@@ -161,18 +165,21 @@ export default function MoreScreen() {
           <AppIcon name="chevronRight" color="#94A3B8" size={16} />
         </Pressable>
       </View>
+      </MotionView>
 
       {shortcuts.length ? <>
         <Text style={styles.section}>MY OPERATIONS</Text>
-        <View style={styles.shortcuts}>{shortcuts.map(item => <Shortcut key={item.key} icon={item.icon} tone={item.tone} title={item.title} onPress={() => router.push(item.href)} />)}</View>
+        <View style={styles.shortcuts}>{shortcuts.map((item,index) => <MotionView key={item.key} delay={Math.min(index*35,120)} style={{ flex: 1 }}><Shortcut icon={item.icon} tone={item.tone} title={item.title} onPress={() => router.push(item.href)} /></MotionView>)}</View>
       </> : null}
 
       <Text style={styles.section}>APP INFORMATION</Text>
+      <MotionView delay={100}>
       <View style={styles.card}>
         <Info icon="package" label="App" value="Parts Connect Android" />
         <Info icon="refresh" label="Runtime" value="0.2.0" />
         <Info icon="shield" label="Updates" value="OTA enabled" last />
       </View>
+      </MotionView>
       <Pressable onPress={() => void handleSignOut()} style={styles.signOut}><AppIcon name="x" size={17} color="#B83D46" /><Text style={styles.outText}>Sign out securely</Text></Pressable>
 
       <Modal visible={switchOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setSwitchOpen(false)}>
@@ -195,7 +202,8 @@ export default function MoreScreen() {
                 const active = account.userId === session?.user?.id;
                 const initials = account.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'PC';
                 return (
-                  <View key={account.userId} style={styles.accountRow}>
+                  <MotionView key={account.userId} delay={Math.min(savedAccounts.indexOf(account) * 28, 140)} trigger={switchOpen} distance={5} duration={180}>
+                  <View style={styles.accountRow}>
                     <Pressable disabled={active || Boolean(switchBusyId)} onPress={() => void handleSwitchAccount(account.userId)} style={styles.accountMain}>
                       <View style={styles.accountAvatar}><Text style={styles.accountInitials}>{initials}</Text></View>
                       <View style={styles.accountCopy}>
@@ -206,6 +214,7 @@ export default function MoreScreen() {
                     </Pressable>
                     {!active ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove saved account ${account.fullName}`} disabled={Boolean(switchBusyId)} onPress={() => void handleRemoveSavedAccount(account.userId)} style={styles.removeAccount}><AppIcon name="x" size={14} color="#B83D46" /></Pressable> : null}
                   </View>
+                  </MotionView>
                 );
               })}
 
@@ -228,7 +237,7 @@ export default function MoreScreen() {
                   </View>
                 </View>
               )}
-              {switchError ? <Text style={styles.switchError}>{switchError}</Text> : null}
+              {switchError ? <MotionView trigger={switchError} distance={4} duration={160}><Text style={styles.switchError}>{switchError}</Text></MotionView> : null}
             </ScrollView>
           </View>
         </View>
