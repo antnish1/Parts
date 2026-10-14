@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 
-export type TickerMetric = { key: string; label: string; value: number; icon: AppIconName; tone: 'blue' | 'red' | 'amber' | 'green'; onPress: () => void };
+export type TickerMetric = { key: string; label: string; value: number | string; icon: AppIconName; tone: 'blue' | 'red' | 'amber' | 'green'; onPress: () => void };
 
 const palette = {
   blue: { bg: '#EFF5FF', fg: '#2457A7', border: '#D8E5F7' },
@@ -11,7 +11,7 @@ const palette = {
   green: { bg: '#EEF8F3', fg: '#16724F', border: '#D5EBDD' },
 };
 
-export function MetricsTicker({ items }: { items: TickerMetric[] }) {
+export function MetricsTicker({ items, loading = false }: { items: TickerMetric[]; loading?: boolean }) {
   const x = useRef(new Animated.Value(0)).current;
   const [width, setWidth] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -24,7 +24,7 @@ export function MetricsTicker({ items }: { items: TickerMetric[] }) {
   useEffect(() => {
     x.stopAnimation();
     x.setValue(0);
-    if (!width || paused || reduceMotion || !items.length) return;
+    if (!width || paused || reduceMotion || loading || !items.length) return;
     const animation = Animated.loop(Animated.timing(x, {
       toValue: -width,
       duration: Math.max(12000, width * 32),
@@ -33,7 +33,7 @@ export function MetricsTicker({ items }: { items: TickerMetric[] }) {
     }));
     animation.start();
     return () => animation.stop();
-  }, [x, width, paused, reduceMotion, items.length]);
+  }, [x, width, paused, reduceMotion, loading, items.length]);
 
   const chips = (copy: string) => items.map((item) => {
     const tone = palette[item.tone];
