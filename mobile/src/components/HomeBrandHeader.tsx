@@ -22,7 +22,7 @@ export function HomeBrandHeader() {
         <Pressable accessibilityRole="button" accessibilityLabel="View activity and alerts" onPress={() => router.push('/(tabs)/activity')} style={styles.bell}>
           <AppIcon name="bell" size={19} color="#FFFFFF" />
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open my profile" onPress={() => router.push('/(tabs)/more')} style={styles.profile}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Switch account" onPress={() => router.push({ pathname: '/(tabs)/more', params: { openSwitch: '1' } })} style={styles.profile}>
           <ProfileAvatar size={35} />
         </Pressable>
       </View>

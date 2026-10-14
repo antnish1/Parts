@@ -255,9 +255,9 @@ const styles = StyleSheet.create({
   identityCopy: { flex: 1 },
   name: { color: colors.text, fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   role: { color: colors.textMuted, fontSize: 9, fontWeight: '700', marginTop: 2 },
-  activePill: { flexDirection: 'row', alignItems: 'baseline', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: '#EEF2F6' },
-  activePillValue: { color: colors.navy, fontSize: 12, fontWeight: '900' },
-  activePillText: { color: colors.textMuted, fontSize: 8, fontWeight: '800' },
+  activePill: { flexDirection: 'row', alignItems: 'baseline', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: '#EAF7F1', borderWidth: 1, borderColor: '#CEEBDC' },
+  activePillValue: { color: '#16724F', fontSize: 12, fontWeight: '900' },
+  activePillText: { color: '#2F7D60', fontSize: 8, fontWeight: '800' },
 
   attentionStrip: { gap: 7, paddingRight: 12 },
   attentionChip: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, borderRadius: 11, borderWidth: 1 },
