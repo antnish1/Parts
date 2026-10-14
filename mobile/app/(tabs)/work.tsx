@@ -51,7 +51,7 @@ export default function WorkScreen() {
             onPress={() => action.href && router.push(action.href)}
             style={({ pressed }) => [styles.card, action.href ? styles.cardActive : styles.cardPlanned, pressed && action.href && styles.pressed]}
           >
-            <View style={[styles.iconWrap, { backgroundColor: iconColor(action) }]}><AppIcon name={iconFor(action)} size={25} color="#FFFFFF" strokeWidth={2.7} /></View>
+            <View style={[styles.iconWrap, { backgroundColor: iconColor(action) }]}><AppIcon name={iconFor(action)} size={21} color="#FFFFFF" strokeWidth={2.7} /></View>
             <View style={styles.copy}>
               <Text style={styles.title}>{action.label}</Text>
               <Text numberOfLines={2} style={styles.description}>{action.description}</Text>
@@ -66,13 +66,13 @@ export default function WorkScreen() {
 }
 
 const styles = StyleSheet.create({
-  grid: { gap: 9 },
-  card: { width: '100%', minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, paddingVertical: 11, borderRadius: 13, borderWidth: 1, backgroundColor: colors.surface },
+  grid: { gap: 6 },
+  card: { width: '100%', minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 12, borderWidth: 1, backgroundColor: colors.surface },
   cardActive: { borderColor: '#E0E7EF' },
   cardPlanned: { borderColor: '#E7EBF0', opacity: 0.65 },
   pressed: { opacity: 0.8 },
-  iconWrap: { width: 48, height: 48, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 40, height: 40, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1 },
-  title: { color: colors.text, fontSize: 13, fontWeight: '800' },
-  description: { color: colors.textMuted, fontSize: 10.5, lineHeight: 15, marginTop: 3 },
+  title: { color: colors.text, fontSize: 11.5, fontWeight: '800' },
+  description: { color: colors.textMuted, fontSize: 9, lineHeight: 12, marginTop: 2 },
 });
