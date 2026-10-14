@@ -49,7 +49,7 @@ export default function OrdersScreen() {
   }, [orders.data]);
 
   return (
-    <Screen title="Track Orders" scroll={false}>
+    <Screen scroll={false}>
       <FlatList
         style={styles.list}
         data={rows}
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 7 },
   copy: { flex: 1, minWidth: 0, gap: 6 },
-  orderNo: { color: colors.text, fontSize: 12, fontWeight: '900' },
+  orderNo: { color: colors.text, fontSize: 10.5, fontWeight: '900' },
   customer: { color: colors.textMuted, fontSize: 10 },
   statusSide: { maxWidth: '49%', alignItems: 'flex-end', gap: 5 },
   date: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
