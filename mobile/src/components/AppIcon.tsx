@@ -9,6 +9,7 @@ export type AppIconName =
   | 'mapPin'
   | 'fileChart'
   | 'eye'
+  | 'eye'
   | 'eyeOff'
   | 'camera'
   | 'activity'
@@ -49,6 +50,7 @@ export function AppIcon({ name, size = 20, color = colors.navy, strokeWidth = 1.
       {name === 'scan' ? <><Path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4M3 12h18" {...common}/><Path d="M8 9h8v6H8z" {...common}/></> : null}
       {name === 'mapPin' ? <><Path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" {...common}/><Circle cx="12" cy="10" r="2.5" {...common}/></> : null}
       {name === 'fileChart' ? <><Path d="M6 2h8l5 5v14a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" {...common}/><Path d="M14 2v5h5M8 17v-3M12 17v-6M16 17v-4" {...common}/></> : null}
+      {name === 'eye' ? <><Path d="M2.5 12s3.4-5.5 9.5-5.5S21.5 12 21.5 12 18.1 17.5 12 17.5 2.5 12 2.5 12Z" {...common}/><Circle cx="12" cy="12" r="2.5" {...common}/></> : null}
       {name === 'eye' ? <><Path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" {...common}/><Circle cx="12" cy="12" r="3" {...common}/></> : null}
       {name === 'eyeOff' ? <><Path d="M3 3l18 18M10.6 6.1A11 11 0 0 1 12 6c6.5 0 10 6 10 6a17 17 0 0 1-3.2 3.8M6.1 6.9C3.5 8.7 2 12 2 12s3.5 6 10 6c1.5 0 2.8-.3 4-.9M10 10a3 3 0 0 0 4 4" {...common}/></> : null}
       {name === 'bell' ? <><Path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z" {...common} /><Path d="M10 21h4" {...common} /></> : null}
