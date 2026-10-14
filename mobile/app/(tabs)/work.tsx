@@ -4,6 +4,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { roleWorkActions, type WorkAction } from '@/auth/roleNavigation';
 import { AppIcon, type AppIconName } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 function iconColor(action: WorkAction): string {
@@ -43,9 +44,9 @@ export default function WorkScreen() {
   return (
     <Screen brandHeader title={role === 'manager' ? 'Manager Workbench' : 'Work'} subtitle={role === 'manager' ? undefined : 'Your operational tasks, arranged for mobile.'}>
       <View style={styles.grid}>
-        {actions.map((action) => (
+        {actions.map((action, index) => (
+          <MotionView key={action.key} delay={Math.min(index * 38, 260)}>
           <Pressable
-            key={action.key}
             disabled={!action.href}
             onPress={() => action.href && router.push(action.href)}
             style={({ pressed }) => [styles.card, action.href ? styles.cardActive : styles.cardPlanned, pressed && action.href && styles.pressed]}
@@ -57,6 +58,7 @@ export default function WorkScreen() {
             </View>
             <AppIcon name="chevronRight" size={16} color={action.href ? '#8290A3' : '#C0C8D2'} />
           </Pressable>
+          </MotionView>
         ))}
       </View>
     </Screen>

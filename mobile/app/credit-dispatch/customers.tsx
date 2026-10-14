@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
+import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
 import { formatCreditMoney } from '@/services/creditDispatch';
 import { getCreditCustomerAging, getCreditCustomerOutstanding, type CreditCustomerAging } from '@/services/creditCustomers';
@@ -42,6 +43,7 @@ export default function CreditCustomersScreen(){
  const query=mode==='outstanding'?outstanding:aging;
  return <Screen title="Credit Customers" subtitle="Outstanding, aging and customer ledger">
    <View style={styles.segment}><Pressable onPress={()=>setMode('outstanding')} style={[styles.segmentButton,mode==='outstanding'&&styles.segmentActive]}><Text style={[styles.segmentText,mode==='outstanding'&&styles.segmentTextActive]}>Outstanding</Text></Pressable><Pressable onPress={()=>setMode('aging')} style={[styles.segmentButton,mode==='aging'&&styles.segmentActive]}><Text style={[styles.segmentText,mode==='aging'&&styles.segmentTextActive]}>Aging</Text></Pressable></View>
+   <MotionView trigger={mode} distance={5} duration={180}>
    <View style={styles.metricsCard}>
     <Metric label="Customers" value={String(summary.customers)}/>
     <View style={styles.metricDivider}/>
@@ -49,6 +51,7 @@ export default function CreditCustomersScreen(){
     <View style={styles.metricDivider}/>
     <Metric label="Overdue" value={formatCreditMoney(summary.overdue)}/>
    </View>
+   </MotionView>
    <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer name...', 'Search mobile number...', 'Search branch...', 'Search risk category...']}/>
    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
     {(mode==='outstanding'?(['Outstanding','Overdue','All'] as OutstandingFilter[]):(['Overdue','30+','All'] as AgingFilter[])).map((item)=>{
@@ -57,7 +60,8 @@ export default function CreditCustomersScreen(){
     })}
    </ScrollView>
    {query.isError?<StateView icon="alert" tone="error" title="Customer credit data could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>:null}
-   {!query.isLoading&&!query.isError&&mode==='outstanding'?outstandingRows.map((row)=>
+   {!query.isLoading&&!query.isError&&mode==='outstanding'?outstandingRows.map((row,index)=>
+    <MotionView key={row.customer_id} delay={Math.min(index*24,180)} trigger={`${mode}-${outstandingFilter}`}>
     <Pressable key={row.customer_id} accessibilityRole="button" onPress={()=>router.push(`/credit-dispatch/customer/${row.customer_id}`)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}>
      <View style={styles.top}><View style={styles.copy}><Text numberOfLines={1} style={styles.name}>{row.customer_name}</Text><Text numberOfLines={1} style={styles.meta}>{row.mobile_no} • {row.default_branch||'—'} • {row.customer_type}</Text></View><Risk risk={row.risk_category}/></View>
      <View style={styles.joined}>
@@ -66,8 +70,9 @@ export default function CreditCustomersScreen(){
       <View style={[styles.joinCell,styles.joinDivider]}><Mini label="Outstanding" value={formatCreditMoney(row.outstanding)}/></View>
       <View style={[styles.joinCell,styles.joinDivider]}><Mini label="Overdue" value={formatCreditMoney(row.overdue)}/></View>
      </View>
-    </Pressable>):null}
-   {!query.isLoading&&!query.isError&&mode==='aging'?agingRows.map((row)=><View key={row.customer_id} style={styles.card}><Pressable accessibilityRole="button" onPress={()=>router.push(`/credit-dispatch/customer/${row.customer_id}`)}><View style={styles.top}><View style={styles.copy}><Text style={styles.name}>{row.customer_name}</Text><Text style={styles.meta}>{row.mobile_no} • {row.default_branch||'—'} • {row.customer_type}</Text></View><Risk risk={row.risk_category}/></View><View style={styles.aging}><Age label="0–7" value={row.bucket_0_7}/><AgeDivider/><Age label="8–15" value={row.bucket_8_15}/><AgeDivider/><Age label="16–30" value={row.bucket_16_30}/><AgeDivider/><Age label="30+" value={row.bucket_30_plus}/></View></Pressable><View style={styles.actionRow}><Pressable onPress={()=>router.push(`/credit-dispatch/customer/${row.customer_id}`)} style={styles.outlineAction}><AppIcon name="package" size={15} color={colors.navy}/><Text style={styles.outlineText}>Ledger</Text></Pressable><Pressable onPress={()=>void Share.share({message:reminder(row)})} style={styles.reminderAction}><AppIcon name="alert" size={15} color={colors.blue}/><Text style={styles.reminderText}>Share Reminder</Text></Pressable></View></View>):null}
+    </Pressable>
+    </MotionView>):null}
+   {!query.isLoading&&!query.isError&&mode==='aging'?agingRows.map((row,index)=><MotionView key={row.customer_id} delay={Math.min(index*24,180)} trigger={`${mode}-${agingFilter}`}><View style={styles.card}><Pressable accessibilityRole="button" onPress={()=>router.push(`/credit-dispatch/customer/${row.customer_id}`)}><View style={styles.top}><View style={styles.copy}><Text style={styles.name}>{row.customer_name}</Text><Text style={styles.meta}>{row.mobile_no} • {row.default_branch||'—'} • {row.customer_type}</Text></View><Risk risk={row.risk_category}/></View><View style={styles.aging}><Age label="0–7" value={row.bucket_0_7}/><AgeDivider/><Age label="8–15" value={row.bucket_8_15}/><AgeDivider/><Age label="16–30" value={row.bucket_16_30}/><AgeDivider/><Age label="30+" value={row.bucket_30_plus}/></View></Pressable><View style={styles.actionRow}><Pressable onPress={()=>router.push(`/credit-dispatch/customer/${row.customer_id}`)} style={styles.outlineAction}><AppIcon name="package" size={15} color={colors.navy}/><Text style={styles.outlineText}>Ledger</Text></Pressable><Pressable onPress={()=>void Share.share({message:reminder(row)})} style={styles.reminderAction}><AppIcon name="alert" size={15} color={colors.blue}/><Text style={styles.reminderText}>Share Reminder</Text></Pressable></View></View></MotionView>):null}
    {!query.isLoading&&!query.isError&&!activeRows.length?<StateView icon="inbox" title={search?'No matching customers':'No customer credit records'} message={search?'Try another customer, mobile, branch or risk filter.':'There are no records in the selected credit view.'}/>:null}
  </Screen>
 }

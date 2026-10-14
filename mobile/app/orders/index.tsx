@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
@@ -82,7 +83,8 @@ export default function OrdersScreen() {
             </View>
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
+          <MotionView delay={Math.min(index * 24, 180)} trigger={filter}>
           <Pressable style={({ pressed }) => [styles.card, pressed && styles.pressed]} onPress={() => router.push(`/orders/${item.id}`)}>
             <View style={styles.top}>
               <View style={styles.copy}>
@@ -97,6 +99,7 @@ export default function OrdersScreen() {
               <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Value</Text><Text numberOfLines={1} style={styles.detailValue}>{formatMoney(item.total_value)}</Text></View>
             </View>
           </Pressable>
+          </MotionView>
         )}
         ListEmptyComponent={!orders.isLoading ? (
           orders.isError
