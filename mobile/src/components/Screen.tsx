@@ -27,7 +27,7 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
   ) : null;
 
   return (
-    <SafeAreaView style={[styles.safe, showBrand && styles.brandedSafe]} edges={showBrand ? [] : ['top']}>
+    <SafeAreaView style={[styles.safe, showBrand && styles.brandedSafe]} edges={['top']}>
       {scroll ? (
         <ScrollView style={showBrand ? styles.pageBackground : undefined} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, showBrand && styles.brandedContent, contentContainerStyle]}>
           {showBrand ? <HomeBrandHeader /> : null}
