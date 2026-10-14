@@ -9,7 +9,7 @@ import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StatusChip } from '@/components/StatusChip';
 import { approveReview, rejectOrder, resetEditedQuantity, setEditedQuantity, zeroReviewItem } from '@/services/approvals';
-import { formatDate, formatMoney, getOrder, getOrderItems, type OrderItem } from '@/services/orders';
+import { formatMoney, getOrder, getOrderItems, type OrderItem } from '@/services/orders';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function ApprovalReviewScreen() {
@@ -180,9 +180,6 @@ function ReviewItem({ item, value, busy, onChange, onReset, onZero }: { item: Or
   );
 }
 
-function Mini({ label, value, dark = false }: { label: string; value: string; dark?: boolean }) {
-  return <View style={styles.mini}><Text style={[styles.miniLabel,dark&&styles.miniLabelDark]}>{label}</Text><Text numberOfLines={1} style={[styles.miniValue,dark&&styles.miniValueDark]}>{value}</Text></View>;
-}
 function ReviewMeta({ label, value, dark = false }: { label:string; value:string; dark?:boolean }) {
   return <View style={styles.reviewMeta}><Text style={[styles.reviewMetaLabel,dark&&styles.reviewMetaLabelDark]}>{label}</Text><Text numberOfLines={1} style={[styles.reviewMetaValue,dark&&styles.reviewMetaValueDark]}>{value}</Text></View>;
 }
