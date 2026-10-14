@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Alert, Image, Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/auth/AuthProvider';
 import { roleWorkActions } from '@/auth/roleNavigation';
@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
 
 export default function MoreScreen() {
-  const { profile, session, signOut, role } = useAuth();
+  const { profile, session, signOut, role, savedAccounts, switchAccount, removeSavedAccount, signIn } = useAuth();
   const actions = role ? roleWorkActions[role] : [];
   const shortcuts = [{ key: 'approval-queue', icon: 'clipboardCheck' as const, tone: 'blue' as const, title: 'Approvals' }, { key: 'track-orders', icon: 'route' as const, tone: 'green' as const, title: 'Track Orders' }, { key: 'delayed-vor', icon: 'timer' as const, tone: 'red' as const, title: 'Delayed VOR' }].flatMap(item => {
     const action = actions.find(a => a.key === item.key && a.href);
@@ -19,6 +19,13 @@ export default function MoreScreen() {
   });
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [switchOpen, setSwitchOpen] = useState(false);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [switchBusyId, setSwitchBusyId] = useState<string | null>(null);
+  const [switchError, setSwitchError] = useState('');
+  const [newLoginId, setNewLoginId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const email = session?.user?.email?.endsWith('@portal.local') ? null : session?.user?.email;
 
   async function savePhoto(uri: string) {
@@ -82,6 +89,50 @@ export default function MoreScreen() {
     catch { Alert.alert('Sign out failed', 'Please try again.'); }
   }
 
+  async function handleSwitchAccount(userId: string) {
+    if (userId === session?.user?.id) return;
+    setSwitchBusyId(userId);
+    setSwitchError('');
+    try {
+      await switchAccount(userId);
+      setSwitchOpen(false);
+      router.replace('/(tabs)/home');
+    } catch (error) {
+      setSwitchError(error instanceof Error ? error.message : 'Could not switch account.');
+    } finally {
+      setSwitchBusyId(null);
+    }
+  }
+
+  async function handleAddAccount() {
+    if (!newLoginId.trim() || !newPassword) {
+      setSwitchError('Enter the User ID and password for the account you want to add.');
+      return;
+    }
+    setSwitchBusyId('add');
+    setSwitchError('');
+    try {
+      await signIn(newLoginId, newPassword);
+      setNewLoginId('');
+      setNewPassword('');
+      setAddAccountOpen(false);
+      setSwitchOpen(false);
+      router.replace('/(tabs)/home');
+    } catch (error) {
+      setSwitchError(error instanceof Error ? error.message : 'Could not add account.');
+    } finally {
+      setSwitchBusyId(null);
+    }
+  }
+
+  async function handleRemoveSavedAccount(userId: string) {
+    try {
+      await removeSavedAccount(userId);
+    } catch (error) {
+      setSwitchError(error instanceof Error ? error.message : 'Could not remove saved account.');
+    }
+  }
+
   return (
     <Screen brandHeader title="My Profile" subtitle="Account, work shortcuts and app information.">
       <View style={styles.hero}>
@@ -102,7 +153,13 @@ export default function MoreScreen() {
         <Info icon="work" label="Role" value={profile?.role || '—'} />
         <Info icon="inventory" label="Branch" value={profile?.branch || '—'} />
         {email ? <Info icon="package" label="Email" value={email} /> : null}
-        <Info icon="shield" label="Session" value="Signed in" last={!email} />
+        <Info icon="shield" label="Session" value="Signed in" />
+        <Pressable accessibilityRole="button" accessibilityLabel="Switch account" onPress={() => { setSwitchError(''); setSwitchOpen(true); }} style={styles.accountAction}>
+          <AppIcon name="refresh" color="#245A95" size={17} />
+          <Text style={styles.label}>Account</Text>
+          <Text style={styles.accountActionText}>Switch account</Text>
+          <AppIcon name="chevronRight" color="#94A3B8" size={16} />
+        </Pressable>
       </View>
 
       {shortcuts.length ? <>
@@ -117,6 +174,65 @@ export default function MoreScreen() {
         <Info icon="shield" label="Updates" value="OTA enabled" last />
       </View>
       <Pressable onPress={() => void handleSignOut()} style={styles.signOut}><AppIcon name="x" size={17} color="#B83D46" /><Text style={styles.outText}>Sign out securely</Text></Pressable>
+
+      <Modal visible={switchOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setSwitchOpen(false)}>
+        <View style={styles.switchBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setSwitchOpen(false)} />
+          <View style={styles.switchSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHead}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sheetTitle}>Switch account</Text>
+                <Text style={styles.sheetSubtitle}>Saved sign-ins stay securely separated on this device.</Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close switch account" onPress={() => setSwitchOpen(false)} style={styles.sheetClose}>
+                <AppIcon name="x" size={20} color="#64748B" />
+              </Pressable>
+            </View>
+
+            <ScrollView style={styles.accountsScroll} contentContainerStyle={styles.accountsList}>
+              {savedAccounts.map((account) => {
+                const active = account.userId === session?.user?.id;
+                const initials = account.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'PC';
+                return (
+                  <View key={account.userId} style={styles.accountRow}>
+                    <Pressable disabled={active || Boolean(switchBusyId)} onPress={() => void handleSwitchAccount(account.userId)} style={styles.accountMain}>
+                      <View style={styles.accountAvatar}><Text style={styles.accountInitials}>{initials}</Text></View>
+                      <View style={styles.accountCopy}>
+                        <Text numberOfLines={1} style={styles.accountName}>{account.fullName}</Text>
+                        <Text numberOfLines={1} style={styles.accountMeta}>{account.role || 'User'} · {account.branch || 'Unassigned'}{account.loginId ? ` · ${account.loginId}` : ''}</Text>
+                      </View>
+                      {switchBusyId === account.userId ? <ActivityIndicator color="#1689D4" /> : active ? <View style={styles.activeCheck}><AppIcon name="check" size={16} color="#fff" /></View> : <AppIcon name="chevronRight" size={17} color="#94A3B8" />}
+                    </Pressable>
+                    {!active ? <Pressable accessibilityRole="button" accessibilityLabel={`Remove saved account ${account.fullName}`} disabled={Boolean(switchBusyId)} onPress={() => void handleRemoveSavedAccount(account.userId)} style={styles.removeAccount}><AppIcon name="x" size={14} color="#B83D46" /></Pressable> : null}
+                  </View>
+                );
+              })}
+
+              {!addAccountOpen ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Add account" onPress={() => { setSwitchError(''); setAddAccountOpen(true); }} style={styles.addAccountRow}>
+                  <View style={styles.addAccountIcon}><Text style={styles.addAccountPlus}>+</Text></View>
+                  <Text style={styles.addAccountText}>Add account</Text>
+                </Pressable>
+              ) : (
+                <View style={styles.addForm}>
+                  <Text style={styles.addFormTitle}>Add another Parts Connect account</Text>
+                  <TextInput autoCapitalize="characters" autoCorrect={false} editable={switchBusyId !== 'add'} placeholder="User ID" placeholderTextColor="#94A3B8" value={newLoginId} onChangeText={setNewLoginId} style={styles.switchInput} />
+                  <View style={styles.switchPasswordField}>
+                    <TextInput autoCapitalize="none" autoCorrect={false} editable={switchBusyId !== 'add'} secureTextEntry={!newPasswordVisible} placeholder="Password" placeholderTextColor="#94A3B8" value={newPassword} onChangeText={setNewPassword} onSubmitEditing={() => void handleAddAccount()} style={[styles.switchInput, styles.switchPasswordInput]} />
+                    <Pressable onPress={() => setNewPasswordVisible((value) => !value)} style={styles.switchEye}><AppIcon name={newPasswordVisible ? 'eyeOff' : 'eye'} size={20} color="#64748B" /></Pressable>
+                  </View>
+                  <View style={styles.addFormActions}>
+                    <Pressable disabled={switchBusyId === 'add'} onPress={() => { setAddAccountOpen(false); setNewLoginId(''); setNewPassword(''); setSwitchError(''); }} style={styles.addCancel}><Text style={styles.addCancelText}>Cancel</Text></Pressable>
+                    <Pressable disabled={switchBusyId === 'add'} onPress={() => void handleAddAccount()} style={styles.addSubmit}>{switchBusyId === 'add' ? <ActivityIndicator color="#fff" /> : <Text style={styles.addSubmitText}>Add & switch</Text>}</Pressable>
+                  </View>
+                </View>
+              )}
+              {switchError ? <Text style={styles.switchError}>{switchError}</Text> : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }
@@ -146,6 +262,8 @@ const styles = StyleSheet.create({
   section: { fontSize: 10, letterSpacing: 1, fontWeight: '900', color: '#697990', marginTop: 5 },
   card: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E7EE', borderRadius: 14, paddingHorizontal: 12 },
   info: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E5EAF0' },
+  accountAction: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  accountActionText: { flex: 1, textAlign: 'right', color: '#245A95', fontSize: 10, fontWeight: '900' },
   label: { fontSize: 11, fontWeight: '800', color: '#35465E', width: 66 },
   value: { flex: 1, textAlign: 'right', color: '#15243B', fontWeight: '800', fontSize: 10 },
   shortcuts: { flexDirection: 'row', gap: 8 },
@@ -157,4 +275,38 @@ const styles = StyleSheet.create({
   shortcutTitle: { fontSize: 9, fontWeight: '800', color: '#203D62' },
   signOut: { borderRadius: 12, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E8B8B8', padding: 14, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
   outText: { color: '#B83D46', fontWeight: '900', fontSize: 11 },
+  switchBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,.48)' },
+  switchSheet: { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: '#FFFFFF', paddingTop: 8, paddingHorizontal: 18, paddingBottom: 24 },
+  sheetHandle: { alignSelf: 'center', width: 88, height: 5, borderRadius: 999, backgroundColor: '#CBD5E1', marginBottom: 12 },
+  sheetHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 10 },
+  sheetTitle: { color: '#12223A', fontSize: 22, fontWeight: '900' },
+  sheetSubtitle: { color: '#64748B', fontSize: 11, lineHeight: 16, marginTop: 3 },
+  sheetClose: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' },
+  accountsScroll: { flexGrow: 0 },
+  accountsList: { paddingBottom: 10 },
+  accountRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E7ECF2' },
+  accountMain: { flex: 1, minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  accountAvatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0C4A86', borderWidth: 2, borderColor: '#D7E5F4' },
+  accountInitials: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  accountCopy: { flex: 1, minWidth: 0 },
+  accountName: { color: '#12223A', fontSize: 14, fontWeight: '900' },
+  accountMeta: { color: '#64748B', fontSize: 9.5, fontWeight: '700', marginTop: 4 },
+  activeCheck: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1689D4' },
+  removeAccount: { width: 34, height: 42, alignItems: 'center', justifyContent: 'center' },
+  addAccountRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
+  addAccountIcon: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: '#082B5B' },
+  addAccountPlus: { color: '#fff', fontSize: 32, lineHeight: 34, fontWeight: '300' },
+  addAccountText: { color: '#12223A', fontSize: 14, fontWeight: '900' },
+  addForm: { gap: 10, paddingTop: 14, paddingBottom: 8 },
+  addFormTitle: { color: '#12223A', fontSize: 13, fontWeight: '900' },
+  switchInput: { minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#D8E0E8', backgroundColor: '#fff', paddingHorizontal: 12, color: '#12223A', fontSize: 13 },
+  switchPasswordField: { position: 'relative', justifyContent: 'center' },
+  switchPasswordInput: { paddingRight: 50 },
+  switchEye: { position: 'absolute', right: 4, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' },
+  addFormActions: { flexDirection: 'row', gap: 10 },
+  addCancel: { flex: 1, minHeight: 46, borderRadius: 12, borderWidth: 1, borderColor: '#D8E0E8', alignItems: 'center', justifyContent: 'center' },
+  addCancelText: { color: '#64748B', fontSize: 11, fontWeight: '900' },
+  addSubmit: { flex: 1, minHeight: 46, borderRadius: 12, backgroundColor: '#082B5B', alignItems: 'center', justifyContent: 'center' },
+  addSubmitText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  switchError: { color: '#B83D46', fontSize: 10, lineHeight: 15, fontWeight: '700', marginTop: 6 },
 });
