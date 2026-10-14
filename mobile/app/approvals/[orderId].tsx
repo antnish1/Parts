@@ -223,7 +223,7 @@ function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset,
               onPress={() => setEditing((current) => !current)}
               style={({ pressed }) => [styles.editQtyButton, pressed && styles.pressed, (busy || rowAction !== null) && styles.disabled]}
             >
-              <AppIcon name="fileChart" size={14} color={colors.navy}/>
+              <AppIcon name="pencil" size={14} color={colors.navy}/>
             </Pressable>
           </View>
 
