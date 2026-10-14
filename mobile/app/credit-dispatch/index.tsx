@@ -5,6 +5,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
+import { MotionView } from '@/components/MotionView';
 import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
@@ -93,7 +94,8 @@ export default function CreditDispatchListScreen(){
             
           </View>
         }
-        renderItem={({item})=>
+        renderItem={({item,index})=>
+          <MotionView delay={Math.min(index*24,180)} trigger={filter}>
           <Pressable accessibilityRole="button" style={({pressed})=>[styles.row,pressed&&styles.pressed]} onPress={()=>router.push(`/credit-dispatch/${item.id}`)}>
             <View style={styles.copy}>
               <View style={styles.topLine}>
@@ -113,6 +115,7 @@ export default function CreditDispatchListScreen(){
               </View>
             </View>
           </Pressable>
+          </MotionView>
         }
         ListEmptyComponent={query.isLoading ? <SkeletonLoader rows={4} compact /> : (query.isError
           ?<StateView icon="alert" tone="error" title="Credit Dispatch could not be loaded" message="Check your connection and retry." actionLabel="Retry" onAction={()=>void query.refetch()}/>
