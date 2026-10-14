@@ -147,12 +147,12 @@ export default function OrderDetailScreen() {
                   <Text style={styles.approvalTitle}>{managerOverride ? 'Manager override available' : 'This order is awaiting your action'}</Text>
                 </View>
               </View>
-              <Pressable onPress={() => router.push(`/approvals/${orderId}`)} style={styles.reviewButton}><AppIcon name="eye" size={15} color={colors.navy}/><Text style={styles.reviewButtonText}>Review quantities</Text></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Review quantities" hitSlop={8} onPress={() => router.push(`/approvals/${orderId}`)} style={({ pressed }) => [styles.reviewButton, pressed && styles.pressed]}><AppIcon name="eye" size={19} color={colors.navy}/></Pressable>
             </View>
             {managerOverride ? <Text style={styles.overrideText}>Audited manager override will be used for this order.</Text> : null}
             <View style={styles.approvalActions}>
-              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('approve')} style={[styles.approveButton, action.isPending && styles.disabled]}><Text style={styles.approveButtonText}>{role === 'manager' ? 'Approve Order' : 'Approve / Send Forward'}</Text></Pressable>
-              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('reject')} style={[styles.rejectButton, action.isPending && styles.disabled]}><Text style={styles.rejectButtonText}>Reject</Text></Pressable>
+              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('approve')} style={({ pressed }) => [styles.approveButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="clipboardCheck" size={17} color={colors.success}/><Text style={styles.approveButtonText}>{role === 'manager' ? 'Approve Order' : 'Approve / Send Forward'}</Text></Pressable>
+              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('reject')} style={({ pressed }) => [styles.rejectButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="trash" size={17} color={colors.danger}/><Text style={styles.rejectButtonText}>Reject</Text></Pressable>
             </View>
             {actionMessage ? <Text style={styles.actionMessage}>{actionMessage}</Text> : null}
           </View>
@@ -276,14 +276,28 @@ export default function OrderDetailScreen() {
         </View>
       </Modal>
 
-      <Modal visible={Boolean(confirmAction)} transparent animationType="fade" onRequestClose={() => setConfirmAction(null)}>
-        <View style={styles.modalBackdrop}>
+      <Modal visible={Boolean(confirmAction)} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setConfirmAction(null)}>
+        <View style={styles.confirmBackdrop}>
           <View style={styles.dialog}>
-            <View style={styles.dialogHeading}><AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={18} color={confirmAction === 'approve' ? colors.success : colors.danger}/><Text style={styles.dialogTitle}>{confirmAction === 'approve' ? 'Approve order?' : 'Reject order?'}</Text></View>
+            <View style={styles.dialogTopRow}>
+              <View style={[styles.dialogIcon, confirmAction === 'approve' ? styles.dialogIconApprove : styles.dialogIconReject]}>
+                <AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={28} color={confirmAction === 'approve' ? colors.success : colors.danger}/>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close confirmation" hitSlop={10} disabled={action.isPending} onPress={() => setConfirmAction(null)} style={({ pressed }) => [styles.dialogClose, pressed && styles.pressed]}>
+                <AppIcon name="x" size={22} color={colors.textMuted}/>
+              </Pressable>
+            </View>
+            <View style={styles.dialogHeading}>
+              <AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={20} color={confirmAction === 'approve' ? colors.success : colors.danger}/>
+              <Text style={styles.dialogTitle}>{confirmAction === 'approve' ? 'Approve order?' : 'Reject order?'}</Text>
+            </View>
+            <Text style={styles.dialogText}>{confirmAction === 'approve' ? 'Are you sure you want to approve this order? The approval workflow will continue.' : 'Are you sure you want to reject this order? This action cannot be undone.'}</Text>
             <View style={styles.dialogActions}>
-              <Pressable disabled={action.isPending} onPress={() => setConfirmAction(null)}><Text style={styles.cancel}>Cancel</Text></Pressable>
-              <Pressable disabled={action.isPending} onPress={() => confirmAction && action.mutate(confirmAction)} style={confirmAction === 'reject' ? styles.confirmReject : styles.confirmApprove}>
-                {action.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.confirmText}>{confirmAction === 'approve' ? 'Approve' : 'Reject'}</Text>}
+              <Pressable disabled={action.isPending} onPress={() => setConfirmAction(null)} style={({ pressed }) => [styles.dialogCancelButton, pressed && styles.dialogButtonPressed, action.isPending && styles.disabled]}>
+                <Text style={styles.dialogCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable disabled={action.isPending} onPress={() => confirmAction && action.mutate(confirmAction)} style={({ pressed }) => [styles.dialogConfirmButton, confirmAction === 'reject' ? styles.confirmReject : styles.confirmApprove, pressed && styles.dialogButtonPressed, action.isPending && styles.disabled]}>
+                {action.isPending ? <ActivityIndicator color="#fff" /> : <><AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'trash'} size={18} color="#fff"/><Text style={styles.confirmText}>{confirmAction === 'approve' ? 'Approve' : 'Reject'}</Text></>}
               </Pressable>
             </View>
           </View>
@@ -321,13 +335,13 @@ const styles = StyleSheet.create({
   approvalIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   approvalEyebrow: { color: colors.blue, fontSize: 9, fontWeight: '900', letterSpacing: 1.1 },
   approvalTitle: { color: colors.text, fontSize: 12, fontWeight: '900', marginTop: 2 },
-  reviewButton: { minHeight: 34, flexDirection:'row', gap:5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 999, borderWidth: 1, borderColor: '#B7C6D8', backgroundColor: '#fff' },
-  reviewButtonText: { color: colors.navy, fontSize: 9, fontWeight: '900' },
+  reviewButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: '#B7C6D8', backgroundColor: '#fff' },
   approvalActions: { flexDirection: 'row', gap: spacing.sm },
-  approveButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.success, backgroundColor: '#FFFFFF' },
+  approveButton: { flex: 1, minHeight: 48, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.success, backgroundColor: '#FFFFFF' },
   approveButtonText: { color: colors.success, fontSize: 11, fontWeight: '900', textAlign: 'center' },
-  rejectButton: { flex: 1, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: '#fff' },
+  rejectButton: { flex: 1, minHeight: 48, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.danger, backgroundColor: '#fff' },
   rejectButtonText: { color: colors.danger, fontSize: 11, fontWeight: '900' },
+  actionPressed: { opacity: .72, transform: [{ scale: .99 }] },
   overrideText: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
   actionMessage: { color: colors.navy, fontSize: 11, fontWeight: '700' },
   activity: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap:spacing.md, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
@@ -397,14 +411,25 @@ const styles = StyleSheet.create({
   transitMeta: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
   transitQty: { color: colors.text, fontSize: 11, fontWeight: '900' },
   empty: { color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.xl },
-  dialog: { alignSelf:'center', width:'78%', maxWidth:310, padding:16, gap:14, borderRadius:16, backgroundColor: colors.surface },
-  dialogHeading:{flexDirection:'row',alignItems:'center',gap:8},
-  dialogTitle: { color: colors.text, fontSize: 14, fontWeight: '900' },
-    dialogActions: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 14 },
-  cancel: { color: colors.textMuted, fontSize: 10, fontWeight: '800' },
-  confirmApprove: { minWidth: 88, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.success },
-  confirmReject: { minWidth: 88, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: colors.danger },
-  confirmText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+  confirmBackdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 28, backgroundColor: 'rgba(2,6,23,0.64)' },
+  dialog: { width: '100%', maxWidth: 390, padding: 22, gap: 14, borderRadius: 24, backgroundColor: colors.surface, shadowColor: '#020617', shadowOpacity: .22, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 18 },
+  dialogTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  dialogIcon: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
+  dialogIconApprove: { backgroundColor: colors.successSoft },
+  dialogIconReject: { backgroundColor: colors.dangerSoft },
+  dialogClose: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  dialogHeading:{flexDirection:'row',alignItems:'center',gap:9},
+  dialogTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '900' },
+  dialogText: { color: colors.textMuted, fontSize: 14, lineHeight: 21, marginTop: -2 },
+  dialogActions: { flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: 8 },
+  dialogCancelButton: { flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1.5, borderColor: colors.border, backgroundColor: '#fff' },
+  dialogCancelText: { color: colors.textMuted, fontSize: 13, fontWeight: '900' },
+  dialogConfirmButton: { flex: 1, minHeight: 50, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', borderRadius: 14 },
+  dialogButtonPressed: { opacity: .78, transform: [{ scale: .985 }] },
+  confirmApprove: { backgroundColor: colors.success },
+  confirmReject: { backgroundColor: colors.danger },
+  confirmText: { color: '#fff', fontSize: 13, fontWeight: '900' },
   loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},
+  pressed: { opacity: .72 },
   disabled: { opacity: .5 },
 });

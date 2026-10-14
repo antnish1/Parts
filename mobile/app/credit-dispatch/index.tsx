@@ -55,7 +55,17 @@ export default function CreditDispatchListScreen(){
   function toggle(next:Filter){setFilter((current)=>current===next&&next!=='all'?'all':next)}
 
   return (
-    <Screen title="Credit Dispatch" subtitle={`${rows.length} shown · ${role} view`} scroll={false}>
+    <Screen
+      title="Credit Dispatch"
+      subtitle={`${rows.length} shown · ${role} view`}
+      scroll={false}
+      right={
+        <Pressable accessibilityRole="button" accessibilityLabel="Open credit customers and aging" onPress={()=>router.push('/credit-dispatch/customers')} style={({pressed})=>[styles.customersButton,pressed&&styles.pressed]}>
+          <AppIcon name="wallet" size={15} color="#fff"/>
+          <Text style={styles.customersButtonText}>Customers / Aging</Text>
+        </Pressable>
+      }
+    >
       <FlatList
         data={rows}
         keyExtractor={(item)=>item.id}
@@ -64,10 +74,9 @@ export default function CreditDispatchListScreen(){
         onRefresh={()=>void query.refetch()}
         ListHeaderComponent={
           <View style={styles.header}>
-            <View style={styles.actions}>
-              {canCreate?<Pressable onPress={()=>router.push('/credit-dispatch/new')} style={styles.primary}><AppIcon name="package" size={14} color="#fff"/><Text style={styles.primaryText}>New Request</Text></Pressable>:null}
-              <Pressable onPress={()=>router.push('/credit-dispatch/customers')} style={styles.secondary}><AppIcon name="wallet" size={14} color={colors.navy}/><Text style={styles.secondaryText}>Customers / Aging</Text></Pressable>
-            </View>
+            {canCreate?<View style={styles.actions}>
+              <Pressable onPress={()=>router.push('/credit-dispatch/new')} style={styles.primary}><AppIcon name="package" size={14} color="#fff"/><Text style={styles.primaryText}>New Request</Text></Pressable>
+            </View>:null}
 
             <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search customer...', 'Search request number...', 'Search document...', 'Search branch...']}/>
 
@@ -130,8 +139,8 @@ const styles=StyleSheet.create({
   actions:{flexDirection:'row',gap:7},
   primary:{flex:1,minHeight:38,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,borderRadius:10,backgroundColor:colors.navy},
   primaryText:{color:'#fff',fontSize:9,fontWeight:'900'},
-  secondary:{flex:1,minHeight:38,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,borderRadius:10,borderWidth:1,borderColor:'#DDE4EC',backgroundColor:'#fff'},
-  secondaryText:{color:colors.navy,fontSize:9,fontWeight:'900'},
+  customersButton:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingHorizontal:11,borderRadius:999,backgroundColor:colors.navy},
+  customersButtonText:{color:'#fff',fontSize:9,fontWeight:'900'},
   filters:{gap:6,paddingRight:10},
   filterChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
   filterChipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
