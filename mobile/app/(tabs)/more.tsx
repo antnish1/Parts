@@ -169,7 +169,7 @@ export default function MoreScreen() {
 
       {shortcuts.length ? <>
         <Text style={styles.section}>MY OPERATIONS</Text>
-        <View style={styles.shortcuts}>{shortcuts.map((item,index) => <MotionView key={item.key} delay={Math.min(index*35,120)}><Shortcut icon={item.icon} tone={item.tone} title={item.title} onPress={() => router.push(item.href)} /></MotionView>)}</View>
+        <View style={styles.shortcuts}>{shortcuts.map((item,index) => <MotionView key={item.key} delay={Math.min(index*35,120)} style={{ flex: 1 }}><Shortcut icon={item.icon} tone={item.tone} title={item.title} onPress={() => router.push(item.href)} /></MotionView>)}</View>
       </> : null}
 
       <Text style={styles.section}>APP INFORMATION</Text>
