@@ -119,16 +119,23 @@ export default function PendingIssueScreen(){
    />
 
    <Modal visible={Boolean(selected)} animationType="slide" onRequestClose={()=>setSelected(null)}>
-     <Screen title={selected?.final_order_no||selected?.order_no||'Issue Order'} subtitle="Review received parts and complete final issue.">
-       <Pressable onPress={()=>setSelected(null)} style={styles.back}><Text style={styles.backText}>‹ Back to Pending Issue</Text></Pressable>
-
+     <Screen title="Issue Order">
        {selected?<View style={styles.issueHero}>
-         <View style={styles.issueHeroIcon}><AppIcon name="check" size={20} color={colors.success}/></View>
-         <View style={styles.issueHeroCopy}>
-           <Text style={styles.issueHeroTitle}>{selected.customer_name||'Customer order'}</Text>
-           <Text style={styles.issueHeroText}>{selected.branch} · {selected.order_type} · Qty {selected.total_qty}</Text>
+         <View style={styles.issueHeroTop}>
+           <View style={styles.issueHeroIcon}><AppIcon name="package" size={19} color="#FFFFFF"/></View>
+           <View style={styles.issueHeroCopy}>
+             <Text numberOfLines={1} style={styles.issueOrderNo}>{selected.final_order_no||selected.order_no}</Text>
+             <Text numberOfLines={1} style={styles.issueHeroTitle}>{selected.customer_name||'Customer order'}</Text>
+           </View>
+           <StatusChip status="Received"/>
          </View>
-         <StatusChip status="Received"/>
+         <View style={styles.issueSummary}>
+           <MiniDark label="Branch" value={selected.branch||'—'}/>
+           <DividerDark/>
+           <MiniDark label="Order type" value={selected.order_type||'—'}/>
+           <DividerDark/>
+           <MiniDark label="Qty" value={String(selected.total_qty)}/>
+         </View>
        </View>:null}
 
        {parts.isLoading?<SkeletonLoader rows={3} compact />:null}
@@ -136,21 +143,27 @@ export default function PendingIssueScreen(){
 
        {parts.data?.map(part=>
          <View key={part.id} style={styles.part}>
-           <View style={styles.partTop}><View style={styles.partIcon}><AppIcon name="package" size={16} color={colors.navy}/></View><View style={styles.partCopy}><Text style={styles.partNo}>{part.part_no}</Text><Text numberOfLines={2} style={styles.partDesc}>{part.description||'No description'}</Text></View><StatusChip status={part.item_status}/></View>
-           <View style={styles.partGrid}><Mini label="Required" value={String(part.effective_qty)}/><Mini label="Billed" value={String(part.billed_qty)}/><Mini label="Received" value={String(part.received_qty)}/></View>
+           <View style={styles.partTop}><View style={styles.partIcon}><AppIcon name="package" size={15} color={colors.navy}/></View><View style={styles.partCopy}><Text style={styles.partNo}>{part.part_no}</Text><Text numberOfLines={1} style={styles.partDesc}>{part.description||'No description'}</Text></View><StatusChip status={part.item_status}/></View>
+           <View style={styles.partGrid}>
+             <Mini label="Required" value={String(part.effective_qty)}/>
+             <Divider/>
+             <Mini label="Billed" value={String(part.billed_qty)}/>
+             <Divider/>
+             <Mini label="Received" value={String(part.received_qty)}/>
+           </View>
          </View>
        )}
 
        <View style={styles.issueForm}>
-         <Text style={styles.formTitle}>Issue document</Text>
+         <View style={styles.formHeading}><View style={styles.formIcon}><AppIcon name="fileChart" size={16} color={colors.navy}/></View><Text style={styles.formTitle}>Issue document</Text></View>
          <Text style={styles.label}>Document type</Text>
          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
            {DOC_TYPES.map(v=><Pressable key={v} onPress={()=>setDocType(v)} style={[styles.chip,docType===v&&styles.chipActive]}><Text style={[styles.chipText,docType===v&&styles.chipTextActive]}>{v}</Text></Pressable>)}
          </ScrollView>
          <Text style={styles.label}>Document No.</Text>
-         <TextInput autoCapitalize="characters" value={docNo} onChangeText={setDocNo} placeholder="Enter issued document number" placeholderTextColor={colors.textMuted} style={styles.input}/>
+         <TextInput autoCapitalize="characters" value={docNo} onChangeText={setDocNo} placeholder="Enter document number" placeholderTextColor={colors.textMuted} style={styles.input}/>
          <Pressable disabled={!docNo.trim()||issue.isPending} onPress={()=>issue.mutate()} style={[styles.issue,(!docNo.trim()||issue.isPending)&&styles.disabled]}>
-           {issue.isPending?<ActivityIndicator color="#fff"/>:<><AppIcon name="check" size={17} color="#fff"/><Text style={styles.issueText}>Mark Order Issued</Text></>}
+           {issue.isPending?<ActivityIndicator color="#fff"/>:<><AppIcon name="clipboardCheck" size={15} color="#fff"/><Text style={styles.issueText}>Mark Order Issued</Text></>}
          </Pressable>
        </View>
      </Screen>
@@ -163,7 +176,9 @@ function Filter({label,value,active,warning=false,danger=false,onPress}:{label:s
  return <Pressable onPress={onPress} style={[styles.filter,active&&{backgroundColor:accent}]}><Text style={[styles.filterValue,active&&styles.filterValueActive]}>{value}</Text><Text style={[styles.filterLabel,active&&styles.filterLabelActive]}>{label}</Text></Pressable>;
 }
 function Mini({label,value}:{label:string;value:string}){return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>}
+function MiniDark({label,value}:{label:string;value:string}){return <View style={styles.mini}><Text style={styles.miniLabelDark}>{label}</Text><Text numberOfLines={1} style={styles.miniValueDark}>{value}</Text></View>}
 function Divider(){return <View style={styles.divider}/>}
+function DividerDark(){return <View style={styles.dividerDark}/>} 
 
 const styles=StyleSheet.create({
  center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
@@ -205,37 +220,42 @@ const styles=StyleSheet.create({
  mini:{flex:1,minWidth:0},
  miniLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
  miniValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
- divider:{width:StyleSheet.hairlineWidth,height:28,backgroundColor:'#DDE4EC'},
+ miniLabelDark:{color:'#91AAC5',fontSize:8,fontWeight:'800'},
+ miniValueDark:{color:'#FFFFFF',fontSize:10,fontWeight:'900',marginTop:2},
+ divider:{width:StyleSheet.hairlineWidth,backgroundColor:'#DDE4EC',marginVertical:8},
+ dividerDark:{width:StyleSheet.hairlineWidth,backgroundColor:'rgba(255,255,255,.18)',marginVertical:8},
  bottom:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:spacing.sm,paddingTop:spacing.sm,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'#E8EDF3'},
  received:{color:colors.textMuted,fontSize:8,fontWeight:'700'},
  open:{flexDirection:'row',alignItems:'center',gap:3},
  openText:{color:colors.blue,fontSize:9,fontWeight:'900'},
- back:{alignSelf:'flex-start',minHeight:38,justifyContent:'center'},
- backText:{color:colors.blue,fontSize:11,fontWeight:'900'},
- issueHero:{minHeight:78,flexDirection:'row',alignItems:'center',gap:spacing.md,padding:spacing.md,borderRadius:20,backgroundColor:colors.successSoft},
- issueHeroIcon:{width:40,height:40,borderRadius:13,alignItems:'center',justifyContent:'center',backgroundColor:'#fff'},
- issueHeroCopy:{flex:1},
- issueHeroTitle:{color:colors.text,fontSize:12,fontWeight:'900'},
- issueHeroText:{color:colors.textMuted,fontSize:9,marginTop:3},
+ issueHero:{padding:14,borderRadius:18,backgroundColor:colors.navy},
+ issueHeroTop:{flexDirection:'row',alignItems:'flex-start',gap:8},
+ issueHeroIcon:{width:38,height:38,borderRadius:11,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,.12)'},
+ issueHeroCopy:{flex:1,minWidth:0},
+ issueOrderNo:{color:'#FFFFFF',fontSize:14,fontWeight:'900',lineHeight:18},
+ issueHeroTitle:{color:'#C5D7EA',fontSize:10,fontWeight:'700',marginTop:2},
+ issueSummary:{minHeight:48,flexDirection:'row',alignItems:'stretch',marginTop:12,borderRadius:9,backgroundColor:'rgba(255,255,255,.08)',overflow:'hidden'},
  loading:{flexDirection:'row',alignItems:'center',gap:spacing.sm},
  loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},
- part:{padding:spacing.md,borderWidth:1,borderColor:'#E1E7EE',borderRadius:18,backgroundColor:colors.surface},
+ part:{padding:12,borderWidth:1,borderColor:'#E1E7EE',borderRadius:14,backgroundColor:colors.surface},
  partTop:{flexDirection:'row',alignItems:'flex-start',gap:spacing.sm},
- partIcon:{width:34,height:34,borderRadius:11,alignItems:'center',justifyContent:'center',backgroundColor:'#EDF3FA'},
+ partIcon:{width:32,height:32,borderRadius:10,alignItems:'center',justifyContent:'center',backgroundColor:'#EDF3FA'},
  partCopy:{flex:1},
  partNo:{color:colors.text,fontSize:12,fontWeight:'900'},
- partDesc:{color:colors.textMuted,fontSize:9,marginTop:2,lineHeight:14},
- partGrid:{flexDirection:'row',gap:spacing.sm,marginTop:spacing.md,paddingTop:spacing.sm,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'#E8EDF3'},
- issueForm:{gap:spacing.sm,padding:spacing.md,borderRadius:20,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
- formTitle:{color:colors.text,fontSize:13,fontWeight:'900'},
+ partDesc:{color:colors.textMuted,fontSize:8.5,marginTop:2,lineHeight:12},
+ partGrid:{minHeight:48,flexDirection:'row',alignItems:'stretch',marginTop:10,paddingHorizontal:8,borderRadius:9,backgroundColor:'#EEF5FC'},
+ issueForm:{gap:8,padding:12,borderRadius:14,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+ formHeading:{flexDirection:'row',alignItems:'center',gap:8},
+ formIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},
+ formTitle:{color:colors.text,fontSize:12,fontWeight:'900'},
  label:{color:colors.textMuted,fontSize:9,fontWeight:'900',textTransform:'uppercase'},
  chips:{gap:spacing.sm,paddingRight:spacing.md},
- chip:{minHeight:38,justifyContent:'center',paddingHorizontal:spacing.md,borderWidth:1,borderColor:'#DFE6EE',borderRadius:999,backgroundColor:colors.surface},
+ chip:{minHeight:32,justifyContent:'center',paddingHorizontal:11,borderWidth:1,borderColor:'#DFE6EE',borderRadius:999,backgroundColor:colors.surface},
  chipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
- chipText:{color:colors.text,fontSize:10,fontWeight:'800'},
+ chipText:{color:colors.text,fontSize:9,fontWeight:'800'},
  chipTextActive:{color:'#fff'},
- input:{minHeight:48,borderWidth:1,borderColor:'#DFE6EE',borderRadius:14,paddingHorizontal:spacing.md,backgroundColor:'#fff',color:colors.text},
- issue:{minHeight:50,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,borderRadius:14,backgroundColor:colors.success},
- issueText:{color:'#fff',fontSize:12,fontWeight:'900'},
+ input:{minHeight:42,borderWidth:1,borderColor:'#DFE6EE',borderRadius:11,paddingHorizontal:12,backgroundColor:'#fff',color:colors.text,fontSize:11},
+ issue:{minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,borderRadius:11,backgroundColor:colors.success},
+ issueText:{color:'#fff',fontSize:10,fontWeight:'900'},
  disabled:{opacity:.45},
 });
