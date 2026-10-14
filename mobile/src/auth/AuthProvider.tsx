@@ -170,9 +170,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setSavedAccounts(await saveAccountSession(data.session, nextProfile));
     },
     signOut: async () => {
+      const activeUserId = session?.user.id;
       queryClient.clear();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      if (activeUserId) {
+        try { setSavedAccounts(await removeSavedAccount(activeUserId)); } catch { /* remote sign-out already succeeded */ }
+      }
     },
   }), [isLoading, profile, savedAccounts, session]);
 
