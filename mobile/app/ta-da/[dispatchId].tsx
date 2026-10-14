@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, Tex
 import { useAuth } from '@/auth/AuthProvider';
 import { TadaDeveloperControls } from '@/components/TadaDeveloperControls';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { AppIcon } from '@/components/AppIcon';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
@@ -74,12 +75,15 @@ export default function TadaDetailScreen() {
   return (
     <Screen title="TA/DA Dispatch" scroll={false}>
       <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <MotionView>
         <View style={styles.hero}>
           <View style={styles.heroTop}><View style={styles.heroIcon}><AppIcon name="clipboardCheck" size={19} color="#FFFFFF"/></View><View style={styles.heroCopy}><Text numberOfLines={1} style={styles.no}>{dispatch.dispatch_no}</Text><Text style={styles.office}>{dispatch.branch_name_snapshot}</Text></View><View style={styles.status}><Text style={styles.statusText}>{tadaStatusLabel(dispatch.status)}</Text></View></View>
           <View style={styles.heroSummary}><HeroMini label="SVRs" value={String(dispatch.total_svr_count)} /><HeroDivider/><HeroMini label="Date" value={dispatch.dispatch_date} /><HeroDivider/><HeroMini label="Mode" value={dispatch.dispatch_mode} /></View>
         </View>
+        </MotionView>
 
         <Text style={styles.sectionTitle}>Custody journey</Text>
+        <MotionView delay={70}>
         <View style={styles.journey}><Step label="Branch" done /><Step label="HQ" done={items.every((item) => item.hq_received === true)} active={dispatch.status.includes('HQ')} /><Step label="Accounts" done={items.every((item) => item.accounts_received === true)} active={dispatch.status.includes('ACCOUNTS')} /></View>
 
         <View style={styles.metaCard}><MetaMini label="Dispatched by" value={dispatch.dispatched_by}/><View style={styles.metaDivider}/><MetaMini label="Reference" value={dispatch.reference_no || '—'}/></View>
@@ -97,9 +101,9 @@ export default function TadaDetailScreen() {
         /> : null}
 
         <Text style={styles.sectionTitle}>SVR packet</Text>
-        {items.map((item) => (
+        {items.map((item, index) => (
+          <MotionView key={item.id} delay={Math.min(index * 26, 180)}>
           <SvrCard
-            key={item.id}
             item={item}
             receiptStage={stage}
             eligible={eligible.some((candidate) => candidate.id === item.id)}
@@ -110,10 +114,11 @@ export default function TadaDetailScreen() {
             onReason={(value) => setReasons((current) => ({ ...current, [item.id]: value }))}
             onRemark={(value) => setRemarks((current) => ({ ...current, [item.id]: value }))}
           />
+          </MotionView>
         ))}
 
         <Pressable onPress={() => setShowHistory((value) => !value)} style={styles.historyToggle}><Text style={styles.historyToggleText}>{showHistory ? 'Hide traceability' : `Show traceability (${events.length})`}</Text></Pressable>
-        {showHistory ? events.map((event) => <View key={event.id} style={styles.event}><View style={styles.eventDot} /><View style={styles.eventCopy}><Text style={styles.eventType}>{event.event_type}</Text><Text style={styles.eventMeta}>{event.actor_name_snapshot || 'System'} · {new Date(event.created_at).toLocaleString('en-IN')}</Text></View></View>) : null}
+        {showHistory ? events.map((event, index) => <MotionView key={event.id} delay={Math.min(index * 22, 160)} trigger={showHistory}><View style={styles.event}><View style={styles.eventDot} /><View style={styles.eventCopy}><Text style={styles.eventType}>{event.event_type}</Text><Text style={styles.eventMeta}>{event.actor_name_snapshot || 'System'} · {new Date(event.created_at).toLocaleString('en-IN')}</Text></View></View></MotionView>) : null}
         {message ? <View style={styles.message}><Text style={styles.messageText}>{message}</Text></View> : null}
       </ScrollView>
 
