@@ -178,7 +178,7 @@ const styles=StyleSheet.create({
   list:{gap:7,paddingBottom:spacing.xxl},
   header:{gap:8,marginBottom:8},
   invoiceHeader:{minHeight:26,flexDirection:'row',alignItems:'center',justifyContent:'flex-end',marginBottom:6},
-  headerAdd:{minHeight:36,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:12,borderRadius:999,backgroundColor:'#EAF3FF',shadowColor:'#245FA5',shadowOpacity:.12,shadowRadius:5,shadowOffset:{width:0,height:3},elevation:2},headerAddPlus:{color:'#245FA5',fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:'#245FA5',fontSize:9,fontWeight:'900'},
+  headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:10,borderRadius:8,borderWidth:1.3,borderColor:colors.success,backgroundColor:'#FFFFFF'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
   countText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
   filters:{gap:6,paddingRight:10},
   stageChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
