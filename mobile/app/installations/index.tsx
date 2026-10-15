@@ -67,8 +67,8 @@ export default function InstallationsScreen() {
   return (
     <Screen title="Engine & Breaker" subtitle="Invoice, registration, completion and acceptance" scroll={false} right={mode === 'invoice' && canManage ? <Pressable onPress={() => router.push('/installations/invoice')} style={styles.headerAdd}><Text style={styles.headerAddPlus}>+</Text><Text style={styles.headerAddText}>Add Invoice</Text></Pressable> : undefined}>
       <View style={styles.segment}>
-        <Pressable onPress={() => setMode('register')} style={[styles.segmentButton, mode === 'register' && styles.segmentActive]}><Text style={[styles.segmentText, mode === 'register' && styles.segmentTextActive]}>Register</Text></Pressable>
-        {canManage ? <Pressable onPress={() => setMode('invoice')} style={[styles.segmentButton, mode === 'invoice' && styles.segmentActive]}><Text style={[styles.segmentText, mode === 'invoice' && styles.segmentTextActive]}>Invoice</Text></Pressable> : null}
+        <Pressable onPress={() => setMode('register')} style={[styles.segmentButton, mode === 'register' && styles.segmentActive]}><AppIcon name="clipboardCheck" size={15} color={mode==='register'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'register' && styles.segmentTextActive]}>Register</Text></Pressable>
+        {canManage ? <Pressable onPress={() => setMode('invoice')} style={[styles.segmentButton, mode === 'invoice' && styles.segmentActive]}><AppIcon name="fileChart" size={15} color={mode==='invoice'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'invoice' && styles.segmentTextActive]}>Invoice</Text></Pressable> : null}
       </View>
 
       {mode === 'invoice' && canManage ? (
@@ -94,7 +94,7 @@ export default function InstallationsScreen() {
               </View>
               <View style={styles.invoiceStatusCol}>
                 <StatusChip status={item.installation_id ? 'Registered' : 'Pending'} />
-                <Text numberOfLines={1} style={styles.dbmsMeta}>DBMS {item.dbms_no || '—'}</Text>
+                <Text numberOfLines={1} style={styles.dbmsMeta}>DBMS <Text style={styles.dbmsValue}>{item.dbms_no || '—'}</Text></Text>
               </View>
             </Pressable>
             </MotionView>
@@ -170,15 +170,15 @@ function StageChip({ label, value, active, onPress }: { label: string; value: nu
 
 const styles=StyleSheet.create({
   center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
-  segment:{flexDirection:'row',gap:3,padding:3,borderRadius:11,backgroundColor:'#EAEFF5'},
-  segmentButton:{flex:1,minHeight:34,alignItems:'center',justifyContent:'center',borderRadius:8},
-  segmentActive:{backgroundColor:colors.navy},
+  segment:{flexDirection:'row',gap:8,backgroundColor:'transparent'},
+  segmentButton:{flex:1,minHeight:40,flexDirection:'row',gap:6,alignItems:'center',justifyContent:'center',borderRadius:14,borderWidth:1.4,borderColor:'#BCD3EE',backgroundColor:'#F4F8FE'},
+  segmentActive:{borderColor:'#2A64A7',backgroundColor:'#EAF3FF',shadowColor:'#245FA5',shadowOpacity:.12,shadowRadius:5,shadowOffset:{width:0,height:3},elevation:2},
   segmentText:{color:colors.textMuted,fontSize:9,fontWeight:'900'},
-  segmentTextActive:{color:'#fff'},
+  segmentTextActive:{color:'#174A86'},
   list:{gap:7,paddingBottom:spacing.xxl},
   header:{gap:8,marginBottom:8},
   invoiceHeader:{minHeight:26,flexDirection:'row',alignItems:'center',justifyContent:'flex-end',marginBottom:6},
-  headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,paddingHorizontal:10,borderRadius:999,borderWidth:1.2,borderColor:colors.success,backgroundColor:'#fff'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
+  headerAdd:{minHeight:36,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:12,borderRadius:999,backgroundColor:'#EAF3FF',shadowColor:'#245FA5',shadowOpacity:.12,shadowRadius:5,shadowOffset:{width:0,height:3},elevation:2},headerAddPlus:{color:'#245FA5',fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:'#245FA5',fontSize:9,fontWeight:'900'},
   countText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
   filters:{gap:6,paddingRight:10},
   stageChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
@@ -203,7 +203,7 @@ const styles=StyleSheet.create({
   meta:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
   subMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',marginTop:3},
   
-  invoiceStatusCol:{minWidth:82,alignItems:'flex-end',justifyContent:'center',gap:5},dbmsMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',textAlign:'right'},deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
+  invoiceStatusCol:{minWidth:92,alignItems:'flex-end',justifyContent:'center',gap:6},dbmsMeta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',textAlign:'right'},dbmsValue:{color:colors.navy,fontWeight:'900'},deleteInline:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:colors.dangerSoft},
   modalBackdrop:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:'rgba(2,6,23,.62)'},
   dialog:{gap:spacing.md,padding:spacing.lg,borderRadius:16,backgroundColor:'#fff'},
   dialogTitle:{color:colors.text,fontSize:15,fontWeight:'900'},
