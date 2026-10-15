@@ -144,6 +144,34 @@ body {
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06) !important;
 }
 
+
+/*
+ * Issue Parts has a deliberately navy modal header even in light-pro mode.
+ * The global light-theme text-white and yellow text rewrites otherwise
+ * turn its order number, title, subtitle and close icon dark-on-dark.
+ * Keep this exception scoped to this dialog; no other page is affected.
+ */
+.pc-issue-parts-header,
+[data-theme='light-pro'] .pc-issue-parts-header {
+  background-color: #0b1f3a !important;
+}
+.pc-issue-parts-header .pc-issue-parts-header-order,
+[data-theme='light-pro'] .pc-issue-parts-header .pc-issue-parts-header-order {
+  color: #ffe47a !important;
+}
+.pc-issue-parts-header .pc-issue-parts-header-title,
+[data-theme='light-pro'] .pc-issue-parts-header .pc-issue-parts-header-title {
+  color: #ffffff !important;
+}
+.pc-issue-parts-header .pc-issue-parts-header-subtitle,
+[data-theme='light-pro'] .pc-issue-parts-header .pc-issue-parts-header-subtitle {
+  color: #dce8f5 !important;
+}
+.pc-issue-parts-header .pc-issue-parts-header-close,
+[data-theme='light-pro'] .pc-issue-parts-header .pc-issue-parts-header-close {
+  color: #ffffff !important;
+}
+
 /* Compact professional layout for the New Order builder */
 [data-theme='light-pro'] section:has(datalist#parts-master-list) {
   padding: 10px !important;
