@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { StateView } from '@/components/StateView';
@@ -127,7 +127,7 @@ export default function OrderDetailScreen() {
               <Text style={styles.orderNo}>{row.final_order_no || row.order_no}</Text>
               <Text numberOfLines={2} style={styles.customer}>{row.customer_name || 'Customer not available'}</Text>
             </View>
-            <StatusChip status={row.approval_status || row.status} />
+            <PulseWrap><StatusChip status={row.approval_status || row.status} /></PulseWrap>
           </View>
           <View style={styles.summaryGrid}>
             <Meta label="Branch" value={row.branch || '—'} />
@@ -143,7 +143,7 @@ export default function OrderDetailScreen() {
         {canApprove ? (
           <MotionView delay={70}>
           <View style={styles.approvalCard}>
-            <View style={styles.approvalHeader}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Review quantities" onPress={() => router.push(`/approvals/${orderId}`)} style={({pressed})=>[styles.approvalHeader,pressed&&styles.approvalHeaderPressed]}>
               <View style={styles.approvalIdentity}>
                 <View style={styles.approvalIcon}><AppIcon name="clipboardCheck" size={18} color={colors.navy}/></View>
                 <View style={{ flex: 1 }}>
@@ -151,12 +151,12 @@ export default function OrderDetailScreen() {
                   <Text style={styles.approvalTitle}>{managerOverride ? 'Manager override available' : 'This order is awaiting your action'}</Text>
                 </View>
               </View>
-              <Pressable accessibilityRole="button" accessibilityLabel="Review quantities" hitSlop={8} onPress={() => router.push(`/approvals/${orderId}`)} style={({ pressed }) => [styles.reviewButton, pressed && styles.pressed]}><AppIcon name="eye" size={19} color={colors.navy}/></Pressable>
-            </View>
+              <View style={styles.reviewIcon}><AppIcon name="eye" size={19} color={colors.navy}/></View>
+            </Pressable>
             {managerOverride ? <Text style={styles.overrideText}>Audited manager override will be used for this order.</Text> : null}
             <View style={styles.approvalActions}>
-              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('approve')} style={({ pressed }) => [styles.approveButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="clipboardCheck" size={17} color={colors.success}/><Text style={styles.approveButtonText}>{role === 'manager' ? 'Approve Order' : 'Approve / Send Forward'}</Text></Pressable>
-              <Pressable disabled={action.isPending} onPress={() => requestApprovalAction('reject')} style={({ pressed }) => [styles.rejectButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="trash" size={17} color={colors.danger}/><Text style={styles.rejectButtonText}>Reject</Text></Pressable>
+              <PulseWrap flex><Pressable disabled={action.isPending} onPress={() => requestApprovalAction('approve')} style={({ pressed }) => [styles.approveButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="clipboardCheck" size={17} color={colors.success}/><Text style={styles.approveButtonText}>{role === 'manager' ? 'Approve Order' : 'Approve / Send Forward'}</Text></Pressable></PulseWrap>
+              <PulseWrap flex delay={420}><Pressable disabled={action.isPending} onPress={() => requestApprovalAction('reject')} style={({ pressed }) => [styles.rejectButton, pressed && styles.actionPressed, action.isPending && styles.disabled]}><AppIcon name="trash" size={17} color={colors.danger}/><Text style={styles.rejectButtonText}>Reject</Text></Pressable></PulseWrap>
             </View>
             {actionMessage ? <Text style={styles.actionMessage}>{actionMessage}</Text> : null}
           </View>
@@ -173,8 +173,11 @@ export default function OrderDetailScreen() {
         <MotionView trigger={quantityFilter} distance={4} duration={180}>
         <View style={styles.totals}>
           <MiniMetric label="Ordered" value={String(totalQty)} active={quantityFilter==='ordered'} onPress={()=>setQuantityFilter('ordered')} />
+          <MetricDivider />
           <MiniMetric label="Billed" value={String(totalBilled)} active={quantityFilter==='billed'} onPress={()=>setQuantityFilter('billed')} />
+          <MetricDivider />
           <MiniMetric label="Pending" value={String(totalPending)} active={quantityFilter==='pending'} onPress={()=>setQuantityFilter('pending')} />
+          <MetricDivider />
           <MiniMetric label="Received" value={String(totalReceived)} active={quantityFilter==='received'} onPress={()=>setQuantityFilter('received')} />
         </View>
         </MotionView>
@@ -194,7 +197,7 @@ export default function OrderDetailScreen() {
                   <Text style={styles.partNo}>{item.part_no}</Text>
                   <Text style={styles.description}>{item.description || 'No description'}</Text>
                 </View>
-                <StatusChip status={getResolvedRowStatus(item)} />
+                <PulseWrap><StatusChip status={getResolvedRowStatus(item)} /></PulseWrap>
               </View>
 
               <View style={styles.partMetrics}>
@@ -322,6 +325,21 @@ function Meta({ label, value }: { label: string; value: string }) { return <View
 function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text style={styles.miniValue}>{value}</Text></View>; }
 function PartMetric({ label, value }: { label: string; value: string }) { return <View style={styles.partMetric}><Text style={styles.partMetricLabel}>{label}</Text><Text numberOfLines={1} style={styles.partMetricValue}>{value}</Text></View>; }
 function PartDivider(){ return <View style={styles.partDivider}/>; }
+function MetricDivider(){ return <View style={styles.metricDivider}/>; }
+function PulseWrap({children,flex=false,delay=0}:{children:React.ReactNode;flex?:boolean;delay?:number}) {
+  const scale=useRef(new Animated.Value(1)).current;
+  useEffect(()=>{
+    const loop=Animated.loop(Animated.sequence([
+      Animated.delay(delay),
+      Animated.timing(scale,{toValue:.985,duration:720,easing:Easing.inOut(Easing.ease),useNativeDriver:true}),
+      Animated.timing(scale,{toValue:1.015,duration:720,easing:Easing.inOut(Easing.ease),useNativeDriver:true}),
+      Animated.timing(scale,{toValue:1,duration:520,easing:Easing.inOut(Easing.ease),useNativeDriver:true}),
+    ]));
+    loop.start();
+    return ()=>loop.stop();
+  },[delay,scale]);
+  return <Animated.View style={[flex&&styles.pulseFlex,{transform:[{scale}]}]}>{children}</Animated.View>;
+}
 function MiniMetric({ label, value, active, onPress }: { label: string; value: string; active: boolean; onPress: () => void }) { return <Pressable accessibilityRole="button" onPress={onPress} style={[styles.metric, active && styles.metricActive]}><Text style={[styles.metricLabel, active && styles.metricLabelActive]}>{label}</Text><Text style={[styles.metricValue, active && styles.metricValueActive]}>{value}</Text></Pressable>; }
 function DetailRow({ label, value, last = false }: { label: string; value: string | null | undefined; last?: boolean }) { return <View style={[styles.detailRow, last && styles.detailRowLast]}><Text style={styles.detailLabel}>{label}</Text><Text style={styles.detailValue}>{value || '—'}</Text></View>; }
 
@@ -346,8 +364,10 @@ const styles = StyleSheet.create({
   approvalIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
   approvalEyebrow: { color: colors.blue, fontSize: 9, fontWeight: '900', letterSpacing: 1.1 },
   approvalTitle: { color: colors.text, fontSize: 12, fontWeight: '900', marginTop: 2 },
-  reviewButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 999, borderWidth: 1, borderColor: '#B7C6D8', backgroundColor: '#fff' },
+  reviewIcon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  approvalHeaderPressed:{opacity:.78},
   approvalActions: { flexDirection: 'row', gap: spacing.sm },
+  pulseFlex:{flex:1},
   approveButton: { flex: 1, minHeight: 48, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.success, backgroundColor: '#FFFFFF' },
   approveButtonText: { color: colors.success, fontSize: 11, fontWeight: '900', textAlign: 'center' },
   rejectButton: { flex: 1, minHeight: 48, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.danger, backgroundColor: '#fff' },
@@ -364,9 +384,10 @@ const styles = StyleSheet.create({
   correctTitle: { color: colors.warning, fontSize: 12, fontWeight: '900' },
   correctText: { color: colors.text, fontSize: 10, marginTop: 2 },
   sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: spacing.xs },
-  totals: { flexDirection: 'row', gap: spacing.sm },
-  metric: { flex: 1, minWidth: 0, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  metricActive: { borderColor: colors.navy, backgroundColor: colors.blueSoft },
+  totals: { minHeight:62,flexDirection:'row',alignItems:'stretch',borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,overflow:'hidden' },
+  metric: { flex: 1, minWidth: 0, paddingHorizontal:10,paddingVertical:10,justifyContent:'center' },
+  metricDivider:{width:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED',marginVertical:9},
+  metricActive: { backgroundColor: colors.blueSoft },
   metricLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '800' },
   metricLabelActive: { color: colors.navy },
   metricValue: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 3 },
