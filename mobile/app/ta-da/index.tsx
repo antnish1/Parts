@@ -47,7 +47,7 @@ export default function TadaTrackingScreen() {
   function toggle(status: Filter) { setFilter((current) => current === status ? 'ALL' : status); }
 
   return (
-    <Screen title="TA/DA" scroll={false}>
+    <Screen title="TA/DA" scroll={false} right={canCreate ? <Pressable onPress={()=>router.push('/ta-da/new')} style={styles.titleNew}><Text style={styles.titleNewPlus}>+</Text><Text style={styles.titleNewText}>New</Text></Pressable> : undefined}>
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
@@ -61,7 +61,6 @@ export default function TadaTrackingScreen() {
                 <AppIcon name="search" size={16} color={colors.textMuted}/>
                 <TextInput value={search} onChangeText={setSearch} placeholder="Dispatch, office, ref. or person…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
               </View>
-              {canCreate?<Pressable onPress={()=>router.push('/ta-da/new')} style={styles.newButton}><AppIcon name="package" size={14} color="#fff"/><Text style={styles.newButtonText}>New</Text></Pressable>:null}
             </View>
 
             {role==='developer'?<View style={styles.developerNote}><AppIcon name="alert" size={14} color={colors.danger}/><Text style={styles.developerNoteText}><Text style={styles.developerNoteStrong}>Developer controls active.</Text> Open a dispatch for audited edit/delete.</Text></View>:null}
@@ -122,8 +121,7 @@ const styles = StyleSheet.create({
   topActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   search: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 12 },
   searchInput: { flex: 1, minHeight: 44, color: colors.text, fontSize: 12 },
-  newButton: { minHeight: 46, minWidth: 69, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 11, borderRadius: 12, backgroundColor: colors.navy },
-  newButtonText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  titleNew:{minHeight:32,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:4},titleNewPlus:{color:colors.success,fontSize:17,fontWeight:'900'},titleNewText:{color:colors.success,fontSize:11,fontWeight:'900'},
   developerNote: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#F3C4C4', backgroundColor: colors.dangerSoft },
   developerNoteText: { flex: 1, color: colors.textMuted, fontSize: 8, lineHeight: 12 },
   developerNoteStrong: { color: colors.danger, fontWeight: '900' },
