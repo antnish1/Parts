@@ -830,3 +830,13 @@ Keep detailed implementation notes in normal docs/PRs, but keep the **durable pr
 A future agent entering this repository should act as though it has received this instruction:
 
 > Read `/AGENTS.md` completely before making any change. Work in the React app under `app/`, preserve established workflows, inspect recent commits and patch scripts before editing, treat production Supabase data carefully, and validate all affected roles on both desktop and mobile. If the user's new instruction conflicts with this file, the user's latest explicit instruction wins and `AGENTS.md` should be updated with the new durable rule.
+
+---
+
+## 31. In Transit calculation — processed same-branch rule (2026-10-15)
+
+- **Include PROCESSED items and orders** in the branch-wide In Transit total and order detail popup whenever they have unreceived effective quantity, regardless of age. This supersedes the 2026-10-10 processed-order exclusion.
+- The calculation is by **canonical order branch and part number**, not across branches or by the current user's branch. Do not display JABALPUR_PARTS quantities within MANDLA orders.
+- In mixed-status orders, a PROCESSED item is not yet dispatched, so do not exclude it using its parent order's PARTIALLY DISPATCHED / DISPATCHED 15-day billing-age window. Truly dispatched item lines still obey the window.
+- Preserve received/issued/rejected/pending exclusions, approved/partially received semantics, edited quantity, receipt deduction, final DBMS order numbers and RLS.
+- Keep both SQL RPCs (`portal_get_in_transit_qty` and `portal_get_in_transit_details`) synchronized. Refer to `docs/in-transit-processed-same-branch-2026-10-15.md` for migration, rollback and validation.
