@@ -9,6 +9,7 @@ import { AppIcon } from '@/components/AppIcon';
 import { RotatingOrderSearch } from '@/components/RotatingOrderSearch';
 import { Screen } from '@/components/Screen';
 import { MotionView } from '@/components/MotionView';
+import { BreathingView } from '@/components/BreathingView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
@@ -112,7 +113,7 @@ export default function ReportsScreen(){
     <Screen title="Reports" subtitle="Operational order register" right={reportActions}>
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
       <MotionView trigger={`${branch}-${status}`} distance={5} duration={190}>
-      <View style={styles.summaryStrip}>
+      <BreathingView><View style={styles.summaryStrip}>
         <Summary label="Orders" value={String(filtered.length)} active={sortMode==='orders'} onPress={()=>setSortMode('orders')} />
         <Divider />
         <Summary label="Qty" value={String(totalQty)} active={sortMode==='qty'} onPress={()=>setSortMode('qty')} />
@@ -120,7 +121,7 @@ export default function ReportsScreen(){
         <Summary label="Value" value={formatMoney(totalValue)} active={sortMode==='value'} onPress={()=>setSortMode('value')} />
         <Divider />
         <Summary label="Branches" value={String(branchSummary.length)} active={sortMode==='branches'} onPress={()=>setSortMode('branches')} />
-      </View>
+      </View></BreathingView>
       </MotionView>
 
       <View style={styles.filterBlock}>

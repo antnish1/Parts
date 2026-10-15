@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 import { getCurrentPortalProfile } from '@/services/profile';
 
@@ -19,4 +20,17 @@ export async function getOrderActivity(orderId:string){
  return {events:(eventsResult.data??[]) as OrderEvent[],comments:raw.map((c)=>({...c,author:Array.isArray(c.author)?c.author[0]??null:c.author??null,attachments:attachmentMap.get(c.id)??[]})),billings:(billingResult.data??[]) as BillingChunk[]};
 }
 export async function addOrderComment(orderId:string,body:string){const text=normalizeText(body);if(!text)throw new Error('Comment is required.');const profile=await getCurrentPortalProfile();const {data:recent,error:recentError}=await supabase.from('portal_order_comments').select('body').eq('order_id',orderId).eq('comment_type','user').order('created_at',{ascending:false}).limit(5);if(recentError)throw recentError;if((recent??[]).some((c)=>normalizeText(c.body??'').toLowerCase()===text.toLowerCase()))throw new Error('Duplicate comment already exists for this order.');const {data,error}=await supabase.from('portal_order_comments').insert({order_id:orderId,author_id:profile?.id??null,comment_type:'user',body:text}).select('id').single();if(error)throw error;return data as {id:string};}
+export async function uploadOrderCommentAttachment(orderId:string,commentId:string,asset:{uri:string;name:string;mimeType?:string|null}) {
+ if(!orderId||!commentId) throw new Error('Order and comment are required.');
+ const file=new File(asset.uri);
+ const bytes=await file.arrayBuffer();
+ const blob=new Blob([bytes],{type:asset.mimeType||'application/octet-stream'});
+ const form=new FormData();
+ form.append('orderId',orderId);
+ form.append('commentId',commentId);
+ form.append('file',blob,asset.name||'attachment');
+ const {data,error}=await supabase.functions.invoke('comment-attachment-upload-action',{body:form});
+ if(error)throw error;if(data?.error)throw new Error(String(data.error));
+ return data.attachment as OrderCommentAttachment;
+}
 export async function getOrderAttachmentUrl(attachmentId:string){const {data,error}=await supabase.functions.invoke('comment-attachment-link-action',{body:{attachmentId}});if(error)throw error;if(data?.error)throw new Error(String(data.error));return data as {signedUrl:string;expiresIn:number;fileName:string};}

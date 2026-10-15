@@ -172,8 +172,7 @@ export default function PendingIssueScreen(){
 }
 
 function Filter({label,value,active,warning=false,danger=false,onPress}:{label:string;value:number;active:boolean;warning?:boolean;danger?:boolean;onPress:()=>void}){
- const accent=danger?colors.danger:warning?colors.warning:colors.navy;
- return <Pressable onPress={onPress} style={[styles.filter,active&&{backgroundColor:accent}]}><Text style={[styles.filterValue,active&&styles.filterValueActive]}>{value}</Text><Text style={[styles.filterLabel,active&&styles.filterLabelActive]}>{label}</Text></Pressable>;
+ return <Pressable onPress={onPress} style={({pressed})=>[styles.filter,active&&styles.filterActive,pressed&&styles.filterPressed]}><Text style={styles.filterValue}>{value}</Text><Text style={styles.filterLabel}>{label}</Text></Pressable>;
 }
 function Mini({label,value,centered=false}:{label:string;value:string;centered?:boolean}){return <View style={[styles.mini,centered&&styles.miniCentered]}><Text style={[styles.miniLabel,centered&&styles.miniCenteredText]}>{label}</Text><Text numberOfLines={1} style={[styles.miniValue,centered&&styles.miniCenteredText]}>{value}</Text></View>}
 function MiniDark({label,value,centered=false}:{label:string;value:string;centered?:boolean}){return <View style={[styles.mini,centered&&styles.miniCentered]}><Text style={[styles.miniLabelDark,centered&&styles.miniCenteredText]}>{label}</Text><Text numberOfLines={1} style={[styles.miniValueDark,centered&&styles.miniCenteredText]}>{value}</Text></View>}
@@ -190,12 +189,12 @@ const styles=StyleSheet.create({
  heroTitle:{color:'#815015',fontSize:12,fontWeight:'900'},
  heroText:{color:'#866C4C',fontSize:9,lineHeight:14,marginTop:3},
  heroTotal:{color:'#815015',fontSize:22,fontWeight:'900'},
- summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,borderWidth:1,borderColor:'#DFE6EF',backgroundColor:'#FFFFFF'},
- filter:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9},
- filterValue:{color:colors.text,fontSize:16,fontWeight:'900'},
+ summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,backgroundColor:'#5B9BD5'},
+ filter:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9},filterActive:{backgroundColor:'rgba(8,43,91,.18)'},filterPressed:{opacity:.8,transform:[{scale:.97}]},
+ filterValue:{color:'#FFFFFF',fontSize:16,fontWeight:'900'},
  filterValueActive:{color:'#fff'},
- filterLabel:{color:colors.textMuted,fontSize:8,fontWeight:'900',marginTop:2},
- filterLabelActive:{color:'#EAF0F7'},
+ filterLabel:{color:'#FFFFFF',fontSize:8,fontWeight:'900',marginTop:2},
+ filterLabelActive:{color:'#FFFFFF'},
  typeRow:{flexDirection:'row',gap:spacing.sm},
  typeChip:{minHeight:36,justifyContent:'center',paddingHorizontal:12,borderRadius:999,borderWidth:1,borderColor:'#DFE6EE',backgroundColor:'#fff'},
  typeChipActive:{backgroundColor:colors.navy,borderColor:colors.navy},

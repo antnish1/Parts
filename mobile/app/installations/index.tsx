@@ -22,6 +22,7 @@ export default function InstallationsScreen() {
   const [filter, setFilter] = useState<Filter>('ALL');
   const [search, setSearch] = useState('');
   const [mode, setMode] = useState<'register' | 'invoice'>('register');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
   const [deleteEntry, setDeleteEntry] = useState<InstallationEntry | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [deleteMessage, setDeleteMessage] = useState('');
@@ -43,6 +44,11 @@ export default function InstallationsScreen() {
       .filter((r) => filter === 'ALL' || r.status === filter)
       .filter((r) => !needle || [r.entry_no, r.branch, r.customer_name, r.invoice_no, r.jcb_invoice_no, r.equipment_no, r.dbms_no, r.dbms_invoice_no, r.svr_no, r.equipment_registration_no].some((v) => String(v ?? '').toLowerCase().includes(needle)));
   }, [data, filter, search]);
+
+  const visibleInvoices = useMemo(() => {
+    const needle = invoiceSearch.trim().toLowerCase();
+    return (invoices.data ?? []).filter((item) => !needle || [item.jcb_invoice_no,item.part_no,item.serial_no,item.dbms_no,item.equipment_type].some((value)=>String(value??'').toLowerCase().includes(needle)));
+  }, [invoices.data, invoiceSearch]);
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
@@ -73,14 +79,17 @@ export default function InstallationsScreen() {
 
       {mode === 'invoice' && canManage ? (
         <FlatList
-          data={invoices.data ?? []}
+          data={visibleInvoices}
           keyExtractor={(item) => item.id}
           refreshing={invoices.isRefetching}
           onRefresh={() => void invoices.refetch()}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.invoiceHeader}>
-              <Text style={styles.countText}>{invoices.data?.length ?? 0} invoices</Text>
+              <View style={styles.search}>
+                <AppIcon name="search" size={16} color={colors.textMuted}/>
+                <TextInput value={invoiceSearch} onChangeText={setInvoiceSearch} placeholder="Invoice, part, serial or DBMS…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
+              </View>
             </View>
           }
           renderItem={({ item, index }) => (
@@ -177,9 +186,9 @@ const styles=StyleSheet.create({
   segmentTextActive:{color:'#174A86'},
   list:{gap:7,paddingBottom:spacing.xxl},
   header:{gap:8,marginBottom:8},
-  invoiceHeader:{minHeight:26,flexDirection:'row',alignItems:'center',justifyContent:'flex-end',marginBottom:6},
-  headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:10,borderRadius:8,borderWidth:1.3,borderColor:colors.success,backgroundColor:'#FFFFFF'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
-  countText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
+  invoiceHeader:{marginBottom:8},
+  headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:10,borderRadius:8,backgroundColor:'#EAF7F1'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
+  
   filters:{gap:6,paddingRight:10},
   stageChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
   stageChipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
