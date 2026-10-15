@@ -74,6 +74,7 @@ export default function ReportsScreen(){
   const [search,setSearch]=useState('');
   const [exporting,setExporting]=useState<'csv'|'xlsx'|''>('');
   const [message,setMessage]=useState('');
+  const [sortMode,setSortMode]=useState<'orders'|'qty'|'value'|'branches'>('orders');
   const query=useQuery({queryKey:['mobile-reports-orders'],queryFn:getAllVisibleOrders});
   const orders=query.data??[];
 
@@ -84,6 +85,12 @@ export default function ReportsScreen(){
   const statusSummary=useMemo(()=>Object.entries(filtered.reduce<Record<string,number>>((acc,o)=>{const key=o.status||o.approval_status||'Unknown';acc[key]=(acc[key]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]),[filtered]);
   const totalValue=filtered.reduce((sum,o)=>sum+Number(o.total_value??0),0);
   const totalQty=filtered.reduce((sum,o)=>sum+Number(o.total_qty??0),0);
+  const previewOrders=useMemo(()=>[...filtered].sort((a,b)=>{
+    if(sortMode==='qty') return Number(b.total_qty??0)-Number(a.total_qty??0);
+    if(sortMode==='value') return Number(b.total_value??0)-Number(a.total_value??0);
+    if(sortMode==='branches') return String(a.branch??'').localeCompare(String(b.branch??''));
+    return new Date(b.created_at).getTime()-new Date(a.created_at).getTime();
+  }),[filtered,sortMode]);
 
   async function runExport(format:'csv'|'xlsx'){
     setExporting(format);setMessage('');
@@ -106,13 +113,13 @@ export default function ReportsScreen(){
       <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
       <MotionView trigger={`${branch}-${status}`} distance={5} duration={190}>
       <View style={styles.summaryStrip}>
-        <Summary label="Orders" value={String(filtered.length)} />
+        <Summary label="Orders" value={String(filtered.length)} active={sortMode==='orders'} onPress={()=>setSortMode('orders')} />
         <Divider />
-        <Summary label="Qty" value={String(totalQty)} />
+        <Summary label="Qty" value={String(totalQty)} active={sortMode==='qty'} onPress={()=>setSortMode('qty')} />
         <Divider />
-        <Summary label="Value" value={formatMoney(totalValue)} />
+        <Summary label="Value" value={formatMoney(totalValue)} active={sortMode==='value'} onPress={()=>setSortMode('value')} />
         <Divider />
-        <Summary label="Branches" value={String(branchSummary.length)} />
+        <Summary label="Branches" value={String(branchSummary.length)} active={sortMode==='branches'} onPress={()=>setSortMode('branches')} />
       </View>
       </MotionView>
 
@@ -148,7 +155,7 @@ export default function ReportsScreen(){
       </MotionView>
 
       <View style={styles.sectionHead}><Text style={styles.section}>Orders</Text><Text style={styles.previewCount}>{Math.min(filtered.length,100)} shown</Text></View>
-      {filtered.slice(0,100).map((order,index)=>
+      {previewOrders.slice(0,100).map((order,index)=>
         <MotionView key={order.id} delay={Math.min(index*20,160)} trigger={`${branch}-${status}`}>
         <Pressable accessibilityRole="button" onPress={()=>router.push(`/orders/${order.id}`)} style={({pressed})=>[styles.row,pressed&&styles.pressed]}>
           <View style={styles.copy}>
@@ -192,7 +199,7 @@ function ReportsLoadingSkeleton(){
 }
 
 function Chip({label,active,onPress}:{label:string;active:boolean;onPress:()=>void}){return <Pressable onPress={onPress} style={[styles.chip,active&&styles.chipActive]}><Text style={[styles.chipText,active&&styles.chipTextActive]}>{label}</Text></Pressable>}
-function Summary({label,value}:{label:string;value:string}){return <View style={styles.summary}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} style={styles.summaryValue}>{value}</Text></View>}
+function Summary({label,value,active,onPress}:{label:string;value:string;active:boolean;onPress:()=>void}){return <Pressable accessibilityRole="button" accessibilityLabel={`Sort reports by ${label}`} onPress={onPress} style={({pressed})=>[styles.summary,active&&styles.summaryActive,pressed&&styles.summaryPressed]}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} style={styles.summaryValue}>{value}</Text></Pressable>}
 function Divider(){return <View style={styles.divider}/>}
 
 const styles=StyleSheet.create({
@@ -228,11 +235,13 @@ const styles=StyleSheet.create({
  infoValue:{fontSize:10,color:'#152740',fontWeight:'900'},
   loading:{flexDirection:'row',alignItems:'center',gap:7},
   loadingText:{color:colors.textMuted,fontSize:9,fontWeight:'700'},
-  summaryStrip:{minHeight:48,flexDirection:'row',alignItems:'stretch',borderRadius:12,borderWidth:1,borderColor:'#C8D6E6',backgroundColor:'#FFFFFF',overflow:'hidden'},
+  summaryStrip:{minHeight:50,flexDirection:'row',alignItems:'stretch',borderRadius:12,backgroundColor:'#5B9BD5',overflow:'hidden'},
   summary:{flex:1,minWidth:0,justifyContent:'center',paddingHorizontal:10},
-  summaryLabel:{color:colors.navy,fontSize:7.5,fontWeight:'900'},
-  summaryValue:{color:colors.navy,fontSize:10,fontWeight:'900',marginTop:2},
-  divider:{width:1,alignSelf:'stretch',marginVertical:8,backgroundColor:'#C8D6E6'},
+  summaryActive:{backgroundColor:'rgba(8,43,91,.16)'},
+  summaryPressed:{opacity:.82},
+  summaryLabel:{color:'#FFFFFF',fontSize:7.5,fontWeight:'900'},
+  summaryValue:{color:'#FFFFFF',fontSize:10,fontWeight:'900',marginTop:2},
+  divider:{width:1,alignSelf:'stretch',marginVertical:9,backgroundColor:'rgba(255,255,255,.5)'},
   filterBlock:{gap:5},
   label:{color:colors.textMuted,fontSize:8,fontWeight:'900',textTransform:'uppercase'},
   chips:{gap:6,paddingRight:10},
