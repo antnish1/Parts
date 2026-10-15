@@ -107,6 +107,10 @@ export function getResolvedRowStatus(row: LegacyLikeOrderItem) {
   const approval = normalizeStatus(row.approval_status ?? row.ApprovalStatus ?? '');
   const status = normalizeStatus(row.status ?? row.Status ?? '');
 
+  // Issued means physically handed over, and must take precedence over receipt
+  // billing chunks. Otherwise an issued part is incorrectly displayed Received.
+  if (rowStatus === 'ISSUED') return 'ISSUED';
+
   if (rowStatus === 'REJECTED' || approval === 'REJECTED' || status === 'REJECTED') return 'REJECTED';
 
   const billingDriven = getBillingDrivenStatus(row);
@@ -126,6 +130,11 @@ export function getOrderStatusLabel(order: LegacyLikeOrder | LegacyLikeOrderItem
   if (!items.length) return 'NA';
   const statuses = items.map(getResolvedRowStatus).filter((status) => status !== 'NA');
   if (!statuses.length) return 'NA';
+
+  // One physically issued item does not make the entire order Issued.
+  // Preserve that distinction throughout Pending Issue, Track Orders and detail.
+  if (statuses.every((status) => status === 'ISSUED')) return 'ISSUED';
+  if (statuses.some((status) => status === 'ISSUED')) return 'PARTIALLY ISSUED';
 
   const hasFulfillment = statuses.some((status) => ['PROCESSED', 'PARTIALLY DISPATCHED', 'DISPATCHED', 'ISSUED', 'PARTIALLY RECEIVED', 'RECEIVED'].includes(status));
   if (hasFulfillment) {
@@ -158,6 +167,7 @@ export function getPrintableStatusLabel(statusOrRow: string | LegacyLikeOrderIte
     PROCESSED: 'Processed',
     DISPATCHED: 'Dispatched',
     ISSUED: 'Issued',
+    'PARTIALLY ISSUED': 'Partially Issued',
     'PARTIALLY DISPATCHED': 'Partially Dispatched',
     RECEIVED: 'Received',
     'PARTIALLY RECEIVED': 'Partially Received',
