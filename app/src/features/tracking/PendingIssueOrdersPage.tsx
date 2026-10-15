@@ -7,6 +7,7 @@ import { useAuth } from '../../auth/useAuth';
 import { PageCard } from '../../components/ui/PageCard';
 import { issuedDocumentTypes, markOrderIssued, type IssuedDocumentType } from '../../services/orderIssue.service';
 import { getPendingIssueOrderParts, getPendingIssueOrders, type PendingIssueOrder } from '../../services/pendingIssue.service';
+import { PartiallyIssuedOrdersSection } from './PartiallyIssuedOrdersSection';
 
 function money(value: number) { return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`; }
 function dateLabel(value: string | null) { return value ? new Date(value).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'; }
@@ -47,7 +48,8 @@ export function PendingIssueOrdersPage() {
   const branch = params.get('branch') ?? 'all';
 
   const query = useQuery({ queryKey: ['pending-issue-orders'], queryFn: getPendingIssueOrders, staleTime: 30000, refetchOnWindowFocus: true });
-  const orders = query.data ?? [];
+  const allOrders = query.data ?? [];
+  const orders = useMemo(() => allOrders.filter((order) => order.issue_status === 'pending'), [allOrders]);
   const branches = useMemo(() => [...new Set(orders.map((order) => order.branch))].sort(), [orders]);
   const isBranch = role === 'branch';
 
@@ -176,6 +178,8 @@ export function PendingIssueOrdersPage() {
           <span className={`absolute bottom-2 right-3 text-[10px] font-semibold ${card.active ? 'text-[#f8d94e]' : 'text-[#334155]'}`}>{money(card.data.value)}</span>
         </button>)}
       </div>
+
+      <PartiallyIssuedOrdersSection orders={allOrders.filter((order) => order.issue_status === 'partially_issued')} />
 
       <div className="mt-3 rounded-lg border border-[#d8e0ea] bg-[#f8fafc] p-2">
         <div className="mb-2 flex items-center justify-between gap-2">

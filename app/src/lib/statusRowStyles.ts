@@ -8,7 +8,7 @@ export function getStatusRowClass(status: string) {
   if (normalized === 'APPROVED') return 'transition-colors bg-emerald-50/70 hover:bg-emerald-100/80';
   if (normalized === 'PROCESSED') return 'transition-colors bg-violet-50/70 hover:bg-violet-100/80';
   if (normalized === 'DISPATCHED' || normalized === 'PARTIALLY DISPATCHED') return 'transition-colors bg-purple-50/70 hover:bg-purple-100/80';
-  if (normalized === 'ISSUED') return 'transition-colors bg-amber-50/70 hover:bg-amber-100/80';
+  if (normalized === 'ISSUED' || normalized === 'PARTIALLY ISSUED') return 'transition-colors bg-amber-50/70 hover:bg-amber-100/80';
   if (normalized === 'RECEIVED' || normalized === 'PARTIALLY RECEIVED') return 'transition-colors bg-cyan-50/70 hover:bg-cyan-100/80';
   if (normalized === 'REJECTED' || normalized === 'PARTIALLY REJECTED') return 'transition-colors bg-rose-50/70 hover:bg-rose-100/80';
 

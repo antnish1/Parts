@@ -16,6 +16,11 @@ export type PendingIssueOrder = {
   total_qty: number;
   total_value: number;
   age_days: number;
+  issue_status: 'pending' | 'partially_issued';
+  issued_qty: number;
+  pending_qty: number;
+  issued_value: number;
+  pending_value: number;
 };
 
 export type PendingIssuePartExportRow = {
@@ -31,10 +36,14 @@ export type PendingIssuePartExportRow = {
   billed_qty: number;
   received_qty: number;
   item_status: string;
+  item_id: string;
+  issued_document_type: string | null;
+  issued_document_no: string | null;
+  issued_at: string | null;
 };
 
-type OrderRow = Omit<PendingIssueOrder, 'total_qty' | 'total_value' | 'age_days'> & { order_for: string | null; status: string | null; issued_at: string | null };
-type ItemRow = LegacyLikeOrderItem & { id: string; order_id: string; description?: string | null };
+type OrderRow = Omit<PendingIssueOrder, 'total_qty' | 'total_value' | 'age_days' | 'issue_status' | 'issued_qty' | 'pending_qty' | 'issued_value' | 'pending_value'> & { order_for: string | null; status: string | null; issued_at: string | null };
+type ItemRow = LegacyLikeOrderItem & { id: string; order_id: string; description?: string | null; issued_document_type?: string | null; issued_document_no?: string | null; issued_at?: string | null };
 type BillingRow = { item_id: string; billed_qty: number | string | null; received_qty: number | string | null; received_at: string | null };
 const PAGE_SIZE = 1000;
 const ID_BATCH_SIZE = 150;
@@ -114,11 +123,16 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
     const orderItems = itemsByOrder.get(order.id) ?? [];
     if (!orderItems.length) return [];
 
-    const resolvedStatus = getOrderStatusLabel(orderItems);
-    // Treat ISSUED as terminal at item level too. This protects against legacy or
-    // partially migrated records where header metadata and row_status disagree.
-    if (normalizeWorkflowStatus(resolvedStatus) === 'ISSUED') return [];
-    if (normalizeWorkflowStatus(resolvedStatus) !== 'RECEIVED') return [];
+    const resolvedStatus = normalizeWorkflowStatus(getOrderStatusLabel(orderItems));
+    const headerStatus = normalizeWorkflowStatus(order.status);
+    const issuedItems = orderItems.filter((item) => normalizeWorkflowStatus(item.row_status) === 'ISSUED');
+    const pendingItems = orderItems.filter((item) => normalizeWorkflowStatus(item.row_status) !== 'ISSUED');
+    // Never count a fully issued order as Pending Issue. A mixed order remains
+    // visible with only its unissued quantity/value counted as outstanding.
+    if (!pendingItems.length) return [];
+    if (issuedItems.length) {
+      if (headerStatus !== 'PARTIALLY_ISSUED') return [];
+    } else if (resolvedStatus !== 'RECEIVED' || headerStatus !== 'RECEIVED') return [];
 
     const itemIdSet = new Set(orderItems.map((item) => item.id));
     const latestReceipt = billings.filter((chunk) => itemIdSet.has(chunk.item_id) && chunk.received_at).map((chunk) => chunk.received_at as string).sort().at(-1) ?? null;
@@ -129,6 +143,11 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
       machine_no: order.machine_no, call_id: order.call_id, received_date: receivedDate,
       total_qty: orderItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
       total_value: orderItems.reduce((sum, item) => sum + getEffectiveValue(item), 0), age_days: ageInDays(receivedDate),
+      issue_status: (issuedItems.length ? 'partially_issued' : 'pending') as PendingIssueOrder['issue_status'],
+      issued_qty: issuedItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
+      pending_qty: pendingItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
+      issued_value: issuedItems.reduce((sum, item) => sum + getEffectiveValue(item), 0),
+      pending_value: pendingItems.reduce((sum, item) => sum + getEffectiveValue(item), 0),
     }];
   }).sort((a, b) => b.age_days - a.age_days);
 }
@@ -138,7 +157,7 @@ export async function getPendingIssueOrderParts(orderIds: string[]): Promise<Pen
   if (!ids.length) return [];
 
   const items = await fetchByIdBatches<ItemRow>(ids, (batch, from, to) => supabase.from('portal_order_items')
-    .select('id, order_id, part_no, description, qty, edited_qty, value, edited_value, billed_qty, row_status')
+    .select('id, order_id, part_no, description, qty, edited_qty, value, edited_value, billed_qty, row_status, issued_document_type, issued_document_no, issued_at')
     .in('order_id', batch).range(from, to));
   const itemIds = items.map((item) => item.id);
   const billings = itemIds.length ? await fetchByIdBatches<BillingRow>(itemIds, (batch, from, to) => supabase.from('portal_order_item_billings')
@@ -164,6 +183,10 @@ export async function getPendingIssueOrderParts(orderIds: string[]): Promise<Pen
       billed_qty: getBilledQty(resolved),
       received_qty: getReceivedQty(resolved),
       item_status: getResolvedRowStatus(resolved),
+      item_id: item.id,
+      issued_document_type: item.issued_document_type ?? null,
+      issued_document_no: item.issued_document_no ?? null,
+      issued_at: item.issued_at ?? null,
     };
   });
 }
