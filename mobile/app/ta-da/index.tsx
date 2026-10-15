@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   topActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   search: { flex: 1, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 12 },
   searchInput: { flex: 1, minHeight: 44, color: colors.text, fontSize: 12 },
-  titleNew:{minHeight:32,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:4},titleNewPlus:{color:colors.success,fontSize:17,fontWeight:'900'},titleNewText:{color:colors.success,fontSize:11,fontWeight:'900'},
+  titleNew:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,borderRadius:6,borderWidth:1.2,borderColor:colors.success,backgroundColor:'#FFFFFF'},titleNewPlus:{color:colors.success,fontSize:17,fontWeight:'900'},titleNewText:{color:colors.success,fontSize:11,fontWeight:'900'},
   developerNote: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9, paddingVertical: 7, borderRadius: 10, borderWidth: 1, borderColor: '#F3C4C4', backgroundColor: colors.dangerSoft },
   developerNoteText: { flex: 1, color: colors.textMuted, fontSize: 8, lineHeight: 12 },
   developerNoteStrong: { color: colors.danger, fontWeight: '900' },
