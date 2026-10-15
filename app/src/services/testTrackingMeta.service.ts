@@ -11,7 +11,8 @@ export type TrackingMeta = {
 
 export type TrackingMetaMap = Record<string, TrackingMeta>;
 
-const CHUNK_SIZE = 500;
+// Keep UUID filters comfortably below proxy/request URL limits.
+const CHUNK_SIZE = 100;
 
 function createMeta(): TrackingMeta {
   return { totalQty: 0, totalValue: 0, commentCount: 0, searchText: '', resolvedStatus: '' };
@@ -56,7 +57,7 @@ export async function getTestTrackingMeta(orderIds: string[]): Promise<TrackingM
 
     const { data: itemRows, error: itemError } = await supabase
       .from('portal_order_items')
-      .select('id, order_id, part_no, description, qty, edited_qty, dnp, value, edited_value, billed_qty, row_status, status, approval_status')
+      .select('id, order_id, part_no, description, qty, edited_qty, dnp, value, edited_value, billed_qty, row_status, status:legacy_status, approval_status:legacy_approval_status')
       .in('order_id', chunk);
     if (itemError) throw itemError;
 
