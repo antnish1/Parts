@@ -294,9 +294,7 @@ export default function OrderDetailScreen() {
         <View style={styles.confirmBackdrop}>
           <View style={styles.dialog}>
             <View style={styles.dialogTopRow}>
-              <View style={[styles.dialogIcon, confirmAction === 'approve' ? styles.dialogIconApprove : styles.dialogIconReject]}>
-                <AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={28} color={confirmAction === 'approve' ? colors.success : colors.danger}/>
-              </View>
+              <View style={styles.dialogTopSpacer}/>
               <Pressable accessibilityRole="button" accessibilityLabel="Close confirmation" hitSlop={10} disabled={action.isPending} onPress={() => setConfirmAction(null)} style={({ pressed }) => [styles.dialogClose, pressed && styles.pressed]}>
                 <AppIcon name="x" size={22} color={colors.textMuted}/>
               </Pressable>
@@ -446,9 +444,7 @@ const styles = StyleSheet.create({
   confirmBackdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 28, backgroundColor: 'rgba(2,6,23,0.64)' },
   dialog: { width: '100%', maxWidth: 390, padding: 22, gap: 14, borderRadius: 24, backgroundColor: colors.surface, shadowColor: '#020617', shadowOpacity: .22, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 18 },
   dialogTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  dialogIcon: { width: 62, height: 62, borderRadius: 31, alignItems: 'center', justifyContent: 'center' },
-  dialogIconApprove: { backgroundColor: colors.successSoft },
-  dialogIconReject: { backgroundColor: colors.dangerSoft },
+  dialogTopSpacer: { width: 1, height: 1 },
   dialogClose: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   dialogHeading:{flexDirection:'row',alignItems:'center',gap:9},
   dialogTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '900' },
