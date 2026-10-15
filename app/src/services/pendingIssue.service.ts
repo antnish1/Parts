@@ -143,7 +143,7 @@ export async function getPendingIssueOrders(): Promise<PendingIssueOrder[]> {
       machine_no: order.machine_no, call_id: order.call_id, received_date: receivedDate,
       total_qty: orderItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
       total_value: orderItems.reduce((sum, item) => sum + getEffectiveValue(item), 0), age_days: ageInDays(receivedDate),
-      issue_status: issuedItems.length ? 'partially_issued' : 'pending',
+      issue_status: (issuedItems.length ? 'partially_issued' : 'pending') as PendingIssueOrder['issue_status'],
       issued_qty: issuedItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
       pending_qty: pendingItems.reduce((sum, item) => sum + getEffectiveQty(item), 0),
       issued_value: issuedItems.reduce((sum, item) => sum + getEffectiveValue(item), 0),
