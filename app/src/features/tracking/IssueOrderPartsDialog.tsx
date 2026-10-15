@@ -68,14 +68,14 @@ export function IssueOrderPartsDialog({
     <div className="fixed inset-0 z-[90] grid place-items-center bg-[#0b1f3a]/70 p-3 sm:p-4"
       role="dialog" aria-modal="true" aria-labelledby="issue-parts-dialog-title">
       <div className="flex max-h-[92vh] w-full max-w-xl flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-3 bg-[#0b1f3a] px-4 py-3">
+        <div className="pc-issue-parts-header flex items-start justify-between gap-3 bg-[#0b1f3a] px-4 py-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] !text-[#ffe47a]">{orderLabel}</p>
-            <h2 id="issue-parts-dialog-title" className="mt-1 text-base font-bold !text-white">Issue selected parts</h2>
-            <p className="mt-1 text-xs !text-[#dce8f5]">Only checked, fully received parts will be marked Issued.</p>
+            <p className="pc-issue-parts-header-order text-[10px] font-semibold uppercase tracking-[0.14em] !text-[#ffe47a]">{orderLabel}</p>
+            <h2 id="issue-parts-dialog-title" className="pc-issue-parts-header-title mt-1 text-base font-bold !text-white">Issue selected parts</h2>
+            <p className="pc-issue-parts-header-subtitle mt-1 text-xs !text-[#dce8f5]">Only checked, fully received parts will be marked Issued.</p>
           </div>
           <button type="button" aria-label="Close" onClick={onClose} disabled={issueMutation.isPending}
-            className="rounded-md p-1 text-white hover:bg-white/10 disabled:opacity-40"><X className="h-4 w-4" /></button>
+            className="pc-issue-parts-header-close rounded-md p-1 text-white hover:bg-white/10 disabled:opacity-40"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="min-h-0 space-y-3 overflow-y-auto p-4">
