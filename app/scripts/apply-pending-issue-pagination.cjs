@@ -4,6 +4,12 @@ const path = require('path');
 const filePath = path.resolve(__dirname, '../src/features/tracking/PendingIssueOrdersPage.tsx');
 let source = fs.readFileSync(filePath, 'utf8');
 
+if (source.includes('UNIFIED_PENDING_ISSUE_V2')) {
+  // New page manages its own KPI selection and pagination; the legacy patch
+  // must never reinsert an order-wide issue workflow.
+  console.log('Unified Pending Issue already handles KPI filters and pagination.');
+} else {
+
 function replaceOnce(from, to, label) {
   if (source.includes(to)) return;
   if (!source.includes(from)) throw new Error(`${label} marker not found`);
@@ -48,3 +54,5 @@ replaceOnce(
 
 fs.writeFileSync(filePath, source);
 console.log('Pending Issue pagination applied.');
+
+}
