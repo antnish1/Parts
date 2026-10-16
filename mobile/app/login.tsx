@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { AppIcon } from '@/components/AppIcon';
 import { MotionView } from '@/components/MotionView';
 import { useAuth } from '@/auth/AuthProvider';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
 
 export default function LoginScreen() {
   const { isAuthenticated, isLoading, signIn } = useAuth();
@@ -38,89 +39,310 @@ export default function LoginScreen() {
 
   return (
     <ImageBackground source={require('../assets/branding/SIGNIN.jpeg')} style={styles.background} resizeMode="cover">
-      <View pointerEvents="none" style={styles.backgroundOverlay} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
-        <MotionView distance={10} duration={260}>
-        <View style={styles.brand}>
-          <Image source={require('../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
-          <Text style={styles.title}>Parts Connect</Text>
-          <Text style={styles.subtitle}>Frontier parts operations</Text>
-        </View>
-        </MotionView>
+      <View pointerEvents="none" style={styles.backgroundWash} />
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.page}
+        >
+          <MotionView distance={10} duration={260}>
+            <View style={styles.brand}>
+              <Image source={require('../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
+              <Text style={styles.title}>Parts Connect</Text>
+              <Text style={styles.subtitle}>Frontier parts operations</Text>
+              <View style={styles.brandUnderline} />
+            </View>
+          </MotionView>
 
-        <MotionView delay={70} distance={8} duration={240}>
-        <View style={styles.card}>
-          <Text style={styles.heading}>{addAccountMode ? 'Add account' : 'Sign in'}</Text>
-          <Text style={styles.help}>{addAccountMode ? 'Sign in with another Parts Connect User ID. Your current account stays saved on this device.' : 'Use the same User ID and password as the Parts Connect portal.'}</Text>
-          <Text style={styles.label}>User ID</Text>
-          <TextInput
-            autoCapitalize="characters"
-            autoCorrect={false}
-            editable={!busy}
-            placeholder="e.g. DAMOH01"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            value={loginId}
-            onChangeText={setLoginId}
-            returnKeyType="next"
-          />
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordField}>
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!busy}
-            secureTextEntry={!passwordVisible}
-            textContentType="password"
-            autoComplete="current-password"
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
-            style={[styles.input, styles.passwordInput]}
-            value={password}
-            onChangeText={setPassword}
-            onSubmitEditing={() => void submit()}
-            returnKeyType="go"
-          />
-          <Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible(value => !value)} hitSlop={8} style={styles.eyeButton}>
-            <AppIcon name={passwordVisible ? 'eyeOff' : 'eye'} size={22} color={colors.textMuted} />
-          </Pressable>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Forgot password?" style={styles.forgotPassword} onPress={() => Alert.alert('Password assistance', 'Your Parts Connect User ID uses an internal account. Please contact your Parts Connect administrator to reset your password. Email-based self-service reset is not available for these accounts.')}>
-            <Text style={styles.forgotText}>Forgot password?</Text>
-          </Pressable>
-          {error ? <MotionView trigger={error} distance={4} duration={170}><Text style={styles.error}>{error}</Text></MotionView> : null}
-          {!isSupabaseConfigured() ? <Text style={styles.warning}>Mobile Supabase environment is not configured on this build.</Text> : null}
-          <Pressable disabled={busy} onPress={() => void submit()} style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonPressed]}>
-            {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>{addAccountMode ? 'Add & switch' : 'Sign in'}</Text>}
-          </Pressable>
-        </View>
-        </MotionView>
+          <MotionView delay={70} distance={8} duration={240}>
+            <View style={styles.cardWrap}>
+              <View style={styles.card}>
+                <View style={styles.userMedallion}>
+                  <AppIcon name="user" size={28} color="#0B71D9" strokeWidth={1.9} />
+                </View>
+
+                <Text style={styles.heading}>{addAccountMode ? 'Add account' : 'Sign in'}</Text>
+                <Text style={styles.help}>
+                  {addAccountMode
+                    ? 'Sign in with another Parts Connect User ID. Your current account stays saved on this device.'
+                    : 'Use the same User ID and password as the Parts Connect portal.'}
+                </Text>
+
+                <FieldLabel icon="user" text="User ID" />
+                <View style={styles.inputShell}>
+                  <AppIcon name="user" size={20} color="#748297" strokeWidth={1.8} />
+                  <TextInput
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!busy}
+                    placeholder="e.g. DAMOH01"
+                    placeholderTextColor="#A2ACBA"
+                    style={styles.input}
+                    value={loginId}
+                    onChangeText={setLoginId}
+                    returnKeyType="next"
+                  />
+                </View>
+
+                <FieldLabel icon="lock" text="Password" />
+                <View style={styles.inputShell}>
+                  <AppIcon name="lock" size={20} color="#748297" strokeWidth={1.8} />
+                  <TextInput
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!busy}
+                    secureTextEntry={!passwordVisible}
+                    textContentType="password"
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    placeholderTextColor="#A2ACBA"
+                    style={styles.input}
+                    value={password}
+                    onChangeText={setPassword}
+                    onSubmitEditing={() => void submit()}
+                    returnKeyType="go"
+                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'}
+                    onPress={() => setPasswordVisible((value) => !value)}
+                    hitSlop={8}
+                    style={styles.eyeButton}
+                  >
+                    <AppIcon name={passwordVisible ? 'eyeOff' : 'eye'} size={22} color="#607086" />
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Forgot password?"
+                  style={styles.forgotPassword}
+                  onPress={() => Alert.alert('Password assistance', 'Your Parts Connect User ID uses an internal account. Please contact your Parts Connect administrator to reset your password. Email-based self-service reset is not available for these accounts.')}
+                >
+                  <Text style={styles.forgotText}>Forgot password?</Text>
+                  <AppIcon name="chevronRight" size={14} color="#0A66D4" strokeWidth={2.2} />
+                </Pressable>
+
+                {error ? <MotionView trigger={error} distance={4} duration={170}><Text style={styles.error}>{error}</Text></MotionView> : null}
+                {!isSupabaseConfigured() ? <Text style={styles.warning}>Mobile Supabase environment is not configured on this build.</Text> : null}
+
+                <Pressable
+                  disabled={busy}
+                  onPress={() => void submit()}
+                  style={({ pressed }) => [styles.button, (pressed || busy) && styles.buttonPressed]}
+                >
+                  <GradientBackground />
+                  {busy
+                    ? <ActivityIndicator color="#FFFFFF" />
+                    : <View style={styles.buttonContent}>
+                        <Text style={styles.buttonText}>{addAccountMode ? 'Add & switch' : 'Sign in'}</Text>
+                        <Text style={styles.buttonArrow}>→</Text>
+                      </View>}
+                </Pressable>
+              </View>
+            </View>
+          </MotionView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ImageBackground>
   );
 }
 
+function FieldLabel({ icon, text }: { icon: 'user' | 'lock'; text: string }) {
+  return (
+    <View style={styles.labelRow}>
+      <AppIcon name={icon} size={17} color="#0A66D4" strokeWidth={1.9} />
+      <Text style={styles.label}>{text}</Text>
+    </View>
+  );
+}
+
+function GradientBackground() {
+  return (
+    <Svg pointerEvents="none" style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <LinearGradient id="signinButton" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="#0752A2" />
+          <Stop offset="0.55" stopColor="#0069D9" />
+          <Stop offset="1" stopColor="#1795FF" />
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" rx="30" fill="url(#signinButton)" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
-  background: { flex: 1 },
-  backgroundOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(244,247,251,.72)' },
-  page: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: 'transparent' },
-  brand: { alignItems: 'center', marginBottom: spacing.xl },
-  logo: { height: 64, width: 64, borderRadius: 16 },
-  title: { marginTop: spacing.md, color: colors.text, fontSize: 26, fontWeight: '900' },
-  subtitle: { marginTop: 2, color: colors.textMuted, fontSize: 13 },
-  card: { gap: spacing.sm, borderRadius: radius.xl, borderWidth: 1, borderColor: 'rgba(214,224,234,.92)', backgroundColor: 'rgba(255,255,255,.94)', padding: spacing.xl },
-  heading: { color: colors.text, fontSize: 20, fontWeight: '800' },
-  help: { color: colors.textMuted, fontSize: 12, lineHeight: 18, marginBottom: spacing.sm },
-  label: { marginTop: spacing.xs, color: colors.text, fontSize: 12, fontWeight: '700' },
-  input: { minHeight: 50, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: '#FFFFFF', paddingHorizontal: spacing.md, color: colors.text, fontSize: 15 },
-  passwordField: { position: 'relative', justifyContent: 'center' },
-  passwordInput: { paddingRight: 55 },
-  eyeButton: { position: 'absolute', right: 5, top: 0, bottom: 0, minWidth: 48, alignItems: 'center', justifyContent: 'center' },
-  forgotPassword: { alignSelf: 'flex-end', minHeight: 42, paddingHorizontal: 2, justifyContent: 'center' },
-  forgotText: { color: '#4E58C8', fontSize: 12, fontWeight: '800' },
-  error: { color: colors.danger, fontSize: 12, lineHeight: 18 },
-  warning: { color: colors.warning, fontSize: 12, lineHeight: 18 },
-  button: { minHeight: 52, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy, marginTop: spacing.md },
-  buttonPressed: { opacity: 0.8 },
-  buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  background: { flex: 1, backgroundColor: '#EEF6FF' },
+  backgroundWash: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(255,255,255,.08)' },
+  keyboard: { flex: 1 },
+  page: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 36,
+  },
+
+  brand: {
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
+    marginBottom: 52,
+  },
+  logo: { width: 88, height: 88 },
+  title: {
+    marginTop: 16,
+    color: '#0E2038',
+    fontSize: 31,
+    lineHeight: 36,
+    fontWeight: '900',
+    letterSpacing: -.7,
+  },
+  subtitle: {
+    marginTop: 4,
+    color: '#6F7F94',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  brandUnderline: {
+    marginTop: 10,
+    width: 66,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#0A7BEF',
+  },
+
+  cardWrap: { paddingTop: 28 },
+  card: {
+    position: 'relative',
+    paddingTop: 56,
+    paddingHorizontal: 28,
+    paddingBottom: 24,
+    borderRadius: 34,
+    backgroundColor: 'rgba(255,255,255,.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(211,225,240,.95)',
+    shadowColor: '#4B89C9',
+    shadowOpacity: .16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 9,
+  },
+  userMedallion: {
+    position: 'absolute',
+    top: -31,
+    alignSelf: 'center',
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DCEFFF',
+    borderWidth: 1,
+    borderColor: '#CDE5FB',
+  },
+  heading: {
+    textAlign: 'center',
+    color: '#0E2038',
+    fontSize: 27,
+    lineHeight: 32,
+    fontWeight: '900',
+    letterSpacing: -.45,
+  },
+  help: {
+    marginTop: 6,
+    marginBottom: 22,
+    textAlign: 'center',
+    color: '#6F7F94',
+    fontSize: 11.5,
+    lineHeight: 17,
+    fontWeight: '500',
+  },
+
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 7,
+  },
+  label: {
+    color: '#13253D',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  inputShell: {
+    minHeight: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#D7E0E9',
+    borderRadius: 30,
+    backgroundColor: 'rgba(250,252,255,.96)',
+  },
+  input: {
+    flex: 1,
+    minHeight: 58,
+    paddingVertical: 0,
+    color: '#1A2B43',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  eyeButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: -8,
+    marginBottom: 16,
+  },
+  forgotText: {
+    color: '#0A66D4',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  error: {
+    color: colors.danger,
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  warning: {
+    color: colors.warning,
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+
+  button: {
+    position: 'relative',
+    minHeight: 60,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 30,
+    marginTop: 6,
+    shadowColor: '#0A70D7',
+    shadowOpacity: .28,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 8,
+  },
+  buttonPressed: { opacity: .82, transform: [{ scale: .995 }] },
+  buttonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
+  buttonArrow: { color: '#FFFFFF', fontSize: 29, lineHeight: 30, marginTop: -2 },
 });
