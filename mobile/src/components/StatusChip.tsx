@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Animated, Easing, StyleSheet, Text } from 'react-native';
 import { colors, radius } from '@/theme/tokens';
 
 function toneFor(status: string | null | undefined) {
@@ -25,15 +26,25 @@ export function formatStatusLabel(status: string | null | undefined) {
 
 export function StatusChip({ status, align = 'left' }: { status: string | null | undefined; align?: 'left' | 'right' }) {
   const tone = toneFor(status);
+  const scale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const animation = Animated.loop(Animated.sequence([
+      Animated.timing(scale, { toValue: 0.965, duration: 850, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 850, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      Animated.delay(1000),
+    ]));
+    animation.start();
+    return () => animation.stop();
+  }, [scale]);
   return (
-    <View style={[styles.chip, align === 'right' && styles.alignRight, { backgroundColor: tone.bg }]}>
+    <Animated.View style={[styles.chip, align === 'right' && styles.alignRight, { backgroundColor: tone.bg, shadowColor: tone.fg, transform: [{ scale }] }]}>
       <Text numberOfLines={1} style={[styles.text, { color: tone.fg }]}>{formatStatusLabel(status)}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   alignRight: { alignSelf: 'flex-end' },
-  chip: { alignSelf: 'flex-start', maxWidth: 170, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
+  chip: { alignSelf: 'flex-start', maxWidth: 170, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   text: { fontSize: 8.5, fontWeight: '900' },
 });
