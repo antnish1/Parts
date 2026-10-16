@@ -5,6 +5,8 @@ import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/auth/AuthProvider';
 import { registerPushToken } from '@/services/notifications';
 
+Notifications.setNotificationHandler({handleNotification:async()=>({shouldShowBanner:true,shouldShowList:true,shouldPlaySound:true,shouldSetBadge:false})});
+
 // Runs only while authenticated; never requests permission in the background.
 // Expo push requires the native build to contain FCM configuration.
 export function PushRegistration(){
