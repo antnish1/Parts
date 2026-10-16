@@ -357,6 +357,31 @@ export function NewOrderPage() {
             <p className={sectionTitleClass}>Parts Builder</p>
             <p className="text-[10px] font-bold text-[#6D8196]">Enter part no. and press Tab</p>
           </div>
+          <div aria-labelledby="initial-order-comment-label" className="mb-2 flex flex-col gap-2 rounded-lg border border-[#dbe3ed] bg-[#f8fafc] px-3 py-2 sm:flex-row sm:items-center">
+            <div className="flex shrink-0 items-center justify-between gap-3 sm:w-[205px]">
+              <label id="initial-order-comment-label" htmlFor="initial-order-comment" className="flex items-center gap-1.5 text-[11px] font-bold !text-[#0f172a]">
+                <MessageSquareText className="h-3.5 w-3.5 text-[#64748b]" aria-hidden="true" />
+                Comment for this order
+              </label>
+              <span id="initial-order-comment-optional" className="text-[10px] font-medium !text-[#64748b]">Optional</span>
+            </div>
+            <div className="relative min-w-0 flex-1">
+              <textarea
+                id="initial-order-comment"
+                aria-describedby="initial-order-comment-optional"
+                className="block h-[46px] w-full resize-y rounded-md border border-[#cbd5e1] bg-white px-3 py-2 pr-14 text-[11px] font-medium leading-4 !text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#60a5fa] focus:ring-1 focus:ring-[#93c5fd]/40 disabled:cursor-not-allowed disabled:opacity-55"
+                style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+                rows={2}
+                maxLength={2000}
+                value={orderComment}
+                onChange={(event) => setOrderComment(event.target.value)}
+                disabled={isFormBusy}
+                placeholder="Optional instructions for the approver or parts team..."
+              />
+              <span aria-hidden="true" className="pointer-events-none absolute bottom-1.5 right-2 text-[10px] font-medium !text-[#64748b]">{orderComment.length}/2000</span>
+            </div>
+          </div>
+
           <div className="overflow-hidden rounded-xl border border-[#334155] bg-[#111827]">
             <table className="w-full min-w-[1040px] border-collapse text-xs">
               <thead className="bg-[#17202d] text-[10px] uppercase tracking-[0.08em] text-white">
@@ -391,30 +416,7 @@ export function NewOrderPage() {
               </tbody>
             </table>
           </div>
-          <section aria-labelledby="initial-order-comment-label" className="mt-3 rounded-xl border border-[#e6b94a]/70 bg-[#292619] p-3 shadow-[0_0_0_1px_rgba(230,185,74,0.12)]">
-            <div className="mb-2 flex items-center justify-between gap-3">
-              <label id="initial-order-comment-label" htmlFor="initial-order-comment" className="flex items-center gap-2 text-xs font-black text-[#ffe08a]">
-                <MessageSquareText className="h-4 w-4" aria-hidden="true" />
-                Comment for this order
-                <span className="rounded-full border border-[#ad8740] bg-[#473919] px-2 py-0.5 text-[10px] font-bold text-[#ffe08a]">Optional</span>
-              </label>
-              <span className="text-[10px] font-semibold tabular-nums text-[#d2b875]">{orderComment.length}/2000</span>
-            </div>
-            <textarea
-              id="initial-order-comment"
-              aria-describedby="initial-order-comment-help"
-              className="block min-h-[84px] w-full resize-y rounded-lg border border-[#ad8740] bg-[#0b1020] px-3 py-2.5 text-xs font-semibold leading-5 text-white outline-none transition placeholder:text-[#94a3b8] focus:border-[#ffe08a] focus:ring-2 focus:ring-[#ffe08a]/25 disabled:cursor-not-allowed disabled:opacity-55"
-              rows={3}
-              maxLength={2000}
-              value={orderComment}
-              onChange={(event) => setOrderComment(event.target.value)}
-              disabled={isFormBusy}
-              placeholder="Add instructions, urgency, part details or any message for the approver / parts team..."
-            />
-            <p id="initial-order-comment-help" className="mt-2 text-[11px] leading-4 text-[#e7d3a6]">
-              Visible to the team in the existing Comments &amp; Order Activity section after submission. Leave blank to submit without a comment.
-            </p>
-          </section>
+
 
           <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#6b5b15] bg-[#111827] p-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-2">

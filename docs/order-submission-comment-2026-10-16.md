@@ -2,7 +2,7 @@
 
 ## User-facing behavior
 
-- All eligible New Order users (branch, admin, super, manager, developer) see a prominent golden-highlighted multiline **Comment for this order — Optional** field above the existing total / Submit Order strip. Mobile gets the same full-width field. It does not block blank submissions.
+- All eligible New Order users (branch, admin, super, manager, developer) see a **compact, light, clearly legible** multiline **Comment for this order — Optional** field **directly above the Parts Builder table**, below the Parts Builder title. On wider screens, the heading and comment input share a row; on narrow screens they stack. It does not block blank submissions. The textarea starts at approximately 46px high and remains vertically resizable. Keep the label dark on the light background and avoid bright gold highlighting or extra explanatory text.
 - Up to 2,000 characters. Whitespace-only means no comment.
 - An entered comment becomes an ordinary row in `portal_order_comments` with `comment_type = 'user'`, `author_id = the creating portal profile id`, `order_id = new order.id`. The existing Comments & Order Activity, author display, comment counts, and notification consumers continue to work as they do for any other comment.
 - No new table, statuses, migrations, role grants, or read policies.
