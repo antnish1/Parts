@@ -9,6 +9,7 @@ import { StatusChip } from '@/components/StatusChip';
 import { getImmutableActivityFeed } from '@/services/orderActivity';
 import { getNotifications, markNotificationRead } from '@/services/notifications';
 import { colors } from '@/theme/tokens';
+import { useAuth } from '@/auth/AuthProvider';
 
 function titleForEvent(value:string){
  return value.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
@@ -40,6 +41,8 @@ type FeedEntry={
 
 export default function ActivityScreen(){
  const qc=useQueryClient();
+ const {role}=useAuth();
+ const isManager=role==='manager';
  const activity=useQuery({queryKey:['immutable-activity-feed'],queryFn:()=>getImmutableActivityFeed(120),staleTime:15_000,refetchInterval:45_000});
  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,staleTime:15_000,refetchInterval:45_000});
  const feed=useMemo(()=>{
@@ -49,6 +52,7 @@ export default function ActivityScreen(){
    const alertsByEvent=new Map(alerts.filter(n=>n.event_key?.startsWith('event:')).map(n=>[n.event_key.slice(6),n]));
    const pairedIds=new Set<string>();
    for(const event of events){
+     if(isManager && /APPROV|REJECT/i.test(event.event_type))continue;
      const alert=alertsByEvent.get(event.id);
      if(alert)pairedIds.add(alert.id);
      combined.push({
@@ -59,11 +63,12 @@ export default function ActivityScreen(){
      });
    }
    for(const alert of alerts){
+     if(isManager && alert.category==='approval')continue;
      if(pairedIds.has(alert.id))continue;
      combined.push({key:`notice:${alert.id}`,orderId:alert.order_id,orderNo:'',title:alert.title,body:alert.body,timestamp:alert.created_at,status:null,notificationId:alert.id,unread:!alert.read_at});
    }
    return combined.sort((a,b)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime()).slice(0,120);
- },[activity.data,notifications.data]);
+ },[activity.data,notifications.data,isManager]);
 
  async function openEntry(entry:FeedEntry){
    if(entry.notificationId){
