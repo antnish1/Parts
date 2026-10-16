@@ -138,7 +138,7 @@ export function OrderDataCorrectionPage() {
 
   function submit(action: CorrectionAction, changes: Record<string, unknown>, expectedUpdatedAt?: string) {
     if (!form.reason?.trim()) return setMessage('Correction reason is required.');
-    const priceChange = action === 'update_item' && selectedItem && (String(changes.part_no ?? '').replace(/\s+/g, '').toUpperCase() !== selectedItem.part_no.replace(/\s+/g, '').toUpperCase() || numberValue(changes.dnp) !== selectedItem.dnp);
+    const priceChange = action === 'update_item' && selectedItem && (String(changes.part_no ?? '').replace(/\s+/g, '').toUpperCase() !== selectedItem.part_no.replace(/\s+/g, '').toUpperCase() || numberValue(String(changes.dnp ?? '')) !== selectedItem.dnp);
     if (priceChange && !window.confirm('Change historical order pricing? This replaces the saved DNP/value and records your correction reason in audit history.')) return;
     mutation.mutate({ action, orderId, itemId: selectedItem?.id, billingId: selectedBilling?.id, expectedUpdatedAt, changes, approvePriceChange: Boolean(priceChange), reason: form.reason.trim(), category: form.category || categories[0], reference: form.reference?.trim(), updateLinkedBillings: form.update_linked_billings !== 'false', syncMatchingItems: form.sync_matching_items !== 'false', ...(action === 'delete_item' ? { deleteLinkedBillings: form.delete_linked_billings === 'true' } : {}) } as never);
   }
