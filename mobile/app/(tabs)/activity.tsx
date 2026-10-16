@@ -42,6 +42,7 @@ type FeedEntry={
 export default function ActivityScreen(){
  const qc=useQueryClient();
  const {role}=useAuth();
+ const canSeePunched=role==='manager'||role==='super';
  const isManager=role==='manager';
  const activity=useQuery({queryKey:['immutable-activity-feed'],queryFn:()=>getImmutableActivityFeed(120),staleTime:15_000,refetchInterval:45_000});
  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,staleTime:15_000,refetchInterval:45_000});
@@ -52,6 +53,7 @@ export default function ActivityScreen(){
    const alertsByEvent=new Map(alerts.filter(n=>n.event_key?.startsWith('event:')).map(n=>[n.event_key.slice(6),n]));
    const pairedIds=new Set<string>();
    for(const event of events){
+     if(!canSeePunched&&event.event_type==='ORDER_CREATED')continue;
      if(isManager && /APPROV|REJECT/i.test(event.event_type))continue;
      const alert=alertsByEvent.get(event.id);
      if(alert)pairedIds.add(alert.id);
@@ -68,7 +70,7 @@ export default function ActivityScreen(){
      combined.push({key:`notice:${alert.id}`,orderId:alert.order_id,orderNo:'',title:alert.title,body:alert.body,timestamp:alert.created_at,status:null,notificationId:alert.id,unread:!alert.read_at});
    }
    return combined.sort((a,b)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime()).slice(0,120);
- },[activity.data,notifications.data,isManager]);
+ },[activity.data,notifications.data,isManager,canSeePunched]);
 
  async function openEntry(entry:FeedEntry){
    if(entry.notificationId){
