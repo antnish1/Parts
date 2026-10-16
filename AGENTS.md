@@ -840,3 +840,13 @@ A future agent entering this repository should act as though it has received thi
 - In mixed-status orders, a PROCESSED item is not yet dispatched, so do not exclude it using its parent order's PARTIALLY DISPATCHED / DISPATCHED 15-day billing-age window. Truly dispatched item lines still obey the window.
 - Preserve received/issued/rejected/pending exclusions, approved/partially received semantics, edited quantity, receipt deduction, final DBMS order numbers and RLS.
 - Keep both SQL RPCs (`portal_get_in_transit_qty` and `portal_get_in_transit_details`) synchronized. Refer to `docs/in-transit-processed-same-branch-2026-10-15.md` for migration, rollback and validation.
+
+## 32. Legacy dispatch evidence and In Transit 15-day guard (2026-10-16)
+
+- Preserve section 31 for genuinely **PROCESSED, not yet dispatched** items. Do **not** infer that an individual part was dispatched merely because another item in the same order was dispatched.
+- Imported items may erroneously retain `row_status=PROCESSED` despite explicit per-item `dispatch_status_legacy=DISPATCHED` or `PARTIALLY DISPATCHED`. That **per-item dispatch proof** overrides the misleading processed label for In Transit and the popup.
+- Truly dispatched items, including imported processed-misclassified rows and partially received items with dispatch proof, must obey the **15-day billing-age window**. Old dispatch rows contribute zero In Transit. In Transit quantity always reflects only recent *dispatched-but-not-received billed units*, not unbilled stock demand.
+- Both SQL RPCs `portal_get_in_transit_qty` and `portal_get_in_transit_details` must use identical dispatch-evidence and age rules. Legacy `portal_order_item_billings.billing_date_raw` may contain Excel serial dates or `DD.MM.YYYY` and must be read using safe date parsing.
+- Never mark historical items Received just because 15 days elapsed. Physical confirmation and auditable receipt details are required. When historical receipt date is verified but billed quantity is below the ordered quantity, reconcile only the **billed** quantity as received and keep the row `PARTIALLY RECEIVED`.
+- Preserve `requests` source data, existing invoice numbers and original status fields; use a dated administrative audit event with an exact pre-change snapshot. Do not impersonate a portal user on backend fixes.
+- Changes affecting the 15-day window need read-only total/detail parity checks, branch scoping verification, and CI before production migration.
