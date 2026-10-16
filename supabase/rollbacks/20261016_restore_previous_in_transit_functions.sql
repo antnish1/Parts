@@ -133,7 +133,7 @@ AS $function$
       else greatest(effective_qty - received_qty, 0)
     end) > 0
   order by order_date desc, order_no;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.portal_get_in_transit_qty(p_branch text, p_part_nos text[])
  RETURNS TABLE(part_no text, in_transit_qty numeric)
@@ -235,4 +235,4 @@ AS $function$
     and approval_status not like 'PENDING%'
   group by normalized_part_no
   order by normalized_part_no;
-$function$
+$function$;
