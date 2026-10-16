@@ -129,14 +129,14 @@ export default function OrderDetailScreen() {
             </View>
             <PulseWrap><StatusChip status={row.approval_status || row.status} /></PulseWrap>
           </View>
-          <View style={styles.summaryGrid}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.summaryGrid}>
             <Meta label="Branch" value={row.branch || '—'} />
             <Meta label="Machine" value={row.machine_no || '—'} />
             <Meta label="Order type" value={row.order_type || row.order_for || '—'} />
             <Meta label="Created" value={formatDate(row.created_at)} />
             <Meta label="Effective qty" value={String(totalQty)} />
             <Meta label="Effective value" value={formatMoney(totalValue)} />
-          </View>
+          </ScrollView>
         </View>
         </MotionView>
 
@@ -349,8 +349,8 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   orderNo: { color: '#fff', fontSize: 14.5, lineHeight: 18, fontWeight: '900' },
   customer: { color: '#C5D7EA', fontSize: 11, lineHeight: 16, marginTop: 3 },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, marginTop: 12 },
-  meta: { width: '33.33%', paddingRight: 6 },
+  summaryGrid: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', marginTop: 12, paddingRight: 4 },
+  meta: { minWidth: 80, maxWidth: 118, flexShrink: 0 },
   metaLabel: { color: '#91AAC5', fontSize: 8, fontWeight: '700' },
   metaValue: { color: '#fff', fontSize: 10, fontWeight: '800', marginTop: 2 },
   approvalCard: { gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#D8E0E8', backgroundColor: '#FFFFFF' },
