@@ -81,12 +81,15 @@ export default function ActivityScreen(){
        <Pressable accessibilityRole="button" accessibilityLabel={`Open ${entry.title}`} onPress={()=>void openEntry(entry)} style={({pressed})=>[styles.row,entry.unread&&styles.unread,pressed&&styles.pressed]}>
          <View style={[styles.accent,{backgroundColor:accentFor(entry.title+' '+(entry.status??''))}]}/>
          <View style={styles.copy}>
-           <View style={styles.heading}><Text numberOfLines={1} style={styles.title}>{entry.title}</Text>{entry.unread?<View style={styles.dot}/>:null}</View>
+           <View style={styles.heading}>
+             <Text numberOfLines={1} style={styles.title}>{entry.title}</Text>
+             {entry.status?<View style={styles.statusTop}><StatusChip status={entry.status} align="right"/></View>:null}
+             {entry.unread?<View style={styles.dot}/>:null}
+           </View>
            {entry.orderNo?<Text numberOfLines={1} style={styles.orderNo}>{entry.orderNo}</Text>:null}
            <Text numberOfLines={3} style={styles.body}>{entry.body}</Text>
            <Text style={styles.date}>{date.toLocaleDateString('en-IN')} · {date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</Text>
          </View>
-         {entry.status?<StatusChip status={entry.status} align="right"/>:null}
        </Pressable>
      </MotionView>;
    })}
@@ -95,10 +98,11 @@ export default function ActivityScreen(){
  </Screen>;
 }
 const styles=StyleSheet.create({
- row:{minHeight:76,flexDirection:'row',alignItems:'center',gap:10,padding:11,borderRadius:13,borderWidth:1,borderColor:'#E1E7EF',backgroundColor:'#fff'},
+ row:{minHeight:76,flexDirection:'row',alignItems:'stretch',gap:10,padding:11,borderRadius:13,borderWidth:1,borderColor:'#E1E7EF',backgroundColor:'#fff'},
  unread:{backgroundColor:'#EFF6FF',borderColor:'#AACDF4'},pressed:{opacity:.82},
  accent:{width:4,alignSelf:'stretch',borderRadius:3},copy:{flex:1,minWidth:0,gap:4},
- heading:{flexDirection:'row',alignItems:'center',gap:7},
+ heading:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:7},
+ statusTop:{alignSelf:'flex-start',maxWidth:'58%',alignItems:'flex-end'},
  title:{color:colors.navy,fontSize:11,fontWeight:'900',flex:1},
  orderNo:{color:colors.text,fontSize:10,fontWeight:'900'},
  body:{color:colors.textMuted,fontSize:10,lineHeight:14},
