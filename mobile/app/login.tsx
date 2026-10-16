@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -21,11 +21,15 @@ export default function LoginScreen() {
   const passwordRef = useRef<TextInput>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
-  function revealFocusedField(target: 'user' | 'password') {
-    // Delay until Android has resized the window around the soft keyboard.
-    requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y: target === 'password' ? 320 : 210, animated: true });
-    });
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
+    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+    return () => { shown.remove(); hidden.remove(); };
+  }, []);
+
+  function revealFocusedField() {
+    // Allow Android to resize first, then keep the fields and submit action reachable.
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }
 
   if (!isLoading && isAuthenticated && !addAccountMode) return <Redirect href="/(tabs)/home" />;
@@ -50,12 +54,11 @@ export default function LoginScreen() {
   return (
     <ImageBackground source={require('../assets/branding/SIGNIN.jpeg')} style={styles.background} resizeMode="cover">
       <View pointerEvents="none" style={styles.backgroundWash} />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboard}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
         <ScrollView
           ref={scrollRef}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          onScrollBeginDrag={() => setKeyboardOpen(true)}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.page, keyboardOpen && styles.pageKeyboard]}
         >
@@ -94,8 +97,7 @@ export default function LoginScreen() {
                     style={styles.input}
                     value={loginId}
                     onChangeText={setLoginId}
-                    onFocus={() => { setKeyboardOpen(true); revealFocusedField('user'); }}
-                    onBlur={() => setKeyboardOpen(false)}
+                    onFocus={() => { setKeyboardOpen(true); revealFocusedField(); }}
                     onSubmitEditing={() => passwordRef.current?.focus()}
                     returnKeyType="next"
                   />
@@ -106,8 +108,7 @@ export default function LoginScreen() {
                   <AppIcon name="lock" size={20} color="#748297" strokeWidth={1.8} />
                   <TextInput
                     ref={passwordRef}
-                    onFocus={() => { setKeyboardOpen(true); revealFocusedField('password'); }}
-                    onBlur={() => setKeyboardOpen(false)}
+                    onFocus={() => { setKeyboardOpen(true); revealFocusedField(); }}
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!busy}
