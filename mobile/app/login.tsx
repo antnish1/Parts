@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, ImageBackground, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { AppIcon } from '@/components/AppIcon';
 import { MotionView } from '@/components/MotionView';
@@ -17,6 +17,20 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
+    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+    return () => { shown.remove(); hidden.remove(); };
+  }, []);
+
+  function revealFocusedField() {
+    // Allow Android to resize first, then keep the fields and submit action reachable.
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }
 
   if (!isLoading && isAuthenticated && !addAccountMode) return <Redirect href="/(tabs)/home" />;
 
@@ -42,12 +56,14 @@ export default function LoginScreen() {
       <View pointerEvents="none" style={styles.backgroundWash} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
         <ScrollView
+          ref={scrollRef}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.page}
+          contentContainerStyle={[styles.page, keyboardOpen && styles.pageKeyboard]}
         >
           <MotionView distance={10} duration={260}>
-            <View style={styles.brand}>
+            <View style={[styles.brand, keyboardOpen && styles.brandKeyboard]}>
               <Image source={require('../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
               <Text style={styles.title}>Parts Connect</Text>
               <Text style={styles.subtitle}>Frontier parts operations</Text>
@@ -81,6 +97,8 @@ export default function LoginScreen() {
                     style={styles.input}
                     value={loginId}
                     onChangeText={setLoginId}
+                    onFocus={() => { setKeyboardOpen(true); revealFocusedField(); }}
+                    onSubmitEditing={() => passwordRef.current?.focus()}
                     returnKeyType="next"
                   />
                 </View>
@@ -89,6 +107,8 @@ export default function LoginScreen() {
                 <View style={styles.inputShell}>
                   <AppIcon name="lock" size={20} color="#748297" strokeWidth={1.8} />
                   <TextInput
+                    ref={passwordRef}
+                    onFocus={() => { setKeyboardOpen(true); revealFocusedField(); }}
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!busy}
@@ -185,6 +205,8 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
   },
 
+  pageKeyboard: { justifyContent: 'flex-start', paddingTop: 10, paddingBottom: 24 },
+  brandKeyboard: { marginBottom: 12 },
   brand: {
     alignItems: 'flex-start',
     paddingHorizontal: 24,
