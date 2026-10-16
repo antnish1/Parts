@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { supabase } from '@/lib/supabase';
 import { queryClient } from '@/lib/queryClient';
+import { revokeCurrentPushToken } from '@/services/notifications';
 import { getSavedAccountTokens, listSavedAccounts, removeSavedAccount, saveAccountSession, type SavedAccount } from '@/auth/accountVault';
 import type { UserProfile, UserRole } from '@/types/auth';
 
@@ -132,6 +133,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       setIsLoading(true);
       queryClient.clear();
       try {
+        if(profile?.id){try{await revokeCurrentPushToken(profile.id);}catch{ /* RPC token ownership is moved on next registration */ }}
         const target = await getSavedAccountTokens(userId);
         const { data, error } = await supabase.auth.setSession({ access_token: target.accessToken, refresh_token: target.refreshToken });
         if (error || !data.session) throw error ?? new Error('Saved account session could not be restored.');
@@ -172,6 +174,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     signOut: async () => {
       const activeUserId = session?.user.id;
       queryClient.clear();
+      if(profile?.id){try{await revokeCurrentPushToken(profile.id);}catch{ /* Offline logout cannot revoke until connectivity returns */ }}
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       if (activeUserId) {
