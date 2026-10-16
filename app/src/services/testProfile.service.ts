@@ -74,19 +74,35 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
   return data ?? [];
 }
 
-export async function getTestProfiles(): Promise<TestProfileRow[]> {
-  const { data, error } = await supabase
-    .from('portal_profiles')
-    .select('id, full_name, branch, role, login_id:legacy_user_id, is_active, created_at')
-    .order('created_at', { ascending: false })
-    .limit(50);
+const PROFILE_BATCH_SIZE = 200;
 
-  if (error) {
-    console.error('Failed to load portal profiles', error);
-    return [];
+/**
+ * The developer workspace must be able to browse every portal profile.
+ * Read in bounded ranges so neither the old 50-row limit nor Supabase's
+ * default maximum result size silently hides users as the account grows.
+ */
+export async function getTestProfiles(): Promise<TestProfileRow[]> {
+  const allProfiles: TestProfileRow[] = [];
+
+  for (let offset = 0; ; offset += PROFILE_BATCH_SIZE) {
+    const { data, error } = await supabase
+      .from('portal_profiles')
+      .select('id, full_name, branch, role, login_id:legacy_user_id, is_active, created_at')
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(offset, offset + PROFILE_BATCH_SIZE - 1);
+
+    if (error) {
+      console.error('Failed to load portal profiles', error);
+      throw error;
+    }
+
+    const batch = (data ?? []) as TestProfileRow[];
+    allProfiles.push(...batch);
+    if (batch.length < PROFILE_BATCH_SIZE) break;
   }
 
-  return data ?? [];
+  return allProfiles;
 }
 
 export async function createTestProfile(input: CreateTestProfileInput) {

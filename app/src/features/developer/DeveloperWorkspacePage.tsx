@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
@@ -25,12 +25,19 @@ export function DeveloperWorkspacePage() {
   const [editBranch, setEditBranch] = useState('');
   const [editRole, setEditRole] = useState('branch');
   const [editLoginId, setEditLoginId] = useState('');
+  const [profileSearch, setProfileSearch] = useState('');
+  const [profileBranchFilter, setProfileBranchFilter] = useState('all');
+  const [profileRoleFilter, setProfileRoleFilter] = useState('all');
+  const [profileActiveFilter, setProfileActiveFilter] = useState('all');
+  const [profilePageSize, setProfilePageSize] = useState('25');
+  const [profilePage, setProfilePage] = useState(1);
 
   const { data: orders = [] } = useQuery({ queryKey: ['order-list-paged', 'developer-workspace'], queryFn: getOrderList });
   const { data: branches = [] } = useQuery({ queryKey: ['test-branches'], queryFn: getTestBranches });
   const { data: parts = [] } = useQuery({ queryKey: ['test-parts'], queryFn: getTestParts });
   const { data: approvers = [] } = useQuery({ queryKey: ['test-approvers'], queryFn: getTestApprovers });
-  const { data: profiles = [], refetch } = useQuery({ queryKey: ['test-profiles'], queryFn: getTestProfiles });
+  const { data: profiles = [], refetch, isLoading: profilesLoading, isError: profilesIsError, error: profilesError } =
+    useQuery({ queryKey: ['test-profiles'], queryFn: getTestProfiles });
   const { data: comments = [], isLoading: commentsLoading } = useQuery({ queryKey: ['developer-comments-inbox'], queryFn: getDeveloperCommentsInbox });
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
@@ -64,10 +71,39 @@ export function DeveloperWorkspacePage() {
     catch (error) { setMessage(error instanceof Error ? error.message : 'Profile status update failed.'); }
   }
 
+  // Search and filter the entire dataset before paginating: hidden or older users
+  // must remain discoverable, and the displayed total must not be a slice count.
+  const profileBranchOptions = useMemo(
+    () => [...new Set(profiles.map((profile) => profile.branch).filter(Boolean))].sort(),
+    [profiles],
+  );
+  const profileRoleOptions = useMemo(
+    () => [...new Set(profiles.map((profile) => profile.role).filter(Boolean))].sort(),
+    [profiles],
+  );
+  const matchingProfiles = useMemo(() => {
+    const term = profileSearch.trim().toLowerCase();
+    return profiles.filter((profile) =>
+      (profileBranchFilter === 'all' || profile.branch === profileBranchFilter) &&
+      (profileRoleFilter === 'all' || profile.role === profileRoleFilter) &&
+      (profileActiveFilter === 'all' || (profileActiveFilter === 'active' ? profile.is_active : !profile.is_active)) &&
+      (!term || [profile.login_id, profile.full_name, profile.branch, profile.role]
+        .some((value) => String(value ?? '').toLowerCase().includes(term))),
+    );
+  }, [profiles, profileSearch, profileBranchFilter, profileRoleFilter, profileActiveFilter]);
+  const profileLimit = profilePageSize === 'all' ? Math.max(1, matchingProfiles.length) : Number(profilePageSize);
+  const totalProfilePages = Math.max(1, Math.ceil(matchingProfiles.length / profileLimit));
+  const visibleProfilePage = Math.min(profilePage, totalProfilePages);
+  const visibleProfiles = matchingProfiles.slice(
+    (visibleProfilePage - 1) * profileLimit,
+    visibleProfilePage * profileLimit,
+  );
+  function resetProfilePage() { setProfilePage(1); }
+
   const branchOptions = branches.map((item) => <option key={item.id} value={item.branch_name}>{item.display_name ?? item.branch_name}</option>);
   const checks = [
     ['Orders', orders.length], ['Active Branches', branches.length], ['Loaded Parts', parts.length], ['Approvers', approvers.length],
-    ['User Profiles', profiles.length], ['Comments', comments.length], ['Pending Orders', orders.filter((order) => order.status.includes('pending')).length], ['Processed Orders', orders.filter((order) => order.status === 'processed').length],
+    ['User Profiles', profilesIsError ? 'Error' : profiles.length], ['Comments', comments.length], ['Pending Orders', orders.filter((order) => order.status.includes('pending')).length], ['Processed Orders', orders.filter((order) => order.status === 'processed').length],
   ];
 
   return (
@@ -89,11 +125,50 @@ export function DeveloperWorkspacePage() {
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
-        <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Recent User Profiles</p>
-        <div className="overflow-hidden rounded-md border border-[#263244]">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">All User Profiles</h2>
+            <p className="mt-1 text-[11px] text-[#c7d2df]">
+              {profilesIsError ? 'Unable to load profiles.' : `${matchingProfiles.length} of ${profiles.length} users`}
+            </p>
+          </div>
+          <button type="button" className="rounded-md border border-[#6D8196] px-3 py-1.5 text-xs font-semibold text-[#82C8E5] hover:bg-[#1f2937]"
+            onClick={() => void refetch()}>Refresh Users</button>
+        </div>
+        <div className="mb-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(180px,2fr)_repeat(3,minmax(110px,1fr))_100px]">
+          <input aria-label="Search all user profiles" className={inputClass} placeholder="Search ID, name, branch or role"
+            value={profileSearch} onChange={(event) => { setProfileSearch(event.target.value); resetProfilePage(); }} />
+          <select aria-label="Filter users by branch" className={inputClass} value={profileBranchFilter}
+            onChange={(event) => { setProfileBranchFilter(event.target.value); resetProfilePage(); }}>
+            <option value="all">All Branches</option>
+            {profileBranchOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+          <select aria-label="Filter users by role" className={inputClass} value={profileRoleFilter}
+            onChange={(event) => { setProfileRoleFilter(event.target.value); resetProfilePage(); }}>
+            <option value="all">All Roles</option>
+            {profileRoleOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+          </select>
+          <select aria-label="Filter users by active status" className={inputClass} value={profileActiveFilter}
+            onChange={(event) => { setProfileActiveFilter(event.target.value); resetProfilePage(); }}>
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <select aria-label="Users per page" className={inputClass} value={profilePageSize}
+            onChange={(event) => { setProfilePageSize(event.target.value); resetProfilePage(); }}>
+            <option value="25">25 / page</option>
+            <option value="50">50 / page</option>
+            <option value="all">Show all</option>
+          </select>
+        </div>
+        {profilesLoading && <p className="mb-2 text-xs text-[#c7d2df]">Loading user profiles...</p>}
+        {profilesIsError && <p role="alert" className="mb-2 rounded-md bg-red-950/40 p-3 text-xs text-[#fda4af]">
+          Failed to load user profiles: {profilesError instanceof Error ? profilesError.message : 'Unknown error'}. Please retry.
+        </p>}
+        <div className="overflow-x-auto rounded-md border border-[#263244]">
           <table className="w-full min-w-[960px] border-collapse text-left text-xs">
             <thead className="bg-[#111827] text-[10px] uppercase tracking-[0.12em] text-[#c7d2df]"><tr><th className="px-2.5 py-2">User ID</th><th className="px-2.5 py-2">Name</th><th className="px-2.5 py-2">Branch</th><th className="px-2.5 py-2">Role</th><th className="px-2.5 py-2">Active</th><th className="px-2.5 py-2 text-right">Action</th></tr></thead>
-            <tbody className="divide-y divide-[#263244]">{profiles.slice(0, 12).map((profile) => {
+            <tbody className="divide-y divide-[#263244]">{visibleProfiles.map((profile) => {
               const editing = editId === profile.id;
               return <tr key={profile.id}>
                 <td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editLoginId} onChange={(event) => setEditLoginId(event.target.value.toUpperCase())} /> : profile.login_id || '-'}</td>
@@ -105,8 +180,26 @@ export function DeveloperWorkspacePage() {
               </tr>;
             })}</tbody>
           </table>
-          {profiles.length === 0 ? <p className="p-2.5 text-xs text-[#c7d2df]">No profiles found.</p> : null}
+          {!profilesLoading && !profilesIsError && matchingProfiles.length === 0 &&
+            <p className="p-3 text-xs text-[#c7d2df]">No users match the current search or filters.</p>}
         </div>
+        {!profilesLoading && !profilesIsError && matchingProfiles.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-[#c7d2df]">
+            <span>
+              Showing {(visibleProfilePage - 1) * profileLimit + 1}–{Math.min(visibleProfilePage * profileLimit, matchingProfiles.length)}
+              {' '}of {matchingProfiles.length} matching profiles · {profiles.length} total
+            </span>
+            <div className="flex items-center gap-2">
+              <button type="button" disabled={visibleProfilePage <= 1}
+                onClick={() => setProfilePage(visibleProfilePage - 1)}
+                className="rounded-md border border-[#6D8196] px-3 py-1.5 disabled:opacity-40">Previous</button>
+              <span className="whitespace-nowrap">Page {visibleProfilePage} / {totalProfilePages}</span>
+              <button type="button" disabled={visibleProfilePage >= totalProfilePages}
+                onClick={() => setProfilePage(visibleProfilePage + 1)}
+                className="rounded-md border border-[#6D8196] px-3 py-1.5 disabled:opacity-40">Next</button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
