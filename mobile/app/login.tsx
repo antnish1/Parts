@@ -40,7 +40,7 @@ export default function LoginScreen() {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
       <MotionView distance={10} duration={260}>
       <View style={styles.brand}>
-        <Image source={require('../assets/native/icon.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
+        <Image source={require('../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Parts Connect logo" />
         <Text style={styles.title}>Parts Connect</Text>
         <Text style={styles.subtitle}>Frontier parts operations</Text>
       </View>
