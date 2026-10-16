@@ -11,7 +11,7 @@ import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StatusChip } from '@/components/StatusChip';
 import { approveReview, rejectOrder, resetEditedQuantity, setEditedQuantity, zeroReviewItem } from '@/services/approvals';
 import { formatMoney, getOrder, getOrderItems, type OrderItem } from '@/services/orders';
-import { getInTransitQtyByBranchParts } from '@/services/inTransit';
+import { getInTransitDetails, getInTransitQtyByBranchParts, type InTransitDetailRow } from '@/services/inTransit';
 import { normalizePartNo } from '@/lib/orderLogic';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -22,6 +22,12 @@ export default function ApprovalReviewScreen() {
   const queryClient = useQueryClient();
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId), enabled: Boolean(orderId) });
   const items = useQuery({ queryKey: ['order-items', orderId], queryFn: () => getOrderItems(orderId), enabled: Boolean(orderId) });
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState('');
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rowAction, setRowAction] = useState<{ itemId: string; action: 'reset' | 'zero' } | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [selectedTransit, setSelectedTransit] = useState<{ partNo: string; qty: number } | null>(null);
   const partNos = (items.data ?? []).map((item) => item.part_no);
   const inTransit = useQuery({
     queryKey: ['approval-review-in-transit', order.data?.branch, partNos.join('|')],
@@ -29,11 +35,12 @@ export default function ApprovalReviewScreen() {
     enabled: Boolean(order.data?.branch) && partNos.length > 0,
     staleTime: 0,
   });
-  const [quantities, setQuantities] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState('');
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [rowAction, setRowAction] = useState<{ itemId: string; action: 'reset' | 'zero' } | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const transitDetails = useQuery({
+    queryKey: ['approval-review-in-transit-details', order.data?.branch, selectedTransit?.partNo],
+    queryFn: () => getInTransitDetails(order.data!.branch!, selectedTransit!.partNo),
+    enabled: Boolean(order.data?.branch && selectedTransit),
+    staleTime: 0,
+  });
 
   useEffect(() => {
     if (!items.data) return;
@@ -165,6 +172,7 @@ export default function ApprovalReviewScreen() {
             rowError={rowErrors[item.id] || ''}
             transitQty={transitMap[normalizePartNo(item.part_no)] ?? 0}
             transitLoading={inTransit.isLoading}
+            onTransitPress={(transitQty) => setSelectedTransit({ partNo: item.part_no, qty: transitQty })}
             onChange={(value) => {
               setRowErrors((current) => ({ ...current, [item.id]: '' }));
               setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }));
@@ -188,6 +196,42 @@ export default function ApprovalReviewScreen() {
         </MotionView>
       </ScrollView>
 
+      <Modal visible={Boolean(selectedTransit)} transparent animationType="slide" onRequestClose={() => setSelectedTransit(null)}>
+        <View style={styles.transitBackdrop}>
+          <View style={styles.transitSheet}>
+            <View style={styles.transitSheetHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.transitEyebrow}>IN TRANSIT</Text>
+                <Text style={styles.transitSheetTitle}>{selectedTransit?.partNo}</Text>
+                <Text style={styles.transitSheetText}>Total quantity in transit: {selectedTransit?.qty ?? 0}</Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close transit details" onPress={() => setSelectedTransit(null)} style={styles.transitClose}>
+                <AppIcon name="x" size={20} color={colors.textMuted}/>
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.transitSheetBody}>
+              {transitDetails.isLoading ? <ActivityIndicator color={colors.navy} /> : null}
+              {transitDetails.isError ? <Text style={styles.transitError}>Unable to load contributing orders.</Text> : null}
+              {(transitDetails.data ?? []).map((detail: InTransitDetailRow) => (
+                <Pressable
+                  key={`${detail.order_id}-${detail.order_no}-${detail.qty}`}
+                  onPress={() => { setSelectedTransit(null); router.push(`/orders/${detail.order_id}`); }}
+                  style={({ pressed }) => [styles.transitDetailCard, pressed && styles.pressed]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.transitOrderNo}>{detail.order_no || 'Order'}</Text>
+                    <Text style={styles.transitMeta}>{detail.branch || '—'} · {detail.order_type || '—'} · {detail.order_for || '—'}</Text>
+                    <Text style={styles.transitMeta}>{detail.order_date ? new Date(detail.order_date).toLocaleDateString('en-IN') : '—'} · {detail.status || '—'}</Text>
+                  </View>
+                  <Text style={styles.transitDetailQty}>Qty {detail.qty}</Text>
+                </Pressable>
+              ))}
+              {!transitDetails.isLoading && !transitDetails.isError && (transitDetails.data ?? []).length === 0 ? <Text style={styles.transitEmpty}>No active contributing orders found.</Text> : null}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={rejectOpen} transparent animationType="fade" onRequestClose={() => setRejectOpen(false)}>
         <View style={styles.modalBackdrop}><View style={styles.dialog}>
           <View style={styles.dialogHeading}><AppIcon name="alert" size={18} color={colors.danger}/><Text style={styles.dialogTitle}>Reject order?</Text></View>
@@ -201,7 +245,7 @@ export default function ApprovalReviewScreen() {
   );
 }
 
-function ReviewItem({ item, value, busy, rowAction, rowError, transitQty, transitLoading, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; transitQty: number; transitLoading: boolean; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
+function ReviewItem({ item, value, busy, rowAction, rowError, transitQty, transitLoading, onTransitPress, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; transitQty: number; transitLoading: boolean; onTransitPress: (qty: number) => void; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
   const [editing, setEditing] = useState(false);
   const next = Number(value || 0);
   const changedFromOriginal = next !== item.qty || item.edited_qty != null;
@@ -268,7 +312,7 @@ function ReviewItem({ item, value, busy, rowAction, rowError, transitQty, transi
         <ReviewDivider />
         <ReviewMeta label="Current" value={String(item.edited_qty ?? item.qty)} />
         <ReviewDivider />
-        <ReviewMeta label="In Transit" value={transitLoading ? '…' : String(transitQty)} />
+        <TransitReviewMeta loading={transitLoading} qty={transitQty} onPress={() => onTransitPress(transitQty)} />
         <ReviewDivider />
         <ReviewMeta label="Line value" value={formatMoney((item.dnp ?? 0) * next)} />
       </View>
@@ -280,6 +324,24 @@ function ReviewItem({ item, value, busy, rowAction, rowError, transitQty, transi
 
 function ReviewMeta({ label, value, dark = false }: { label:string; value:string; dark?:boolean }) {
   return <View style={styles.reviewMeta}><Text style={[styles.reviewMetaLabel,dark&&styles.reviewMetaLabelDark]}>{label}</Text><Text numberOfLines={1} style={[styles.reviewMetaValue,dark&&styles.reviewMetaValueDark]}>{value}</Text></View>;
+}
+function TransitReviewMeta({ loading, qty, onPress }: { loading: boolean; qty: number; onPress: () => void }) {
+  const clickable = !loading && qty > 0;
+  return (
+    <Pressable
+      accessibilityRole={clickable ? 'button' : undefined}
+      accessibilityLabel={clickable ? `View ${qty} in-transit units` : undefined}
+      disabled={!clickable}
+      onPress={onPress}
+      style={({ pressed }) => [styles.reviewMeta, clickable && styles.transitMetaCell, pressed && clickable && styles.transitMetaPressed]}
+    >
+      <Text style={[styles.reviewMetaLabel, clickable && styles.transitMetaLabel]}>In Transit</Text>
+      <View style={styles.transitMetaValueRow}>
+        {clickable ? <AppIcon name="truck" size={11} color="#7A5200"/> : null}
+        <Text numberOfLines={1} style={[styles.reviewMetaValue, clickable && styles.transitMetaValue]}>{loading ? '…' : String(qty)}</Text>
+      </View>
+    </Pressable>
+  );
 }
 function ReviewDivider(){ return <View style={styles.reviewDivider}/>; }
 
@@ -303,6 +365,11 @@ const styles = StyleSheet.create({
   reviewMetaValue:{color:'#152740',fontSize:9.5,fontWeight:'900',marginTop:3},
   reviewMetaLabelDark:{color:'#91AAC5'},
   reviewMetaValueDark:{color:'#FFFFFF'},
+  transitMetaCell:{backgroundColor:'#FFF8E8'},
+  transitMetaPressed:{opacity:.72},
+  transitMetaLabel:{color:'#8B651F'},
+  transitMetaValueRow:{flexDirection:'row',alignItems:'center',gap:4,marginTop:3},
+  transitMetaValue:{color:'#7A5200',marginTop:0,textDecorationLine:'underline'},
   reviewDivider:{width:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED',marginVertical:7},
   sectionHeading:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
   sectionTitle:{color:colors.text,fontSize:14,fontWeight:'900'},
@@ -338,6 +405,20 @@ const styles = StyleSheet.create({
   rejectText:{color:colors.danger,fontSize:11,fontWeight:'900'},
   pressed:{opacity:.72},
   disabled:{opacity:.4},
+  transitBackdrop:{flex:1,justifyContent:'flex-end',backgroundColor:'rgba(2,6,23,.58)'},
+  transitSheet:{maxHeight:'72%',borderTopLeftRadius:24,borderTopRightRadius:24,backgroundColor:colors.surface,overflow:'hidden'},
+  transitSheetHeader:{flexDirection:'row',alignItems:'flex-start',padding:18,borderBottomWidth:StyleSheet.hairlineWidth,borderBottomColor:colors.border},
+  transitEyebrow:{color:colors.blue,fontSize:9,fontWeight:'900',letterSpacing:1.2},
+  transitSheetTitle:{color:colors.text,fontSize:18,fontWeight:'900',marginTop:3},
+  transitSheetText:{color:colors.textMuted,fontSize:11,marginTop:3},
+  transitClose:{width:38,height:38,alignItems:'center',justifyContent:'center'},
+  transitSheetBody:{padding:16,gap:9,paddingBottom:30},
+  transitDetailCard:{minHeight:72,flexDirection:'row',alignItems:'center',gap:12,padding:12,borderRadius:14,borderWidth:1,borderColor:colors.border,backgroundColor:'#F7F9FC'},
+  transitOrderNo:{color:colors.blue,fontSize:12,fontWeight:'900'},
+  transitMeta:{color:colors.textMuted,fontSize:9,marginTop:3},
+  transitDetailQty:{color:colors.text,fontSize:11,fontWeight:'900'},
+  transitError:{color:colors.danger,fontSize:10,textAlign:'center'},
+  transitEmpty:{color:colors.textMuted,fontSize:10,textAlign:'center',paddingVertical:20},
   modalBackdrop:{flex:1,justifyContent:'center',backgroundColor:'rgba(2,6,23,.65)'},
   dialog:{alignSelf:'center',width:'78%',maxWidth:310,padding:16,gap:14,borderRadius:16,backgroundColor:colors.surface},
   dialogHeading:{flexDirection:'row',alignItems:'center',gap:8},
