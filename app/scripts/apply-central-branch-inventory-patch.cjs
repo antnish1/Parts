@@ -3,6 +3,12 @@ const path = require('path');
 
 const file = path.join(__dirname, '../src/services/testInventoryLookup.service.ts');
 let text = fs.readFileSync(file, 'utf8');
+if (text.includes('CURRENT_INVENTORY_SNAPSHOT_V2')) {
+  // The latest-report stock lookup uses getBranchCalculationScope directly.
+  // Do not reintroduce the former shared-code fallback, which mixed old
+  // 2026-06 unkeyed inventory into the current 2026-10 branch snapshot.
+  console.log('Current inventory snapshot V2: legacy inventory patch skipped.');
+} else {
 
 if (!text.includes("centralBranchGroup.service")) {
   text = text.replace(
@@ -24,3 +30,5 @@ text = text.replace(
 );
 
 fs.writeFileSync(file, text);
+
+}
