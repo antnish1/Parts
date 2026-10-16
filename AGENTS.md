@@ -841,6 +841,13 @@ A future agent entering this repository should act as though it has received thi
 - Preserve received/issued/rejected/pending exclusions, approved/partially received semantics, edited quantity, receipt deduction, final DBMS order numbers and RLS.
 - Keep both SQL RPCs (`portal_get_in_transit_qty` and `portal_get_in_transit_details`) synchronized. Refer to `docs/in-transit-processed-same-branch-2026-10-15.md` for migration, rollback and validation.
 
+## 33. Developer workspace — complete user-profile register (2026-10-16)
+
+- The developer workspace must display **all** portal user profiles, not just the most recent 12 or first 50.
+- Fetch `portal_profiles` in stable, bounded pages to avoid both the legacy 50-row limit and default API row limits; expose clear loading/error states rather than silently showing an incomplete list.
+- Label the section **All User Profiles** and support searching by user ID/name/branch/role, branch/role/active filters, and pagination or Show All.
+- Keep existing developer-only route authorization and the current create/edit/activate/deactivate Edge Function workflows. Do not change credentials, user roles, database policies or data in a display-only improvement.
+
 ## 32. Legacy dispatch evidence and In Transit 15-day guard (2026-10-16)
 
 - Preserve section 31 for genuinely **PROCESSED, not yet dispatched** items. Do **not** infer that an individual part was dispatched merely because another item in the same order was dispatched.
