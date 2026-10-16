@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Animated, Easing, ActivityIndicator, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { Screen } from '@/components/Screen';
 import { StateView } from '@/components/StateView';
-import { getPartLocationResult } from '@/services/partLocation';
+import { getPartLocationResult, type PartLocation } from '@/services/partLocation';
 import { formatMoney } from '@/services/orders';
 import { colors, spacing } from '@/theme/tokens';
+
+function LocationRow({location,index}:{location:PartLocation;index:number}) {
+  const [open,setOpen]=useState(false);
+  return <View style={styles.locationRow}>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Location ${location.location}, ${open?'collapse':'expand'} details`} onPress={()=>setOpen(value=>!value)} style={styles.locationHeader}>
+      <View style={styles.locationIndex}><Text style={styles.locationIndexText}>{index+1}</Text></View>
+      <AppIcon name="inventory" size={16} color="#087B58"/>
+      <Text style={styles.location}>{location.location}</Text>
+      <AppIcon name="chevronRight" size={17} color="#087B58"/>
+    </Pressable>
+    {open?<View style={styles.locationBody}>
+      <Text style={styles.locationBodyText}>Location confirmed in Part Location master</Text>
+      <Text style={styles.quantityNote}>Rack/bin quantity is not recorded in the current location data.</Text>
+    </View>:null}
+  </View>;
+}
 
 export default function PartLocationFinderScreen() {
   const { role } = useAuth();
@@ -15,90 +32,124 @@ export default function PartLocationFinderScreen() {
   const [loading,setLoading] = useState(false);
   const [message,setMessage] = useState('');
   const [result,setResult] = useState<Awaited<ReturnType<typeof getPartLocationResult>> | null>(null);
+  const [scannerOpen,setScannerOpen] = useState(false);
+  const [permission,requestPermission] = useCameraPermissions();
+  const scanLocked = useRef(false);
+  const pulse = useRef(new Animated.Value(1)).current;
+  const hasLocations = Boolean(result?.locations.length);
 
-  if (role === 'accounts') return <View style={styles.center}><StateView icon="alert" tone="error" title="Part Location unavailable" message="This workflow is not available for Accounts." /></View>;
+  useEffect(()=>{
+    if(!hasLocations){pulse.setValue(1);return;}
+    const animation=Animated.loop(Animated.sequence([
+      Animated.timing(pulse,{toValue:1.012,duration:1100,easing:Easing.inOut(Easing.ease),useNativeDriver:true}),
+      Animated.timing(pulse,{toValue:1,duration:1100,easing:Easing.inOut(Easing.ease),useNativeDriver:true}),
+      Animated.delay(700),
+    ]));
+    animation.start();
+    return ()=>animation.stop();
+  },[hasLocations,pulse]);
 
-  async function search() {
-    const value = partNo.trim();
-    if (!value) return;
-    setLoading(true);
-    setMessage('');
+  async function search(value = partNo) {
+    const normalized=value.trim();
+    if(!normalized)return;
+    setLoading(true);setMessage('');setResult(null);
     try {
-      const data = await getPartLocationResult(value);
+      const data=await getPartLocationResult(normalized);
       setResult(data);
-      if (!data.part) setMessage('Part was not found in Part Master.');
-      else if (!data.locations.length) setMessage('No active storage location is mapped for this part.');
-    } catch (error) {
-      setResult(null);
-      setMessage(error instanceof Error ? error.message : 'Lookup failed.');
-    } finally {
-      setLoading(false);
-    }
+      if(!data.part)setMessage('Part was not found in Part Master.');
+      else if(!data.locations.length)setMessage('No active storage location is mapped for this part.');
+    } catch(error) {
+      setMessage(error instanceof Error?error.message:'Lookup failed.');
+    } finally {setLoading(false);}
   }
 
-  return (
-    <Screen title="Part Location" subtitle="Find the physical rack, bin or shelf for a part">
-      <View style={styles.searchRow}>
-        <View style={styles.search}>
-          <AppIcon name="search" size={16} color={colors.textMuted}/>
-          <TextInput autoCapitalize="characters" autoCorrect={false} value={partNo} onChangeText={setPartNo} onSubmitEditing={() => void search()} returnKeyType="search" placeholder="Part No." placeholderTextColor={colors.textMuted} style={styles.input}/>
-        </View>
-        <Pressable onPress={() => void search()} disabled={loading} style={styles.searchButton}>{loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.searchText}>Find</Text>}</Pressable>
-      </View>
+  async function openScanner(){
+    if(!permission?.granted){
+      const next=await requestPermission();
+      if(!next.granted){setMessage('Camera permission is required to scan part barcodes.');return;}
+    }
+    scanLocked.current=false;
+    setScannerOpen(true);
+  }
 
-      {result?.part ? (
-        <View style={styles.partRow}>
-          <View style={styles.partIcon}><AppIcon name="package" size={16} color={colors.navy}/></View>
-          <View style={styles.copy}>
-            <Text style={styles.partNo}>{result.part.part_no}</Text>
-            <Text numberOfLines={1} style={styles.description}>{result.part.description || 'No description'}</Text>
-            <Text style={styles.meta}>DNP {formatMoney(result.part.dnp)} · {result.part.cat1 || result.part.cat2 || 'Uncategorised'}</Text>
-          </View>
-        </View>
-      ) : null}
+  function handleScan(data:string){
+    if(scanLocked.current)return;
+    const value=data.trim().replace(/\s+/g,'').toUpperCase();
+    if(!value)return;
+    scanLocked.current=true;
+    setScannerOpen(false);
+    setPartNo(value);
+    void search(value);
+  }
 
-      {result?.locations.length ? <Text style={styles.section}>Locations</Text> : null}
-      {result?.locations.map((location,index) => (
-        <View key={location.id} style={styles.locationRow}>
-          <View style={styles.locationIndex}><Text style={styles.locationIndexText}>{index+1}</Text></View>
-          <AppIcon name="inventory" size={15} color={colors.blue}/>
-          <Text style={styles.location}>{location.location}</Text>
-        </View>
-      ))}
+  if(role==='accounts')return <View style={styles.center}><StateView icon="alert" tone="error" title="Part Location unavailable" message="This workflow is not available for Accounts."/></View>;
 
-      {message ? <View style={styles.message}><AppIcon name="alert" size={14} color={colors.warning}/><Text style={styles.messageText}>{message}</Text></View> : null}
-
-      {['manager','admin','developer'].includes(role ?? '') ? (
-        <Pressable onPress={() => router.push('/parts/location-manage')} style={styles.manage}>
-          <AppIcon name="inventory" size={14} color={colors.navy}/>
-          <Text style={styles.manageText}>Manage locations</Text>
-          <AppIcon name="chevronRight" size={14} color={colors.navy}/>
+  return <Screen title="Part Location" subtitle="Find the physical rack, bin or shelf for a part">
+    <View style={styles.searchRow}>
+      <View style={styles.search}>
+        <AppIcon name="search" size={16} color={colors.textMuted}/>
+        <TextInput autoCapitalize="characters" autoCorrect={false} value={partNo} onChangeText={value=>{setPartNo(value);setResult(null);setMessage('');}} onSubmitEditing={()=>void search()} returnKeyType="search" placeholder="Part No." placeholderTextColor={colors.textMuted} style={styles.input}/>
+        <Pressable accessibilityRole="button" accessibilityLabel="Scan part barcode" onPress={()=>void openScanner()} style={styles.scanButton}>
+          <AppIcon name="scan" size={20} color={colors.blue}/>
         </Pressable>
-      ) : null}
-    </Screen>
-  );
+      </View>
+      <Pressable onPress={()=>void search()} disabled={loading||!partNo.trim()} style={[styles.searchButton,(loading||!partNo.trim())&&styles.disabled]}>
+        {loading?<ActivityIndicator color="#fff"/>:<Text style={styles.searchText}>Find</Text>}
+      </Pressable>
+    </View>
+    {result?.part?<View style={[styles.partRow,hasLocations&&styles.partFound]}>
+      <View style={styles.partIcon}><AppIcon name="package" size={16} color={colors.navy}/></View>
+      <View style={styles.copy}>
+        <Text style={styles.partNo}>{result.part.part_no}</Text>
+        <Text numberOfLines={2} style={styles.description}>{result.part.description||'No description'}</Text>
+        <Text style={styles.meta}>DNP {formatMoney(result.part.dnp)} · {result.part.cat1||result.part.cat2||'Uncategorised'}</Text>
+      </View>
+    </View>:null}
+    {hasLocations?<Animated.View style={[styles.foundPanel,{transform:[{scale:pulse}]}]}>
+      <View style={styles.foundHeading}>
+        <View style={styles.foundIcon}><AppIcon name="mapPin" size={18} color="#087B58"/></View>
+        <View style={styles.copy}><Text style={styles.foundTitle}>Part location found</Text><Text style={styles.foundSubtitle}>{result!.locations.length} active {result!.locations.length===1?'location':'locations'} · Tap a location to expand</Text></View>
+        <AppIcon name="check" size={19} color="#087B58"/>
+      </View>
+      {result!.locations.map((location,index)=><LocationRow key={location.id} location={location} index={index}/>)}
+    </Animated.View>:null}
+    {message?<View style={styles.message}><AppIcon name="alert" size={14} color={colors.warning}/><Text style={styles.messageText}>{message}</Text></View>:null}
+    {['manager','admin','developer'].includes(role??'')?<Pressable onPress={()=>router.push('/parts/location-manage')} style={styles.manage}>
+      <AppIcon name="inventory" size={14} color={colors.navy}/><Text style={styles.manageText}>Manage locations</Text><AppIcon name="chevronRight" size={14} color={colors.navy}/>
+    </Pressable>:null}
+    <Modal visible={scannerOpen} animationType="slide" onRequestClose={()=>setScannerOpen(false)}>
+      <View style={styles.scannerPage}>
+        <View style={styles.scannerTop}>
+          <Text style={styles.scannerTitle}>Scan Part Barcode</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Close scanner" onPress={()=>setScannerOpen(false)} style={styles.scannerClose}><AppIcon name="x" size={23} color="#fff"/></Pressable>
+        </View>
+        {scannerOpen&&permission?.granted?<CameraView style={styles.camera} facing="back" barcodeScannerSettings={{barcodeTypes:['code128','code39','code93','ean13','ean8','upc_a','upc_e','itf14','pdf417','qr']}} onBarcodeScanned={({data})=>handleScan(data)}/>:null}
+        <Text style={styles.scannerHint}>Align the barcode inside the camera frame. The part will be searched automatically.</Text>
+      </View>
+    </Modal>
+  </Screen>;
 }
 
 const styles=StyleSheet.create({
-  center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
-  searchRow:{flexDirection:'row',gap:7},
-  search:{flex:1,minHeight:42,flexDirection:'row',alignItems:'center',gap:7,borderWidth:1,borderColor:'#E1E7EE',borderRadius:11,paddingHorizontal:10,backgroundColor:'#fff'},
-  input:{flex:1,minHeight:40,color:colors.text,fontSize:11},
-  searchButton:{width:64,minHeight:42,alignItems:'center',justifyContent:'center',borderRadius:11,backgroundColor:colors.navy},
-  searchText:{color:'#fff',fontSize:9,fontWeight:'900'},
-  partRow:{minHeight:60,flexDirection:'row',alignItems:'center',gap:8,padding:9,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
-  partIcon:{width:32,height:32,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF3F8'},
-  copy:{flex:1},
-  partNo:{color:colors.text,fontSize:10,fontWeight:'900'},
-  description:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
-  meta:{color:'#7C8796',fontSize:7.5,fontWeight:'700',marginTop:3},
-  section:{color:colors.text,fontSize:10,fontWeight:'900'},
-  locationRow:{minHeight:46,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:9,borderRadius:11,borderWidth:1,borderColor:'#DDE6F0',backgroundColor:'#fff'},
-  locationIndex:{width:24,height:24,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:colors.blueSoft},
-  locationIndexText:{color:colors.blue,fontSize:8,fontWeight:'900'},
-  location:{flex:1,color:colors.text,fontSize:11,fontWeight:'900'},
-  message:{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:9,paddingVertical:7,borderRadius:10,backgroundColor:colors.warningSoft},
-  messageText:{flex:1,color:colors.warning,fontSize:8.5,fontWeight:'700'},
-  manage:{minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,borderRadius:11,borderWidth:1,borderColor:'#DDE4EC',backgroundColor:'#fff'},
-  manageText:{color:colors.navy,fontSize:9,fontWeight:'900'},
+ center:{flex:1,justifyContent:'center',padding:spacing.xl,backgroundColor:colors.background},
+ searchRow:{flexDirection:'row',gap:7},search:{flex:1,minHeight:46,flexDirection:'row',alignItems:'center',gap:7,borderWidth:1,borderColor:'#D6E2EF',borderRadius:11,paddingHorizontal:10,backgroundColor:'#fff'},
+ input:{flex:1,minHeight:43,color:colors.text,fontSize:12},scanButton:{width:36,height:36,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EDF5FF'},
+ searchButton:{width:64,minHeight:46,alignItems:'center',justifyContent:'center',borderRadius:11,backgroundColor:colors.navy},searchText:{color:'#fff',fontSize:10,fontWeight:'900'},disabled:{opacity:.5},
+ partRow:{minHeight:60,flexDirection:'row',alignItems:'center',gap:9,padding:10,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
+ partFound:{borderColor:'#B4DFCB',backgroundColor:'#F3FBF7'},partIcon:{width:34,height:34,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#E8F2FC'},
+ copy:{flex:1,minWidth:0},partNo:{color:colors.text,fontSize:12,fontWeight:'900'},description:{color:colors.textMuted,fontSize:10,fontWeight:'700',marginTop:2},meta:{color:'#6D7B8B',fontSize:9,fontWeight:'700',marginTop:4},
+ foundPanel:{gap:8,padding:11,borderRadius:16,borderWidth:1.3,borderColor:'#72C7A4',backgroundColor:'#E8F8F0',shadowColor:'#15865E',shadowOpacity:.12,shadowRadius:8,shadowOffset:{width:0,height:3},elevation:2},
+ foundHeading:{flexDirection:'row',gap:9,alignItems:'center',paddingVertical:4},foundIcon:{width:34,height:34,borderRadius:10,backgroundColor:'#D0F1E0',alignItems:'center',justifyContent:'center'},
+ foundTitle:{color:'#075D43',fontSize:13,fontWeight:'900'},foundSubtitle:{color:'#42826D',fontSize:9,marginTop:2},
+ locationRow:{borderRadius:11,borderWidth:1,borderColor:'#BFE4D3',backgroundColor:'#FFFFFF',overflow:'hidden'},
+ locationHeader:{minHeight:48,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:10},
+ locationIndex:{width:25,height:25,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:'#E0F6EA'},locationIndexText:{color:'#087B58',fontSize:10,fontWeight:'900'},
+ location:{flex:1,color:'#15392D',fontSize:12,fontWeight:'900'},locationBody:{paddingHorizontal:12,paddingBottom:10,gap:4,borderTopColor:'#E0F1E8',borderTopWidth:1,paddingTop:8},
+ locationBodyText:{fontSize:10,color:'#287357',fontWeight:'700'},quantityNote:{fontSize:9,color:'#64748B'},
+ message:{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:10,paddingVertical:9,borderRadius:10,backgroundColor:colors.warningSoft},
+ messageText:{flex:1,color:colors.warning,fontSize:10,fontWeight:'700'},
+ manage:{minHeight:45,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,borderRadius:11,borderWidth:1,borderColor:'#DDE4EC',backgroundColor:'#fff'},manageText:{color:colors.navy,fontSize:10,fontWeight:'900'},
+ scannerPage:{flex:1,backgroundColor:'#081B34'},scannerTop:{paddingTop:48,paddingHorizontal:20,paddingBottom:15,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
+ scannerTitle:{fontSize:20,fontWeight:'900',color:'#fff'},scannerClose:{width:44,height:44,alignItems:'center',justifyContent:'center'},
+ camera:{flex:1},scannerHint:{padding:20,textAlign:'center',color:'#E2EAF7',fontSize:12,lineHeight:18},
 });
