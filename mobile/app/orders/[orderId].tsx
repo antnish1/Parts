@@ -12,7 +12,7 @@ import { StatusChip } from '@/components/StatusChip';
 import { approveOrderStage, rejectOrder } from '@/services/approvals';
 import { getInTransitDetails, getInTransitQtyByBranchParts, type InTransitDetailRow } from '@/services/inTransit';
 import { getBilledQty, getEffectiveQty, getEffectiveValue, getPendingQty, getReceivedQty, getResolvedRowStatus, normalizePartNo, normalizeStatus } from '@/lib/orderLogic';
-import { formatDate, formatMoney, getOrder, getOrderBillingChunks, getOrderItems } from '@/services/orders';
+import { formatDate, formatMoney, getOrder, getOrderBillingChunks, getOrderItems, type OrderBillingChunk } from '@/services/orders';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function OrderDetailScreen() {
@@ -24,6 +24,8 @@ export default function OrderDetailScreen() {
   const [confirmAction, setConfirmAction] = useState<'approve' | 'reject' | null>(null);
   const [actionMessage, setActionMessage] = useState('');
   const [quantityFilter, setQuantityFilter] = useState<'ordered' | 'billed' | 'pending' | 'received'>('ordered');
+  const [expandedProcessing, setExpandedProcessing] = useState<Record<string, boolean>>({});
+  const [expandedChunks, setExpandedChunks] = useState<Record<string, boolean>>({});
 
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId), enabled: Boolean(orderId) });
   const items = useQuery({ queryKey: ['order-items', orderId], queryFn: () => getOrderItems(orderId), enabled: Boolean(orderId) });
@@ -227,37 +229,20 @@ export default function OrderDetailScreen() {
                 ) : <Text style={styles.transitZero}>0</Text>}
               </View>
 
-              {chunks.length ? (
-                <View style={styles.chunks}>
-                  <Text style={styles.chunksTitle}>Billing / Docket Chunks ({chunks.length})</Text>
-                  {chunks.map((chunk) => (
-                    <View key={chunk.id} style={styles.chunkRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.chunkTitle}>{chunk.invoice_no || 'Invoice not available'} · Qty {Number(chunk.billed_qty ?? 0)}</Text>
-                        <Text style={styles.chunkText}>{chunk.docket_no || 'No docket'} · {chunk.transport_name || 'No transport'}</Text>
-                      </View>
-                      <Text style={styles.chunkDate}>{formatDate(chunk.billing_date || chunk.created_at)}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
+              <PartProcessingDispatch
+                item={item}
+                chunks={chunks}
+                expanded={Boolean(expandedProcessing[item.id])}
+                onToggle={() => setExpandedProcessing((current) => ({ ...current, [item.id]: !current[item.id] }))}
+                expandedChunks={expandedChunks}
+                onToggleChunk={(chunkId) => setExpandedChunks((current) => ({ ...current, [chunkId]: !current[chunkId] }))}
+              />
             </View>
             </MotionView>
           );
         })}
         {items.isError ? <Text style={styles.error}>Part details could not be loaded.</Text> : null}
 
-        <Text style={styles.sectionTitle}>Processing & dispatch</Text>
-        <View style={styles.detailCard}>
-          <DetailRow label="Processing ref" value={row.processing_reference} />
-          <DetailRow label="Processed date" value={formatDate(row.processed_date)} />
-          <DetailRow label="Final order no." value={row.final_order_no} />
-          <DetailRow label="DBMS invoice" value={row.dbms_invoice_no} />
-          <DetailRow label="DBMS invoice date" value={formatDate(row.dbms_invoice_date)} />
-          <DetailRow label="Docket" value={row.docket_no} />
-          <DetailRow label="Transport" value={row.transport_name} />
-          <DetailRow label="Received" value={formatDate(row.received_date)} last />
-        </View>
       </ScrollView>
 
       <Modal visible={Boolean(selectedTransit)} transparent animationType="slide" onRequestClose={() => setSelectedTransit(null)}>
@@ -387,6 +372,125 @@ function PulseWrap({children,flex=false,delay=0}:{children:React.ReactNode;flex?
 function MiniMetric({ label, value, active, onPress }: { label: string; value: string; active: boolean; onPress: () => void }) { return <Pressable accessibilityRole="button" onPress={onPress} style={[styles.metric, active && styles.metricActive]}><Text style={[styles.metricLabel, active && styles.metricLabelActive]}>{label}</Text><Text style={[styles.metricValue, active && styles.metricValueActive]}>{value}</Text></Pressable>; }
 function DetailRow({ label, value, last = false }: { label: string; value: string | null | undefined; last?: boolean }) { return <View style={[styles.detailRow, last && styles.detailRowLast]}><Text style={styles.detailLabel}>{label}</Text><Text style={styles.detailValue}>{value || '—'}</Text></View>; }
 
+type PartDispatchItem = {
+  id: string;
+  dbms_invoice_no: string | null;
+  dbms_invoice_date: string | null;
+  docket_no: string | null;
+  transport_name: string | null;
+  received_date: string | null;
+};
+
+function PartProcessingDispatch({
+  item,
+  chunks,
+  expanded,
+  onToggle,
+  expandedChunks,
+  onToggleChunk,
+}: {
+  item: PartDispatchItem;
+  chunks: OrderBillingChunk[];
+  expanded: boolean;
+  onToggle: () => void;
+  expandedChunks: Record<string, boolean>;
+  onToggleChunk: (chunkId: string) => void;
+}) {
+  const hasPartRecord = Boolean(item.dbms_invoice_no || item.dbms_invoice_date || item.docket_no || item.transport_name || item.received_date);
+  const summary = chunks.length
+    ? `${chunks.length} delivery chunk${chunks.length === 1 ? '' : 's'}`
+    : hasPartRecord ? 'Part dispatch details' : 'No dispatch yet';
+
+  return (
+    <View style={styles.partDispatch}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={onToggle} style={({ pressed }) => [styles.partDispatchHeader, pressed && styles.pressed]}>
+        <View style={styles.partDispatchIcon}><AppIcon name="truck" size={15} color={colors.navy}/></View>
+        <View style={styles.partDispatchCopy}>
+          <Text style={styles.partDispatchTitle}>Processing & dispatch</Text>
+          <Text style={styles.partDispatchSummary}>{summary}</Text>
+        </View>
+        <View style={[styles.partDispatchChevron, expanded && styles.partDispatchChevronOpen]}><AppIcon name="chevronRight" size={16} color={colors.textMuted}/></View>
+      </Pressable>
+
+      {expanded ? (
+        <View style={styles.partDispatchBody}>
+          {hasPartRecord ? (
+            <View style={styles.partRecord}>
+              <Text style={styles.partRecordTitle}>PART RECORD</Text>
+              <DetailRow label="DBMS invoice" value={item.dbms_invoice_no} />
+              <DetailRow label="DBMS invoice date" value={formatDate(item.dbms_invoice_date)} />
+              <DetailRow label="Docket" value={item.docket_no} />
+              <DetailRow label="Transport" value={item.transport_name} />
+              <DetailRow label="Received" value={formatDate(item.received_date)} last />
+            </View>
+          ) : null}
+
+          {chunks.length ? (
+            <View style={styles.chunkList}>
+              <Text style={styles.chunksTitle}>DELIVERY CHUNKS ({chunks.length})</Text>
+              {chunks.map((chunk, index) => {
+                const chunkOpen = Boolean(expandedChunks[chunk.id]);
+                return (
+                  <View key={chunk.id} style={styles.chunkCard}>
+                    <Pressable accessibilityRole="button" accessibilityState={{ expanded: chunkOpen }} onPress={() => onToggleChunk(chunk.id)} style={({ pressed }) => [styles.chunkHeader, pressed && styles.pressed]}>
+                      <View style={styles.chunkNumber}><Text style={styles.chunkNumberText}>{index + 1}</Text></View>
+                      <View style={styles.chunkHeaderCopy}>
+                        <Text style={styles.chunkTitle}>Chunk {index + 1} · Qty {Number(chunk.billed_qty ?? 0)}</Text>
+                        <Text numberOfLines={1} style={styles.chunkText}>{chunk.invoice_no || 'Invoice pending'} · {chunk.docket_no || 'No docket'}</Text>
+                      </View>
+                      <View style={styles.chunkRight}>
+                        <Text style={styles.chunkDate}>{formatDate(chunk.billing_date || chunk.created_at)}</Text>
+                        <View style={[styles.chunkChevron, chunkOpen && styles.partDispatchChevronOpen]}><AppIcon name="chevronRight" size={14} color={colors.textMuted}/></View>
+                      </View>
+                    </Pressable>
+                    {chunkOpen ? <ChunkDetails chunk={chunk} /> : null}
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {!hasPartRecord && chunks.length === 0 ? <Text style={styles.noDispatchText}>No processing or dispatch information has been recorded for this part yet.</Text> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function ChunkDetails({ chunk }: { chunk: OrderBillingChunk }) {
+  return (
+    <View style={styles.chunkDetails}>
+      <View style={styles.chunkMetricRow}>
+        <ChunkMetric label="Invoice" value={chunk.invoice_no || '—'} />
+        <PartDivider />
+        <ChunkMetric label="Billing date" value={formatDate(chunk.billing_date)} />
+        <PartDivider />
+        <ChunkMetric label="Delivery no." value={chunk.delivery_no || '—'} />
+      </View>
+      <View style={styles.partMetricSeparator} />
+      <View style={styles.chunkMetricRow}>
+        <ChunkMetric label="Billed" value={String(Number(chunk.billed_qty ?? 0))} />
+        <PartDivider />
+        <ChunkMetric label="Received" value={String(Number(chunk.received_qty ?? 0))} />
+        <PartDivider />
+        <ChunkMetric label="Received date" value={formatDate(chunk.received_at)} />
+      </View>
+      <View style={styles.partMetricSeparator} />
+      <View style={styles.chunkMetricRow}>
+        <ChunkMetric label="Docket" value={chunk.docket_no || '—'} />
+        <PartDivider />
+        <ChunkMetric label="Transport" value={chunk.transport_name || '—'} />
+        <PartDivider />
+        <ChunkMetric label="Status" value={chunk.raw_status || '—'} />
+      </View>
+    </View>
+  );
+}
+
+function ChunkMetric({ label, value }: { label: string; value: string }) {
+  return <View style={styles.chunkMetric}><Text style={styles.chunkMetricLabel}>{label}</Text><Text numberOfLines={2} style={styles.chunkMetricValue}>{value}</Text></View>;
+}
+
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background },
   content: { paddingBottom: 44, gap: spacing.md },
@@ -460,12 +564,35 @@ const styles = StyleSheet.create({
   transitBadge: { flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#E7B94D' },
   transitBadgeText: { color: '#7A5200', fontSize: 10, fontWeight: '900' },
   transitZero: { color: colors.text, fontSize: 11, fontWeight: '800' },
-  chunks: { marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border, gap: spacing.sm },
-  chunksTitle: { color: colors.blue, fontSize: 9, fontWeight: '900', letterSpacing: .7 },
-  chunkRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start', padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.background },
-  chunkTitle: { color: colors.text, fontSize: 10, fontWeight: '800' },
-  chunkText: { color: colors.textMuted, fontSize: 9, marginTop: 2 },
-  chunkDate: { color: colors.textMuted, fontSize: 9, textAlign: 'right' },
+  partDispatch:{marginTop:spacing.md,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:colors.border},
+  partDispatchHeader:{minHeight:50,flexDirection:'row',alignItems:'center',gap:9,paddingTop:10},
+  partDispatchIcon:{width:30,height:30,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},
+  partDispatchCopy:{flex:1,minWidth:0},
+  partDispatchTitle:{color:colors.text,fontSize:10.5,fontWeight:'900'},
+  partDispatchSummary:{color:colors.textMuted,fontSize:8.5,fontWeight:'700',marginTop:2},
+  partDispatchChevron:{width:28,height:28,alignItems:'center',justifyContent:'center'},
+  partDispatchChevronOpen:{transform:[{rotate:'90deg'}]},
+  partDispatchBody:{gap:10,paddingTop:8},
+  partRecord:{borderRadius:10,borderWidth:1,borderColor:colors.border,overflow:'hidden',backgroundColor:'#FFFFFF'},
+  partRecordTitle:{paddingHorizontal:10,paddingTop:9,paddingBottom:6,color:colors.blue,fontSize:8,fontWeight:'900',letterSpacing:.8},
+  chunkList:{gap:8},
+  chunksTitle:{color:colors.blue,fontSize:8,fontWeight:'900',letterSpacing:.8},
+  chunkCard:{borderRadius:10,borderWidth:1,borderColor:colors.border,overflow:'hidden',backgroundColor:'#FFFFFF'},
+  chunkHeader:{minHeight:52,flexDirection:'row',alignItems:'center',gap:8,padding:9},
+  chunkNumber:{width:25,height:25,borderRadius:8,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},
+  chunkNumberText:{color:colors.navy,fontSize:9,fontWeight:'900'},
+  chunkHeaderCopy:{flex:1,minWidth:0},
+  chunkTitle:{color:colors.text,fontSize:9.5,fontWeight:'900'},
+  chunkText:{color:colors.textMuted,fontSize:8.5,marginTop:2},
+  chunkRight:{alignItems:'flex-end',gap:2},
+  chunkDate:{color:colors.textMuted,fontSize:8,textAlign:'right'},
+  chunkChevron:{width:20,height:20,alignItems:'center',justifyContent:'center'},
+  chunkDetails:{backgroundColor:'#EEF5FC',borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'#CFDDED'},
+  chunkMetricRow:{flexDirection:'row',alignItems:'stretch',minHeight:48},
+  chunkMetric:{flex:1,minWidth:0,paddingHorizontal:7,paddingVertical:8,justifyContent:'center'},
+  chunkMetricLabel:{color:'#748297',fontSize:7.5,fontWeight:'700'},
+  chunkMetricValue:{color:'#152740',fontSize:9,fontWeight:'900',marginTop:3},
+  noDispatchText:{padding:10,borderRadius:9,backgroundColor:'#F8FAFC',color:colors.textMuted,fontSize:9,lineHeight:14},
   detailCard: { borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, overflow: 'hidden' },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.lg, padding: spacing.md, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   detailRowLast: { borderBottomWidth: 0 },
