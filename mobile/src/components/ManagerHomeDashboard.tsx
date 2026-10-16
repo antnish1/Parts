@@ -9,6 +9,7 @@ import { Screen } from '@/components/Screen';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
+import { BreathingView } from '@/components/BreathingView';
 import { getApprovalQueue } from '@/services/approvals';
 import { getCreditDispatches } from '@/services/creditDispatch';
 import { getAllVisibleOrders, formatDate } from '@/services/orders';
@@ -132,7 +133,7 @@ export function ManagerHomeDashboard() {
           <Text style={styles.greetingName}>Good morning, {firstName}</Text>
           <Text style={styles.greetingMeta}>{profile?.branch || 'All Branches'} · Manager · {today}</Text>
         </View>
-        <View style={styles.activePill}><Text style={styles.activePillValue}>{orders.isLoading ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View>
+        <BreathingView minScale={0.965} maxScale={1.015}><View style={styles.activePill}><Text style={styles.activePillValue}>{orders.isLoading ? '—' : stats.activeOrders}</Text><Text style={styles.activePillText}> active</Text></View></BreathingView>
       </View>
 
       <MetricsTicker loading={metricsLoading} items={[
