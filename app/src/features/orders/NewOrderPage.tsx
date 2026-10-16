@@ -1,5 +1,4 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
-import { MessageSquareText } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
@@ -357,29 +356,20 @@ export function NewOrderPage() {
             <p className={sectionTitleClass}>Parts Builder</p>
             <p className="text-[10px] font-bold text-[#6D8196]">Enter part no. and press Tab</p>
           </div>
-          <div aria-labelledby="initial-order-comment-label" className="mb-2 flex flex-col gap-2 rounded-lg border border-[#dbe3ed] bg-[#f8fafc] px-3 py-2 sm:flex-row sm:items-center">
-            <div className="flex shrink-0 items-center justify-between gap-3 sm:w-[205px]">
-              <label id="initial-order-comment-label" htmlFor="initial-order-comment" className="flex items-center gap-1.5 text-[11px] font-bold !text-[#0f172a]">
-                <MessageSquareText className="h-3.5 w-3.5 text-[#64748b]" aria-hidden="true" />
-                Comment for this order
-              </label>
-              <span id="initial-order-comment-optional" className="text-[10px] font-medium !text-[#64748b]">Optional</span>
-            </div>
-            <div className="relative min-w-0 flex-1">
-              <textarea
-                id="initial-order-comment"
-                aria-describedby="initial-order-comment-optional"
-                className="block h-[46px] w-full resize-y rounded-md border border-[#cbd5e1] bg-white px-3 py-2 pr-14 text-[11px] font-medium leading-4 !text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#60a5fa] focus:ring-1 focus:ring-[#93c5fd]/40 disabled:cursor-not-allowed disabled:opacity-55"
-                style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
-                rows={2}
-                maxLength={2000}
-                value={orderComment}
-                onChange={(event) => setOrderComment(event.target.value)}
-                disabled={isFormBusy}
-                placeholder="Optional instructions for the approver or parts team..."
-              />
-              <span aria-hidden="true" className="pointer-events-none absolute bottom-1.5 right-2 text-[10px] font-medium !text-[#64748b]">{orderComment.length}/2000</span>
-            </div>
+          <div className="relative mb-2">
+            <textarea
+              id="initial-order-comment"
+              aria-label="Optional order comment"
+              className="block h-[46px] w-full resize-y rounded-md border border-[#cbd5e1] bg-white px-3 py-2 pr-14 text-[11px] font-medium leading-4 !text-[#0f172a] outline-none placeholder:text-[#94a3b8] focus:border-[#60a5fa] focus:ring-1 focus:ring-[#93c5fd]/40 disabled:cursor-not-allowed disabled:opacity-55"
+              style={{ color: '#0f172a', backgroundColor: '#ffffff' }}
+              rows={2}
+              maxLength={2000}
+              value={orderComment}
+              onChange={(event) => setOrderComment(event.target.value)}
+              disabled={isFormBusy}
+              placeholder="Optional instructions for the approver or parts team..."
+            />
+            <span aria-hidden="true" className="pointer-events-none absolute bottom-1.5 right-2 text-[10px] font-medium !text-[#64748b]">{orderComment.length}/2000</span>
           </div>
 
           <div className="overflow-hidden rounded-xl border border-[#334155] bg-[#111827]">
