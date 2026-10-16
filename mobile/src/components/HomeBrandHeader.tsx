@@ -20,8 +20,10 @@ export function HomeBrandHeader() {
         <View style={styles.logoWrap}>
           <Image source={require('../../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" />
         </View>
-        <View>
-          <Text style={styles.name}>Parts Connect Portal</Text>
+        <View style={styles.divider} />
+        <View style={styles.brandNameRow}>
+          <Text style={styles.name}>Parts Connect</Text>
+          <Text style={styles.portal}>Portal</Text>
         </View>
       </View>
       <View style={styles.actions}>
@@ -41,11 +43,13 @@ export function HomeBrandHeader() {
 const styles = StyleSheet.create({
   shell: { marginHorizontal: -12, backgroundColor: '#082B5B' },
   bar: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
-  logoWrap: { width: 42, height: 38, borderRadius: 11, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', padding: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,.85)' },
-  logo: { width: 34, height: 30 },
-  name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
-  subtitle: { color: '#C1D3EB', fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
+  logoWrap: { width: 46, height: 46, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', padding: 5, borderWidth: 1, borderColor: 'rgba(255,255,255,.95)' },
+  logo: { width: 36, height: 36 },
+  divider: { width: 1, height: 34, backgroundColor: 'rgba(190,220,255,.65)' },
+  brandNameRow: { flexDirection: 'row', alignItems: 'center', minWidth: 0, flexShrink: 1 },
+  name: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', letterSpacing: -.25 },
+  portal: { color: '#7FC2FF', fontSize: 18, fontWeight: '900', letterSpacing: -.25, marginLeft: 5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bell: { minWidth: 34, minHeight: 38, alignItems: 'center', justifyContent: 'center' },
   unreadPill:{position:'absolute',right:-4,top:1,minWidth:16,height:16,paddingHorizontal:3,borderRadius:9,backgroundColor:'#DC3545',alignItems:'center',justifyContent:'center'},
