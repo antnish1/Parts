@@ -7,6 +7,7 @@ import { TadaDeveloperControls } from '@/components/TadaDeveloperControls';
 import { Screen } from '@/components/Screen';
 import { MotionView } from '@/components/MotionView';
 import { AppIcon } from '@/components/AppIcon';
+import { BreathingView } from '@/components/BreathingView';
 import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StateView } from '@/components/StateView';
 import { getTadaDispatch, receiveTadaDispatch, tadaLocationLabel, tadaStatusLabel, type TadaSvrItem } from '@/services/tada';
@@ -77,7 +78,7 @@ export default function TadaDetailScreen() {
       <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <MotionView>
         <View style={styles.hero}>
-          <View style={styles.heroTop}><View style={styles.heroIcon}><AppIcon name="clipboardCheck" size={19} color="#FFFFFF"/></View><View style={styles.heroCopy}><Text numberOfLines={1} style={styles.no}>{dispatch.dispatch_no}</Text><Text style={styles.office}>{dispatch.branch_name_snapshot}</Text></View><View style={styles.status}><Text style={styles.statusText}>{tadaStatusLabel(dispatch.status)}</Text></View></View>
+          <View style={styles.heroTop}><View style={styles.heroIcon}><AppIcon name="clipboardCheck" size={19} color="#FFFFFF"/></View><View style={styles.heroCopy}><Text numberOfLines={1} style={styles.no}>{dispatch.dispatch_no}</Text><Text style={styles.office}>{dispatch.branch_name_snapshot}</Text></View><BreathingView minScale={0.965} maxScale={1.015}><View style={styles.status}><Text style={styles.statusText}>{tadaStatusLabel(dispatch.status)}</Text></View></BreathingView></View>
           <View style={styles.heroSummary}><HeroMini label="SVRs" value={String(dispatch.total_svr_count)} /><HeroDivider/><HeroMini label="Date" value={dispatch.dispatch_date} /><HeroDivider/><HeroMini label="Mode" value={dispatch.dispatch_mode} /></View>
         </View>
         </MotionView>
