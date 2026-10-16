@@ -13,7 +13,7 @@ export function HomeBrandHeader() {
     <View style={[styles.shell, { paddingTop: insets.top }]}> 
     <View style={styles.bar}>
       <View style={styles.brand}>
-        <Image source={require('../../assets/native/icon.png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" />
         <View>
           <Text style={styles.name}>Parts Connect</Text>
         </View>
@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   shell: { marginHorizontal: -12, backgroundColor: '#082B5B' },
   bar: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
-  logo: { width: 34, height: 34, borderRadius: 8 },
+  logo: { width: 38, height: 34 },
   name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   subtitle: { color: '#C1D3EB', fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
