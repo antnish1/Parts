@@ -120,8 +120,11 @@ export function OrderDataCorrectionPage() {
       const dnp = part.dnp;
       const qty = numberValue(form.qty) ?? 0;
       const editedQty = numberValue(form.edited_qty);
-      setForm((current) => ({ ...current, part_no: part.part_no, description: part.description || '', dnp: text(dnp), value: dnp === null ? '' : text(dnp * qty), edited_value: dnp === null || editedQty === null ? '' : text(dnp * editedQty) }));
-      setMessage('Part details loaded from Part Master.');
+      const sameSavedPart = Boolean(selectedItem && part.part_no.replace(/\s+/g, '').toUpperCase() === selectedItem.part_no.replace(/\s+/g, '').toUpperCase());
+      setForm((current) => sameSavedPart
+        ? { ...current, part_no: part.part_no, description: current.description, dnp: text(selectedItem!.dnp), value: current.value, edited_value: current.edited_value }
+        : { ...current, part_no: part.part_no, description: part.description || '', dnp: text(dnp), value: dnp === null ? '' : text(dnp * qty), edited_value: dnp === null || editedQty === null ? '' : text(dnp * editedQty) });
+      setMessage(sameSavedPart ? 'Part verified. Historical DNP and order value were preserved.' : 'Part details loaded from Part Master.');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Part lookup failed.'); }
     finally { setPartBusy(false); }
   }
@@ -135,7 +138,9 @@ export function OrderDataCorrectionPage() {
 
   function submit(action: CorrectionAction, changes: Record<string, unknown>, expectedUpdatedAt?: string) {
     if (!form.reason?.trim()) return setMessage('Correction reason is required.');
-    mutation.mutate({ action, orderId, itemId: selectedItem?.id, billingId: selectedBilling?.id, expectedUpdatedAt, changes, reason: form.reason.trim(), category: form.category || categories[0], reference: form.reference?.trim(), updateLinkedBillings: form.update_linked_billings !== 'false', syncMatchingItems: form.sync_matching_items !== 'false', ...(action === 'delete_item' ? { deleteLinkedBillings: form.delete_linked_billings === 'true' } : {}) } as never);
+    const priceChange = action === 'update_item' && selectedItem && (String(changes.part_no ?? '').replace(/\s+/g, '').toUpperCase() !== selectedItem.part_no.replace(/\s+/g, '').toUpperCase() || numberValue(String(changes.dnp ?? '')) !== selectedItem.dnp);
+    if (priceChange && !window.confirm('Change historical order pricing? This replaces the saved DNP/value and records your correction reason in audit history.')) return;
+    mutation.mutate({ action, orderId, itemId: selectedItem?.id, billingId: selectedBilling?.id, expectedUpdatedAt, changes, approvePriceChange: Boolean(priceChange), reason: form.reason.trim(), category: form.category || categories[0], reference: form.reference?.trim(), updateLinkedBillings: form.update_linked_billings !== 'false', syncMatchingItems: form.sync_matching_items !== 'false', ...(action === 'delete_item' ? { deleteLinkedBillings: form.delete_linked_billings === 'true' } : {}) } as never);
   }
 
   function submitOrder() {

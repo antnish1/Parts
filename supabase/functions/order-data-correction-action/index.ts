@@ -161,6 +161,14 @@ serve(async (req) => {
       if (error) throw error;
       await assertFresh(current as Row, body.expectedUpdatedAt);
       const patch = pickAllowed((body.changes ?? {}) as Row, ITEM_FIELDS);
+      const partChanged = 'part_no' in patch && normalizePartNo(patch.part_no) !== normalizePartNo(current.part_no);
+      const requestedDnp = numberOrNull('dnp' in patch ? patch.dnp : current.dnp);
+      const savedDnp = numberOrNull(current.dnp);
+      // A current catalogue lookup must never silently reprice an existing order line.
+      // Explicit historical-price changes require confirmation and the existing audited reason.
+      if ((partChanged || requestedDnp !== savedDnp) && body.approvePriceChange !== true) {
+        throw new Error('Historical order price is locked. Confirm the price correction explicitly before saving.');
+      }
       if ('part_no' in patch && normalizePartNo(patch.part_no) !== normalizePartNo(current.part_no)) {
         const part = await lookupPart(admin, patch.part_no);
         const qty = numberOrNull('qty' in patch ? patch.qty : current.qty) ?? 0;
@@ -178,8 +186,15 @@ serve(async (req) => {
         const dnp = numberOrNull('dnp' in patch ? patch.dnp : current.dnp);
         const qty = numberOrNull('qty' in patch ? patch.qty : current.qty) ?? 0;
         const editedQty = numberOrNull('edited_qty' in patch ? patch.edited_qty : current.edited_qty);
-        if ('dnp' in patch || 'qty' in patch) patch.value = dnp === null ? null : dnp * qty;
-        if ('dnp' in patch || 'edited_qty' in patch) patch.edited_value = editedQty === null || dnp === null ? null : dnp * editedQty;
+        const priceChanged = dnp !== savedDnp;
+        const qtyChanged = 'qty' in patch && qty !== numberOrNull(current.qty);
+        const editedQtyChanged = 'edited_qty' in patch && editedQty !== numberOrNull(current.edited_qty);
+        // Ignore client-submitted totals: keep original totals unless quantity or an
+        // explicitly approved DNP actually changed. Never reprice on a status edit.
+        if (priceChanged || qtyChanged) patch.value = dnp === null ? null : dnp * qty;
+        else delete patch.value;
+        if (priceChanged || editedQtyChanged) patch.edited_value = editedQty === null || dnp === null ? null : dnp * editedQty;
+        else delete patch.edited_value;
       }
       auditChanges = changedFields(current as Row, patch);
       if (!Object.keys(auditChanges).length) throw new Error('No item changes were detected.');
