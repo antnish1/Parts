@@ -73,8 +73,8 @@ export default function InstallationsScreen() {
   return (
     <Screen title="Engine & Breaker" subtitle="Invoice, registration, completion and acceptance" scroll={false} right={mode === 'invoice' && canManage ? <Pressable onPress={() => router.push('/installations/invoice')} style={styles.headerAdd}><Text style={styles.headerAddPlus}>+</Text><Text style={styles.headerAddText}>Add Invoice</Text></Pressable> : undefined}>
       <View style={styles.segment}>
-        <Pressable onPress={() => setMode('register')} style={[styles.segmentButton, mode === 'register' && styles.segmentActive]}><AppIcon name="clipboardCheck" size={15} color={mode==='register'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'register' && styles.segmentTextActive]}>Register</Text></Pressable>
-        {canManage ? <Pressable onPress={() => setMode('invoice')} style={[styles.segmentButton, mode === 'invoice' && styles.segmentActive]}><AppIcon name="fileChart" size={15} color={mode==='invoice'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'invoice' && styles.segmentTextActive]}>Invoice</Text></Pressable> : null}
+        <Pressable onPress={() => setMode('register')} style={[styles.segmentButton, mode === 'register' && styles.segmentActive]}><AppIcon name="inventory" size={17} color={mode==='register'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'register' && styles.segmentTextActive]}>Register</Text></Pressable>
+        {canManage ? <Pressable onPress={() => setMode('invoice')} style={[styles.segmentButton, mode === 'invoice' && styles.segmentActive]}><AppIcon name="work" size={17} color={mode==='invoice'?'#174A86':colors.textMuted}/><Text style={[styles.segmentText, mode === 'invoice' && styles.segmentTextActive]}>Invoice</Text></Pressable> : null}
       </View>
 
       {mode === 'invoice' && canManage ? (
@@ -122,16 +122,15 @@ export default function InstallationsScreen() {
               {isDeveloper?<View style={styles.developerNote}><AppIcon name="alert" size={14} color={colors.danger}/><Text style={styles.developerNoteText}><Text style={styles.developerNoteStrong}>Developer override.</Text> Delete requires an audited reason.</Text></View>:null}
               {deleteMessage?<Text style={styles.message}>{deleteMessage}</Text>:null}
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
-                <StageChip label="Pending" value={counts.PENDING} active={filter === 'PENDING'} onPress={() => setFilter(filter === 'PENDING' ? 'ALL' : 'PENDING')} />
-                <StageChip label="Acceptance" value={counts.ACCEPTANCE_PENDING} active={filter === 'ACCEPTANCE_PENDING'} onPress={() => setFilter(filter === 'ACCEPTANCE_PENDING' ? 'ALL' : 'ACCEPTANCE_PENDING')} />
-                <StageChip label="Accepted" value={counts.ACCEPTED} active={filter === 'ACCEPTED'} onPress={() => setFilter(filter === 'ACCEPTED' ? 'ALL' : 'ACCEPTED')} />
-                <StageChip label="All" value={counts.ALL} active={filter === 'ALL'} onPress={() => setFilter('ALL')} />
-              </ScrollView>
-
               <View style={styles.search}>
                 <AppIcon name="search" size={16} color={colors.textMuted}/>
                 <TextInput value={search} onChangeText={setSearch} placeholder="Entry, invoice, serial, branch, customer…" placeholderTextColor={colors.textMuted} style={styles.searchInput}/>
+              </View>
+              <View style={styles.stageStrip}>
+                <StageChip label="All" value={counts.ALL} active={filter === 'ALL'} onPress={() => setFilter('ALL')} />
+                <StageChip label="Pending" value={counts.PENDING} active={filter === 'PENDING'} onPress={() => setFilter(filter === 'PENDING' ? 'ALL' : 'PENDING')} />
+                <StageChip label="Acceptance" value={counts.ACCEPTANCE_PENDING} active={filter === 'ACCEPTANCE_PENDING'} onPress={() => setFilter(filter === 'ACCEPTANCE_PENDING' ? 'ALL' : 'ACCEPTANCE_PENDING')} />
+                <StageChip label="Accepted" value={counts.ACCEPTED} active={filter === 'ACCEPTED'} onPress={() => setFilter(filter === 'ACCEPTED' ? 'ALL' : 'ACCEPTED')} />
               </View>
             </View>
           }
@@ -190,12 +189,13 @@ const styles=StyleSheet.create({
   headerAdd:{minHeight:34,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,paddingHorizontal:10,borderRadius:8,backgroundColor:'#EAF7F1'},headerAddPlus:{color:colors.success,fontSize:16,lineHeight:18,fontWeight:'900'},headerAddText:{color:colors.success,fontSize:9,fontWeight:'900'},
   
   filters:{gap:6,paddingRight:10},
-  stageChip:{minHeight:34,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:9,borderRadius:999,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
-  stageChipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
-  stageValue:{color:colors.navy,fontSize:9.5,fontWeight:'900'},
-  stageValueActive:{color:'#fff'},
-  stageLabel:{color:colors.textMuted,fontSize:8,fontWeight:'800'},
-  stageLabelActive:{color:'#fff'},
+  stageStrip:{flexDirection:'row',borderRadius:14,borderWidth:1,borderColor:'#D4E0ED',overflow:'hidden',backgroundColor:'#FFFFFF'},
+  stageChip:{flex:1,minWidth:0,minHeight:60,alignItems:'center',justifyContent:'center',gap:3,paddingHorizontal:2,borderBottomWidth:3,borderBottomColor:'transparent',backgroundColor:'#FFFFFF'},
+  stageChipActive:{backgroundColor:'#E7F1FF',borderBottomColor:'#3276BB'},
+  stageValue:{color:'#697788',fontSize:14,fontWeight:'900'},
+  stageValueActive:{color:'#174A86'},
+  stageLabel:{color:colors.textMuted,fontSize:9,fontWeight:'800'},
+  stageLabelActive:{color:'#174A86'},
   search:{minHeight:42,flexDirection:'row',alignItems:'center',gap:7,borderRadius:11,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff',paddingHorizontal:10},
   searchInput:{flex:1,minHeight:40,color:colors.text,fontSize:11},
   developerNote:{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:9,paddingVertical:7,borderRadius:10,borderWidth:1,borderColor:'#F3C4C4',backgroundColor:colors.dangerSoft},
