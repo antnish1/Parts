@@ -85,14 +85,14 @@ language plpgsql security definer set search_path=public as $$
 declare inserted_count integer;
 begin
  insert into public.portal_notifications(recipient_profile_id,order_id,event_key,category,title,body)
- select p.id,o.id,'vor:'||o.id::text||':'||case when current_date-o.processed_date between 3 and 5 then '3-5' else '5+' end,
+ select p.id,o.id,'vor:'||o.id::text||':'||case when (timezone('Asia/Kolkata',now())::date-o.processed_date) between 3 and 5 then '3-5' else '5+' end,
  'delayed_vor',
- case when current_date-o.processed_date between 3 and 5 then 'Delayed VOR: 3–5 days' else 'Delayed VOR: 5+ days' end,
+ case when (timezone('Asia/Kolkata',now())::date-o.processed_date) between 3 and 5 then 'Delayed VOR: 3–5 days' else 'Delayed VOR: 5+ days' end,
  'Order '||coalesce(o.final_order_no,o.order_no)||' needs follow-up.'
  from public.portal_orders o join public.portal_profiles p on p.is_active=true and
  regexp_replace(upper(coalesce(p.branch,'')),'[ _-]','','g')=regexp_replace(upper(o.branch),'[ _-]','','g')
  where upper(o.order_type)='VOR' and o.processed_date is not null
- and (current_date-o.processed_date between 3 and 5 or current_date-o.processed_date>=6)
+ and ((timezone('Asia/Kolkata',now())::date-o.processed_date) between 3 and 5 or (timezone('Asia/Kolkata',now())::date-o.processed_date)>=6)
  and exists (select 1 from public.portal_order_items i where i.order_id=o.id and upper(coalesce(i.row_status,'')) in ('PROCESSED','PARTIALLY DISPATCHED'))
  on conflict do nothing;
  get diagnostics inserted_count=row_count;
@@ -100,3 +100,4 @@ begin
 end $$;
 revoke all on function public.portal_queue_delayed_vor_alerts() from public,anon,authenticated;
 -- Scheduled service worker only. No client invocation.
+grant execute on function public.portal_queue_delayed_vor_alerts() to service_role;
