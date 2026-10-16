@@ -13,9 +13,11 @@ export function HomeBrandHeader() {
     <View style={[styles.shell, { paddingTop: insets.top }]}> 
     <View style={styles.bar}>
       <View style={styles.brand}>
-        <Image source={require('../../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" />
+        <View style={styles.logoWrap}>
+          <Image source={require('../../assets/branding/PCLOGO.png')} style={styles.logo} resizeMode="contain" />
+        </View>
         <View>
-          <Text style={styles.name}>Parts Connect</Text>
+          <Text style={styles.name}>Parts Connect Portal</Text>
         </View>
       </View>
       <View style={styles.actions}>
@@ -35,7 +37,8 @@ const styles = StyleSheet.create({
   shell: { marginHorizontal: -12, backgroundColor: '#082B5B' },
   bar: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: '#082B5B', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9, flex: 1 },
-  logo: { width: 38, height: 34 },
+  logoWrap: { width: 42, height: 38, borderRadius: 11, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', padding: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,.85)' },
+  logo: { width: 34, height: 30 },
   name: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   subtitle: { color: '#C1D3EB', fontSize: 8, fontWeight: '800', letterSpacing: 0.8 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
