@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 import { getCurrentPortalProfile } from '@/services/profile';
+import { getVisibleOrders } from '@/services/orders';
 
 export type OrderEvent={id:string;event_type:string;old_status:string|null;new_status:string|null;notes:string|null;created_at:string};
 export type OrderCommentAttachment={id:string;comment_id:string;original_file_name:string;mime_type:string;file_size_bytes:number;created_at:string};
@@ -34,3 +35,49 @@ export async function uploadOrderCommentAttachment(orderId:string,commentId:stri
  return data.attachment as OrderCommentAttachment;
 }
 export async function getOrderAttachmentUrl(attachmentId:string){const {data,error}=await supabase.functions.invoke('comment-attachment-link-action',{body:{attachmentId}});if(error)throw error;if(data?.error)throw new Error(String(data.error));return data as {signedUrl:string;expiresIn:number;fileName:string};}
+
+export type ActivityFeedRow = {
+  id: string;
+  order_id: string;
+  order_no: string;
+  event_type: string;
+  old_status: string | null;
+  new_status: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export async function getImmutableActivityFeed(limit = 120): Promise<ActivityFeedRow[]> {
+  const visibleOrders = await getVisibleOrders(250);
+  const ids = visibleOrders.map((order) => order.id);
+  if (!ids.length) return [];
+
+  const orderNoById = new Map(visibleOrders.map((order) => [order.id, order.order_no]));
+  const rows: ActivityFeedRow[] = [];
+  const batchSize = 150;
+
+  for (let index = 0; index < ids.length; index += batchSize) {
+    const { data, error } = await supabase
+      .from('portal_order_events')
+      .select('id,order_id,event_type,old_status,new_status,notes,created_at')
+      .in('order_id', ids.slice(index, index + batchSize))
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+
+    rows.push(...(data ?? []).map((event: any) => ({
+      id: String(event.id),
+      order_id: String(event.order_id),
+      order_no: orderNoById.get(String(event.order_id)) || 'Order',
+      event_type: String(event.event_type ?? 'ACTIVITY'),
+      old_status: event.old_status ?? null,
+      new_status: event.new_status ?? null,
+      notes: event.notes ?? null,
+      created_at: String(event.created_at),
+    })));
+  }
+
+  return rows
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, limit);
+}
