@@ -11,6 +11,8 @@ import { SkeletonLoader } from '@/components/SkeletonLoader';
 import { StatusChip } from '@/components/StatusChip';
 import { approveReview, rejectOrder, resetEditedQuantity, setEditedQuantity, zeroReviewItem } from '@/services/approvals';
 import { formatMoney, getOrder, getOrderItems, type OrderItem } from '@/services/orders';
+import { getInTransitQtyByBranchParts } from '@/services/inTransit';
+import { normalizePartNo } from '@/lib/orderLogic';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function ApprovalReviewScreen() {
@@ -20,6 +22,13 @@ export default function ApprovalReviewScreen() {
   const queryClient = useQueryClient();
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId), enabled: Boolean(orderId) });
   const items = useQuery({ queryKey: ['order-items', orderId], queryFn: () => getOrderItems(orderId), enabled: Boolean(orderId) });
+  const partNos = (items.data ?? []).map((item) => item.part_no);
+  const inTransit = useQuery({
+    queryKey: ['approval-review-in-transit', order.data?.branch, partNos.join('|')],
+    queryFn: () => getInTransitQtyByBranchParts(order.data!.branch!, partNos),
+    enabled: Boolean(order.data?.branch) && partNos.length > 0,
+    staleTime: 0,
+  });
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [message, setMessage] = useState('');
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -118,6 +127,7 @@ export default function ApprovalReviewScreen() {
   const busy = approve.isPending || reject.isPending;
   const currentQty = (items.data ?? []).reduce((sum, item) => sum + Number(quantities[item.id] ?? item.edited_qty ?? item.qty), 0);
   const originalQty = (items.data ?? []).reduce((sum, item) => sum + item.qty, 0);
+  const transitMap = inTransit.data ?? {};
 
   return (
     <Screen title="Approval Review" scroll={false}>
@@ -153,6 +163,8 @@ export default function ApprovalReviewScreen() {
             busy={busy}
             rowAction={rowAction?.itemId === item.id ? rowAction.action : null}
             rowError={rowErrors[item.id] || ''}
+            transitQty={transitMap[normalizePartNo(item.part_no)] ?? 0}
+            transitLoading={inTransit.isLoading}
             onChange={(value) => {
               setRowErrors((current) => ({ ...current, [item.id]: '' }));
               setQuantities((current) => ({ ...current, [item.id]: value.replace(/[^0-9]/g, '') }));
@@ -189,7 +201,7 @@ export default function ApprovalReviewScreen() {
   );
 }
 
-function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
+function ReviewItem({ item, value, busy, rowAction, rowError, transitQty, transitLoading, onChange, onReset, onZero }: { item: OrderItem; value: string; busy: boolean; rowAction: 'reset' | 'zero' | null; rowError: string; transitQty: number; transitLoading: boolean; onChange: (value: string) => void; onReset: () => void; onZero: () => void }) {
   const [editing, setEditing] = useState(false);
   const next = Number(value || 0);
   const changedFromOriginal = next !== item.qty || item.edited_qty != null;
@@ -256,6 +268,8 @@ function ReviewItem({ item, value, busy, rowAction, rowError, onChange, onReset,
         <ReviewDivider />
         <ReviewMeta label="Current" value={String(item.edited_qty ?? item.qty)} />
         <ReviewDivider />
+        <ReviewMeta label="In Transit" value={transitLoading ? '…' : String(transitQty)} />
+        <ReviewDivider />
         <ReviewMeta label="Line value" value={formatMoney((item.dnp ?? 0) * next)} />
       </View>
 
@@ -284,9 +298,9 @@ const styles = StyleSheet.create({
   miniValue:{color:colors.text,fontSize:11,fontWeight:'900',marginTop:3},
   miniLabelDark:{color:'#91AAC5'},
   miniValueDark:{color:'#fff'},
-  reviewMeta:{flex:1,minWidth:0,paddingHorizontal:8,paddingVertical:8,justifyContent:'center'},
-  reviewMetaLabel:{color:'#748297',fontSize:8,fontWeight:'700'},
-  reviewMetaValue:{color:'#152740',fontSize:10,fontWeight:'900',marginTop:3},
+  reviewMeta:{flex:1,minWidth:0,paddingHorizontal:6,paddingVertical:8,justifyContent:'center'},
+  reviewMetaLabel:{color:'#748297',fontSize:7.5,fontWeight:'700'},
+  reviewMetaValue:{color:'#152740',fontSize:9.5,fontWeight:'900',marginTop:3},
   reviewMetaLabelDark:{color:'#91AAC5'},
   reviewMetaValueDark:{color:'#FFFFFF'},
   reviewDivider:{width:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED',marginVertical:7},
