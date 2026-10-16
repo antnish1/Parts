@@ -18,12 +18,13 @@ create table public.portal_push_devices (
  profile_id uuid not null references public.portal_profiles(id) on delete cascade,
  expo_push_token text not null,
  updated_at timestamptz not null default now(),
- unique(profile_id,expo_push_token)
+ unique(profile_id,expo_push_token),
+ unique(expo_push_token)
 );
 alter table public.portal_notifications enable row level security;
 alter table public.portal_push_devices enable row level security;
-grant select,update on public.portal_notifications to authenticated;
-grant select,insert,update,delete on public.portal_push_devices to authenticated;
+grant select,update(read_at) on public.portal_notifications to authenticated;
+grant select,delete on public.portal_push_devices to authenticated;
 create policy notifications_select on public.portal_notifications for select to authenticated using (
  exists(select 1 from public.portal_profiles p where p.id=recipient_profile_id and p.auth_user_id=auth.uid() and p.is_active=true));
 create policy notifications_read on public.portal_notifications for update to authenticated using (
@@ -101,3 +102,21 @@ end $$;
 revoke all on function public.portal_queue_delayed_vor_alerts() from public,anon,authenticated;
 -- Scheduled service worker only. No client invocation.
 grant execute on function public.portal_queue_delayed_vor_alerts() to service_role;
+
+-- Atomically move an Expo device token to the currently signed-in account.
+-- Prevents a switched shared device receiving notifications for its previous account.
+create function public.portal_register_push_device(push_token text) returns void
+ language plpgsql security definer set search_path=public as $$
+declare profile_uuid uuid;
+begin
+ if push_token is null or length(push_token)>300 or push_token not like 'ExpoPushToken[%'
+ then raise exception 'Invalid push token'; end if;
+ select p.id into profile_uuid from public.portal_profiles p
+ where p.auth_user_id=auth.uid() and p.is_active=true limit 1;
+ if profile_uuid is null then raise exception 'Active profile not found'; end if;
+ insert into public.portal_push_devices(profile_id,expo_push_token,updated_at)
+ values(profile_uuid,push_token,now())
+ on conflict(expo_push_token) do update set profile_id=excluded.profile_id,updated_at=now();
+end $$;
+revoke all on function public.portal_register_push_device(text) from public,anon;
+grant execute on function public.portal_register_push_device(text) to authenticated;
