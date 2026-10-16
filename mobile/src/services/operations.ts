@@ -237,6 +237,8 @@ export async function getDelayedVorOrders(): Promise<DelayedVorOrder[]> {
   return orders
     .filter((order) => String(order.order_type ?? '').trim().toUpperCase() === 'VOR')
     .map((order) => ({ ...order, age_days: ageDays(order.processed_date) }))
+    // An order becomes delayed only from the following calendar day.
+    .filter((order) => order.age_days >= 1)
     .sort((a, b) => b.age_days - a.age_days);
 }
 
