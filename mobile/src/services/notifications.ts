@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import * as SecureStore from 'expo-secure-store';
+import { getCurrentPortalProfile } from '@/services/profile';
 export type PortalNotification={id:string;order_id:string|null;event_key:string;category:string;title:string;body:string;created_at:string;read_at:string|null};
 export async function getNotifications():Promise<PortalNotification[]>{
  const {data,error}=await supabase.from('portal_notifications').select('id,order_id,event_key,category,title,body,created_at,read_at').order('created_at',{ascending:false}).limit(100);
@@ -8,7 +9,9 @@ export async function getNotifications():Promise<PortalNotification[]>{
    if(error.code==='42P01'||error.code==='PGRST205'||error.code==='PGRST116'&&error.message?.includes('portal_notifications'))return [];
    throw error;
  }
- return (data??[]) as PortalNotification[];
+ const profile=await getCurrentPortalProfile();
+ const role=String(profile?.role??'').toLowerCase();
+ return ((data??[]) as PortalNotification[]).filter(n=>n.category!=='order'||role==='manager'||role==='super');
 }
 export async function markNotificationRead(id:string){
  const {error}=await supabase.from('portal_notifications').update({read_at:new Date().toISOString()}).eq('id',id).is('read_at',null);
