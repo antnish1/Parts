@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 import { useAuth } from '@/auth/AuthProvider';
 import { registerPushToken } from '@/services/notifications';
 
@@ -19,8 +18,7 @@ export function PushRegistration(){
        const existing=await Notifications.getPermissionsAsync();
        const permission=existing.granted?existing:await Notifications.requestPermissionsAsync();
        if(!permission.granted||cancelled)return;
-       const projectId=Constants.expoConfig?.extra?.eas?.projectId;
-       if(typeof projectId!=='string'||!projectId)return;
+       const projectId='3026af5e-622e-48de-bb4f-1ca851373589';
        const response=await Notifications.getExpoPushTokenAsync({projectId});
        if(cancelled)return;
        registered=response.data;
