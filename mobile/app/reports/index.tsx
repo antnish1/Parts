@@ -13,6 +13,7 @@ import { BreathingView } from '@/components/BreathingView';
 import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { formatDate, formatMoney, getAllVisibleOrders, type OrderSummary } from '@/services/orders';
+import { getPendingIssueOrders } from '@/services/operations';
 import { colors, spacing } from '@/theme/tokens';
 
 function escapeCsv(value: unknown) { return `"${String(value ?? '').replace(/"/g, '""')}"`; }
@@ -77,6 +78,7 @@ export default function ReportsScreen(){
   const [message,setMessage]=useState('');
   const [sortMode,setSortMode]=useState<'orders'|'qty'|'value'|'branches'>('orders');
   const query=useQuery({queryKey:['mobile-reports-orders'],queryFn:getAllVisibleOrders});
+  const pendingIssueQuery=useQuery({queryKey:['mobile-reports-pending-issue'],queryFn:getPendingIssueOrders,staleTime:30_000});
   const orders=query.data??[];
 
   const branches=useMemo(()=>[...new Set(orders.map((o)=>o.branch).filter((v):v is string=>Boolean(v)))].sort(),[orders]);
@@ -84,6 +86,10 @@ export default function ReportsScreen(){
   const filtered=useMemo(()=>orders.filter((o)=>(branch==='all'||o.branch===branch)&&(status==='all'||(o.status||o.approval_status)===status)&&(!search.trim()||[o.order_no,o.final_order_no,o.customer_name,o.branch,o.machine_no,o.order_type,o.status,o.approval_status].some(v=>String(v??'').toLowerCase().includes(search.trim().toLowerCase())))),[orders,branch,status,search]);
   const branchSummary=useMemo(()=>Object.entries(filtered.reduce<Record<string,number>>((acc,o)=>{const key=o.branch||'Unassigned';acc[key]=(acc[key]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]),[filtered]);
   const statusSummary=useMemo(()=>Object.entries(filtered.reduce<Record<string,number>>((acc,o)=>{const key=o.status||o.approval_status||'Unknown';acc[key]=(acc[key]||0)+1;return acc;},{})).sort((a,b)=>b[1]-a[1]),[filtered]);
+  const pendingIssueCount=useMemo(()=>{
+    const needle=search.trim().toLowerCase();
+    return (pendingIssueQuery.data??[]).filter((o)=>(branch==='all'||o.branch===branch)&&(!needle||[o.order_no,o.final_order_no,o.customer_name,o.branch,o.machine_no,o.order_type].some(v=>String(v??'').toLowerCase().includes(needle)))).length;
+  },[pendingIssueQuery.data,branch,search]);
   const totalValue=filtered.reduce((sum,o)=>sum+Number(o.total_value??0),0);
   const totalQty=filtered.reduce((sum,o)=>sum+Number(o.total_qty??0),0);
   const previewOrders=useMemo(()=>[...filtered].sort((a,b)=>{
@@ -151,6 +157,7 @@ export default function ReportsScreen(){
         <View style={styles.summaryBox}>
           <Text style={styles.section}>Top statuses</Text>
           {statusSummary.slice(0,5).map(([label,count])=><View key={label} style={styles.summaryRow}><View style={styles.statusCopy}><StatusChip status={label}/></View><Text style={styles.summaryCount}>{count}</Text></View>)}
+          <View style={styles.summaryRow}><View style={styles.statusCopy}><StatusChip status="Pending Issue"/></View><Text style={styles.summaryCount}>{pendingIssueQuery.isLoading?'…':pendingIssueCount}</Text></View>
         </View>
       </View>
       </MotionView>
