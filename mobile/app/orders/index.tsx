@@ -34,7 +34,7 @@ export default function OrdersScreen() {
     return (orders.data ?? []).filter((order) => {
       if (!matchesFilter(order, filter)) return false;
       if (!needle) return true;
-      return [order.order_no, order.machine_no, order.customer_name, order.branch, order.order_type, order.final_order_no, order.dbms_invoice_no]
+      return [order.order_no, order.machine_no, order.customer_name, order.order_for, order.branch, order.order_type, order.final_order_no, order.dbms_invoice_no]
         .some((value) => (value ?? '').toLowerCase().includes(needle));
     });
   }, [filter, orders.data, search]);
@@ -89,14 +89,15 @@ export default function OrdersScreen() {
             <View style={styles.top}>
               <View style={styles.copy}>
                 <Text numberOfLines={1} ellipsizeMode="middle" style={styles.orderNo}>{item.final_order_no || item.order_no}</Text>
-                <Text numberOfLines={1} style={styles.customer}>{item.customer_name || item.machine_no || 'No customer/machine'}</Text>
+                <Text numberOfLines={1} style={styles.customer}>{item.customer_name || item.machine_no || item.order_for || 'No customer/machine'}</Text>
               </View>
               <View style={styles.statusSide}><StatusChip status={item.approval_status || item.status} /><Text style={styles.date}>{formatDate(item.created_at)}</Text></View>
             </View>
             <View style={styles.details}>
-              <View style={styles.detailCol}><Text style={styles.detailTitle}>Branch</Text><Text numberOfLines={1} style={styles.detailValue}>{item.branch || '—'}</Text></View>
-              <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Qty</Text><Text numberOfLines={1} style={styles.detailValue}>{item.total_qty == null ? '—' : String(item.total_qty)}</Text></View>
-              <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Value</Text><Text numberOfLines={1} style={styles.detailValue}>{formatMoney(item.total_value)}</Text></View>
+              <View style={styles.detailCol}><Text style={styles.detailTitle}>Qty</Text><Text numberOfLines={1} style={styles.detailValue}>{item.total_qty == null ? '—' : String(item.total_qty)}</Text></View>
+              <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Type</Text><Text numberOfLines={1} style={styles.detailValue}>{item.order_type || '—'}</Text></View>
+              <View style={[styles.detailColWide, styles.detailDivider]}><Text style={styles.detailTitle}>Branch</Text><Text numberOfLines={1} style={styles.detailValue}>{item.branch || '—'}</Text></View>
+              <View style={[styles.detailColWide, styles.detailDivider]}><Text style={styles.detailTitle}>Value</Text><Text numberOfLines={1} style={styles.detailValue}>{formatMoney(item.total_value)}</Text></View>
             </View>
           </Pressable>
           </MotionView>
@@ -131,8 +132,9 @@ const styles = StyleSheet.create({
   statusSide: { maxWidth: '49%', alignItems: 'flex-end', gap: 5 },
   date: { color: colors.textMuted, fontSize: 9, fontWeight: '700' },
   details: { backgroundColor: '#EEF5FC', borderRadius: 9, paddingVertical: 10, flexDirection: 'row' },
-  detailCol: { flex: 1, minWidth: 0, paddingHorizontal: 9, gap: 4 },
+  detailCol: { flex: 0.8, minWidth: 0, paddingHorizontal: 7, gap: 4 },
+  detailColWide: { flex: 1.25, minWidth: 0, paddingHorizontal: 7, gap: 4 },
   detailDivider: { borderLeftWidth: 1, borderLeftColor: '#CFDDED' },
-  detailTitle: { color: '#748297', fontSize: 9, fontWeight: '700' },
-  detailValue: { color: '#152740', fontSize: 10, fontWeight: '900' },
+  detailTitle: { color: '#748297', fontSize: 8.5, fontWeight: '700' },
+  detailValue: { color: '#152740', fontSize: 9.5, fontWeight: '900' },
 });
