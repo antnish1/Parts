@@ -186,8 +186,15 @@ serve(async (req) => {
         const dnp = numberOrNull('dnp' in patch ? patch.dnp : current.dnp);
         const qty = numberOrNull('qty' in patch ? patch.qty : current.qty) ?? 0;
         const editedQty = numberOrNull('edited_qty' in patch ? patch.edited_qty : current.edited_qty);
-        if ('dnp' in patch || 'qty' in patch) patch.value = dnp === null ? null : dnp * qty;
-        if ('dnp' in patch || 'edited_qty' in patch) patch.edited_value = editedQty === null || dnp === null ? null : dnp * editedQty;
+        const priceChanged = dnp !== savedDnp;
+        const qtyChanged = 'qty' in patch && qty !== numberOrNull(current.qty);
+        const editedQtyChanged = 'edited_qty' in patch && editedQty !== numberOrNull(current.edited_qty);
+        // Ignore client-submitted totals: keep original totals unless quantity or an
+        // explicitly approved DNP actually changed. Never reprice on a status edit.
+        if (priceChanged || qtyChanged) patch.value = dnp === null ? null : dnp * qty;
+        else delete patch.value;
+        if (priceChanged || editedQtyChanged) patch.edited_value = editedQty === null || dnp === null ? null : dnp * editedQty;
+        else delete patch.edited_value;
       }
       auditChanges = changedFields(current as Row, patch);
       if (!Object.keys(auditChanges).length) throw new Error('No item changes were detected.');
