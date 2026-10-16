@@ -190,7 +190,7 @@ const styles=StyleSheet.create({
  heroText:{color:'#866C4C',fontSize:9,lineHeight:14,marginTop:3},
  heroTotal:{color:'#815015',fontSize:22,fontWeight:'900'},
  summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,backgroundColor:'#5B9BD5'},
- filter:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9},filterActive:{backgroundColor:'rgba(8,43,91,.18)'},filterPressed:{opacity:.8,transform:[{scale:.97}]},
+ filter:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9},filterActive:{backgroundColor:'rgba(8,43,91,.32)'},filterPressed:{opacity:.8,transform:[{scale:.97}]},
  filterValue:{color:'#FFFFFF',fontSize:16,fontWeight:'900'},
  filterValueActive:{color:'#fff'},
  filterLabel:{color:'#FFFFFF',fontSize:8,fontWeight:'900',marginTop:2},

@@ -293,15 +293,12 @@ export default function OrderDetailScreen() {
       <Modal visible={Boolean(confirmAction)} transparent animationType="fade" statusBarTranslucent onRequestClose={() => setConfirmAction(null)}>
         <View style={styles.confirmBackdrop}>
           <View style={styles.dialog}>
-            <View style={styles.dialogTopRow}>
-              <View style={styles.dialogTopSpacer}/>
-              <Pressable accessibilityRole="button" accessibilityLabel="Close confirmation" hitSlop={10} disabled={action.isPending} onPress={() => setConfirmAction(null)} style={({ pressed }) => [styles.dialogClose, pressed && styles.pressed]}>
-                <AppIcon name="x" size={22} color={colors.textMuted}/>
-              </Pressable>
-            </View>
             <View style={styles.dialogHeading}>
               <AppIcon name={confirmAction === 'approve' ? 'clipboardCheck' : 'alert'} size={20} color={confirmAction === 'approve' ? colors.success : colors.danger}/>
               <Text style={styles.dialogTitle}>{confirmAction === 'approve' ? 'Approve order?' : 'Reject order?'}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close confirmation" hitSlop={10} disabled={action.isPending} onPress={() => setConfirmAction(null)} style={({ pressed }) => [styles.dialogClose, pressed && styles.pressed]}>
+                <AppIcon name="x" size={22} color={colors.textMuted}/>
+              </Pressable>
             </View>
             <Text style={styles.dialogText}>{confirmAction === 'approve' ? 'Are you sure you want to approve this order? The approval workflow will continue.' : 'Are you sure you want to reject this order? This action cannot be undone.'}</Text>
             <View style={styles.dialogActions}>
@@ -382,14 +379,14 @@ const styles = StyleSheet.create({
   correctTitle: { color: colors.warning, fontSize: 12, fontWeight: '900' },
   correctText: { color: colors.text, fontSize: 10, marginTop: 2 },
   sectionTitle: { color: colors.text, fontSize: 14, fontWeight: '900', marginTop: spacing.xs },
-  totals: { minHeight:62,flexDirection:'row',alignItems:'stretch',borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,overflow:'hidden' },
+  totals: { minHeight:62,flexDirection:'row',alignItems:'stretch',borderRadius:radius.md,borderWidth:1,borderColor:'#BCD7EF',backgroundColor:'#EAF3FD',overflow:'hidden' },
   metric: { flex: 1, minWidth: 0, paddingHorizontal:10,paddingVertical:10,justifyContent:'center' },
   metricDivider:{width:StyleSheet.hairlineWidth,backgroundColor:'#CFDDED',marginVertical:9},
-  metricActive: { backgroundColor: colors.blueSoft },
+  metricActive: { backgroundColor: '#3276BB' },
   metricLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '800' },
-  metricLabelActive: { color: colors.navy },
+  metricLabelActive: { color: '#FFFFFF' },
   metricValue: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 3 },
-  metricValueActive: { color: colors.navy },
+  metricValueActive: { color: '#FFFFFF' },
   sectionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   filterHint: { color: colors.textMuted, fontSize: 9, fontWeight: '800', textTransform: 'capitalize' },
   itemCard: { padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
@@ -446,8 +443,8 @@ const styles = StyleSheet.create({
   dialogTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   dialogTopSpacer: { width: 1, height: 1 },
   dialogClose: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  dialogHeading:{flexDirection:'row',alignItems:'center',gap:9},
-  dialogTitle: { color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '900' },
+  dialogHeading:{flexDirection:'row',alignItems:'center',gap:9,justifyContent:'space-between'},
+  dialogTitle: { flex: 1, color: colors.text, fontSize: 21, lineHeight: 26, fontWeight: '900' },
   dialogText: { color: colors.textMuted, fontSize: 14, lineHeight: 21, marginTop: -2 },
   dialogActions: { flexDirection: 'row', alignItems: 'stretch', gap: 12, marginTop: 8 },
   dialogCancelButton: { flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', borderRadius: 14, borderWidth: 1.5, borderColor: colors.border, backgroundColor: '#fff' },

@@ -90,8 +90,7 @@ export default function DelayedVorScreen(){
 }
 
 function BucketCard({label,value,active,warning=false,danger=false,onPress}:{label:string;value:number;active:boolean;warning?:boolean;danger?:boolean;onPress:()=>void}){
- const accent=danger?colors.danger:warning?colors.warning:colors.navy;
- return <Pressable onPress={onPress} style={[styles.bucket,active&&{backgroundColor:accent,borderColor:accent}]}><Text style={[styles.bucketValue,active&&styles.bucketValueActive]}>{value}</Text><Text style={[styles.bucketLabel,active&&styles.bucketLabelActive]}>{label}</Text></Pressable>;
+ return <Pressable onPress={onPress} style={[styles.bucket,active&&styles.bucketActive]}><Text style={[styles.bucketValue,active&&styles.bucketValueActive]}>{value}</Text><Text style={[styles.bucketLabel,active&&styles.bucketLabelActive]}>{label}</Text></Pressable>;
 }
 
 const styles=StyleSheet.create({
@@ -109,8 +108,9 @@ const styles=StyleSheet.create({
  alertTitle:{color:'#8C2F2F',fontSize:12,fontWeight:'900'},
  alertText:{color:'#865D5D',fontSize:9,lineHeight:14,marginTop:3},
  alertTotal:{color:'#8C2F2F',fontSize:22,fontWeight:'900'},
- summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,borderWidth:1,borderColor:'#DFE6EF',backgroundColor:'#FFFFFF'},
+ summary:{flexDirection:'row',gap:1,padding:2,borderRadius:12,borderWidth:1,borderColor:'#C7DAEF',backgroundColor:'#EAF3FD'},
  bucket:{flex:1,minHeight:44,alignItems:'center',justifyContent:'center',borderRadius:9,borderWidth:1,borderColor:'transparent'},
+ bucketActive:{backgroundColor:'#3276BB',borderColor:'#3276BB'},
  bucketValue:{color:colors.text,fontSize:16,fontWeight:'900'},
  bucketValueActive:{color:'#fff'},
  bucketLabel:{color:colors.textMuted,fontSize:8,fontWeight:'900',marginTop:2},
