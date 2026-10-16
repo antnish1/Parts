@@ -1,9 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import * as SecureStore from 'expo-secure-store';
-export type PortalNotification={id:string;order_id:string|null;category:string;title:string;body:string;created_at:string;read_at:string|null};
+export type PortalNotification={id:string;order_id:string|null;event_key:string;category:string;title:string;body:string;created_at:string;read_at:string|null};
 export async function getNotifications():Promise<PortalNotification[]>{
- const {data,error}=await supabase.from('portal_notifications').select('id,order_id,category,title,body,created_at,read_at').order('created_at',{ascending:false}).limit(100);
- if(error)throw error;
+ const {data,error}=await supabase.from('portal_notifications').select('id,order_id,event_key,category,title,body,created_at,read_at').order('created_at',{ascending:false}).limit(100);
+ if(error){
+   // The optional notification migration may not yet be deployed. Keep permanent Activity available.
+   if(error.code==='42P01'||error.code==='PGRST205'||error.code==='PGRST116'&&error.message?.includes('portal_notifications'))return [];
+   throw error;
+ }
  return (data??[]) as PortalNotification[];
 }
 export async function markNotificationRead(id:string){
