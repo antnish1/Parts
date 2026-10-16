@@ -115,9 +115,11 @@ serve(async (req) => {
   const customerName = clean(body.customerName);
   const callId = clean(body.callId);
   const warrantyStatus = clean(body.warrantyStatus) || (orderFor === 'Stock' ? 'NA' : 'UW');
+  const initialComment = clean(body.comment).replace(/\s+/g, ' ');
   const items = Array.isArray(body.items) ? body.items : [];
 
   if (!branch || !orderType || !orderFor) return fail('Branch, order type and order for are required');
+  if (initialComment.length > 2000) return fail('Order comment must be 2000 characters or fewer.', 'COMMENT_TOO_LONG');
 
   let canonicalBranch = '';
   let profileBranch = '';
@@ -193,9 +195,24 @@ serve(async (req) => {
     const { error: itemError } = await adminClient.from('portal_order_items').insert(itemRows);
     if (itemError) throw itemError;
 
+    // Store the optional submission comment exactly like a normal order-detail comment.
+    // Do not throw if this step fails: the order already exists, and callers must never
+    // retry order creation merely because a comment insert failed.
+    let initialCommentSaved: boolean | null = null;
+    if (initialComment) {
+      const { error: commentError } = await adminClient.from('portal_order_comments').insert({
+        order_id: order.id,
+        author_id: profile.id,
+        comment_type: 'user',
+        body: initialComment,
+      });
+      initialCommentSaved = !commentError;
+      if (commentError) console.error('Order created, but initial comment could not be saved', order.id, errorMessage(commentError));
+    }
+
     const machineNote = machineMasterResult?.warning ? ` Machine master save skipped: ${machineMasterResult.warning}` : '';
     await adminClient.from('portal_order_events').insert({ order_id: order.id, event_type: 'ORDER_CREATED', old_status: null, new_status: initialStatus, actor_id: profile.id, notes: `Created by ${profile.full_name || profile.role}. Approver: ${approver.full_name || approver.role}. Branch: ${canonicalBranch}. ${itemRows.length} item row(s).${machineNote}` });
-    return json({ ok: true, id: order.id, order_no: order.order_no, branch: canonicalBranch, machine_master_warning: machineMasterResult?.warning ?? null });
+    return json({ ok: true, id: order.id, order_no: order.order_no, branch: canonicalBranch, machine_master_warning: machineMasterResult?.warning ?? null, initial_comment_saved: initialCommentSaved });
   } catch (error) {
     return fail(error instanceof Error ? error.message : 'Order creation failed', 'ORDER_CREATE_FAILED');
   }

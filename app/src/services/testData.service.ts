@@ -62,6 +62,7 @@ export type CreateTestOrderInput = {
   customerName?: string;
   callId?: string;
   warrantyStatus?: string;
+  comment?: string;
   partNo?: string;
   description?: string;
   dnp?: number;
@@ -167,5 +168,10 @@ export async function createTestOrder(input: CreateTestOrderInput) {
   if (error) throw new Error(await readFunctionError(error));
   if (data?.ok === false || data?.error) throw new Error(friendlyOrderError(String(data.error || 'Order creation failed.')));
   if (!data?.id || !data?.order_no) throw new Error('Order creation response was incomplete. Please redeploy create-order-action.');
-  return { id: data.id as string, order_no: data.order_no as string };
+  return {
+    id: data.id as string,
+    order_no: data.order_no as string,
+    // null also covers earlier Edge Function versions without comment acknowledgement.
+    initialCommentSaved: typeof data.initial_comment_saved === 'boolean' ? data.initial_comment_saved as boolean : null,
+  };
 }

@@ -1,10 +1,13 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { MessageSquareText } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageCard } from '../../components/ui/PageCard';
 import { Button } from '../../components/ui/Button';
 import { ActionLoader, ButtonLoader, FeedbackModal } from '../../components/ui/FeedbackModal';
 import { useAuth } from '../../auth/useAuth';
-import { createTestOrder } from '../../services/testData.service';
+import { createTestOrder, type CreateTestOrderInput } from '../../services/testData.service';
+import { addTestOrderComment } from '../../services/testOrderView.service';
+import { ensureInitialOrderComment } from '../../services/initialOrderComment.service';
 import { lookupTestPartByNo, type TestPart } from '../../services/testPart.service';
 import { getTestBranches } from '../../services/testBranch.service';
 import { getTestApprovers } from '../../services/testProfile.service';
@@ -20,7 +23,7 @@ const labelClass = 'text-[9px] font-black uppercase tracking-[0.12em] text-[#c7d
 const sectionTitleClass = 'mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#0f4c81]';
 
 type ItemLine = { lineId: number; partNo: string; description: string; dnp: string; qty: string; previous30dQty: number };
-type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number };
+type OrderSummary = { orderNo: string; branch: string; orderType: string; orderFor: string; customerName: string; approverName: string; totalItems: number; totalValue: number; commentSaved: boolean | null; commentWarning: string | null; submittedComment: string };
 type BranchOption = { id: string; branch_name: string; branch_code: string };
 
 type OrderFormState = {
@@ -72,6 +75,7 @@ export function NewOrderPage() {
   const [partCache, setPartCache] = useState<Record<string, TestPart>>({});
   const [form, setForm] = useState<OrderFormState>(() => buildInitialForm('Jabalpur BHL'));
   const [items, setItems] = useState<ItemLine[]>([defaultItem]);
+  const [orderComment, setOrderComment] = useState('');
 
   const branchOptions = useMemo(() => {
     const list = (branches.length ? branches : fallbackBranches) as BranchOption[];
@@ -90,11 +94,16 @@ export function NewOrderPage() {
   const totalValue = useMemo(() => items.reduce((sum, item) => sum + Number(item.dnp || 0) * Number(item.qty || 0), 0), [items]);
 
   const mutation = useMutation({
-    mutationFn: createTestOrder,
+    mutationFn: async (input: CreateTestOrderInput) => {
+      const order = await createTestOrder(input);
+      // Order creation is already successful: a comment retry must never create another order.
+      const comment = await ensureInitialOrderComment(order.id, input.comment ?? '', order.initialCommentSaved, addTestOrderComment);
+      return { ...order, ...comment, submittedComment: input.comment?.trim() ?? '' };
+    },
     onSuccess: (order) => {
       const approver = approvers.find((item) => item.id === form.approverId);
       setSubmitStarted(false);
-      setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue });
+      setOrderSummary({ orderNo: order.order_no, branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, customerName: form.customerName, approverName: approver?.full_name ?? '', totalItems: items.length, totalValue, commentSaved: order.commentSaved, commentWarning: order.commentWarning, submittedComment: order.submittedComment });
       setMessage('');
       setMachineStatus('');
       setManualCustomerPrompt({ open: false, machineNo: '', customerName: '' });
@@ -102,6 +111,7 @@ export function NewOrderPage() {
       setPartCache({});
       setForm(buildInitialForm(resetBranch));
       setItems([createDefaultItem()]);
+      setOrderComment('');
       queryClient.invalidateQueries({ queryKey: ['test-orders'] });
       queryClient.invalidateQueries({ queryKey: ['test-dashboard-summary'] });
       queryClient.invalidateQueries({ queryKey: ['order-list-paged'] });
@@ -270,7 +280,7 @@ export function NewOrderPage() {
     if (partLookupLineId !== null) return stopWithMessage('Please wait for part lookup to finish.');
     if (duplicatePart) return stopWithMessage(`Duplicate item not allowed: ${duplicatePart.partNo}`);
     if (invalidItem) return stopWithMessage('Each item must have valid master part, Qty, Description, and DNP. Qty must be a whole number above zero.');
-    const payload = { branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems };
+    const payload = { branch: form.branch, orderType: form.orderType, orderFor: form.orderFor, approverId: form.approverId, machineNo: form.orderFor === 'Stock' ? '' : normalizeMachineNo(form.machineNo), customerName: form.orderFor === 'Stock' ? '' : form.customerName, callId: form.callId, warrantyStatus: form.orderFor === 'Stock' ? 'NA' : form.warrantyStatus, items: parsedItems, comment: orderComment.trim() };
     window.setTimeout(() => mutation.mutate(payload), 0);
   }
 
@@ -381,6 +391,31 @@ export function NewOrderPage() {
               </tbody>
             </table>
           </div>
+          <section aria-labelledby="initial-order-comment-label" className="mt-3 rounded-xl border border-[#e6b94a]/70 bg-[#292619] p-3 shadow-[0_0_0_1px_rgba(230,185,74,0.12)]">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label id="initial-order-comment-label" htmlFor="initial-order-comment" className="flex items-center gap-2 text-xs font-black text-[#ffe08a]">
+                <MessageSquareText className="h-4 w-4" aria-hidden="true" />
+                Comment for this order
+                <span className="rounded-full border border-[#ad8740] bg-[#473919] px-2 py-0.5 text-[10px] font-bold text-[#ffe08a]">Optional</span>
+              </label>
+              <span className="text-[10px] font-semibold tabular-nums text-[#d2b875]">{orderComment.length}/2000</span>
+            </div>
+            <textarea
+              id="initial-order-comment"
+              aria-describedby="initial-order-comment-help"
+              className="block min-h-[84px] w-full resize-y rounded-lg border border-[#ad8740] bg-[#0b1020] px-3 py-2.5 text-xs font-semibold leading-5 text-white outline-none transition placeholder:text-[#94a3b8] focus:border-[#ffe08a] focus:ring-2 focus:ring-[#ffe08a]/25 disabled:cursor-not-allowed disabled:opacity-55"
+              rows={3}
+              maxLength={2000}
+              value={orderComment}
+              onChange={(event) => setOrderComment(event.target.value)}
+              disabled={isFormBusy}
+              placeholder="Add instructions, urgency, part details or any message for the approver / parts team..."
+            />
+            <p id="initial-order-comment-help" className="mt-2 text-[11px] leading-4 text-[#e7d3a6]">
+              Visible to the team in the existing Comments &amp; Order Activity section after submission. Leave blank to submit without a comment.
+            </p>
+          </section>
+
           <div className="mt-3 flex flex-col gap-2 rounded-xl border border-[#6b5b15] bg-[#111827] p-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <Button type="button" className="rounded-lg bg-[#ffd94a] px-3 py-1.5 text-xs text-[#0b1020] hover:bg-[#ffe177]" onClick={addItem} disabled={isFormBusy}>⊕ Add Item</Button>

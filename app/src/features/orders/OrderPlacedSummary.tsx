@@ -7,10 +7,13 @@ type OrderPlacedSummaryProps = {
   approverName: string;
   totalItems: number;
   totalValue: number;
+  commentSaved?: boolean | null;
+  commentWarning?: string | null;
+  submittedComment?: string;
   onClose: () => void;
 };
 
-export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, customerName, approverName, totalItems, totalValue, onClose }: OrderPlacedSummaryProps) {
+export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, customerName, approverName, totalItems, totalValue, commentSaved, commentWarning, submittedComment, onClose }: OrderPlacedSummaryProps) {
   const orderDate = new Intl.DateTimeFormat('en-IN', {
     day: '2-digit',
     month: 'short',
@@ -59,6 +62,19 @@ export function OrderPlacedSummary({ orderNo, branch, orderType, orderFor, custo
               </div>
             ))}
           </div>
+
+          {commentSaved === true ? (
+            <p className="mt-3 rounded-xl border border-[#86efac] bg-[#ecfdf5] px-3 py-2 text-xs font-semibold text-[#15803d]">
+              Your comment was saved in the order's Comments section.
+            </p>
+          ) : null}
+          {commentWarning ? (
+            <div role="alert" className="mt-3 rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-3 py-2 text-xs leading-5 text-[#92400e]">
+              <p className="font-black">Order created, but the comment was not saved.</p>
+              <p className="mt-1">{commentWarning} Do not submit the order again. Copy the comment below and add it in the order's Comments section.</p>
+              {submittedComment ? <p className="mt-2 whitespace-pre-wrap break-words rounded-lg border border-[#fde68a] bg-white px-2 py-2 font-semibold text-[#44403c]">{submittedComment}</p> : null}
+            </div>
+          ) : null}
 
           <div className="mt-4 rounded-2xl border border-[#e5edf5] bg-[#f8fafc] px-4 py-3 text-center">
             <p className="text-[11px] font-bold text-[#475569]">Frontier Commercial Vehicle Pvt. Ltd.</p>
