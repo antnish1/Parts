@@ -68,7 +68,7 @@ create trigger notify_order_comment after insert on public.portal_order_comments
 create function public.portal_notify_dispatch() returns trigger language plpgsql security definer set search_path=public as $$
 declare o record;
 begin
- if coalesce(new.billed_qty,0)<=0 or (lower(coalesce(new.raw_status,'')) not like '%dispatch%' and lower(coalesce(new.raw_status,'')) not like '%despatch%') then return new; end if;
+ if new.source is distinct from 'status_report_upload' or coalesce(new.billed_qty,0)<=0 or (lower(coalesce(new.raw_status,'')) not like '%dispatch%' and lower(coalesce(new.raw_status,'')) not like '%despatch%') then return new; end if;
  select * into o from public.portal_orders where id=new.order_id;
  if not found then return new; end if;
  insert into public.portal_notifications(recipient_profile_id,order_id,event_key,category,title,body)
