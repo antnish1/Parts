@@ -1,11 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const relativePath = 'src/features/approvals/ApprovalsPage.tsx';
-const filePath = path.join(__dirname, '..', relativePath);
+const filePath = path.join(__dirname, '..', 'src/features/approvals/ApprovalsPage.tsx');
 let source = fs.readFileSync(filePath, 'utf8');
 
-// Keep the In Transit warning readable and subtle.
+// Preserve the existing subtle in-transit styling.
 source = source
   .replace(
     "className={hasInTransit ? 'bg-[#3a2f0b]' : 'bg-[#111827]'}",
@@ -15,55 +14,88 @@ source = source
     'border-[#f4c542] bg-[#fff3b0] px-2 py-0.5 font-black text-[#6b4e00]',
     'border-[#e7b94d] bg-[#fff7d6] px-2 py-0.5 font-black text-[#7a5200]',
   );
-
 if (!source.includes("hasInTransit ? 'bg-[#fff9e8]'")) {
-  throw new Error('Subtle Item Review In Transit row highlight marker not found');
+  throw new Error('Item Review row highlight marker not found');
 }
 
-// Item Review inventory: use the exact branch-specific inventory lookup used on
-// Order Details and show it immediately before the In Transit column.
-const inTransitImport = "import { getInTransitQtyByBranchParts } from '../../services/inTransit.service';";
-const inventoryImport = "import { getInventoryQtyByBranchParts } from '../../services/testInventoryLookup.service';";
+// APPROVAL_CURRENT_INVENTORY_V2. Run after apply-in-transit-qty.cjs
+// (the latter creates the review and its In Transit column).
+const inventoryImport = "import { formatInventoryReportDate, getCurrentInventoryByBranchParts } from '../../services/testInventoryLookup.service';";
+const transitImport = "import { getInTransitQtyByBranchParts } from '../../services/inTransit.service';";
 if (!source.includes(inventoryImport)) {
-  if (!source.includes(inTransitImport)) throw new Error('Item Review In Transit import marker not found');
-  source = source.replace(inTransitImport, `${inTransitImport}\n${inventoryImport}`);
+  if (!source.includes(transitImport)) throw new Error('Approval Review In Transit import missing');
+  source = source.replace(transitImport, transitImport + '\n' + inventoryImport);
 }
 
-const inTransitMapMarker = '  const reviewInTransitMap = reviewInTransitQuery.data ?? {};';
-const inventoryQueryBlock = `${inTransitMapMarker}\n\n  const reviewInventoryQuery = useQuery({\n    queryKey: ['approval-review-inventory', reviewQuery.data?.order.branch, reviewQuery.data?.items.map((item) => item.part_no).join('|')],\n    queryFn: () => getInventoryQtyByBranchParts(reviewQuery.data!.order.branch, reviewQuery.data!.items.map((item) => item.part_no)),\n    enabled: isReviewPage && !!reviewQuery.data?.order.branch && (reviewQuery.data?.items.length ?? 0) > 0,\n    staleTime: 0,\n  });\n  const reviewInventoryMap = reviewInventoryQuery.data ?? {};`;
-if (!source.includes("queryKey: ['approval-review-inventory'")) {
-  if (!source.includes(inTransitMapMarker)) throw new Error('Item Review In Transit map marker not found');
-  source = source.replace(inTransitMapMarker, inventoryQueryBlock);
+const logicImports = source.split('\n');
+const logicIndex = logicImports.findIndex((line) =>
+  line.startsWith('import {') && line.includes("from '../../lib/orderLogic';"));
+if (logicIndex < 0) throw new Error('Review Qty helper import not found');
+if (!logicImports[logicIndex].includes('getPendingQty')) {
+  logicImports[logicIndex] = logicImports[logicIndex].replace('import {', 'import { getPendingQty,');
+  source = logicImports.join('\n');
 }
 
-if (!source.includes('>INV</th>')) {
-  const headerPattern = /(<th[^>]*>)In Transit(<\/th>)/;
-  const headerMatch = source.match(headerPattern);
-  if (!headerMatch) throw new Error('Item Review In Transit header marker not found');
-  source = source.replace(headerPattern, `${headerMatch[1]}INV${headerMatch[2]}\n                    ${headerMatch[1]}In Transit${headerMatch[2]}`);
+const inventoryDataMarker = '  const reviewInTransitMap = reviewInTransitQuery.data ?? {};';
+const inventoryData = `${inventoryDataMarker}
+
+  const reviewInventoryQuery = useQuery({
+    queryKey: ['approval-review-current-inventory', reviewQuery.data?.order.branch, reviewQuery.data?.items.map((item) => item.part_no).join('|')],
+    queryFn: () => getCurrentInventoryByBranchParts(reviewQuery.data!.order.branch, reviewQuery.data!.items.map((item) => item.part_no)),
+    enabled: !!reviewQuery.data?.order.branch && (reviewQuery.data?.items.length ?? 0) > 0,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+  const reviewInventoryMap = reviewInventoryQuery.data?.quantities ?? {};
+  const reviewInventoryReportDate = reviewInventoryQuery.data?.reportDate ?? null;`;
+if (!source.includes('reviewInventoryReportDate')) {
+  if (!source.includes(inventoryDataMarker)) throw new Error('Review Inventory data marker not found');
+  source = source.replace(inventoryDataMarker, inventoryData);
 }
 
-const hasTransitMarker = '                  const hasInTransit = !reviewInTransitQuery.isLoading && !reviewInTransitQuery.isError && inTransitQty > 0;';
+if (!source.includes('title="Inventory from latest uploaded branch stock report"')) {
+  const inTransitHeader = /(<th[^>]*>)In Transit(<\/th>)/;
+  const match = source.match(inTransitHeader);
+  if (!match) throw new Error('Review In Transit table header not found');
+  const pendingHeader = `${match[1]}Pending Qty${match[2]}`;
+  const invHeader = `<th className="px-2.5 py-2 text-right" title="Inventory from latest uploaded branch stock report">Inv <span className="block whitespace-nowrap text-[9px] font-medium tracking-normal">{formatInventoryReportDate(reviewInventoryReportDate)}</span></th>`;
+  source = source.replace(inTransitHeader, `${pendingHeader}\n                    ${invHeader}\n                    ${match[0]}`);
+}
+
+const valueMarker = '                  const hasInTransit = !reviewInTransitQuery.isLoading && !reviewInTransitQuery.isError && inTransitQty > 0;';
 const inventoryValueLine = '                  const inventoryQty = reviewInventoryMap[normalizePartNo(item.part_no)] ?? 0;';
 if (!source.includes(inventoryValueLine)) {
-  if (!source.includes(hasTransitMarker)) throw new Error('Item Review In Transit row logic marker not found');
-  source = source.replace(hasTransitMarker, `${hasTransitMarker}\n${inventoryValueLine}`);
+  if (!source.includes(valueMarker)) throw new Error('Review in-transit item quantity marker not found');
+  source = source.replace(valueMarker, valueMarker + '\n' + inventoryValueLine);
 }
 
-if (!source.includes('reviewInventoryQuery.isLoading')) {
-  const transitCellMarker = `                      <td className="px-2.5 py-2 text-right">\n                        {reviewInTransitQuery.isLoading ? (`;
-  const inventoryCell = `                      <td className="px-2.5 py-2 text-right font-semibold text-[#0f172a]">\n                        {reviewInventoryQuery.isLoading ? (\n                          <span className="text-[#8fa1b5]">...</span>\n                        ) : reviewInventoryQuery.isError ? (\n                          <span className="font-black text-[#b42318]">—</span>\n                        ) : (\n                          inventoryQty\n                        )}\n                      </td>\n`;
-  if (!source.includes(transitCellMarker)) throw new Error('Item Review In Transit cell marker not found');
-  source = source.replace(transitCellMarker, `${inventoryCell}${transitCellMarker}`);
+const inventoryCellMarker = 'reviewInventoryQuery.isLoading ?';
+if (!source.includes(inventoryCellMarker)) {
+  const transitCellMarker = `                      <td className="px-2.5 py-2 text-right">
+                        {reviewInTransitQuery.isLoading ? (`;
+  if (!source.includes(transitCellMarker)) throw new Error('Review In Transit cell marker not found');
+  const pendingCell = `                      <td className="px-2.5 py-2 text-right font-semibold text-[#0f4c81]">{getPendingQty(item)}</td>
+                      <td className="px-2.5 py-2 text-right font-semibold text-[#0f172a]">
+                        {reviewInventoryQuery.isLoading ? (
+                          <span className="text-[#8fa1b5]">...</span>
+                        ) : reviewInventoryQuery.isError || !reviewInventoryReportDate ? (
+                          <span title="No inventory report available">—</span>
+                        ) : (
+                          inventoryQty
+                        )}
+                      </td>
+`;
+  source = source.replace(transitCellMarker, pendingCell + transitCellMarker);
 }
 
-const inventoryErrorNotice = 'Inventory quantity could not be loaded. Refresh the page before approving this order.';
-if (!source.includes(inventoryErrorNotice)) {
-  const transitNoticeExpression = /\{reviewInTransitQuery\.isError \? <p className="mb-2 rounded-md border border-\[#f2c8c8\] bg-\[#fff7f7\] px-2\.5 py-1\.5 text-\[11px\] font-semibold text-\[#b42318\]">In Transit quantity could not be loaded\. Refresh the page before approving this order\.<\/p> : null\}/;
-  const match = source.match(transitNoticeExpression);
-  if (!match) throw new Error('Item Review In Transit error notice expression marker not found');
-  source = source.replace(match[0], `${match[0]}\n          {reviewInventoryQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">${inventoryErrorNotice}</p> : null}`);
+const notice = 'Current inventory could not be loaded. Refresh the page before approving this order.';
+if (!source.includes(notice)) {
+  const transitNotice = /\{reviewInTransitQuery\.isError \? <p[^\n]+In Transit quantity could not be loaded\. Refresh the page before approving this order\.<\/p> : null\}/;
+  const match = source.match(transitNotice);
+  if (!match) throw new Error('Review In Transit notice marker not found');
+  source = source.replace(match[0], `${match[0]}
+          {reviewInventoryQuery.isError ? <p className="mb-2 rounded-md border border-[#f2c8c8] bg-[#fff7f7] px-2.5 py-1.5 text-[11px] font-semibold text-[#b42318]">${notice}</p> : null}`);
 }
 
 fs.writeFileSync(filePath, source, 'utf8');
-console.log('Subtle Item Review In Transit highlight and branch inventory column applied.');
+console.log('Approval Review current inventory/report date, Pending Qty and correct column order applied.');
