@@ -106,6 +106,7 @@ export type CorrectionPayload = {
   reason: string;
   category: string;
   reference?: string;
+  approvePriceChange?: boolean;
   updateLinkedBillings?: boolean;
   syncMatchingItems?: boolean;
   deleteLinkedBillings?: boolean;
