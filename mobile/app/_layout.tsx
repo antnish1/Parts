@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { queryClient } from '@/lib/queryClient';
+import { PushRegistration } from '@/components/PushRegistration';
 
 function AppStatusBar() {
   const { isAuthenticated } = useAuth();
@@ -15,6 +16,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <PushRegistration />
           <AppStatusBar />
           <Stack screenOptions={{ headerShown: false }} />
         </AuthProvider>

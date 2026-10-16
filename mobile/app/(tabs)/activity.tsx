@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { MotionView } from '@/components/MotionView';
@@ -7,6 +8,7 @@ import { StateView } from '@/components/StateView';
 import { StatusChip } from '@/components/StatusChip';
 import { getImmutableActivityFeed } from '@/services/orderActivity';
 import { colors } from '@/theme/tokens';
+import { getNotifications, markNotificationRead } from '@/services/notifications';
 
 function accentFor(status: string | null | undefined) {
   const value = (status ?? '').toLowerCase();
@@ -28,15 +30,37 @@ function eventMessage(eventType: string, notes: string | null, oldStatus: string
 }
 
 export default function ActivityScreen() {
+  const [tab,setTab]=useState<'notifications'|'history'>('notifications');
+  const qc=useQueryClient();
+  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,refetchInterval:45_000});
+  async function openNotification(id:string,orderId:string|null){
+    try{await markNotificationRead(id);}catch{/* Still navigate if marking read fails */}
+    await qc.invalidateQueries({queryKey:['notifications']});
+    if(orderId)router.push(`/orders/${orderId}`);
+  }
   const activity = useQuery({
     queryKey: ['immutable-activity-feed'],
     queryFn: () => getImmutableActivityFeed(120),
+    enabled: tab==='history',
     staleTime: 15_000,
   });
   const visible = (activity.data ?? []).slice(0, 40);
 
   return (
-    <Screen brandHeader title="Activity" subtitle="Permanent operational history.">
+    <Screen brandHeader title="Activity & Notifications" subtitle="Notifications and permanent operational history.">
+      <View style={styles.tabs}>
+        <Pressable onPress={()=>setTab('notifications')} style={[styles.tab,tab==='notifications'&&styles.tabSelected]}><Text style={[styles.tabText,tab==='notifications'&&styles.tabTextSelected]}>Notifications</Text></Pressable>
+        <Pressable onPress={()=>setTab('history')} style={[styles.tab,tab==='history'&&styles.tabSelected]}><Text style={[styles.tabText,tab==='history'&&styles.tabTextSelected]}>Activity History</Text></Pressable>
+      </View>
+      {tab==='notifications'?<>
+        {notifications.isError?<StateView icon="alert" tone="error" title="Notifications unavailable" actionLabel="Retry" onAction={()=>void notifications.refetch()}/>:null}
+        {notifications.isLoading?<StateView icon="activity" title="Loading notifications"/>:null}
+        {(notifications.data??[]).map(n=><Pressable accessibilityRole="button" key={n.id} onPress={()=>void openNotification(n.id,n.order_id)} style={[styles.notification,!n.read_at&&styles.notificationUnread]}>
+          <View style={styles.notificationTitle}><Text style={styles.notificationHeading}>{n.title}</Text>{!n.read_at?<View style={styles.unreadDot}/>:null}</View>
+          <Text style={styles.notificationBody}>{n.body}</Text><Text style={styles.notificationDate}>{new Date(n.created_at).toLocaleString('en-IN')}</Text>
+        </Pressable>)}
+        {!notifications.isLoading&&!notifications.isError&&!notifications.data?.length?<StateView icon="inbox" title="No notifications yet"/>:null}
+      </>:<>
       {activity.isError ? <StateView icon="alert" tone="error" title="Activity could not be loaded" actionLabel="Retry" onAction={() => void activity.refetch()} /> : null}
       {activity.isLoading ? <StateView icon="activity" title="Loading activity" message="Fetching permanent audit events…" /> : null}
 
@@ -72,11 +96,24 @@ export default function ActivityScreen() {
       ) : null}
 
       {!activity.isLoading && !activity.isError && !visible.length ? <StateView icon="activity" title="No activity recorded yet" message="Permanent audit events will appear here as actions occur." /> : null}
+      </>}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  tabs:{flexDirection:'row',gap:3,padding:3,backgroundColor:'#E9F2FC',borderRadius:11},
+  tab:{flex:1,minHeight:38,alignItems:'center',justifyContent:'center',borderRadius:8},
+  tabSelected:{backgroundColor:'#245D9B'},
+  tabText:{color:'#4F6783',fontSize:11,fontWeight:'800'},
+  tabTextSelected:{color:'#fff'},
+  notification:{padding:13,gap:6,borderRadius:13,borderWidth:1,borderColor:'#E1E8F1',backgroundColor:'#fff'},
+  notificationUnread:{borderColor:'#A8C9F1',backgroundColor:'#EFF6FF'},
+  notificationTitle:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10},
+  notificationHeading:{color:colors.text,fontSize:12,fontWeight:'900',flex:1},
+  notificationBody:{color:colors.textMuted,fontSize:11,lineHeight:17},
+  notificationDate:{color:'#697B90',fontSize:9,fontWeight:'700'},
+  unreadDot:{width:8,height:8,backgroundColor:'#2574D6',borderRadius:4},
   register: { borderRadius: 15, overflow: 'hidden', borderWidth: 1, borderColor: '#E0E7EF', backgroundColor: '#FFFFFF' },
   row: { minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 10, paddingVertical: 10, borderBottomColor: '#E8EDF3', borderBottomWidth: StyleSheet.hairlineWidth },
   lastRow: { borderBottomWidth: 0 },
