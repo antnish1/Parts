@@ -22,6 +22,12 @@ export default function ApprovalReviewScreen() {
   const queryClient = useQueryClient();
   const order = useQuery({ queryKey: ['order', orderId], queryFn: () => getOrder(orderId), enabled: Boolean(orderId) });
   const items = useQuery({ queryKey: ['order-items', orderId], queryFn: () => getOrderItems(orderId), enabled: Boolean(orderId) });
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState('');
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rowAction, setRowAction] = useState<{ itemId: string; action: 'reset' | 'zero' } | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [selectedTransit, setSelectedTransit] = useState<{ partNo: string; qty: number } | null>(null);
   const partNos = (items.data ?? []).map((item) => item.part_no);
   const inTransit = useQuery({
     queryKey: ['approval-review-in-transit', order.data?.branch, partNos.join('|')],
@@ -35,12 +41,6 @@ export default function ApprovalReviewScreen() {
     enabled: Boolean(order.data?.branch && selectedTransit),
     staleTime: 0,
   });
-  const [quantities, setQuantities] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState('');
-  const [rejectOpen, setRejectOpen] = useState(false);
-  const [rowAction, setRowAction] = useState<{ itemId: string; action: 'reset' | 'zero' } | null>(null);
-  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
-  const [selectedTransit, setSelectedTransit] = useState<{ partNo: string; qty: number } | null>(null);
 
   useEffect(() => {
     if (!items.data) return;
