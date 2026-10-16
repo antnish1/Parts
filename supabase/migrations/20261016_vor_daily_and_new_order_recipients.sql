@@ -52,7 +52,6 @@ begin
         'Order '||coalesce(o.final_order_no,o.order_no)||' needs follow-up.'
  from public.portal_orders o
  join public.portal_profiles p on p.is_active=true
-   and lower(coalesce(p.role,''))='branch'
    and regexp_replace(upper(coalesce(p.branch,'')),'[ _-]','','g')=
        regexp_replace(upper(o.branch),'[ _-]','','g')
  where upper(coalesce(o.order_type,''))='VOR'
