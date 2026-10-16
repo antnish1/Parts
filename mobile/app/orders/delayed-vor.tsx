@@ -12,17 +12,18 @@ import { StatusChip } from '@/components/StatusChip';
 import { getDelayedVorOrders } from '@/services/operations';
 import { colors, spacing } from '@/theme/tokens';
 
-type Bucket='1-2'|'3-5'|'5+';
+type Bucket='today'|'1-2'|'3-5'|'5+';
 
 export default function DelayedVorScreen(){
  const {role}=useAuth();
  const allowed=role!=='accounts';
- const [bucket,setBucket]=useState<Bucket>('1-2');
+ const [bucket,setBucket]=useState<Bucket>('today');
  const [search,setSearch]=useState('');
  const query=useQuery({queryKey:['delayed-vor-orders'],queryFn:getDelayedVorOrders,enabled:allowed,staleTime:30_000});
  const rows=query.data??[];
 
  const counts=useMemo(()=>({
+   today:rows.filter(r=>r.age_days===0).length,
    '1-2':rows.filter(r=>r.age_days>=1&&r.age_days<=2).length,
    '3-5':rows.filter(r=>r.age_days>=3&&r.age_days<=5).length,
    '5+':rows.filter(r=>r.age_days>5).length,
@@ -31,7 +32,7 @@ export default function DelayedVorScreen(){
  const visible=useMemo(()=>{
    const n=search.trim().toLowerCase();
    return rows
-    .filter(r=>bucket==='1-2'?r.age_days>=1&&r.age_days<=2:bucket==='3-5'?r.age_days>=3&&r.age_days<=5:r.age_days>5)
+    .filter(r=>bucket==='today'?r.age_days===0:bucket==='1-2'?r.age_days>=1&&r.age_days<=2:bucket==='3-5'?r.age_days>=3&&r.age_days<=5:r.age_days>5)
     .filter(r=>!n||[r.order_no,r.final_order_no,r.branch,r.customer_name,r.machine_no].some(v=>String(v??'').toLowerCase().includes(n)));
  },[rows,bucket,search]);
 
@@ -49,6 +50,7 @@ export default function DelayedVorScreen(){
         <RotatingOrderSearch value={search} onChangeText={setSearch} hints={['Search order number...', 'Search customer name...', 'Search branch...', 'Search machine number...']}/>
 
         <View style={styles.summary}>
+          <BucketCard label="Today" value={counts.today} active={bucket==='today'} onPress={()=>setBucket('today')}/>
           <BucketCard label="1–2d" value={counts['1-2']} active={bucket==='1-2'} onPress={()=>setBucket('1-2')}/>
           <BucketCard label="3–5d" value={counts['3-5']} active={bucket==='3-5'} warning onPress={()=>setBucket('3-5')}/>
           <BucketCard label="5+d" value={counts['5+']} active={bucket==='5+'} danger onPress={()=>setBucket('5+')}/>
@@ -74,7 +76,7 @@ export default function DelayedVorScreen(){
         </View>
         <View style={styles.infoStrip}>
           <View style={styles.infoCell}><Text style={styles.infoLabel}>Machine</Text><Text numberOfLines={1} style={styles.infoValue}>{item.machine_no||'—'}</Text></View>
-          <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Age</Text><Text style={styles.infoValue}>{`${item.age_days} days`}</Text></View>
+          <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Age</Text><Text style={styles.infoValue}>{item.age_days===0?'Today':`${item.age_days} days`} </Text></View>
           <View style={[styles.infoCell,styles.infoBorder]}><Text style={styles.infoLabel}>Branch</Text><Text numberOfLines={1} style={styles.infoValue}>{item.branch||'—'}</Text></View>
         </View>
       </Pressable>

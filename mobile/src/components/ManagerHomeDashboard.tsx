@@ -47,7 +47,7 @@ export function ManagerHomeDashboard() {
     const orderRows = orders.data ?? [];
     return {
       approvals: approvals.data?.length ?? 0,
-      delayed: delayed.data?.length ?? 0,
+      delayed: (delayed.data ?? []).filter((order) => order.age_days >= 1).length,
       pendingIssue: pendingIssue.data?.length ?? 0,
       activeOrders: orderRows.filter((row) => !CLOSED.has(normalize(row.status))).length,
       creditPending: (credit.data ?? []).filter((row) => row.approval_status === 'Pending Manager Approval').length,
@@ -73,7 +73,7 @@ export function ManagerHomeDashboard() {
       });
     }
 
-    for (const order of (delayed.data ?? []).slice(0, 2)) {
+    for (const order of (delayed.data ?? []).filter((order) => order.age_days >= 1).slice(0, 2)) {
       rows.push({
         id: `vor-${order.id}`,
         title: order.final_order_no || order.order_no,
