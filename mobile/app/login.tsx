@@ -102,7 +102,7 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  backgroundOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(244,247,251,.72)' },
+  backgroundOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(244,247,251,.72)' },
   page: { flex: 1, justifyContent: 'center', padding: spacing.xl, backgroundColor: 'transparent' },
   brand: { alignItems: 'center', marginBottom: spacing.xl },
   logo: { height: 64, width: 64, borderRadius: 16 },
