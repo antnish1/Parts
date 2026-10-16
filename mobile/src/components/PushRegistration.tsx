@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { router } from 'expo-router';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/auth/AuthProvider';
@@ -8,6 +9,15 @@ import { registerPushToken } from '@/services/notifications';
 // Expo push requires the native build to contain FCM configuration.
 export function PushRegistration(){
  const {profile,isAuthenticated}=useAuth();
+ useEffect(()=>{
+   const open=(response:Notifications.NotificationResponse)=>{
+     const id=response.notification.request.content.data?.orderId;
+     if(typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id))router.push(`/orders/${id}`);
+   };
+   const listener=Notifications.addNotificationResponseReceivedListener(open);
+   void Notifications.getLastNotificationResponseAsync().then(response=>{if(response)open(response);}).catch(()=>{});
+   return ()=>listener.remove();
+ },[]);
  useEffect(()=>{
    if(!isAuthenticated||!profile?.id||Platform.OS!=='android')return;
    let cancelled=false;
