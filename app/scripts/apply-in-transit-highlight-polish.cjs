@@ -27,13 +27,13 @@ if (!source.includes(inventoryImport)) {
   source = source.replace(transitImport, transitImport + '\n' + inventoryImport);
 }
 
-if (!/import \\{[^}]*\\bgetPendingQty\\b[^}]*\\} from '..\\/..\\/lib\\/orderLogic';/.test(source)) {
-  // apply-in-transit-qty.cjs has already added normalizePartNo to this import.
-  // Extend the actual generated import instead of relying on an old exact string.
-  const existing = /import \\{([^}]+)\\} from '..\\/..\\/lib\\/orderLogic';/;
-  if (!existing.test(source)) throw new Error('Review Qty helper import not found');
-  source = source.replace(existing, (_whole, named) =>
-    `import { getPendingQty, \${named.trim()} } from '../../lib/orderLogic';`);
+const logicImports = source.split('\n');
+const logicIndex = logicImports.findIndex((line) =>
+  line.startsWith('import {') && line.includes("from '../../lib/orderLogic';"));
+if (logicIndex < 0) throw new Error('Review Qty helper import not found');
+if (!logicImports[logicIndex].includes('getPendingQty')) {
+  logicImports[logicIndex] = logicImports[logicIndex].replace('import {', 'import { getPendingQty,');
+  source = logicImports.join('\n');
 }
 
 const inventoryDataMarker = '  const reviewInTransitMap = reviewInTransitQuery.data ?? {};';
