@@ -5,6 +5,7 @@ import { StatusBar, StyleSheet, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { queryClient } from '@/lib/queryClient';
 import { PersistentBottomNav } from '@/components/PersistentBottomNav';
+import { PushRegistration } from '@/components/PushRegistration';
 
 function AppStatusBar() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +35,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <PushRegistration />
           <AppStatusBar />
           <RootNavigationShell />
         </AuthProvider>
