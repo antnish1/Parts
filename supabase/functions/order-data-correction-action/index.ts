@@ -161,6 +161,14 @@ serve(async (req) => {
       if (error) throw error;
       await assertFresh(current as Row, body.expectedUpdatedAt);
       const patch = pickAllowed((body.changes ?? {}) as Row, ITEM_FIELDS);
+      const partChanged = 'part_no' in patch && normalizePartNo(patch.part_no) !== normalizePartNo(current.part_no);
+      const requestedDnp = numberOrNull('dnp' in patch ? patch.dnp : current.dnp);
+      const savedDnp = numberOrNull(current.dnp);
+      // A current catalogue lookup must never silently reprice an existing order line.
+      // Explicit historical-price changes require confirmation and the existing audited reason.
+      if ((partChanged || requestedDnp !== savedDnp) && body.approvePriceChange !== true) {
+        throw new Error('Historical order price is locked. Confirm the price correction explicitly before saving.');
+      }
       if ('part_no' in patch && normalizePartNo(patch.part_no) !== normalizePartNo(current.part_no)) {
         const part = await lookupPart(admin, patch.part_no);
         const qty = numberOrNull('qty' in patch ? patch.qty : current.qty) ?? 0;
