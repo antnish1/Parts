@@ -94,9 +94,9 @@ export default function OrdersScreen() {
               <View style={styles.statusSide}><StatusChip status={item.approval_status || item.status} /><Text style={styles.date}>{formatDate(item.created_at)}</Text></View>
             </View>
             <View style={styles.details}>
-              <View style={styles.detailCol}><Text style={styles.detailTitle}>Qty</Text><Text numberOfLines={1} style={styles.detailValue}>{item.total_qty == null ? '—' : String(item.total_qty)}</Text></View>
+              <View style={styles.detailColWide}><Text style={styles.detailTitle}>Branch</Text><Text numberOfLines={1} style={styles.detailValue}>{item.branch || '—'}</Text></View>
+              <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Qty</Text><Text numberOfLines={1} style={styles.detailValue}>{item.total_qty == null ? '—' : String(item.total_qty)}</Text></View>
               <View style={[styles.detailCol, styles.detailDivider]}><Text style={styles.detailTitle}>Type</Text><Text numberOfLines={1} style={styles.detailValue}>{item.order_type || '—'}</Text></View>
-              <View style={[styles.detailColWide, styles.detailDivider]}><Text style={styles.detailTitle}>Branch</Text><Text numberOfLines={1} style={styles.detailValue}>{item.branch || '—'}</Text></View>
               <View style={[styles.detailColWide, styles.detailDivider]}><Text style={styles.detailTitle}>Value</Text><Text numberOfLines={1} style={styles.detailValue}>{formatMoney(item.total_value)}</Text></View>
             </View>
           </Pressable>
