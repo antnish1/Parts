@@ -10,6 +10,8 @@ export type AppIconName =
   | 'mapPin'
   | 'fileChart'
   | 'upload'
+  | 'user'
+  | 'lock'
   | 'pencil'
   | 'eye'
   | 'eye'
@@ -48,6 +50,8 @@ export function AppIcon({ name, size = 20, color = colors.navy, strokeWidth = 1.
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
       {name === 'upload' ? <><Path d="M12 16V3m0 0-5 5m5-5 5 5" {...common}/><Path d="M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4" {...common}/></> : null}
+      {name === 'user' ? <><Circle cx="12" cy="8" r="4" {...common}/><Path d="M4 21a8 8 0 0 1 16 0" {...common}/></> : null}
+      {name === 'lock' ? <><Rect x="5" y="10" width="14" height="11" rx="2" {...common}/><Path d="M8 10V7a4 4 0 0 1 8 0v3" {...common}/></> : null}
       {name === 'clipboardCheck' ? <><Rect x="5" y="4" width="14" height="18" rx="2" {...common}/><Path d="M9 4.5V3h6v1.5" {...common}/><Polyline points="8.5,13 11,15.5 16,10" {...common}/></> : null}
       {name === 'route' ? <><Circle cx="6" cy="18" r="2" {...common}/><Circle cx="18" cy="6" r="2" {...common}/><Path d="M8 18h7a4 4 0 0 0 0-8H9a4 4 0 0 1 0-8" {...common}/></> : null}
       {name === 'trash' ? <><Path d="M4 7h16" {...common}/><Path d="M9 7V4h6v3" {...common}/><Path d="M7 7l1 14h8l1-14" {...common}/><Path d="M10 11v6M14 11v6" {...common}/></> : null}
