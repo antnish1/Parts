@@ -129,14 +129,14 @@ export default function OrderDetailScreen() {
             </View>
             <PulseWrap><StatusChip status={row.approval_status || row.status} /></PulseWrap>
           </View>
-          <View style={styles.summaryGrid}>
-            <Meta label="Branch" value={row.branch || '—'} />
-            <Meta label="Machine" value={row.machine_no || '—'} />
-            <Meta label="Order type" value={row.order_type || row.order_for || '—'} />
-            <Meta label="Created" value={formatDate(row.created_at)} />
-            <Meta label="Effective qty" value={String(totalQty)} />
-            <Meta label="Effective value" value={formatMoney(totalValue)} />
-          </View>
+          <OrderMetaMarquee fields={[
+            { label: 'Branch', value: row.branch || '—' },
+            { label: 'Machine', value: row.machine_no || '—' },
+            { label: 'Order type', value: row.order_type || row.order_for || '—' },
+            { label: 'Created', value: formatDate(row.created_at) },
+            { label: 'Effective qty', value: String(totalQty) },
+            { label: 'Effective value', value: formatMoney(totalValue) },
+          ]} />
         </View>
         </MotionView>
 
@@ -316,6 +316,55 @@ export default function OrderDetailScreen() {
   );
 }
 
+type OrderMetaField = { label: string; value: string };
+function OrderMetaMarquee({ fields }: { fields: OrderMetaField[] }) {
+  const scrollRef = useRef<ScrollView>(null);
+  const groupWidth = useRef(0);
+  const offset = useRef(0);
+  const dragging = useRef(false);
+  useEffect(() => {
+    let frame = 0;
+    let previous = 0;
+    const tick = (now: number) => {
+      if (previous && !dragging.current && groupWidth.current > 0) {
+        // Native scrolling keeps the text sharp and allows a finger swipe.
+        offset.current = (offset.current + Math.min(now - previous, 50) * 0.018) % groupWidth.current;
+        scrollRef.current?.scrollTo({ x: offset.current, animated: false });
+      }
+      previous = now;
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const onFirstGroupLayout = (width: number) => {
+    if (width > 0 && groupWidth.current !== width) {
+      groupWidth.current = width;
+      offset.current = 0;
+      scrollRef.current?.scrollTo({ x: 0, animated: false });
+    }
+  };
+  return <ScrollView
+    ref={scrollRef}
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    scrollEventThrottle={16}
+    onScroll={(event) => { if (dragging.current) offset.current = event.nativeEvent.contentOffset.x; }}
+    onScrollBeginDrag={() => { dragging.current = true; }}
+    onScrollEndDrag={() => { dragging.current = false; offset.current %= groupWidth.current || 1; scrollRef.current?.scrollTo({ x: offset.current, animated: false }); }}
+    onMomentumScrollEnd={(event) => { offset.current = event.nativeEvent.contentOffset.x % (groupWidth.current || 1); scrollRef.current?.scrollTo({ x: offset.current, animated: false }); }}
+    style={styles.metaMarquee}
+    contentContainerStyle={styles.metaMarqueeContent}
+  >
+    <View onLayout={(event) => onFirstGroupLayout(event.nativeEvent.layout.width)} style={styles.summaryGrid}>
+      {fields.map((field) => <Meta key={field.label} {...field} />)}
+    </View>
+    <View style={styles.summaryGrid} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {fields.map((field) => <Meta key={field.label} {...field} />)}
+    </View>
+  </ScrollView>;
+}
+
 function Meta({ label, value }: { label: string; value: string }) { return <View style={styles.meta}><Text style={styles.metaLabel}>{label}</Text><Text numberOfLines={1} style={styles.metaValue}>{value}</Text></View>; }
 function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text style={styles.miniValue}>{value}</Text></View>; }
 function PartMetric({ label, value }: { label: string; value: string }) { return <View style={styles.partMetric}><Text style={styles.partMetricLabel}>{label}</Text><Text numberOfLines={1} style={styles.partMetricValue}>{value}</Text></View>; }
@@ -349,8 +398,10 @@ const styles = StyleSheet.create({
   heroCopy: { flex: 1 },
   orderNo: { color: '#fff', fontSize: 14.5, lineHeight: 18, fontWeight: '900' },
   customer: { color: '#C5D7EA', fontSize: 11, lineHeight: 16, marginTop: 3 },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, marginTop: 12 },
-  meta: { width: '33.33%', paddingRight: 8 },
+  metaMarquee: { marginTop: 12 },
+  metaMarqueeContent: { alignItems: 'center' },
+  summaryGrid: { flexDirection: 'row', gap: 18, alignItems: 'flex-start', paddingRight: 18 },
+  meta: { minWidth: 92, maxWidth: 160 },
   metaLabel: { color: '#91AAC5', fontSize: 8, fontWeight: '700' },
   metaValue: { color: '#fff', fontSize: 10, fontWeight: '800', marginTop: 2 },
   approvalCard: { gap: 10, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#D8E0E8', backgroundColor: '#FFFFFF' },
