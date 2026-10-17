@@ -1,0 +1,48 @@
+name: Build Parts Connect AAB for Internal Testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - fix/mobile-notification-role-rules-and-push-20261017
+    paths:
+      - .github/workflows/build-parts-internal-test-aab.yaml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parts-internal-test-aab
+  cancel-in-progress: false
+
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.13.0'
+      - name: Confirm EAS authorization available
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN GitHub Actions secret is not set. No build was started."
+            exit 1
+          fi
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm ci
+      - name: Verify TypeScript and Android JS bundle
+        working-directory: mobile
+        run: npm run check
+      - name: Install EAS CLI
+        run: npm install --global eas-cli
+      - name: Submit one Play Store AAB to EAS Build
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CI: '1'
+        run: eas build --platform android --profile production --non-interactive --no-wait
