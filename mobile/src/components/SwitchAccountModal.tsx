@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { AppIcon } from '@/components/AppIcon';
 import { MotionView } from '@/components/MotionView';
@@ -13,9 +13,27 @@ export function SwitchAccountModal({ visible, onClose }: { visible: boolean; onC
   const [newLoginId, setNewLoginId] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => {
+      setKeyboardOpen(true);
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
+
+  function revealForm() {
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+  }
 
   function close() {
     if (switchBusyId) return;
+    Keyboard.dismiss();
+    setKeyboardOpen(false);
     setSwitchError('');
     setAddAccountOpen(false);
     setNewLoginId('');
@@ -69,9 +87,9 @@ export function SwitchAccountModal({ visible, onClose }: { visible: boolean; onC
 
   return (
     <Modal visible={visible} transparent animationType="slide" statusBarTranslucent onRequestClose={close}>
-      <View style={styles.backdrop}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={close} />
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, keyboardOpen && styles.sheetKeyboard]}>
           <View style={styles.handle} />
           <View style={styles.head}>
             <View style={{ flex: 1 }}>
@@ -83,7 +101,7 @@ export function SwitchAccountModal({ visible, onClose }: { visible: boolean; onC
             </Pressable>
           </View>
 
-          <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
+          <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false} style={styles.scroll} contentContainerStyle={styles.list}>
             {savedAccounts.map((account) => {
               const active = account.userId === session?.user?.id;
               const initials = account.fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'PC';
@@ -112,9 +130,9 @@ export function SwitchAccountModal({ visible, onClose }: { visible: boolean; onC
             ) : (
               <View style={styles.addForm}>
                 <Text style={styles.addTitle}>Add another Parts Connect account</Text>
-                <TextInput autoCapitalize="characters" autoCorrect={false} editable={switchBusyId !== 'add'} placeholder="User ID" placeholderTextColor="#94A3B8" value={newLoginId} onChangeText={setNewLoginId} style={styles.input} />
+                <TextInput autoCapitalize="characters" autoCorrect={false} editable={switchBusyId !== 'add'} onFocus={revealForm} onSubmitEditing={() => passwordRef.current?.focus()} returnKeyType="next" placeholder="User ID" placeholderTextColor="#94A3B8" value={newLoginId} onChangeText={setNewLoginId} style={styles.input} />
                 <View style={styles.passwordField}>
-                  <TextInput autoCapitalize="none" autoCorrect={false} editable={switchBusyId !== 'add'} secureTextEntry={!newPasswordVisible} placeholder="Password" placeholderTextColor="#94A3B8" value={newPassword} onChangeText={setNewPassword} onSubmitEditing={() => void handleAddAccount()} style={[styles.input, styles.passwordInput]} />
+                  <TextInput ref={passwordRef} onFocus={revealForm} autoCapitalize="none" autoCorrect={false} editable={switchBusyId !== 'add'} secureTextEntry={!newPasswordVisible} placeholder="Password" placeholderTextColor="#94A3B8" value={newPassword} onChangeText={setNewPassword} onSubmitEditing={() => void handleAddAccount()} style={[styles.input, styles.passwordInput]} />
                   <Pressable onPress={() => setNewPasswordVisible((value) => !value)} style={styles.eye}><AppIcon name={newPasswordVisible ? 'eyeOff' : 'eye'} size={20} color="#64748B" /></Pressable>
                 </View>
                 <View style={styles.formActions}>
@@ -126,20 +144,21 @@ export function SwitchAccountModal({ visible, onClose }: { visible: boolean; onC
             {switchError ? <Text style={styles.error}>{switchError}</Text> : null}
           </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,.48)' },
+  sheetKeyboard: { maxHeight: '96%' },
   sheet: { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: '#FFFFFF', paddingTop: 8, paddingHorizontal: 18, paddingBottom: 24 },
   handle: { alignSelf: 'center', width: 88, height: 5, borderRadius: 999, backgroundColor: '#CBD5E1', marginBottom: 12 },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 10 },
   title: { color: '#12223A', fontSize: 22, fontWeight: '900' },
   subtitle: { color: '#64748B', fontSize: 11, lineHeight: 16, marginTop: 3 },
   close: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F1F5F9' },
-  scroll: { flexGrow: 0 },
+  scroll: { flexGrow: 0, flexShrink: 1 },
   list: { paddingBottom: 10 },
   accountRow: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E7ECF2' },
   accountMain: { flex: 1, minHeight: 78, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
