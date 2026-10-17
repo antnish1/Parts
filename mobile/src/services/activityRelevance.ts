@@ -40,9 +40,9 @@ export function isOrderActivityRelevant(role: UserRole | null | undefined, event
 }
 
 const roleNotificationCategories: Record<UserRole, ReadonlySet<string>> = {
-  branch: new Set(['approval', 'comment', 'dispatch', 'delayed_vor']),
-  super: new Set(['order', 'approval', 'comment']),
-  manager: new Set(['order', 'approval', 'comment']),
+  branch: new Set(['approval', 'comment', 'dispatch', 'delayed_vor', 'credit_dispatch', 'tada', 'installation']),
+  super: new Set(['order', 'approval', 'comment', 'installation']),
+  manager: new Set(['order', 'approval', 'comment', 'tada', 'credit_dispatch', 'installation']),
   admin: new Set(['approval', 'comment', 'dispatch']),
   viewer: new Set(),
   developer: new Set(['order', 'approval', 'comment', 'dispatch', 'delayed_vor', 'tada', 'credit_dispatch', 'credit', 'installation', 'engine_breaker']),
