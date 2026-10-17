@@ -5,7 +5,7 @@ import { MessageCircle } from 'lucide-react';
 import { PageCard } from '../../components/ui/PageCard';
 import { StatusBadge } from '../../components/tables/StatusBadge';
 import { OrderTypeBadge } from '../../components/tables/OrderTypeBadge';
-import { getOrderList } from '../../services/orderList.service';
+import { getTrackOrderList } from '../../services/orderList.service';
 import { getTestTrackingMeta, type TrackingMeta } from '../../services/testTrackingMeta.service';
 import { getStatusRowClasses } from '../../lib/statusRowStyles';
 import { useAuth } from '../../auth/useAuth';
@@ -63,7 +63,7 @@ export function TrackOrdersPage() {
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getOrderList });
+  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getTrackOrderList });
   const orderIdsKey = useMemo(() => orders.map((order) => order.id).join('|'), [orders]);
   const metaQuery = useQuery({ queryKey: ['tracking-meta', profile?.id, role, profile?.branch, orderIdsKey], queryFn: () => getTestTrackingMeta(orders.map((order) => order.id)), enabled: orders.length > 0 });
   const metaMap = metaQuery.data ?? {};
