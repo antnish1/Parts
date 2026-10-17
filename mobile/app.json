@@ -77,7 +77,8 @@
         "foregroundImage": "./assets/native/adaptive-foreground.png",
         "monochromeImage": "./assets/native/adaptive-monochrome.png",
         "backgroundColor": "#0B2A52"
-      }
+      },
+      "googleServicesFile": "./google-services.json"
     }
   }
 }

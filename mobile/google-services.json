@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "150400512649",
+    "project_id": "frontier-parts-connect",
+    "storage_bucket": "frontier-parts-connect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:150400512649:android:568d1759ab5c65ef348c58",
+        "android_client_info": {
+          "package_name": "com.frontier.partsconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBzGHHHDLYC26BxyKM-rj0Vjup_1aRrCE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
