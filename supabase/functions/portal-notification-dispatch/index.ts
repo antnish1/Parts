@@ -1,74 +1,50 @@
-// Secure server-only Expo push dispatcher.
-// Call with Authorization: Bearer <NOTIFICATION_DISPATCH_SECRET> from a trusted scheduler.
-// Required secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, NOTIFICATION_DISPATCH_SECRET.
-// Never invoke from a mobile client and never put service role credentials in Expo.
+// Server-only dispatcher. Requires a verified bearer secret and service role.
+// Each delivery is leased atomically by Postgres, so concurrent schedulers
+// cannot select the same queued device notification.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-type NotificationRow = {
- id:string; recipient_profile_id:string; order_id:string|null;
- title:string; body:string; category:string;
-};
-type DeviceRow = {expo_push_token:string;profile_id:string};
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
- status,headers:{'content-type':'application/json','cache-control':'no-store'}
-});
-Deno.serve(async(req)=>{
- if(req.method!=='POST')return json({error:'Method not allowed'},405);
+type Delivery={id:string;lease_token:string;expo_push_token:string;order_id:string|null;title:string;body:string;notification_id:string};
+const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
+const isToken=(s:string)=>/^(ExpoPushToken|ExponentPushToken)\\[[^\\]]+\\]$/.test(s);
+Deno.serve(async req=>{
+ if(req.method!=='POST')return reply({error:'Method not allowed'},405);
  const secret=Deno.env.get('NOTIFICATION_DISPATCH_SECRET');
- if(!secret||secret.length<32||req.headers.get('authorization')!==`Bearer ${secret}`)
-   return json({error:'Unauthorized'},401);
+ if(!secret||secret.length<32||req.headers.get('authorization')!==`Bearer ${secret}`)return reply({error:'Unauthorized'},401);
  const url=Deno.env.get('SUPABASE_URL'),key=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
- if(!url||!key)return json({error:'Missing server configuration'},503);
+ if(!url||!key)return reply({error:'Missing server configuration'},503);
  const db=createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false}});
- const {data:notifications,error}=await db.from('portal_notifications')
-   .select('id,recipient_profile_id,order_id,title,body,category')
-   .is('push_sent_at',null).order('created_at',{ascending:true}).limit(100);
- if(error)return json({error:'Could not load notifications'},500);
- if(!notifications?.length)return json({processed:0,queued:0});
- const profiles=[...new Set((notifications as NotificationRow[]).map(n=>n.recipient_profile_id))];
- const {data:active,error:profilesError}=await db.from('portal_profiles')
-   .select('id').in('id',profiles).eq('is_active',true);
- if(profilesError)return json({error:'Could not verify recipient accounts'},500);
- const activeSet=new Set((active??[]).map(p=>p.id));
- const {data:devices,error:deviceError}=await db.from('portal_push_devices')
-   .select('profile_id,expo_push_token').in('profile_id',profiles);
- if(deviceError)return json({error:'Could not load registered devices'},500);
- const tokens=new Map<string,string[]>();
- for(const device of (devices??[]) as DeviceRow[]){
-   if(!activeSet.has(device.profile_id))continue;
-   if(!/^ExpoPushToken\\[[^\\]]+\\]$/.test(device.expo_push_token))continue;
-   tokens.set(device.profile_id,[...(tokens.get(device.profile_id)??[]),device.expo_push_token]);
- }
- let accepted=0,failed=0,notRegistered=0;
- // Sequential per notification ensures idempotency marking applies only when all
- // device tokens are accepted. Unaccepted entries remain eligible for retry.
- for(const notification of notifications as NotificationRow[]){
-  if(!activeSet.has(notification.recipient_profile_id))continue;
-  const destination=[...new Set(tokens.get(notification.recipient_profile_id)??[])];
-  if(!destination.length){notRegistered++;continue;}
-  try{
-   const messages=destination.map(to=>({
-    to,title:notification.title,body:notification.body,sound:'default',
-    channelId:'operations',data:{orderId:notification.order_id??undefined,notificationId:notification.id}
-   }));
-   const response=await fetch('https://exp.host/--/api/v2/push/send',{
+ const {error:fillError}=await db.rpc('portal_push_fill_queue',{max_rows:200});
+ if(fillError)return reply({error:'Queue synchronization failed'},503);
+ const {data:claimed,error:claimError}=await db.rpc('portal_push_claim',{max_rows:40});
+ if(claimError)return reply({error:'Queue claim failed'},503);
+ let accepted=0,retried=0,invalid=0,failed=0;
+ for(const d of (claimed??[]) as Delivery[]){
+  let status='retry',ticket:string|null=null,reason:string|null=null;
+  if(!isToken(d.expo_push_token)){status='invalid_token';reason='Invalid Expo token format';}
+  else try{
+   const res=await fetch('https://exp.host/--/api/v2/push/send',{
     method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(messages),signal:AbortSignal.timeout(15000)
+    body:JSON.stringify({to:d.expo_push_token,sound:'default',channelId:'operations',
+      title:d.title,body:d.body,data:{orderId:d.order_id,notificationId:d.notification_id}}),
+    signal:AbortSignal.timeout(15000)
    });
-   if(!response.ok){failed++;continue;}
-   const payload=await response.json();
-   const tickets=Array.isArray(payload.data)?payload.data:[payload.data];
-   if(tickets.length!==messages.length||tickets.some((ticket:any)=>ticket?.status!=='ok')){
-     failed++;continue;
+   if(res.status===429||res.status>=500){reason=`Expo HTTP ${res.status}`;}
+   else if(!res.ok){status='failed';reason=`Expo HTTP ${res.status}`;}
+   else{
+    const payload=await res.json();
+    const t=Array.isArray(payload.data)?payload.data[0]:payload.data;
+    if(t?.status==='ok'&&typeof t.id==='string'){status='ticket_ok';ticket=t.id;}
+    else{reason=String(t?.message??'Expo rejected ticket');status=t?.details?.error==='DeviceNotRegistered'?'invalid_token':'failed';}
    }
-   // Expo accepted submission (not proof of device delivery); receipts still need
-   // a separate periodic inspection process for production-grade monitoring.
-   const {error:updateError}=await db.from('portal_notifications')
-     .update({push_sent_at:new Date().toISOString()}).eq('id',notification.id).is('push_sent_at',null);
-   if(updateError){failed++;continue;}
-   accepted++;
-  }catch{failed++;}
+  }catch(e){reason=e instanceof Error?e.message:'Network failure';}
+  const {data:finished,error:finishError}=await db.rpc('portal_push_finish',{
+   p_id:d.id,p_lease_token:d.lease_token,p_status:status,p_ticket_id:ticket,p_error:reason
+  });
+  if(finishError||!finished){failed++;continue;}
+  if(status==='ticket_ok')accepted++;
+  else if(status==='retry')retried++;
+  else if(status==='invalid_token')invalid++;
+  else failed++;
  }
- return json({processed:notifications.length,accepted,failed,notRegistered,
-   note:'accepted means Expo ticket accepted; device delivery receipt not yet verified'});
+ return reply({claimed:(claimed??[]).length,accepted,retried,invalid,failed,
+  note:'Expo accepted tickets; delivery receipts require verification by the separate receipt processor.'});
 });
