@@ -13,7 +13,7 @@ revoke all on public.portal_push_runtime from anon,authenticated;
 create table if not exists public.portal_push_deliveries (
  id uuid primary key default gen_random_uuid(),
  notification_id uuid not null references public.portal_notifications(id) on delete cascade,
- device_id uuid not null references public.portal_push_devices(id) on delete cascade,
+ device_id uuid references public.portal_push_devices(id) on delete set null,
  status text not null default 'pending' check (status in ('pending','leased','ticket_ok','delivered','retry','failed','invalid_token')),
  attempts integer not null default 0,
  next_attempt_at timestamptz not null default now(),
@@ -62,6 +62,9 @@ begin
  return query
  with due as (
  select q.id from public.portal_push_deliveries q
+ join public.portal_notifications n on n.id=q.notification_id
+ join public.portal_push_devices d on d.id=q.device_id and d.profile_id=n.recipient_profile_id
+ join public.portal_profiles p on p.id=d.profile_id and p.is_active=true
  where (q.status in ('pending','retry') and q.next_attempt_at<=now())
     or (q.status='leased' and q.lease_until<now())
  limit greatest(1,least(max_rows,100)) for update skip locked
