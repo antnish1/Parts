@@ -34,3 +34,24 @@
 - `portal_installation_entries.status` only supports `PENDING`, `ACCEPTANCE_PENDING`, `ACCEPTED` in the live database. Code must not reference `COMPLETED` as a status.
 - SQL migrations have **not** been executed. Source-level contract tests are not substitutes for a transactional schema validation or real role-scoped notification integration test.
 - Mobile Activity can display new categories, but notifications without `order_id` do not yet deep-link into their source Credit Dispatch / TA/DA / Installation records. A later schema addition with a secure resource reference is required for full navigation parity.
+
+## Production rollout update — 17 October 2026
+
+The following changes **have been applied to production Supabase** with user authorization:
+- migration `notification_push_delivery_queue_20261017`
+- migration `notification_order_recipient_rules_20261017`
+- migration `notification_operational_role_rules_20261017`
+- migration `push_queue_device_registration_boundary_20261017` (no push for notifications created before current token registration)
+- Edge Functions `portal-notification-dispatch` and `portal-notification-receipts` deployed, `verify_jwt=false` since each validates a long private `NOTIFICATION_DISPATCH_SECRET` bearer value in code.
+
+Post-deployment verification: all six notification triggers exist; queue tables use RLS; authenticated users lack EXECUTE on queue RPCs; only service_role has permission. All operations above avoided direct inserts to user-visible notification rows and made no changes to existing approval transition functions.
+
+**Push sending is NOT ACTIVATED:** no scheduler has been set up; no `NOTIFICATION_DISPATCH_SECRET` has been configured through the available connector; there were zero device tokens and zero delivery queue entries at validation time. Deploying function source does not execute it.
+
+### Required activation steps
+1. Configure `NOTIFICATION_DISPATCH_SECRET` as a high-entropy 32+ character **server-side Supabase Edge Function secret**, never an Expo public environment variable, repository secret printed in CI logs or message attachment.
+2. Configure a trusted scheduler (e.g. pg_cron + pg_net with token stored in Supabase Vault, or equivalent approved scheduler) to POST to both Edge Functions at an appropriate cadence. The scheduler must send the bearer secret in its Authorization header, avoid overlapping runs where practical, and must not expose the secret to mobile users.
+3. Verify the functions reject unauthorized calls with 401, verify correct service-role privileges, then run a controlled dry-run with **one opt-in test phone** that has a Firebase-enabled Android native binary. Current installed APK may lack the Firebase client registration.
+4. Create a legitimately scoped test notification and check device registration, Expo ticket receipt, final receipt status, unread bell count, and event deep link. If any step fails, keep scheduler disabled.
+5. Review real recipient behavior for both Accounts-first and Manager-first credit requests; verify no cross-branch leaks or unsolicited noise.
+6. Merge the reviewed PR / publish OTA only with appropriate user approval and checks. Code and DB are temporarily out of sync until that happens; do not publish an APK/AAB automatically.
