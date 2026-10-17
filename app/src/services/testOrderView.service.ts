@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
-import { currentBranchScopeIncludes, getCurrentPortalProfile, isSaloniCrossBranchTrackViewer } from './branchScope.service';
+import { currentBranchScopeIncludes, getCurrentPortalProfile, isSaloniCrossBranchTrackViewer, normalizeBranchKey } from './branchScope.service';
 import { getBranchCalculationScope } from './branchCalculation.service';
 import { withCentralOrderValues } from './centralBranchGroup.service';
 import { getInTransitQtyByBranchParts } from './inTransit.service';
