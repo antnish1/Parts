@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getEffectiveQty, getReceivedQty, getResolvedRowStatus, normalizePartNo } from '../lib/orderLogic';
-import { currentBranchScopeIncludes, getCurrentPortalProfile } from './branchScope.service';
+import { currentBranchScopeIncludes, getCurrentPortalProfile, isSaloniCrossBranchTrackViewer } from './branchScope.service';
 import { getBranchCalculationScope } from './branchCalculation.service';
 import { withCentralOrderValues } from './centralBranchGroup.service';
 import { getInTransitQtyByBranchParts } from './inTransit.service';
@@ -227,7 +227,9 @@ export async function getTestOrderView(orderId: string) {
   if (orderError) throw orderError;
 
   const rawOrder = order as unknown as RawOrderView;
-  if (!(await currentBranchScopeIncludes(rawOrder.branch))) throw new Error('This order belongs to another branch.');
+  if (!(await currentBranchScopeIncludes(rawOrder.branch)) && !(await isSaloniCrossBranchTrackViewer())) {
+    throw new Error('This order belongs to another branch.');
+  }
   const profile = await getCurrentPortalProfile();
   if (profile?.role === 'super' && rawOrder.approver_id !== profile.id) throw new Error('This order is assigned to another approver.');
 
