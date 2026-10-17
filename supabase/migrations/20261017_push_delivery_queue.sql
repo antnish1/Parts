@@ -1,5 +1,15 @@
 -- Durable per-device push delivery queue. Existing portal_notifications unchanged.
 -- Do not deploy before rollout review and scheduler secret setup.
+-- Activation boundary: do NOT send 228+ historic unread notifications when
+-- the first device registers. It is intentionally set at deployment time.
+create table if not exists public.portal_push_runtime (
+ singleton boolean primary key default true check(singleton),
+ enabled_after timestamptz not null default now()
+);
+insert into public.portal_push_runtime(singleton) values(true) on conflict do nothing;
+alter table public.portal_push_runtime enable row level security;
+revoke all on public.portal_push_runtime from anon,authenticated;
+
 create table if not exists public.portal_push_deliveries (
  id uuid primary key default gen_random_uuid(),
  notification_id uuid not null references public.portal_notifications(id) on delete cascade,
@@ -30,8 +40,9 @@ begin
  insert into public.portal_push_deliveries(notification_id,device_id)
  select n.id,d.id from public.portal_notifications n
  join public.portal_profiles p on p.id=n.recipient_profile_id and p.is_active=true
+ cross join public.portal_push_runtime runtime
  join public.portal_push_devices d on d.profile_id=p.id
- where n.push_sent_at is null
+ where n.push_sent_at is null and n.created_at>=runtime.enabled_after
  order by n.created_at asc
  limit greatest(1,least(max_rows,500))
  on conflict do nothing;
