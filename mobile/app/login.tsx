@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   logo: { width: 88, height: 88 },
   title: {
-    marginTop: 5,
+    marginTop: 0,
     color: '#0E2038',
     fontSize: 31,
     lineHeight: 36,
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     letterSpacing: -.7,
   },
   subtitle: {
-    marginTop: 4,
+    marginTop: 1,
     color: '#6F7F94',
     fontSize: 14,
     lineHeight: 20,
