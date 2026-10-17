@@ -873,3 +873,11 @@ A future agent entering this repository should act as though it has received thi
 - Older branch reports must display their **real** report date (e.g., DAMOH may be 25/06/26), and branches with no report show `Inv —` rather than a fabricated date or a misleading zero.
 - Both Order Details and Approval Item Review use `getCurrentInventoryByBranchParts`; the latter has Pending Qty → Inv date → In Transit. Existing inventory values/quantities are **not** mutated when changing the display.
 - The order-detail Excel report should follow the same column order and header. Keep existing role permissions and queries working, and validate prebuild patch injection and regression tests.
+
+
+## 35. Saloni Track Orders cross-branch view and comments (2026-10-17)
+
+- Only the **active SALONI account**, verified by exact portal profile ID `6a4fad26-55bb-4894-a2cd-e2b2cfa070e8` **and** linked Supabase auth ID `767bd1c7-3c4c-4925-b125-888a27906250`, may see orders across all branches on **Track Orders**. No matching by full name alone, role, or branch.
+- Apply the exception only in `getTrackOrderList` used by Track Orders. Do not broaden `getOrderList`, the approval register, new order permissions, branch scoped services, manager/admin processing, or any other branch user's scope.
+- Saloni may open any order and post a normal comment using the existing authenticated comment flow. Her exception conveys **no approval, rejection, processing, quantity changes, issuance, or order edits**. Existing active-profile/RLS checks still apply.
+- Fetch Track Orders using stable bounded pages for Saloni, rather than silently truncating at 1,000 orders. Preserve filtering, search, sorting, and comment badges.
