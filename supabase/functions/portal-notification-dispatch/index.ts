@@ -4,7 +4,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 type Delivery={id:string;lease_token:string;expo_push_token:string;order_id:string|null;title:string;body:string;notification_id:string};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json','cache-control':'no-store'}});
-const isToken=(s:string)=>/^(ExpoPushToken|ExponentPushToken)\\[[^\\]]+\\]$/.test(s);
+const isToken=(s:string)=>/^(ExpoPushToken|ExponentPushToken)\[[^\]]+\]$/.test(s);
 Deno.serve(async req=>{
  if(req.method!=='POST')return reply({error:'Method not allowed'},405);
  const secret=Deno.env.get('NOTIFICATION_DISPATCH_SECRET');
