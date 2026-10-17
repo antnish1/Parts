@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/lib/supabase';
 import { getCurrentPortalProfile } from '@/services/profile';
 import { getVisibleOrders } from '@/services/orders';
@@ -28,25 +29,25 @@ export async function uploadOrderCommentAttachment(orderId:string,commentId:stri
  const url=process.env.EXPO_PUBLIC_SUPABASE_URL;
  const anonKey=process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
  if(!url||!anonKey)throw new Error('Attachment upload is not configured.');
- const form=new FormData();
- form.append('orderId',orderId);
- form.append('commentId',commentId);
- // RN native fetch serializes {uri,name,type} into multipart bytes.
- // Never create Blob(ArrayBuffer) or set Content-Type manually: RN must add its boundary.
- form.append('file',{uri:asset.uri,name:asset.name||'attachment',type:asset.mimeType||'application/octet-stream'} as unknown as Blob);
- let response:Response;
+ // Native Expo file-system transfer: no JS Blob or React Native FormData serialization.
+ // DocumentPicker copies the selected file into a local app cache URI.
+ let response:FileSystem.FileSystemUploadResult;
  try {
-   response=await fetch(`${url.replace(/\/$/,'')}/functions/v1/comment-attachment-upload-action`,{
-     method:'POST',
+   response=await FileSystem.uploadAsync(`${url.replace(/\/$/,'')}/functions/v1/comment-attachment-upload-action`,asset.uri,{
+     httpMethod:'POST',
+     uploadType:FileSystem.FileSystemUploadType.MULTIPART,
+     fieldName:'file',
+     mimeType:asset.mimeType||'application/octet-stream',
+     parameters:{orderId,commentId},
      headers:{Authorization:`Bearer ${session.access_token}`,apikey:anonKey,Accept:'application/json'},
-     body:form,
    });
  }catch(error){
-   throw new Error(`Unable to connect to attachment upload service. ${error instanceof Error?error.message:'Check your internet connection.'}`);
+   throw new Error(`Native attachment upload could not start: ${error instanceof Error?error.message:'Unknown device error'}`);
  }
- const result:unknown=await response.json().catch(()=>null);
- const payload=result&&typeof result==='object'?result as {error?:unknown;attachment?:OrderCommentAttachment}:null;
- if(!response.ok||payload?.error||!payload?.attachment){
+ let payload:{error?:unknown;attachment?:OrderCommentAttachment}|null=null;
+ try { payload=JSON.parse(response.body) as {error?:unknown;attachment?:OrderCommentAttachment}; }
+ catch { /* Keep HTTP error details without exposing server HTML. */ }
+ if(response.status<200||response.status>=300||payload?.error||!payload?.attachment){
    throw new Error(typeof payload?.error==='string'?payload.error:`Attachment upload failed (HTTP ${response.status}).`);
  }
  return payload.attachment;
