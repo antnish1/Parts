@@ -1,4 +1,5 @@
 name: Build Parts Connect AAB for Internal Testing
+# Dependency pins validated by App CI and Mobile CI.
 
 on:
   workflow_dispatch:
