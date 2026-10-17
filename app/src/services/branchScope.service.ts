@@ -53,6 +53,23 @@ export async function getCurrentPortalProfile(): Promise<ProfileRow | null> {
   return (loginProfile as ProfileRow | null) ?? null;
 }
 
+/** Specific, currently active SALONI identity; never a blanket branch-role override. */
+export async function isSaloniCrossBranchTrackViewer(): Promise<boolean> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session?.user?.id !== '767bd1c7-3c4c-4925-b125-888a27906250') return false;
+  const { data: profile, error } = await supabase
+    .from('portal_profiles')
+    .select('id, auth_user_id, legacy_user_id, role, is_active')
+    .eq('auth_user_id', sessionData.session.user.id)
+    .maybeSingle();
+  if (error) throw error;
+  return profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8'
+    && profile.auth_user_id === '767bd1c7-3c4c-4925-b125-888a27906250'
+    && profile.legacy_user_id?.trim().toUpperCase() === 'SALONI'
+    && profile.role === 'branch'
+    && profile.is_active === true;
+}
+
 export async function getCurrentBranchScopeValues(): Promise<string[] | null> {
   const row = await getCurrentPortalProfile();
   if (!row?.is_active) return [];

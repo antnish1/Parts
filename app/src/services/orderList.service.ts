@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { TestOrder } from './testData.service';
-import { getCurrentBranchScopeValues, getCurrentPortalProfile } from './branchScope.service';
+import { getCurrentBranchScopeValues, getCurrentPortalProfile, isSaloniCrossBranchTrackViewer, normalizeBranchKey } from './branchScope.service';
 
 const ORDER_COLUMNS = 'id, order_no, branch, order_type, order_for, machine_no, customer_name, status, approval_status, approver_id, approver:portal_profiles!portal_orders_approver_id_fkey(full_name, role), processing_reference, processed_notes, processed_date, final_order_no, dbms_invoice_no, dbms_invoice_date, received_date, docket_no, transport_name, total_qty, total_value, comment_count, created_at';
 const DEFAULT_LIST_LIMIT = 1000;
@@ -38,6 +38,32 @@ async function fetchPortalOrders(options: OrderListOptions = {}): Promise<TestOr
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as TestOrder[];
+}
+
+/**
+ * Only the verified SALONI login gets all-branch Track Orders visibility.
+ * Do not apply this exception to getOrderList/getApprovalOrderList or other modules.
+ */
+export async function getTrackOrderList(): Promise<TestOrder[]> {
+  const isSaloni = await isSaloniCrossBranchTrackViewer();
+  if (!isSaloni) return getOrderList();
+
+  // Use bounded pages: the default 1,000-row list cannot show all branches' orders.
+  const pageSize = 500;
+  const orders: TestOrder[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('portal_orders')
+      .select(ORDER_COLUMNS)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as unknown as TestOrder[];
+    orders.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return orders;
 }
 
 export async function getOrderList(): Promise<TestOrder[]> {

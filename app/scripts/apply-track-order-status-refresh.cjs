@@ -4,7 +4,10 @@ const path = require('path');
 function patch(filePath, from, to, label) {
   let source = fs.readFileSync(filePath, 'utf8');
   if (source.includes(to)) return;
-  if (!source.includes(from)) throw new Error(`${label} marker not found`);
+  if (!source.includes(from)) {
+    if (label === 'Track Orders query' && source.includes('queryFn: getTrackOrderList')) return;
+    throw new Error(`${label} marker not found`);
+  }
   source = source.replace(from, to);
   fs.writeFileSync(filePath, source);
 }
@@ -15,6 +18,15 @@ patch(
   "  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getOrderList });",
   "  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getOrderList, staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: true });",
   'Track Orders query',
+);
+
+// Saloni's cross-branch view uses getTrackOrderList, not getOrderList.
+// Keep the status-refresh behavior for the newer query without weakening validation.
+patch(
+  trackPath,
+  "  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getTrackOrderList });",
+  "  const { data: orders = [], isLoading } = useQuery({ queryKey: ['order-list-paged', profile?.id, role, profile?.branch], queryFn: getTrackOrderList, staleTime: 0, refetchOnMount: 'always', refetchOnWindowFocus: true });",
+  'Saloni Track Orders query',
 );
 
 const correctionPath = path.resolve(__dirname, '../src/features/orders/OrderDataCorrectionPage.tsx');
