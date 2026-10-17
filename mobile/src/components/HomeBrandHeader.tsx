@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getNotifications } from '@/services/notifications';
+import { getActivityReadKeys, getImmutableActivityFeed } from '@/services/orderActivity';
+import { useAuth } from '@/auth/AuthProvider';
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,8 +13,25 @@ import { SwitchAccountModal } from '@/components/SwitchAccountModal';
 export function HomeBrandHeader() {
   const [switchOpen, setSwitchOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,refetchInterval:45_000});
-  const unread=(notifications.data??[]).filter(item=>!item.read_at).length;
+  const {role}=useAuth();
+  const activity=useQuery({queryKey:['immutable-activity-feed'],queryFn:()=>getImmutableActivityFeed(120),staleTime:15_000,refetchInterval:45_000});
+  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,staleTime:15_000,refetchInterval:45_000});
+  const reads=useQuery({queryKey:['activity-read-keys'],queryFn:getActivityReadKeys,staleTime:15_000,refetchInterval:45_000});
+  const readKeys=new Set(reads.data??[]);
+  const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&n.category==='approval'));
+  const eventIds=new Set<string>();
+  let unread=0;
+  for(const event of activity.data??[]){
+    if(event.event_type==='ORDER_CREATED'&&role!=='manager'&&role!=='super')continue;
+    if(role==='manager'&&/APPROV|REJECT/i.test(event.event_type))continue;
+    const matching=alerts.find(n=>n.event_key===`event:${event.id}`);
+    if(matching)eventIds.add(matching.id);
+    if(!readKeys.has(`event:${event.id}`)&&!matching?.read_at)unread++;
+  }
+  for(const alert of alerts){
+    if(eventIds.has(alert.id))continue;
+    if(!readKeys.has(`notice:${alert.id}`)&&!alert.read_at)unread++;
+  }
   return (
     <View style={[styles.shell, { paddingTop: insets.top }]}> 
     <View style={styles.bar}>
