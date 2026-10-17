@@ -10,7 +10,6 @@ import { AppIcon } from '@/components/AppIcon';
 import { getActivityReadKeys, getImmutableActivityFeed, markActivityRead } from '@/services/orderActivity';
 import { getNotifications, markNotificationRead } from '@/services/notifications';
 import { colors } from '@/theme/tokens';
-import { useAuth } from '@/auth/AuthProvider';
 
 function titleForEvent(value:string){
  return value.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
@@ -44,11 +43,8 @@ type ActivityFilter='unread'|'read'|'all';
 
 export default function ActivityScreen(){
  const qc=useQueryClient();
- const {role}=useAuth();
  const [filter,setFilter]=useState<ActivityFilter>('unread');
  const [search,setSearch]=useState('');
- const canSeePunched=role==='manager'||role==='super';
- const isManager=role==='manager';
  const activity=useQuery({queryKey:['immutable-activity-feed'],queryFn:()=>getImmutableActivityFeed(120),staleTime:15_000,refetchInterval:45_000});
  const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,staleTime:15_000,refetchInterval:45_000});
  const readState=useQuery({queryKey:['activity-read-keys'],queryFn:getActivityReadKeys,staleTime:15_000});
@@ -61,8 +57,6 @@ export default function ActivityScreen(){
    const alertsByEvent=new Map(alerts.filter(n=>n.event_key?.startsWith('event:')).map(n=>[n.event_key.slice(6),n]));
    const pairedIds=new Set<string>();
    for(const event of events){
-     if(!canSeePunched&&event.event_type==='ORDER_CREATED')continue;
-     if(isManager && /APPROV|REJECT/i.test(event.event_type))continue;
      const alert=alertsByEvent.get(event.id);
      if(alert)pairedIds.add(alert.id);
      const key=`event:${event.id}`;
@@ -75,7 +69,6 @@ export default function ActivityScreen(){
      });
    }
    for(const alert of alerts){
-     if(isManager && alert.category==='approval')continue;
      if(pairedIds.has(alert.id))continue;
      const key=`notice:${alert.id}`;
      combined.push({
@@ -85,7 +78,7 @@ export default function ActivityScreen(){
      });
    }
    return combined.sort((a,b)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime()).slice(0,120);
- },[activity.data,notifications.data,readState.data,isManager,canSeePunched]);
+ },[activity.data,notifications.data,readState.data]);
 
  const counts=useMemo(()=>({
    unread:feed.filter(entry=>entry.unread).length,

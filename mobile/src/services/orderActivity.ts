@@ -2,6 +2,7 @@ import { File } from 'expo-file-system';
 import { supabase } from '@/lib/supabase';
 import { getCurrentPortalProfile } from '@/services/profile';
 import { getVisibleOrders } from '@/services/orders';
+import { isOrderActivityRelevant } from '@/services/activityRelevance';
 
 export type OrderEvent={id:string;event_type:string;old_status:string|null;new_status:string|null;notes:string|null;created_at:string};
 export type OrderCommentAttachment={id:string;comment_id:string;original_file_name:string;mime_type:string;file_size_bytes:number;created_at:string};
@@ -48,6 +49,8 @@ export type ActivityFeedRow = {
 };
 
 export async function getImmutableActivityFeed(limit = 120): Promise<ActivityFeedRow[]> {
+  const profile = await getCurrentPortalProfile();
+  if (!profile?.is_active) return [];
   const visibleOrders = await getVisibleOrders(250);
   const ids = visibleOrders.map((order) => order.id);
   if (!ids.length) return [];
@@ -65,16 +68,18 @@ export async function getImmutableActivityFeed(limit = 120): Promise<ActivityFee
       .limit(limit);
     if (error) throw error;
 
-    rows.push(...(data ?? []).map((event: any) => ({
-      id: String(event.id),
-      order_id: String(event.order_id),
-      order_no: orderNoById.get(String(event.order_id)) || 'Order',
-      event_type: String(event.event_type ?? 'ACTIVITY'),
-      old_status: event.old_status ?? null,
-      new_status: event.new_status ?? null,
-      notes: event.notes ?? null,
-      created_at: String(event.created_at),
-    })));
+    rows.push(...(data ?? [])
+      .filter((event: any) => isOrderActivityRelevant(profile.role, String(event.event_type ?? 'ACTIVITY')))
+      .map((event: any) => ({
+        id: String(event.id),
+        order_id: String(event.order_id),
+        order_no: orderNoById.get(String(event.order_id)) || 'Order',
+        event_type: String(event.event_type ?? 'ACTIVITY'),
+        old_status: event.old_status ?? null,
+        new_status: event.new_status ?? null,
+        notes: event.notes ?? null,
+        created_at: String(event.created_at),
+      })));
   }
 
   return rows
