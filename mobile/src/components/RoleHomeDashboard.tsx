@@ -56,7 +56,7 @@ export function RoleHomeDashboard(){
    <MetricsTicker loading={canTrack&&orders.isLoading} items={ticker}/>
    {featured?<Pressable accessibilityRole="button" onPress={()=>go(featured.href!)} style={({pressed})=>[styles.primaryTrack,pressed&&styles.pressed]}>
       <View style={styles.trackIcon}><AppIcon name={iconFor(featured)} size={21} color="#fff"/></View>
-      <View style={styles.trackCopy}><Text style={styles.trackTitle}>{featured.label}</Text><Text style={styles.trackCaption}>{featured.description}</Text></View>
+      <View style={styles.trackCopy}><Text style={styles.trackTitle}>{featured.label}</Text><Text style={styles.trackCaption}>{featured.key==='track-orders'?'Search, filter and open order details':featured.description}</Text></View>
       <AppIcon name="chevronRight" size={18} color="#C5D9ED"/>
    </Pressable>:null}
    <View style={styles.sectionHead}><Text style={styles.sectionTitle}>My work</Text><Pressable onPress={()=>go('/(tabs)/work')}><Text style={styles.sectionLink}>All tools</Text></Pressable></View>
