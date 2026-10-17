@@ -73,7 +73,7 @@ returns trigger language plpgsql security definer set search_path=public as $$
 declare heading text; category_name text;
 begin
  if new.status is not distinct from old.status then return new; end if;
- if new.status not in ('ACCEPTANCE_PENDING','COMPLETED','ACCEPTED') then return new; end if;
+ if new.status not in ('ACCEPTANCE_PENDING','ACCEPTED') then return new; end if;
  heading:=case when new.status='ACCEPTED' then 'Installation accepted'
  else 'Installation awaiting acceptance' end;
  category_name:='installation';
