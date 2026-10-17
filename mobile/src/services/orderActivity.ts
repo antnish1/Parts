@@ -22,16 +22,34 @@ export async function getOrderActivity(orderId:string){
 }
 export async function addOrderComment(orderId:string,body:string){const text=normalizeText(body);if(!text)throw new Error('Comment is required.');const profile=await getCurrentPortalProfile();const {data:recent,error:recentError}=await supabase.from('portal_order_comments').select('body').eq('order_id',orderId).eq('comment_type','user').order('created_at',{ascending:false}).limit(5);if(recentError)throw recentError;if((recent??[]).some((c)=>normalizeText(c.body??'').toLowerCase()===text.toLowerCase()))throw new Error('Duplicate comment already exists for this order.');const {data,error}=await supabase.from('portal_order_comments').insert({order_id:orderId,author_id:profile?.id??null,comment_type:'user',body:text}).select('id').single();if(error)throw error;return data as {id:string};}
 export async function uploadOrderCommentAttachment(orderId:string,commentId:string,asset:{uri:string;name:string;mimeType?:string|null}) {
- if(!orderId||!commentId) throw new Error('Order and comment are required.');
+ if(!orderId||!commentId)throw new Error('Order and comment are required.');
+ const {data:{session},error:sessionError}=await supabase.auth.getSession();
+ if(sessionError||!session?.access_token)throw new Error('Session expired. Sign in again before retrying the attachment.');
+ const url=process.env.EXPO_PUBLIC_SUPABASE_URL;
+ const anonKey=process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+ if(!url||!anonKey)throw new Error('Attachment upload is not configured.');
  const form=new FormData();
  form.append('orderId',orderId);
  form.append('commentId',commentId);
- // React Native's multipart fetch accepts a local file URI. Constructing Blob from
- // ArrayBuffer is unsupported on Android/Hermes and fails before the request.
+ // RN native fetch serializes {uri,name,type} into multipart bytes.
+ // Never create Blob(ArrayBuffer) or set Content-Type manually: RN must add its boundary.
  form.append('file',{uri:asset.uri,name:asset.name||'attachment',type:asset.mimeType||'application/octet-stream'} as unknown as Blob);
- const {data,error}=await supabase.functions.invoke('comment-attachment-upload-action',{body:form});
- if(error)throw error;if(data?.error)throw new Error(String(data.error));
- return data.attachment as OrderCommentAttachment;
+ let response:Response;
+ try {
+   response=await fetch(`${url.replace(/\\/$/,'')}/functions/v1/comment-attachment-upload-action`,{
+     method:'POST',
+     headers:{Authorization:`Bearer ${session.access_token}`,apikey:anonKey,Accept:'application/json'},
+     body:form,
+   });
+ }catch(error){
+   throw new Error(`Unable to connect to attachment upload service. ${error instanceof Error?error.message:'Check your internet connection.'}`);
+ }
+ const result:unknown=await response.json().catch(()=>null);
+ const payload=result&&typeof result==='object'?result as {error?:unknown;attachment?:OrderCommentAttachment}:null;
+ if(!response.ok||payload?.error||!payload?.attachment){
+   throw new Error(typeof payload?.error==='string'?payload.error:`Attachment upload failed (HTTP ${response.status}).`);
+ }
+ return payload.attachment;
 }
 export async function getOrderAttachmentUrl(attachmentId:string){const {data,error}=await supabase.functions.invoke('comment-attachment-link-action',{body:{attachmentId}});if(error)throw error;if(data?.error)throw new Error(String(data.error));return data as {signedUrl:string;expiresIn:number;fileName:string};}
 
