@@ -8,7 +8,7 @@ const receipts = readFileSync(new URL('../../../supabase/functions/portal-notifi
 
 describe('notification production safety contracts', () => {
  it('keeps history intact and prevents initial push flood',()=>{
-  expect(migration).toContain('n.created_at>=runtime.enabled_after');
+  expect(migration).toContain('n.created_at>=greatest(runtime.enabled_after,d.updated_at)');
   expect(migration).toContain('and not exists (');
   expect(migration).not.toMatch(/truncate\s+.*portal_notifications/i);
   expect(rules).toContain('on conflict do nothing');
