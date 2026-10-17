@@ -36,7 +36,7 @@ export async function uploadOrderCommentAttachment(orderId:string,commentId:stri
  form.append('file',{uri:asset.uri,name:asset.name||'attachment',type:asset.mimeType||'application/octet-stream'} as unknown as Blob);
  let response:Response;
  try {
-   response=await fetch(`${url.replace(/\\/$/,'')}/functions/v1/comment-attachment-upload-action`,{
+   response=await fetch(`${url.replace(/\/$/,'')}/functions/v1/comment-attachment-upload-action`,{
      method:'POST',
      headers:{Authorization:`Bearer ${session.access_token}`,apikey:anonKey,Accept:'application/json'},
      body:form,
