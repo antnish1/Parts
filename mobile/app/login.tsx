@@ -210,11 +210,11 @@ const styles = StyleSheet.create({
   brand: {
     alignItems: 'flex-start',
     paddingHorizontal: 24,
-    marginBottom: 52,
+    marginBottom: 30,
   },
   logo: { width: 88, height: 88 },
   title: {
-    marginTop: 16,
+    marginTop: 5,
     color: '#0E2038',
     fontSize: 31,
     lineHeight: 36,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A7BEF',
   },
 
-  cardWrap: { paddingTop: 28 },
+  cardWrap: { paddingTop: 22 },
   card: {
     position: 'relative',
     paddingTop: 56,
