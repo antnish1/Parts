@@ -16,6 +16,7 @@ export type CreditDispatchRecord = {
   due_date: string;
   total_received_amount: number;
   balance_amount: number;
+  approval_flow_version?: number;
   approval_status: 'Draft' | 'Pending Accounts Approval' | 'Pending Manager Approval' | 'Approved' | 'Rejected by Accounts' | 'Rejected by Manager' | 'Correction Requested by Accounts' | 'Correction Requested by Manager';
   recovery_status: 'Pending Payment' | 'Partial Payment' | 'Partial Payment - Overdue' | 'Payment Overdue' | 'Closed';
   remarks: string | null;
@@ -202,7 +203,7 @@ export async function resubmitCorrectedCreditDispatch(dispatchId: string, input:
       issuer_signature_path: issuerSignaturePath,
       customer_signed_at: nowIso,
       issuer_signed_at: nowIso,
-      approval_status: 'Pending Accounts Approval',
+      approval_status: current.approval_flow_version === 2 ? 'Pending Manager Approval' : 'Pending Accounts Approval',
       correction_note: null,
       rejection_reason: null,
       approved_by: null,
@@ -216,7 +217,7 @@ export async function resubmitCorrectedCreditDispatch(dispatchId: string, input:
     .single();
 
   if (error) throw error;
-  await addEvent(dispatchId, 'Corrected and Resubmitted to Accounts', 'Branch corrected the complete request, captured fresh customer and issuer signatures, and resubmitted it for Accounts approval.');
+  await addEvent(dispatchId, `Corrected and Resubmitted to ${current.approval_flow_version === 2 ? 'Manager' : 'Accounts'}`, `Branch corrected the complete request and resubmitted it for ${current.approval_flow_version === 2 ? 'Manager' : 'Accounts'} approval.`);
   return data as CreditDispatchRecord;
 }
 
@@ -240,7 +241,7 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
       credit_amount: input.creditAmount,
       tentative_closure_days: input.tentativeClosureDays,
       due_date: new Date(new Date(input.documentDate).getTime() + input.tentativeClosureDays * 86400000).toISOString().slice(0, 10),
-      approval_status: 'Pending Accounts Approval',
+      approval_status: 'Pending Manager Approval',
       remarks: input.remarks.trim() || null,
       sales_employee_name: salesEmployeeName,
       customer_signature_path: customerSignaturePath,
@@ -252,7 +253,7 @@ export async function createCreditDispatch(input: CreditDispatchFormInput) {
     .single();
 
   if (error) throw error;
-  await addEvent(data.id, 'Submitted for Accounts Approval', 'Credit dispatch request submitted digitally with customer and issuer signatures for Accounts approval.');
+  await addEvent(data.id, 'Submitted for Manager Approval', 'Credit dispatch request submitted digitally with customer and issuer signatures for Manager approval.');
   return data as CreditDispatchRecord;
 }
 
