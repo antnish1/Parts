@@ -81,3 +81,30 @@ export async function getImmutableActivityFeed(limit = 120): Promise<ActivityFee
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, limit);
 }
+
+
+export async function getActivityReadKeys(): Promise<string[]> {
+  const profile = await getCurrentPortalProfile();
+  if (!profile?.id) return [];
+  const { data, error } = await supabase
+    .from('portal_activity_reads')
+    .select('activity_key')
+    .eq('profile_id', profile.id);
+  if (error) {
+    if (error.code === '42P01' || error.code === 'PGRST205') return [];
+    throw error;
+  }
+  return (data ?? []).map((row: any) => String(row.activity_key));
+}
+
+export async function markActivityRead(activityKey: string): Promise<void> {
+  const profile = await getCurrentPortalProfile();
+  if (!profile?.id || !activityKey) return;
+  const { error } = await supabase
+    .from('portal_activity_reads')
+    .upsert(
+      { profile_id: profile.id, activity_key: activityKey, read_at: new Date().toISOString() },
+      { onConflict: 'profile_id,activity_key' },
+    );
+  if (error) throw error;
+}
