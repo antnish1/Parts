@@ -14,7 +14,7 @@
 | Created / forwarded / approved / rejected order | Active assigned approver, affected employee, relevant Manager by branch, Admin for approved-ready events |
 | New order comment | Active order owner, approver or relevant operational branch/manager/super/admin; exclude author |
 | Dispatch from status-report billing | Active assigned employee and branch operators |
-| TA/DA, Credit Dispatch, installations | **Not yet supported by this migration.** Requires separate event schemas and notification triggers with event-by-role matrices, strict action/branch authorization, and tests. Do not claim complete parity. |
+| TA/DA | New migration listens to existing `portal_tada_events`; HQ Manager and Accounts are centralized reviewers; branch creator gets terminal updates. Requires test with live workflow permissions before deploy. |\n| Credit Dispatch | New migration listens to `portal_credit_dispatch_events`; recipient is current status reviewer (Manager or Accounts) for either approval order; branch creator receives correction/rejection/approval updates. |\n| Installations | Status change trigger alerts Manager/Super for acceptance and original creator after acceptance. |
 | Viewer | No broad unsolicited notifications |
 
 ## Mandatory production release gates
@@ -27,3 +27,10 @@
 - [ ] Add idempotent event tests, multi-role and multi-branch recipient tests, no cross-role leaks, duplicate suppression.
 - [ ] Run App CI and Mobile CI before merge or deploy.
 - [ ] Never build or publish APK/AAB/OTA automatically through this work.
+
+## Verified deployment assumptions
+
+- Read-only production profile counts (2026-10-17): 1 active Manager, 1 active Accounts, 1 active Super, 12 active Branch accounts. **Central approval roles must not be excluded by a branch-name mismatch**; event filtering is based on the relevant workflow step.
+- `portal_installation_entries.status` only supports `PENDING`, `ACCEPTANCE_PENDING`, `ACCEPTED` in the live database. Code must not reference `COMPLETED` as a status.
+- SQL migrations have **not** been executed. Source-level contract tests are not substitutes for a transactional schema validation or real role-scoped notification integration test.
+- Mobile Activity can display new categories, but notifications without `order_id` do not yet deep-link into their source Credit Dispatch / TA/DA / Installation records. A later schema addition with a secure resource reference is required for full navigation parity.
