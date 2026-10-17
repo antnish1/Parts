@@ -64,7 +64,7 @@ begin
  select q.id from public.portal_push_deliveries q
  where (q.status in ('pending','retry') and q.next_attempt_at<=now())
     or (q.status='leased' and q.lease_until<now())
- for update skip locked limit greatest(1,least(max_rows,100))
+ limit greatest(1,least(max_rows,100)) for update skip locked
  ), claimed as (
  update public.portal_push_deliveries q set status='leased',lease_token=gen_random_uuid(),
    lease_until=now()+interval '2 minutes',attempts=q.attempts+1,updated_at=now()
