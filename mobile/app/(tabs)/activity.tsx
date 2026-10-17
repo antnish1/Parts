@@ -152,12 +152,13 @@ export default function ActivityScreen(){
          <View style={styles.copy}>
            <View style={styles.heading}>
              <Text numberOfLines={1} style={styles.title}>{entry.title}</Text>
-             {entry.status?<View style={styles.statusTop}><StatusChip status={entry.status} align="right"/></View>:null}
-             {entry.unread?<View style={styles.dot}/>:null}
+             <View style={styles.statusTop}>
+               {entry.status?<StatusChip status={entry.status} align="right"/>:null}
+               <Text style={styles.date}>{date.toLocaleDateString('en-IN')} · {date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</Text>
+             </View>
            </View>
            {entry.orderNo?<Text numberOfLines={1} style={styles.orderNo}>{entry.orderNo}</Text>:null}
            <Text numberOfLines={3} style={styles.body}>{entry.body}</Text>
-           <Text style={styles.date}>{date.toLocaleDateString('en-IN')} · {date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</Text>
          </View>
        </Pressable>
      </MotionView>;
@@ -176,22 +177,21 @@ function FilterTab({label,count,active,onPress}:{label:string;count:number;activ
 }
 
 const styles=StyleSheet.create({
- searchBox:{minHeight:56,flexDirection:'row',alignItems:'center',gap:10,paddingHorizontal:16,borderRadius:14,borderWidth:1,borderColor:'#D8E0E9',backgroundColor:'#fff'},
- searchInput:{flex:1,minHeight:54,color:colors.text,fontSize:13,fontWeight:'600'},
- segmented:{minHeight:58,flexDirection:'row',overflow:'hidden',borderRadius:14,borderWidth:1,borderColor:'#D8E0E9',backgroundColor:'#fff'},
+ searchBox:{minHeight:40,flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:12,borderRadius:10,borderWidth:1,borderColor:'#D8E0E9',backgroundColor:'#fff'},
+ searchInput:{flex:1,minHeight:38,color:colors.text,fontSize:12,fontWeight:'600'},
+ segmented:{minHeight:36,flexDirection:'row',overflow:'hidden',borderRadius:10,borderWidth:1,borderColor:'#D8E0E9',backgroundColor:'#fff'},
  filterTab:{flex:1,alignItems:'center',justifyContent:'center',borderBottomWidth:3,borderBottomColor:'transparent'},
  filterTabActive:{backgroundColor:'#EAF3FF',borderBottomColor:'#2E69B7'},
- filterText:{color:'#6D798A',fontSize:11,fontWeight:'800'},
+ filterText:{color:'#6D798A',fontSize:10,fontWeight:'800'},
  filterTextActive:{color:'#173F78',fontWeight:'900'},
- row:{minHeight:76,flexDirection:'row',alignItems:'stretch',gap:10,padding:11,borderRadius:13,borderWidth:1,borderColor:'#E1E7EF',backgroundColor:'#fff'},
+ row:{minHeight:70,flexDirection:'row',alignItems:'stretch',gap:8,padding:10,borderRadius:13,borderWidth:1,borderColor:'#E1E7EF',backgroundColor:'#fff'},
  unread:{backgroundColor:'#EFF6FF',borderColor:'#AACDF4'},pressed:{opacity:.82},
  accent:{width:4,alignSelf:'stretch',borderRadius:3},copy:{flex:1,minWidth:0,gap:4},
  heading:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:7},
- statusTop:{alignSelf:'flex-start',maxWidth:'58%',alignItems:'flex-end'},
+ statusTop:{alignSelf:'flex-start',maxWidth:'62%',alignItems:'flex-end',marginLeft:'auto',gap:4},
  title:{color:colors.navy,fontSize:11,fontWeight:'900',flex:1},
  orderNo:{color:colors.text,fontSize:10,fontWeight:'900'},
  body:{color:colors.textMuted,fontSize:10,lineHeight:14},
- date:{color:'#718095',fontSize:9,fontWeight:'700'},
- dot:{width:7,height:7,borderRadius:4,backgroundColor:'#1E69CB'},
+ date:{color:'#718095',fontSize:8,fontWeight:'700',textAlign:'right'},
  notice:{fontSize:10,color:'#956B2B',backgroundColor:'#FFF7E9',borderRadius:8,padding:9}
 });
