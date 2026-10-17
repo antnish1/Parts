@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import { Linking, Pressable, StyleSheet, Text, TextInput, View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -13,21 +13,48 @@ import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function OrderActivityScreen(){
  const params=useLocalSearchParams<{orderId:string}>(); const orderId=Array.isArray(params.orderId)?params.orderId[0]:params.orderId; const qc=useQueryClient(); const query=useQuery({queryKey:['order-activity',orderId],queryFn:()=>getOrderActivity(orderId),enabled:Boolean(orderId)}); const [comment,setComment]=useState(''),[message,setMessage]=useState(''); const [attachment,setAttachment]=useState<DocumentPicker.DocumentPickerAsset|null>(null);
+ const [savedCommentId,setSavedCommentId]=useState<string|null>(null);
+ const submitLock=useRef(false);
  const add=useMutation({
    mutationFn:async()=>{
-     const created=await addOrderComment(orderId,comment);
-     if(attachment) await uploadOrderCommentAttachment(orderId,created.id,{uri:attachment.uri,name:attachment.name,mimeType:attachment.mimeType});
+     let commentId=savedCommentId;
+     if(!commentId){
+       const created=await addOrderComment(orderId,comment);
+       commentId=created.id;
+       setSavedCommentId(commentId);
+     }
+     if(attachment){
+       try {
+         await uploadOrderCommentAttachment(orderId,commentId,{uri:attachment.uri,name:attachment.name,mimeType:attachment.mimeType});
+       } catch(e) {
+         const reason=e instanceof Error?e.message:'Upload failed.';
+         throw new Error(`Comment saved, but attachment failed: ${reason} Tap Add to retry the attachment without posting a duplicate comment.`);
+       }
+     }
    },
-   onSuccess:async()=>{setComment('');setAttachment(null);setMessage('Comment added.');await query.refetch();await qc.invalidateQueries({queryKey:['order',orderId]})},
-   onError:(e)=>setMessage(e instanceof Error?e.message:'Could not add comment.')
+   onSuccess:async()=>{
+     setComment('');setAttachment(null);setSavedCommentId(null);setMessage('Comment added.');
+     await query.refetch();
+     await qc.invalidateQueries({queryKey:['order',orderId]});
+   },
+   onError:async(e)=>{
+     setMessage(e instanceof Error?e.message:'Could not add comment.');
+     await query.refetch();
+   }
  });
+ function submitComment(){
+   if(submitLock.current||add.isPending||(!comment.trim()&&!savedCommentId))return;
+   submitLock.current=true;
+   setMessage('');
+   add.mutate(undefined,{onSettled:()=>{submitLock.current=false;}});
+ }
  async function pickAttachment(){
    const result=await DocumentPicker.getDocumentAsync({multiple:false,copyToCacheDirectory:true,type:['image/jpeg','image/png','image/webp','application/pdf','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword','text/csv']});
    if(!result.canceled) setAttachment(result.assets[0]??null);
  }
  async function openAttachment(id:string){try{const link=await getOrderAttachmentUrl(id);await Linking.openURL(link.signedUrl)}catch(e){setMessage(e instanceof Error?e.message:'Could not open attachment.')}}
  return <Screen title="Order Activity" subtitle="Audit events, comments and billing movement">
-  <View style={styles.commentRow}><View style={styles.commentShell}><TextInput multiline value={comment} onChangeText={setComment} placeholder="Add order comment…" placeholderTextColor={colors.textMuted} style={styles.commentInput}/><Pressable accessibilityRole="button" accessibilityLabel="Upload attachment" onPress={()=>void pickAttachment()} style={styles.attachButton}><AppIcon name="upload" size={17} color={colors.blue}/></Pressable></View><Pressable disabled={!comment.trim()||add.isPending} onPress={()=>add.mutate()} style={[styles.addButton,(!comment.trim()||add.isPending)&&styles.disabled]}>{add.isPending?<ActivityIndicator color="#fff"/>:<Text style={styles.addText}>Add</Text>}</Pressable></View>{attachment?<View style={styles.selectedFile}><AppIcon name="fileChart" size={13} color={colors.blue}/><Text numberOfLines={1} style={styles.selectedFileText}>{attachment.name}</Text><Pressable onPress={()=>setAttachment(null)}><AppIcon name="x" size={14} color={colors.textMuted}/></Pressable></View>:null}{message?<Text style={styles.message}>{message}</Text>:null}
+  <View style={styles.commentRow}><View style={styles.commentShell}><TextInput multiline value={comment} editable={!savedCommentId&&!add.isPending} onChangeText={setComment} placeholder="Add order comment…" placeholderTextColor={colors.textMuted} style={styles.commentInput}/><Pressable accessibilityRole="button" accessibilityLabel="Upload attachment" onPress={()=>void pickAttachment()} style={styles.attachButton}><AppIcon name="upload" size={17} color={colors.blue}/></Pressable></View><Pressable accessibilityRole="button" accessibilityLabel={savedCommentId?'Retry attachment upload':'Add comment'} accessibilityState={{disabled:(!comment.trim()&&!savedCommentId)||add.isPending,busy:add.isPending}} disabled={(!comment.trim()&&!savedCommentId)||add.isPending} onPress={submitComment} style={({pressed})=>[styles.addButton,((!comment.trim()&&!savedCommentId)||add.isPending)&&styles.disabled,pressed&&!add.isPending&&styles.addPressed]}>{add.isPending?<ActivityIndicator color="#fff"/>:<Text style={styles.addText}>{savedCommentId?'Retry':'Add'}</Text>}</Pressable></View>{attachment?<View style={styles.selectedFile}><AppIcon name="fileChart" size={13} color={colors.blue}/><Text numberOfLines={1} style={styles.selectedFileText}>{attachment.name}</Text><Pressable onPress={()=>setAttachment(null)}><AppIcon name="x" size={14} color={colors.textMuted}/></Pressable></View>:null}{message?<Text style={styles.message}>{message}</Text>:null}
   {query.isLoading?<View style={styles.loading}><ActivityIndicator color={colors.navy}/><Text style={styles.loadingText}>Loading complete order activity…</Text></View>:null}
   {query.isError?<StateView icon="alert" tone="error" title="Order activity could not be loaded" message="Events, comments and billing history are temporarily unavailable." actionLabel="Retry" onAction={()=>void query.refetch()}/>:null}
   <Text style={styles.section}>Events</Text>
@@ -56,4 +83,4 @@ export default function OrderActivityScreen(){
  </Screen>
 }
 function Mini({label,value}:{label:string;value:string}){return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>}
-const styles=StyleSheet.create({commentRow:{flexDirection:'row',gap:spacing.sm},commentShell:{flex:1,position:'relative'},commentInput:{minHeight:60,maxHeight:120,padding:spacing.md,paddingRight:46,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,color:colors.text,textAlignVertical:'top'},attachButton:{position:'absolute',right:7,top:8,width:34,height:34,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},selectedFile:{minHeight:32,flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:9,borderRadius:9,backgroundColor:'#EEF5FC'},selectedFileText:{flex:1,color:colors.blue,fontSize:9,fontWeight:'800'},addButton:{width:64,alignItems:'center',justifyContent:'center',borderRadius:radius.md,backgroundColor:colors.navy},addText:{color:'#fff',fontSize:11,fontWeight:'900'},disabled:{opacity:.45},message:{color:colors.navy,fontSize:11,fontWeight:'700'},section:{color:colors.text,fontSize:14,fontWeight:'900',marginTop:spacing.xs},card:{padding:spacing.md,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,gap:spacing.sm},eventCard:{padding:spacing.sm,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},eventCopy:{flex:1,minWidth:0,gap:3},eventNotes:{color:colors.text,fontSize:10.5,lineHeight:15},top:{flexDirection:'row',justifyContent:'space-between',gap:spacing.sm},eventStatus:{alignItems:'flex-end',gap:4},metaRight:{color:colors.textMuted,fontSize:8.5,lineHeight:13,textAlign:'right'},eventType:{color:colors.text,fontSize:12,fontWeight:'900',textTransform:'capitalize'},createdDate:{color:colors.navy,fontSize:10,fontWeight:'900',marginTop:4},createdTime:{color:colors.textMuted,fontSize:9,fontWeight:'800',marginTop:1},body:{color:colors.text,fontSize:11,lineHeight:17},meta:{color:colors.textMuted,fontSize:9,lineHeight:14},attachment:{minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm,paddingHorizontal:spacing.sm,borderRadius:radius.sm,backgroundColor:colors.surfaceMuted},loading:{flexDirection:'row',alignItems:'center',gap:spacing.sm},loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},attachmentName:{flex:1,flexDirection:'row',alignItems:'center',gap:6},attachmentText:{flex:1,color:colors.blue,fontSize:10,fontWeight:'800'},attachmentMeta:{color:colors.textMuted,fontSize:9},grid:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},mini:{width:'47%'},miniLabel:{color:colors.textMuted,fontSize:9,fontWeight:'700'},miniValue:{color:colors.text,fontSize:10,fontWeight:'800',marginTop:2},empty:{color:colors.textMuted,textAlign:'center',padding:spacing.xl}});
+const styles=StyleSheet.create({commentRow:{flexDirection:'row',gap:spacing.sm},commentShell:{flex:1,position:'relative'},commentInput:{minHeight:60,maxHeight:120,padding:spacing.md,paddingRight:46,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,color:colors.text,textAlignVertical:'top'},attachButton:{position:'absolute',right:7,top:8,width:34,height:34,borderRadius:9,alignItems:'center',justifyContent:'center',backgroundColor:'#EEF5FC'},selectedFile:{minHeight:32,flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:9,borderRadius:9,backgroundColor:'#EEF5FC'},selectedFileText:{flex:1,color:colors.blue,fontSize:9,fontWeight:'800'},addButton:{width:64,minHeight:60,alignItems:'center',justifyContent:'center',borderRadius:radius.md,backgroundColor:colors.navy},addPressed:{opacity:.78,transform:[{scale:.96}]},addText:{color:'#fff',fontSize:11,fontWeight:'900'},disabled:{opacity:.45},message:{color:colors.navy,fontSize:11,fontWeight:'700'},section:{color:colors.text,fontSize:14,fontWeight:'900',marginTop:spacing.xs},card:{padding:spacing.md,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface,gap:spacing.sm},eventCard:{padding:spacing.sm,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,backgroundColor:colors.surface},eventCopy:{flex:1,minWidth:0,gap:3},eventNotes:{color:colors.text,fontSize:10.5,lineHeight:15},top:{flexDirection:'row',justifyContent:'space-between',gap:spacing.sm},eventStatus:{alignItems:'flex-end',gap:4},metaRight:{color:colors.textMuted,fontSize:8.5,lineHeight:13,textAlign:'right'},eventType:{color:colors.text,fontSize:12,fontWeight:'900',textTransform:'capitalize'},createdDate:{color:colors.navy,fontSize:10,fontWeight:'900',marginTop:4},createdTime:{color:colors.textMuted,fontSize:9,fontWeight:'800',marginTop:1},body:{color:colors.text,fontSize:11,lineHeight:17},meta:{color:colors.textMuted,fontSize:9,lineHeight:14},attachment:{minHeight:42,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:spacing.sm,paddingHorizontal:spacing.sm,borderRadius:radius.sm,backgroundColor:colors.surfaceMuted},loading:{flexDirection:'row',alignItems:'center',gap:spacing.sm},loadingText:{color:colors.textMuted,fontSize:10,fontWeight:'700'},attachmentName:{flex:1,flexDirection:'row',alignItems:'center',gap:6},attachmentText:{flex:1,color:colors.blue,fontSize:10,fontWeight:'800'},attachmentMeta:{color:colors.textMuted,fontSize:9},grid:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},mini:{width:'47%'},miniLabel:{color:colors.textMuted,fontSize:9,fontWeight:'700'},miniValue:{color:colors.text,fontSize:10,fontWeight:'800',marginTop:2},empty:{color:colors.textMuted,textAlign:'center',padding:spacing.xl}});
