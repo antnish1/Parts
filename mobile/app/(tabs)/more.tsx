@@ -132,7 +132,6 @@ export default function MoreScreen() {
         <Info icon="work" label="Role" value={profile?.role || '—'} />
         <Info icon="inventory" label="Branch" value={profile?.branch || '—'} />
         {email ? <Info icon="package" label="Email" value={email} /> : null}
-        <Info icon="shield" label="Session" value="Signed in" />
         <Pressable accessibilityRole="button" accessibilityLabel="Switch account" onPress={() => { setSwitchError(''); setSwitchOpen(true); }} style={styles.accountAction}>
           <AppIcon name="refresh" color="#245A95" size={17} />
           <Text style={styles.label}>Account</Text>
