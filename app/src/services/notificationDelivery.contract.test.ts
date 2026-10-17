@@ -16,7 +16,7 @@ describe('notification production safety contracts', () => {
  it('leases only unclaimed due work and restricts table access',()=>{
   expect(migration).toContain('for update skip locked');
   expect(migration).toContain("interval '2 minutes'");
-  expect(migration).toContain('q.lease_token');
+  expect(migration).toContain('lease_token=gen_random_uuid()');
   expect(migration).toContain('service_role only');
   expect(migration).toContain('revoke all on public.portal_push_deliveries from anon,authenticated');
   expect(migration).toContain('unique(notification_id,device_id)');
