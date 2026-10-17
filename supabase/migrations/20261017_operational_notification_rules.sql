@@ -24,11 +24,7 @@ begin
    'Credit dispatch '||coalesce(d.dispatch_no,'')||' updated.'
  from public.portal_profiles p
  where p.is_active=true and p.id is distinct from new.created_by and (
-   (p.role=target_role and (
-      target_role='accounts' or
-      (nullif(trim(coalesce(d.branch,'')),'') is not null and
-       regexp_replace(upper(p.branch),'[ _-]','','g')=regexp_replace(upper(d.branch),'[ _-]','','g'))
-   )) or
+   (p.role=target_role and target_role in ('accounts','manager')) or
    (target_role='branch' and p.id=d.created_by)
  )
  on conflict do nothing;
@@ -56,9 +52,7 @@ begin
  from public.portal_profiles p
  where p.is_active=true and p.id is distinct from new.actor_id and (
   (target_role='accounts' and p.role='accounts') or
-  (target_role='manager' and p.role='manager' and
-    nullif(trim(coalesce(d.branch_key,'')),'') is not null and
-    regexp_replace(upper(p.branch),'[ _-]','','g')=regexp_replace(upper(d.branch_key),'[ _-]','','g')) or
+  (target_role='manager' and p.role='manager') or
   (target_role='branch' and p.id=d.created_by)
  )
  on conflict do nothing;
@@ -83,9 +77,7 @@ begin
  from public.portal_profiles p
  where p.is_active=true and (
    (new.status='ACCEPTED' and p.id=new.created_by) or
-   (new.status<>'ACCEPTED' and p.role in ('manager','super') and
-     nullif(trim(coalesce(new.branch,'')),'') is not null and
-     regexp_replace(upper(p.branch),'[ _-]','','g')=regexp_replace(upper(new.branch),'[ _-]','','g'))
+   (new.status<>'ACCEPTED' and p.role in ('manager','super'))
  )
  on conflict do nothing;
  return new;
