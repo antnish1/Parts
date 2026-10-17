@@ -45,3 +45,28 @@ describe('notification production safety contracts', () => {
   expect(rules).toContain('p.id is distinct from new.author_id');
  });
 });
+
+describe('operational notification coverage contracts',()=>{
+ const ops=readFileSync(new URL('../../../supabase/migrations/20261017_operational_notification_rules.sql',import.meta.url),'utf8');
+ it('binds credit dispatch notifications to event transitions and current status',()=>{
+  expect(ops).toContain('after insert on public.portal_credit_dispatch_events');
+  expect(ops).toContain("d.approval_status='Pending Manager Approval'");
+  expect(ops).toContain("d.approval_status='Pending Accounts Approval'");
+  expect(ops).toContain("p.id=d.created_by");
+  expect(ops).toContain("'credit_dispatch'");
+ });
+ it('routes TA/DA work to HQ manager, Accounts and original branch user',()=>{
+  expect(ops).toContain('after insert on public.portal_tada_events');
+  expect(ops).toContain("'AWAITING_HQ_RECEIPT'");
+  expect(ops).toContain("'AWAITING_ACCOUNTS_RECEIPT'");
+  expect(ops).toContain("p.id=d.created_by");
+  expect(ops).toContain("'tada'");
+ });
+ it('uses only real installation statuses and never creates entries from client UI',()=>{
+  expect(ops).toContain('after update of status on public.portal_installation_entries');
+  expect(ops).toContain("'ACCEPTANCE_PENDING'");
+  expect(ops).toContain("'ACCEPTED'");
+  expect(ops).not.toContain("'COMPLETED'");
+  expect(ops).toContain("'installation'");
+ });
+});
