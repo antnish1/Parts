@@ -42,7 +42,7 @@ begin
  join public.portal_profiles p on p.id=n.recipient_profile_id and p.is_active=true
  cross join public.portal_push_runtime runtime
  join public.portal_push_devices d on d.profile_id=p.id
- where n.push_sent_at is null and n.created_at>=runtime.enabled_after
+ where n.push_sent_at is null and n.created_at>=greatest(runtime.enabled_after,d.updated_at)
    and not exists (
      select 1 from public.portal_push_deliveries existing
      where existing.notification_id=n.id and existing.device_id=d.id
