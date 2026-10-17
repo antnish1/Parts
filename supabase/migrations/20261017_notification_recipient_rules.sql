@@ -24,9 +24,9 @@ begin
  where p.is_active=true and p.id is distinct from new.actor_id and (
    (p.id=o.approver_id and lower(p.role) in ('manager','super'))
    or (p.id=o.employee_id and lower(p.role) in ('branch','super','manager'))
-   or (lower(p.role)='manager' and
-       regexp_replace(upper(coalesce(p.branch,'')),'[ _-]','','g')=
-       regexp_replace(upper(coalesce(o.branch,'')),'[ _-]','','g'))
+   or (lower(p.role)='manager' and upper(new.event_type) in
+       ('ORDER_CREATED','SUPER_FORWARDED_MANAGER','SUPER_APPROVED_PENDING_MANAGER',
+        'REVIEW_EDITS_PENDING_MANAGER','REVIEW_ORIGINAL_PENDING_MANAGER'))
    or (lower(p.role)='admin' and upper(new.event_type) in
         ('MANAGER_APPROVED','MANAGER_DIRECT_APPROVED',
          'REVIEW_EDITS_MANAGER_APPROVED','REVIEW_ORIGINAL_MANAGER_APPROVED'))
