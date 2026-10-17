@@ -152,11 +152,13 @@ export default function ActivityScreen(){
          <View style={styles.copy}>
            <View style={styles.heading}>
              <Text numberOfLines={1} style={styles.title}>{entry.title}</Text>
-             {entry.status?<View style={styles.statusTop}><StatusChip status={entry.status} align="right"/></View>:null}
+             <View style={styles.statusTop}>
+               {entry.status?<StatusChip status={entry.status} align="right"/>:null}
+               <Text style={styles.date}>{date.toLocaleDateString('en-IN')} · {date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</Text>
+             </View>
            </View>
            {entry.orderNo?<Text numberOfLines={1} style={styles.orderNo}>{entry.orderNo}</Text>:null}
            <Text numberOfLines={3} style={styles.body}>{entry.body}</Text>
-           <Text style={styles.date}>{date.toLocaleDateString('en-IN')} · {date.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</Text>
          </View>
        </Pressable>
      </MotionView>;
@@ -186,10 +188,10 @@ const styles=StyleSheet.create({
  unread:{backgroundColor:'#EFF6FF',borderColor:'#AACDF4'},pressed:{opacity:.82},
  accent:{width:4,alignSelf:'stretch',borderRadius:3},copy:{flex:1,minWidth:0,gap:4},
  heading:{flexDirection:'row',alignItems:'flex-start',justifyContent:'space-between',gap:7},
- statusTop:{alignSelf:'flex-start',maxWidth:'60%',alignItems:'flex-end',marginLeft:'auto'},
+ statusTop:{alignSelf:'flex-start',maxWidth:'62%',alignItems:'flex-end',marginLeft:'auto',gap:4},
  title:{color:colors.navy,fontSize:11,fontWeight:'900',flex:1},
  orderNo:{color:colors.text,fontSize:10,fontWeight:'900'},
  body:{color:colors.textMuted,fontSize:10,lineHeight:14},
- date:{color:'#718095',fontSize:9,fontWeight:'700'},
+ date:{color:'#718095',fontSize:8,fontWeight:'700',textAlign:'right'},
  notice:{fontSize:10,color:'#956B2B',backgroundColor:'#FFF7E9',borderRadius:8,padding:9}
 });
