@@ -56,8 +56,8 @@ export function Screen({ children, title, subtitle, right, brandHeader = false, 
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: colors.background },
-  safe: { flex: 1, backgroundColor: colors.background },
+  shell: { flex: 1, backgroundColor: '#082B5B' },
+  safe: { flex: 1, backgroundColor: '#082B5B' },
   flex: { flex: 1 },
   pageBackground: { backgroundColor: '#FFFFFF' },
   brandedSafe: { backgroundColor: '#082B5B' },
