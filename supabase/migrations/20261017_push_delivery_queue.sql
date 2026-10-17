@@ -43,6 +43,10 @@ begin
  cross join public.portal_push_runtime runtime
  join public.portal_push_devices d on d.profile_id=p.id
  where n.push_sent_at is null and n.created_at>=runtime.enabled_after
+   and not exists (
+     select 1 from public.portal_push_deliveries existing
+     where existing.notification_id=n.id and existing.device_id=d.id
+   )
  order by n.created_at asc
  limit greatest(1,least(max_rows,500))
  on conflict do nothing;
