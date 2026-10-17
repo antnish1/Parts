@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { MotionView } from '@/components/MotionView';
 import { StateView } from '@/components/StateView';
@@ -105,17 +105,34 @@ export default function ActivityScreen(){
  },[feed,filter,search]);
 
  async function openEntry(entry:FeedEntry){
+   if(!entry.unread){
+     if(entry.orderId)router.push(`/orders/${entry.orderId}`);
+     return;
+   }
+   const readKey=['activity-read-keys'] as const;
+   const notificationKey=['notifications'] as const;
+   await qc.cancelQueries({queryKey:readKey});
+   await qc.cancelQueries({queryKey:notificationKey});
+   const previousReads=qc.getQueryData<string[]>(readKey);
+   const previousNotifications=qc.getQueryData<typeof notifications.data>(notificationKey);
+   // Optimistic update: the Activity counter and shared header badge move together.
+   qc.setQueryData<string[]>(readKey,old=>[...new Set([...(old??[]),entry.key])]);
+   if(entry.notificationId){
+     qc.setQueryData<typeof notifications.data>(notificationKey,old=>old?.map(n=>
+       n.id===entry.notificationId?{...n,read_at:n.read_at??new Date().toISOString()}:n));
+   }
    try{
      await markActivityRead(entry.key);
-     if(entry.notificationId) await markNotificationRead(entry.notificationId);
-     await Promise.all([
-       qc.invalidateQueries({queryKey:['activity-read-keys']}),
-       qc.invalidateQueries({queryKey:['notifications']}),
-     ]);
-   } catch {
-     // Permanent activity stays accessible if read-state persistence is temporarily unavailable.
+     if(entry.notificationId)await markNotificationRead(entry.notificationId);
+     if(entry.orderId)router.push(`/orders/${entry.orderId}`);
+   }catch{
+     qc.setQueryData(readKey,previousReads);
+     qc.setQueryData(notificationKey,previousNotifications);
+     Alert.alert('Could not mark as read','Please check your connection and try again.');
+   }finally{
+     void qc.invalidateQueries({queryKey:readKey});
+     void qc.invalidateQueries({queryKey:notificationKey});
    }
-   if(entry.orderId)router.push(`/orders/${entry.orderId}`);
  }
 
  return <Screen brandHeader title="Activity">
