@@ -1,3 +1,4 @@
+import { ChunkLoadRecovery, installChunkLoadRecovery } from './components/ui/ChunkLoadRecovery';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -25,11 +26,13 @@ import './track-orders-kpi-render-state.css';
 import './track-orders-kpi-desktop-active.css';
 import './global-interaction-contrast.css';
 
+installChunkLoadRecovery();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <App />
+        <ChunkLoadRecovery><App /></ChunkLoadRecovery>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,
