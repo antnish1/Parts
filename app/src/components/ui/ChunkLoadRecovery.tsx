@@ -30,7 +30,7 @@ export class ChunkLoadRecovery extends Component<{ children: ReactNode }, State>
   state: State = { failed: false };
 
   static getDerivedStateFromError(error: Error): State {
-    return { failed: isChunkError(error) };
+    return { failed: true };
   }
 
   componentDidCatch(error: Error, _info: ErrorInfo) {
