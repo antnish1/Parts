@@ -4,7 +4,7 @@ import * as Updates from 'expo-updates';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Keep the cached app usable when offline. Never block sign-in indefinitely.
-const MAX_STARTUP_WAIT_MS = 4500;
+const MAX_STARTUP_WAIT_MS = 10000;
 
 export function StartupUpdateGate({ children }: PropsWithChildren) {
   const [ready, setReady] = useState(__DEV__ || !Updates.isEnabled);
@@ -16,27 +16,30 @@ export function StartupUpdateGate({ children }: PropsWithChildren) {
     }
     let active = true;
     let released = false;
+    let reloading = false;
     const release = () => {
-      if (!active || released) return;
+      if (!active || released || reloading) return;
       released = true;
       setReady(true);
       void SplashScreen.hideAsync().catch(() => undefined);
     };
     // Short hard deadline: do not let network checks delay the app indefinitely.
-    const timer = setTimeout(release, MAX_STARTUP_WAIT_MS);
+    const timer = setTimeout(() => { if (!reloading) release(); }, MAX_STARTUP_WAIT_MS);
     async function checkBeforeDisplay() {
       try {
         const check = await Updates.checkForUpdateAsync();
         if (!active || released || !check.isAvailable) return;
         const download = await Updates.fetchUpdateAsync();
         if (!active || released || !download.isNew) return;
-        // Reload only while the splash is held. If the deadline elapsed,
-        // keep the current session and apply the downloaded update on next launch.
+        reloading = true;
+        clearTimeout(timer);
+        // Do not reveal the obsolete UI while a downloaded bundle activates.
         await Updates.reloadAsync();
       } catch {
-        // Offline, update server failure, or unsupported runtime: use cached app.
+        // Offline or incompatible update: do not block normal cached startup.
+        reloading = false;
       } finally {
-        release();
+        if (!reloading) release();
       }
     }
     void checkBeforeDisplay();

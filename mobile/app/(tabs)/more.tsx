@@ -10,6 +10,7 @@ import { MotionView } from '@/components/MotionView';
 import { Screen } from '@/components/Screen';
 import { supabase } from '@/lib/supabase';
 import { colors } from '@/theme/tokens';
+import { UpdateDiagnostics } from '@/components/UpdateDiagnostics';
 
 export default function MoreScreen() {
   const { profile, session, signOut, role, savedAccounts, switchAccount, removeSavedAccount } = useAuth();
@@ -154,6 +155,7 @@ export default function MoreScreen() {
         <Info icon="shield" label="Updates" value="OTA enabled" last />
       </View>
       </MotionView>
+      <UpdateDiagnostics />
       <Pressable onPress={() => void handleSignOut()} style={styles.signOut}><AppIcon name="x" size={17} color="#B83D46" /><Text style={styles.outText}>Sign out securely</Text></Pressable>
 
       <Modal visible={switchOpen} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setSwitchOpen(false)}>
