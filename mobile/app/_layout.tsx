@@ -1,4 +1,8 @@
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StartupUpdateGate } from '@/components/StartupUpdateGate';
+
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar, View } from 'react-native';
@@ -16,11 +20,13 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <PushRegistration />
-          <AppStatusBar />
-          <View style={{ flex: 1, backgroundColor: '#082B5B' }}>
-            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#082B5B' } }} />
-          </View>
+          <StartupUpdateGate>
+            <PushRegistration />
+            <AppStatusBar />
+            <View style={{ flex: 1, backgroundColor: '#082B5B' }}>
+              <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#082B5B' } }} />
+            </View>
+          </StartupUpdateGate>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
