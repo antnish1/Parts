@@ -81,14 +81,14 @@ export default function PartLocationFinderScreen() {
     if(scanLocked.current)return;
     const raw=data.trim();
     // Supplier QR links are not part numbers. Keep scanning until the actual label is centered.
-    if(/^https?:\\/\\//i.test(raw) || /(?:^|\\s)www\\./i.test(raw)){
+    if(/^https?:\/\//i.test(raw) || /(?:^|\s)www\./i.test(raw)){
       if(lastUnsupportedScan.current!==raw){
         lastUnsupportedScan.current=raw;
         setScanHint('QR link detected. Move closer and align the part-number barcode.');
       }
       return;
     }
-    const value=raw.replace(/\\s+/g,'').toUpperCase();
+    const value=raw.replace(/\s+/g,'').toUpperCase();
     // JCB part numbers use digits / letters, usually with a separator e.g. 320/A7358.
     // Require a reasonably structured code; do not submit random surrounding labels.
     if(!/^[A-Z0-9][A-Z0-9/-]{4,29}$/.test(value) || !/[0-9]/.test(value)){
