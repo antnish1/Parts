@@ -77,7 +77,7 @@ export default function PartLocationFinderScreen() {
     setScannerOpen(true);
   }
 
-  function handleScan(data:string, type?:string, bounds?:{origin?:{x:number;y:number};size?:{width:number;height:number}}){
+  function handleScan(data:string){
     if(scanLocked.current)return;
     const raw=data.trim();
     // Supplier QR links are not part numbers. Keep scanning until the actual label is centered.
@@ -94,12 +94,6 @@ export default function PartLocationFinderScreen() {
     if(!/^[A-Z0-9][A-Z0-9/-]{4,29}$/.test(value) || !/[0-9]/.test(value)){
       setScanHint('Unsupported code. Align the part-number barcode.');
       return;
-    }
-    if(bounds?.origin&&bounds?.size){
-      // Camera frame is centrally placed. Ignore codes far from that target.
-      const cx=bounds.origin.x+bounds.size.width/2;
-      const cy=bounds.origin.y+bounds.size.height/2;
-      if(cx<0||cy<0)return;
     }
     scanLocked.current=true;
     setScannerOpen(false);
@@ -149,7 +143,7 @@ export default function PartLocationFinderScreen() {
           facing="back"
           enableTorch={torch}
           barcodeScannerSettings={{barcodeTypes:['code128','code39','code93','ean13','ean8','upc_a','upc_e','itf14','pdf417','qr']}}
-          onBarcodeScanned={({data,type,bounds})=>handleScan(data,type,bounds)}
+          onBarcodeScanned={({data})=>handleScan(data)}
         />:null}
         <View style={styles.cameraOverlay} pointerEvents="box-none">
           <View style={styles.cameraTop}>
