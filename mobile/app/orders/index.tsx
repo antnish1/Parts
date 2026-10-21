@@ -91,7 +91,7 @@ export default function OrdersScreen() {
                 <Text numberOfLines={1} ellipsizeMode="middle" style={styles.orderNo}>{item.final_order_no || item.order_no}</Text>
                 <Text numberOfLines={1} style={styles.customer}>{item.customer_name || item.machine_no || item.order_for || 'No customer/machine'}</Text>
               </View>
-              <View style={styles.statusSide}><StatusChip status={item.approval_status || item.status} /><Text style={styles.date}>{formatDate(item.created_at)}</Text></View>
+              <View style={styles.statusSide}><StatusChip status={item.status || item.approval_status} /><Text style={styles.date}>{formatDate(item.created_at)}</Text></View>
             </View>
             <View style={styles.details}>
               <View style={styles.detailColWide}><Text style={styles.detailTitle}>Branch</Text><Text numberOfLines={1} style={styles.detailValue}>{item.branch || '—'}</Text></View>
