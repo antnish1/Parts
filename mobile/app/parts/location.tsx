@@ -36,6 +36,8 @@ export default function PartLocationFinderScreen() {
   const [torch,setTorch] = useState(false);
   const [permission,requestPermission] = useCameraPermissions();
   const scanLocked = useRef(false);
+  const lastUnsupportedScan = useRef('');
+  const [scanHint,setScanHint] = useState('Align the part-number barcode inside the frame.');
   const pulse = useRef(new Animated.Value(1)).current;
   const hasLocations = Boolean(result?.locations.length);
 
@@ -70,13 +72,35 @@ export default function PartLocationFinderScreen() {
       if(!next.granted){setMessage('Camera permission is required to scan part barcodes.');return;}
     }
     scanLocked.current=false;
+    lastUnsupportedScan.current='';
+    setScanHint('Align the part-number barcode inside the frame.');
     setScannerOpen(true);
   }
 
-  function handleScan(data:string){
+  function handleScan(data:string, type?:string, bounds?:{origin?:{x:number;y:number};size?:{width:number;height:number}}){
     if(scanLocked.current)return;
-    const value=data.trim().replace(/\s+/g,'').toUpperCase();
-    if(!value)return;
+    const raw=data.trim();
+    // Supplier QR links are not part numbers. Keep scanning until the actual label is centered.
+    if(/^https?:\\/\\//i.test(raw) || /(?:^|\\s)www\\./i.test(raw)){
+      if(lastUnsupportedScan.current!==raw){
+        lastUnsupportedScan.current=raw;
+        setScanHint('QR link detected. Move closer and align the part-number barcode.');
+      }
+      return;
+    }
+    const value=raw.replace(/\\s+/g,'').toUpperCase();
+    // JCB part numbers use digits / letters, usually with a separator e.g. 320/A7358.
+    // Require a reasonably structured code; do not submit random surrounding labels.
+    if(!/^[A-Z0-9][A-Z0-9/-]{4,29}$/.test(value) || !/[0-9]/.test(value)){
+      setScanHint('Unsupported code. Align the part-number barcode.');
+      return;
+    }
+    if(bounds?.origin&&bounds?.size){
+      // Camera frame is centrally placed. Ignore codes far from that target.
+      const cx=bounds.origin.x+bounds.size.width/2;
+      const cy=bounds.origin.y+bounds.size.height/2;
+      if(cx<0||cy<0)return;
+    }
     scanLocked.current=true;
     setScannerOpen(false);
     setPartNo(value);
@@ -125,7 +149,7 @@ export default function PartLocationFinderScreen() {
           facing="back"
           enableTorch={torch}
           barcodeScannerSettings={{barcodeTypes:['code128','code39','code93','ean13','ean8','upc_a','upc_e','itf14','pdf417','qr']}}
-          onBarcodeScanned={({data})=>handleScan(data)}
+          onBarcodeScanned={({data,type,bounds})=>handleScan(data,type,bounds)}
         />:null}
         <View style={styles.cameraOverlay} pointerEvents="box-none">
           <View style={styles.cameraTop}>
@@ -153,7 +177,7 @@ export default function PartLocationFinderScreen() {
             </View>
           </View>
           <View style={styles.scannerHintWrap}>
-            <Text style={styles.scannerHint}>Align the part barcode inside the frame. The part will be searched automatically.</Text>
+            <Text style={styles.scannerHint}>{scanHint}</Text>
           </View>
         </View>
       </View>
