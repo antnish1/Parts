@@ -129,7 +129,7 @@ export default function OrderDetailScreen() {
               <Text style={styles.orderNo}>{row.final_order_no || row.order_no}</Text>
               <Text numberOfLines={2} style={styles.customer}>{row.customer_name || 'Customer not available'}</Text>
             </View>
-            <PulseWrap><StatusChip status={row.approval_status || row.status} /></PulseWrap>
+            <PulseWrap><StatusChip status={row.status || row.approval_status} /></PulseWrap>
           </View>
           <OrderMetaMarquee fields={[
             { label: 'Branch', value: row.branch || '—' },
