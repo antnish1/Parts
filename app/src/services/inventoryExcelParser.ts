@@ -19,14 +19,6 @@ export type ParsedInventoryUploadRow = {
   inv_value: number;
 };
 
-const INACTIVE_INVENTORY_BRANCH_CODES = new Set([
-  'DFM001',
-  'DFM002',
-  'DFM0014',
-  'DFM0031',
-  'HDFM002',
-]);
-
 const INVENTORY_BRANCH_OVERRIDES: Record<string, { branchName: string; branchCode: string }> = {
   DFM003: { branchName: 'JABALPUR PARTS', branchCode: 'DFM003' },
   DFM0033: { branchName: 'DAMOH', branchCode: 'DFM0033' },
@@ -73,11 +65,6 @@ export async function parseInventoryExcel(file: File, reportDate: string) {
     const itemGroup = clean(readColumn(row, ['Item Group', 'ItemGroup', 'Group']));
     const uom = clean(readColumn(row, ['UOM', 'Uom']));
     const footerText = `${sourceBranchName} ${sourceBranchCode} ${itemCode} ${itemName}`.toLowerCase();
-
-    if (INACTIVE_INVENTORY_BRANCH_CODES.has(sourceBranchCode)) {
-      ignoredRows += 1;
-      return;
-    }
 
     if (!sourceBranchCode || !itemCode || footerText.includes('grand total') || footerText === '') {
       failedRows += 1;
