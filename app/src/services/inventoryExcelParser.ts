@@ -24,12 +24,12 @@ const INACTIVE_INVENTORY_BRANCH_CODES = new Set([
   'DFM002',
   'DFM0014',
   'DFM0031',
-  'DFM0033',
   'HDFM002',
 ]);
 
 const INVENTORY_BRANCH_OVERRIDES: Record<string, { branchName: string; branchCode: string }> = {
   DFM003: { branchName: 'JABALPUR PARTS', branchCode: 'DFM003' },
+  DFM0033: { branchName: 'DAMOH', branchCode: 'DFM0033' },
 };
 
 function normalizeHeader(value: string) {
