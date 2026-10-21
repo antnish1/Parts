@@ -58,7 +58,7 @@ export function UploadsPage() {
       setInventoryFile(null);
       await queryClient.invalidateQueries({ queryKey: ['test-inventory'] });
       setInventoryStep('complete');
-      setInventoryMessage(`Inventory upload complete. Total ${result.totalRows}, valid ${result.validRows}, failed ${result.failedRows}, staged ${result.stagedRows ?? 0}, changed ${result.changedRows ?? 0}${result.batchId ? `, batch ${result.batchId}` : ''}.`);
+      setInventoryMessage(`Inventory upload complete. Total ${result.totalRows}, valid ${result.validRows}, failed ${result.failedRows}, excluded ${result.excludedRows}, staged ${result.stagedRows ?? 0}, changed ${result.changedRows ?? 0}${result.batchId ? `, batch ${result.batchId}` : ''}.`);
     } catch (error) {
       setInventoryStep('failed');
       setInventoryMessage(error instanceof Error ? error.message : 'Inventory upload failed.');
