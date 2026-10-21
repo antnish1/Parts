@@ -125,6 +125,7 @@ export default function DocketScannerScreen() {
           return <MotionView key={key} delay={Math.min(index * 28, 200)} trigger={`${docketNo}-${received}`}><View style={[styles.rowCard, received && styles.receivedCard]}>
             <View style={styles.rowTop}><View style={styles.rowCopy}><Text style={styles.partNo}>{row.part_no}</Text><Text numberOfLines={2} style={styles.description}>{row.description || 'No description'}</Text></View><View style={[styles.badge, received ? styles.badgeDone : styles.badgeOpen]}><Text style={[styles.badgeText, received ? styles.badgeDoneText : styles.badgeOpenText]}>{received ? 'Received' : 'Pending'}</Text></View></View>
             <View style={styles.metaGrid}><Mini label="Order" value={row.final_order_no || row.order_no} /><Mini label="Branch" value={row.branch} /><Mini label="Billed" value={String(row.billed_qty)} /><Mini label="Received" value={String(row.received_qty)} /><Mini label="Invoice" value={row.invoice_no || '—'} /><Mini label="Delivery" value={row.delivery_no || '—'} /><Mini label="Transport" value={row.transport_name || '—'} /></View>
+            {received ? <View style={styles.receivedStamp}><Text style={styles.receivedStampLabel}>Received on</Text><Text style={styles.receivedStampValue}>{formatReceivedAt(row.received_at)}</Text></View> : null}
             {!received && canReceive ? <Pressable disabled={Boolean(busyId)} onPress={() => void receive(row)} style={[styles.receiveButton, Boolean(busyId) && styles.disabled]}>{busyId === key ? <ActivityIndicator color="#fff" /> : <Text style={styles.receiveText}>Mark Received</Text>}</Pressable> : null}
           </View></MotionView>;
         })}
@@ -153,12 +154,28 @@ export default function DocketScannerScreen() {
   );
 }
 
+function formatReceivedAt(value: string | null): string {
+  if (!value) return 'Date and time not recorded';
+  // Legacy item rows sometimes store a date without a time. Never invent one.
+  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-');
+    return `${day}/${month}/${year} (time unavailable)`;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date and time unavailable';
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  }).format(date);
+}
+
 function Mini({ label, value }: { label: string; value: string }) { return <View style={styles.mini}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={1} style={styles.miniValue}>{value}</Text></View>; }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background }, content: { gap: 10, paddingBottom: 36 },
   scannerCard: { padding: 12, gap: 10, borderRadius: 18, backgroundColor: colors.navy }, scanGraphic: { minHeight: 92, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#12375F' }, scanFrame: { height: 64, width: '76%', alignItems: 'center', justifyContent: 'center', borderRadius: 11, borderWidth: 1.5, borderColor: '#B7D8FF', borderStyle: 'dashed' }, scanIconWrap:{marginBottom:4}, scanHint: { color: '#D6E7FF', fontSize: 9, fontWeight:'800' }, scanButton: { minHeight: 42, flexDirection:'row', gap:7, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#fff' }, scanButtonText: { color: colors.navy, fontSize: 11, fontWeight: '900' },
   searchRow: { flexDirection: 'row', gap: 7 }, input: { flex: 1, minHeight: 42, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', paddingHorizontal: spacing.md, color: colors.text, fontSize: 14 }, searchButton: { width: 72, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, searchText: { color: '#fff', fontSize: 12, fontWeight: '900' }, status: { paddingHorizontal:10,paddingVertical:9, borderRadius: 10, backgroundColor: colors.blueSoft }, statusText: { color: colors.navySoft, fontSize: 11, lineHeight: 17 }, resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, resultTitle: { color: colors.text, fontSize: 13, fontWeight: '900' }, receiveAll: { minHeight: 38, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: colors.success }, receiveAllText: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  receivedStamp:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:8,paddingTop:8,borderTopWidth:StyleSheet.hairlineWidth,borderTopColor:'#BFE8D8'},receivedStampLabel:{fontSize:10,fontWeight:'700',color:colors.textMuted},receivedStampValue:{fontSize:10,fontWeight:'900',color:colors.navy,textAlign:'right',flexShrink:1},
   readOnlyNote:{color:colors.textMuted,fontSize:9,fontWeight:'700',marginTop:2},
   rowCard: { padding: spacing.lg, gap: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, receivedCard: { backgroundColor: colors.successSoft, borderColor: '#BFE8D8' }, rowTop: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' }, rowCopy: { flex: 1 }, partNo: { color: colors.text, fontSize: 14, fontWeight: '900' }, description: { color: colors.textMuted, fontSize: 11, lineHeight: 16, marginTop: 3 }, badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 5, borderRadius: radius.sm }, badgeOpen: { backgroundColor: colors.warningSoft }, badgeDone: { backgroundColor: '#D8F1E7' }, badgeText: { fontSize: 10, fontWeight: '900' }, badgeOpenText: { color: colors.warning }, badgeDoneText: { color: colors.success }, metaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, mini: { width: '31%', minWidth: 88 }, miniLabel: { color: colors.textMuted, fontSize: 9, fontWeight: '700' }, miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 2 }, receiveButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, receiveText: { color: '#fff', fontSize: 12, fontWeight: '900' }, disabled: { opacity: 0.45 },
   cameraPage: { flex: 1, backgroundColor: '#000' }, cameraOverlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, justifyContent: 'space-between', padding: spacing.lg, backgroundColor: 'rgba(0,0,0,0.18)' }, cameraTop: { flexDirection: 'row', justifyContent: 'space-between' }, cameraControl: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: 'rgba(11,31,58,0.82)' }, cameraControlText: { color: '#fff', fontSize: 12, fontWeight: '900' }, cameraFrame: { flex: 1, alignItems: 'center', justifyContent: 'center' }, focusBox: { width: '82%', height: 180, borderRadius: radius.lg, borderWidth: 3, borderColor: '#fff' }, cameraHint: { alignSelf: 'center', color: '#fff', fontSize: 12, fontWeight: '800', marginBottom: spacing.xl, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, backgroundColor: 'rgba(0,0,0,0.5)' },
