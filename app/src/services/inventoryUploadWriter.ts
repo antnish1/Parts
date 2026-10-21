@@ -5,6 +5,7 @@ type InventoryUploadResult = {
   totalRows: number;
   validRows: number;
   failedRows: number;
+  excludedRows: number;
   changedRows: number;
   stagedRows: number;
   batchId: string;
@@ -30,6 +31,7 @@ export async function uploadInventoryExcel(file: File, reportDate: string): Prom
     totalRows: data?.totalRows ?? parsed.totalRows,
     validRows: data?.validRows ?? parsed.rows.length,
     failedRows: data?.failedRows ?? parsed.failedRows,
+    excludedRows: (data?.excludedRows ?? 0) + parsed.ignoredRows,
     changedRows: data?.changedRows ?? 0,
     stagedRows: data?.stagedRows ?? 0,
     batchId: data?.batchId ?? '',
