@@ -33,6 +33,7 @@ export default function PartLocationFinderScreen() {
   const [message,setMessage] = useState('');
   const [result,setResult] = useState<Awaited<ReturnType<typeof getPartLocationResult>> | null>(null);
   const [scannerOpen,setScannerOpen] = useState(false);
+  const [torch,setTorch] = useState(false);
   const [permission,requestPermission] = useCameraPermissions();
   const scanLocked = useRef(false);
   const pulse = useRef(new Animated.Value(1)).current;
@@ -119,12 +120,42 @@ export default function PartLocationFinderScreen() {
     </Pressable>:null}
     <Modal visible={scannerOpen} animationType="slide" onRequestClose={()=>setScannerOpen(false)}>
       <View style={styles.scannerPage}>
-        <View style={styles.scannerTop}>
-          <Text style={styles.scannerTitle}>Scan Part Barcode</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Close scanner" onPress={()=>setScannerOpen(false)} style={styles.scannerClose}><AppIcon name="x" size={23} color="#fff"/></Pressable>
+        {scannerOpen&&permission?.granted?<CameraView
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          enableTorch={torch}
+          barcodeScannerSettings={{barcodeTypes:['code128','code39','code93','ean13','ean8','upc_a','upc_e','itf14','pdf417','qr']}}
+          onBarcodeScanned={({data})=>handleScan(data)}
+        />:null}
+        <View style={styles.cameraOverlay} pointerEvents="box-none">
+          <View style={styles.cameraTop}>
+            <View>
+              <Text style={styles.scannerTitle}>Scan Part Barcode</Text>
+              <Text style={styles.scannerSub}>Part Location Finder</Text>
+            </View>
+            <View style={styles.cameraActions}>
+              <Pressable accessibilityRole="button" accessibilityLabel={torch?'Turn torch off':'Turn torch on'} onPress={()=>setTorch(value=>!value)} style={styles.cameraControl}>
+                <Text style={styles.cameraControlText}>{torch?'Torch Off':'Torch On'}</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close scanner" onPress={()=>setScannerOpen(false)} style={styles.cameraClose}>
+                <AppIcon name="x" size={22} color="#fff"/>
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.cameraFrameWrap}>
+            <View style={styles.focusBox}>
+              <View style={[styles.corner,styles.cornerTL]}/>
+              <View style={[styles.corner,styles.cornerTR]}/>
+              <View style={[styles.corner,styles.cornerBL]}/>
+              <View style={[styles.corner,styles.cornerBR]}/>
+              <AppIcon name="scan" size={26} color="#D7E8FF"/>
+              <Text style={styles.focusLabel}>PART BARCODE</Text>
+            </View>
+          </View>
+          <View style={styles.scannerHintWrap}>
+            <Text style={styles.scannerHint}>Align the part barcode inside the frame. The part will be searched automatically.</Text>
+          </View>
         </View>
-        {scannerOpen&&permission?.granted?<CameraView style={styles.camera} facing="back" barcodeScannerSettings={{barcodeTypes:['code128','code39','code93','ean13','ean8','upc_a','upc_e','itf14','pdf417','qr']}} onBarcodeScanned={({data})=>handleScan(data)}/>:null}
-        <Text style={styles.scannerHint}>Align the barcode inside the camera frame. The part will be searched automatically.</Text>
       </View>
     </Modal>
   </Screen>;
@@ -149,7 +180,23 @@ const styles=StyleSheet.create({
  message:{flexDirection:'row',alignItems:'center',gap:7,paddingHorizontal:10,paddingVertical:9,borderRadius:10,backgroundColor:colors.warningSoft},
  messageText:{flex:1,color:colors.warning,fontSize:10,fontWeight:'700'},
  manage:{minHeight:45,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,borderRadius:11,borderWidth:1,borderColor:'#DDE4EC',backgroundColor:'#fff'},manageText:{color:colors.navy,fontSize:10,fontWeight:'900'},
- scannerPage:{flex:1,backgroundColor:'#081B34'},scannerTop:{paddingTop:48,paddingHorizontal:20,paddingBottom:15,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},
- scannerTitle:{fontSize:20,fontWeight:'900',color:'#fff'},scannerClose:{width:44,height:44,alignItems:'center',justifyContent:'center'},
- camera:{flex:1},scannerHint:{padding:20,textAlign:'center',color:'#E2EAF7',fontSize:12,lineHeight:18},
+ scannerPage:{flex:1,backgroundColor:'#06172D'},
+ cameraOverlay:{...StyleSheet.absoluteFill,justifyContent:'space-between',backgroundColor:'rgba(4,15,30,.26)'},
+ cameraTop:{paddingTop:48,paddingHorizontal:18,paddingBottom:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between',backgroundColor:'rgba(6,23,45,.84)'},
+ scannerTitle:{fontSize:20,fontWeight:'900',color:'#fff'},
+ scannerSub:{marginTop:2,fontSize:9,fontWeight:'800',color:'#BFD3EE',letterSpacing:.6},
+ cameraActions:{flexDirection:'row',alignItems:'center',gap:8},
+ cameraControl:{minHeight:40,justifyContent:'center',paddingHorizontal:12,borderRadius:10,backgroundColor:'rgba(11,31,58,.88)',borderWidth:1,borderColor:'rgba(255,255,255,.18)'},
+ cameraControlText:{color:'#fff',fontSize:10,fontWeight:'900'},
+ cameraClose:{width:40,height:40,borderRadius:20,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(11,31,58,.88)',borderWidth:1,borderColor:'rgba(255,255,255,.18)'},
+ cameraFrameWrap:{flex:1,alignItems:'center',justifyContent:'center',paddingHorizontal:22},
+ focusBox:{width:'82%',height:164,borderRadius:18,borderWidth:2.5,borderColor:'#FFFFFF',alignItems:'center',justifyContent:'center',gap:8,backgroundColor:'rgba(5,20,40,.10)'},
+ focusLabel:{color:'#EAF3FF',fontSize:10,fontWeight:'900',letterSpacing:1.2},
+ corner:{position:'absolute',width:28,height:28,borderColor:'#7FC2FF'},
+ cornerTL:{top:-3,left:-3,borderTopWidth:4,borderLeftWidth:4,borderTopLeftRadius:18},
+ cornerTR:{top:-3,right:-3,borderTopWidth:4,borderRightWidth:4,borderTopRightRadius:18},
+ cornerBL:{bottom:-3,left:-3,borderBottomWidth:4,borderLeftWidth:4,borderBottomLeftRadius:18},
+ cornerBR:{bottom:-3,right:-3,borderBottomWidth:4,borderRightWidth:4,borderBottomRightRadius:18},
+ scannerHintWrap:{paddingHorizontal:20,paddingVertical:18,backgroundColor:'rgba(6,23,45,.88)'},
+ scannerHint:{textAlign:'center',color:'#E2EAF7',fontSize:11,lineHeight:17,fontWeight:'700'},
 });
