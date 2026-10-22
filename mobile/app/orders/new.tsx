@@ -143,7 +143,7 @@ export default function NewOrderScreen() {
       <View style={styles.orderBackdrop}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <View><Text style={styles.title}>New Order</Text><Text style={styles.subtitle}>{branch} · {profile?.fullName}</Text></View>
+          <View style={styles.titleRow}><Text style={styles.title}>New Order</Text><Text style={styles.subtitleRight} numberOfLines={1}>{branch} · {profile?.fullName}</Text></View>
 
           <Section title="Order setup">
             <View style={styles.twoColumns}>
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
   headerShell: { paddingHorizontal: 12, backgroundColor: '#082B5B' },
   orderBackdrop: { flex: 1, backgroundColor: '#FFFFFF' },
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background }, content: { padding: 10, gap: 8, paddingBottom: 32 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, minHeight: 27 }, subtitleRight: { flexShrink: 1, textAlign: 'right', color: colors.textMuted, fontSize: 10, fontWeight: '700' },
   back: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: '#082B5B', fontSize: 19, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   section: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
   chips: { gap: 5, paddingRight: 5 }, chip: { minHeight: 34, minWidth: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted }, chipActive: { borderColor: '#198562', borderWidth: 2, backgroundColor: '#FFFFFF' }, chipText: { color: colors.text, fontSize: 12, fontWeight: '800' }, chipTextActive: { color: '#198562' }, disabled: { opacity: 0.45 },
