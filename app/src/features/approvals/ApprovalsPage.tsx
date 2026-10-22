@@ -100,7 +100,7 @@ export function ApprovalsPage() {
       orders.filter((order) => {
         if (!isPendingWorkflow(order)) return false;
         if (role === 'super') return order.approver_id === profile?.id && order.status === 'pending_approval';
-        if ((role === 'manager' || role === 'director')) return true;
+        if (((role === 'manager' || role === 'director') || role === 'director')) return true;
         return role === 'developer';
       }),
     [orders, profile?.id, role],
@@ -138,7 +138,7 @@ export function ApprovalsPage() {
           : 'Saving changes';
 
   function needsManagerOverride(order: OrderRow, action: 'approve' | 'reject' | 'managerApprove' | 'managerReject') {
-    if (role !== 'manager') return false;
+    if ((role !== 'manager' && role !== 'director')) return false;
     if (isManagerApprovalStage(order)) return false;
     if (action !== 'managerApprove') return false;
     if (['manager', 'director'].includes(order.approver?.role ?? '') || order.approver_id === profile?.id) return false;
@@ -157,18 +157,18 @@ export function ApprovalsPage() {
     setBusyId(`${order.id}-${action}`);
     try {
       if (action === 'approve') {
-        if (role === 'manager') await setTestOrderManagerApproved(order);
+        if ((role === 'manager' || role === 'director')) await setTestOrderManagerApproved(order);
         else await setTestOrderApproved(order);
       }
       if (action === 'reject') {
-        if (role === 'manager') await setTestOrderManagerRejected(order);
+        if ((role === 'manager' || role === 'director')) await setTestOrderManagerRejected(order);
         else await setTestOrderRejected(order);
       }
       if (action === 'managerApprove') await setTestOrderManagerApproved(order);
       if (action === 'managerReject') await setTestOrderManagerRejected(order);
 
       const labels = {
-        approve: role === 'manager' ? 'approved by manager' : 'sent to manager approval',
+        approve: (role === 'manager' || role === 'director') ? 'approved by manager' : 'sent to manager approval',
         reject: 'rejected',
         managerApprove: 'manager approved',
         managerReject: 'manager rejected',
@@ -242,9 +242,9 @@ export function ApprovalsPage() {
             const totalQty = getOrderTotalQty(order);
             const totalValue = getOrderTotalValue(order);
             const isMenuOpen = openActionMenuId === order.id;
-            const approveAction = role === 'manager' ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
-            const rejectAction = role === 'manager' ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
-            const approveLabel = role === 'manager' ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
+            const approveAction = (role === 'manager' || role === 'director') ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
+            const rejectAction = (role === 'manager' || role === 'director') ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
+            const approveLabel = (role === 'manager' || role === 'director') ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
 
             return (
               <div key={order.id} className="relative rounded-2xl border border-[#d9dee7] bg-white p-3 shadow-sm">
@@ -279,7 +279,7 @@ export function ApprovalsPage() {
                   {isMenuOpen ? (
                     <div className="absolute right-0 top-9 z-40 w-40 overflow-hidden rounded-lg border border-[#cbd5e1] bg-white py-1 text-left shadow-xl">
                       <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#1d4ed8] hover:bg-[#eff6ff]" onClick={() => { setOpenActionMenuId(''); navigate(`/approvals/review/${order.id}`); }}>Review</button>
-                      {role !== 'manager' ? <>
+                      {(role !== 'manager' && role !== 'director') ? <>
                         <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#0f766e] hover:bg-[#ecfdf5]" onClick={() => void runAction(order, approveAction)}>{approveLabel}</button>
                         <div className="mx-2 border-t border-[#e2e8f0]" />
                         <button type="button" className="block w-full px-3 py-2 text-left text-xs font-bold text-[#dc2626] hover:bg-[#fef2f2]" onClick={() => void runAction(order, rejectAction)}>Reject</button>
@@ -314,9 +314,9 @@ export function ApprovalsPage() {
               {filteredOrders.map((order, index) => {
                 const isManagerQueue = isManagerApprovalStage(order);
                 const displayStatus = isManagerQueue ? 'pending_manager_approval' : order.status;
-                const approveAction = role === 'manager' ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
-                const rejectAction = role === 'manager' ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
-                const approveLabel = role === 'manager' ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
+                const approveAction = (role === 'manager' || role === 'director') ? 'managerApprove' : isManagerQueue ? 'managerApprove' : 'approve';
+                const rejectAction = (role === 'manager' || role === 'director') ? 'managerReject' : isManagerQueue ? 'managerReject' : 'reject';
+                const approveLabel = (role === 'manager' || role === 'director') ? 'Approve' : isManagerQueue ? 'Manager Approve' : 'Approve';
                 const totalQty = getOrderTotalQty(order);
                 const totalValue = getOrderTotalValue(order);
                 const isMenuOpen = openActionMenuId === order.id;
@@ -361,7 +361,7 @@ export function ApprovalsPage() {
                           >
                             Review
                           </button>
-                          {role !== 'manager' ? <>
+                          {(role !== 'manager' && role !== 'director') ? <>
                             <button
                               type="button"
                               className="block w-full px-3 py-2 text-left text-xs font-bold text-[#0f766e] hover:bg-[#ecfdf5] disabled:opacity-40"
