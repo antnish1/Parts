@@ -129,11 +129,11 @@ export function OrderDetailPage() {
   const displayStatus = isManagerApprovalWorkflow ? 'PENDING MANAGER APPROVAL' : status;
   const isPendingWorkflow = workflowStatusKey.includes('pending');
   const isSelectedSuperApprover = role === 'super' && order.approver_id === profile?.id;
-  const canApprove = (role === 'developer' || isSelectedSuperApprover || role === 'manager') && isPendingWorkflow;
-  const canAdmin = role === 'developer' || role === 'admin';
+  const canApprove = (role === 'developer' || isSelectedSuperApprover || role === 'manager' || role === 'director') && isPendingWorkflow;
+  const canAdmin = role === 'developer' || role === 'admin' || role === 'director';
   const canProcess = (canAdmin || role === 'manager') && rawStatus === 'approved';
   const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_super_approval', 'pending_manager_approval']);
-  const canEditQty = (role === 'developer' || role === 'manager' || isSelectedSuperApprover)
+  const canEditQty = (role === 'developer' || role === 'manager' || role === 'director' || isSelectedSuperApprover)
     && pendingStatuses.has((order.status ?? '').toLowerCase().replace(/[\s-]+/g, '_'))
     && pendingStatuses.has((order.approval_status ?? '').toLowerCase().replace(/[\s-]+/g, '_'));
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
@@ -217,9 +217,9 @@ export function OrderDetailPage() {
   }
 
   function needsManagerOverride() {
-    if (role !== 'manager') return false;
+    if (role !== 'manager' && role !== 'director') return false;
     if (isManagerApprovalWorkflow) return false;
-    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
+    if ((order.approver?.role === 'manager' || order.approver?.role === 'director') || order.approver_id === profile?.id) return false;
     return true;
   }
 
@@ -232,13 +232,13 @@ export function OrderDetailPage() {
     setBusyAction(action);
     try {
       if (action === 'approve') {
-        if (role === 'manager') await setTestOrderManagerApproved(order as unknown as TestOrder);
+        if (role === 'manager' || role === 'director') await setTestOrderManagerApproved(order as unknown as TestOrder);
         else await setTestOrderApproved(order as unknown as TestOrder);
       } else {
-        if (role === 'manager') await setTestOrderManagerRejected(order as unknown as TestOrder);
+        if (role === 'manager' || role === 'director') await setTestOrderManagerRejected(order as unknown as TestOrder);
         else await setTestOrderRejected(order as unknown as TestOrder);
       }
-      setActionMessage(`${order.order_no} ${action === 'approve' ? (role === 'manager' ? 'approved by manager' : 'sent to manager approval') : 'rejected'}.`);
+      setActionMessage(`${order.order_no} ${action === 'approve' ? ((role === 'manager' || role === 'director') ? 'approved by manager' : 'sent to manager approval') : 'rejected'}.`);
       setShowManagerOverride(false);
       await refetch();
       await queryClient.invalidateQueries({ queryKey: ['test-orders'] });
