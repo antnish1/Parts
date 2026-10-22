@@ -46,7 +46,7 @@ export function LoginPage() {
       <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-[18px] w-[30%] -skew-y-[17deg] origin-bottom-right bg-gradient-to-r from-[#f4bd18] to-[#082957]" />
 
       <div className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center px-5 py-16 md:min-h-[100dvh] md:grid-cols-[minmax(0,1fr)_340px_minmax(0,1fr)] md:px-[5.2%] md:py-10">
-        <div className="z-10 mb-12 flex max-w-[345px] flex-col items-start justify-center md:mb-0">
+        <div className="z-10 mb-12 flex max-w-[345px] flex-col items-start justify-start md:mb-0 md:self-start md:pt-4">
           <div>
             <span className="mb-4 block h-[3px] w-10 rounded-full bg-[#efbd15]" />
             <h2 className="text-[30px] font-extrabold leading-tight tracking-[-0.04em] text-[#061c38]">Welcome Back</h2>
