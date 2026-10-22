@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const roles = ['branch', 'admin', 'super', 'manager', 'viewer', 'developer', 'hq', 'accounts'];
+const roles = ['branch', 'admin', 'super', 'manager', 'director', 'viewer', 'developer', 'hq', 'accounts'];
 
 type Payload = {
   email?: string;
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
   if (!roles.includes(role)) return json({ error: 'Invalid role.' }, 400);
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters.' }, 400);
 
-  const { data: branch, error: branchError } = await adminClient.rpc('resolve_portal_branch', { value: rawBranch });
+  const { data: branch, error: branchError } = rawBranch === 'ALL_BRANCHES' && role === 'director' ? { data: 'ALL_BRANCHES', error: null } : await adminClient.rpc('resolve_portal_branch', { value: rawBranch });
   if (branchError) return json({ error: branchError.message }, 400);
   const branchKey = clean(branch);
   if (!branchKey) return json({ error: `Branch is not mapped in portal_branches: ${rawBranch}` }, 400);
