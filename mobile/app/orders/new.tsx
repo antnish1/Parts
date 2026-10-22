@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
+import { HomeBrandHeader } from '@/components/HomeBrandHeader';
 import { createOrder, getApprovers, getInTransitQty, lookupMachine, lookupPart, normalizeMachineNo, normalizePartNo, type Approver } from '@/services/newOrder';
 import { colors, radius, spacing } from '@/theme/tokens';
 
@@ -136,10 +137,10 @@ export default function NewOrderScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={[]}>
+      <View style={styles.headerShell}><HomeBrandHeader /></View>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-          <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>‹ Back</Text></Pressable>
           <View><Text style={styles.title}>New Order</Text><Text style={styles.subtitle}>{branch} · {profile?.fullName}</Text></View>
 
           <Section title="Order setup">
@@ -226,10 +227,11 @@ function ChipRow({ values, selected, onSelect, disabled = false }: { values: str
 function Mini({ label, value, wide = false }: { label: string; value: string; wide?: boolean }) { return <View style={[styles.mini, wide && styles.miniWide]}><Text style={styles.miniLabel}>{label}</Text><Text numberOfLines={wide ? 2 : 1} style={styles.miniValue}>{value}</Text></View>; }
 
 const styles = StyleSheet.create({
+  headerShell: { paddingHorizontal: 12, backgroundColor: '#082B5B' },
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background }, content: { padding: 10, gap: 8, paddingBottom: 32 },
   back: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: colors.text, fontSize: 19, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   section: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
-  chips: { gap: 5, paddingRight: 5 }, chip: { minHeight: 34, minWidth: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted }, chipActive: { borderColor: colors.navy, backgroundColor: colors.navy }, chipText: { color: colors.text, fontSize: 12, fontWeight: '800' }, chipTextActive: { color: '#fff' }, disabled: { opacity: 0.45 },
+  chips: { gap: 5, paddingRight: 5 }, chip: { minHeight: 34, minWidth: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted }, chipActive: { borderColor: '#198562', borderWidth: 2, backgroundColor: '#FFFFFF' }, chipText: { color: colors.text, fontSize: 12, fontWeight: '800' }, chipTextActive: { color: '#198562' }, disabled: { opacity: 0.45 },
   input: { minHeight: 38, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', paddingHorizontal: 10, color: colors.text, fontSize: 12 }, inputActionRow: { flexDirection: 'row', gap: 6 }, lookupButton: { width: 65, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, lookupText: { color: '#fff', fontSize: 11, fontWeight: '900' },
   readOnly: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted, paddingHorizontal: 10 }, readOnlyValue: { color: colors.text, fontSize: 12, fontWeight: '700' }, placeholder: { color: colors.textMuted, fontSize: 11 }, select: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, backgroundColor: '#fff' }, selectValue: { color: colors.text, fontSize: 13, fontWeight: '700' },
   partsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, addLink: { color: colors.blue, fontSize: 12, fontWeight: '900' }, partCard: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, partTop: { flexDirection: 'row', justifyContent: 'space-between' }, partIndex: { color: colors.navy, fontSize: 12, fontWeight: '900' }, remove: { color: colors.danger, fontSize: 11, fontWeight: '800' },
