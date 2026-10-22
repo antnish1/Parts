@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     zIndex: 2,
   },
-  logo: { width: 88, height: 88 },
+  logo: { width: 88, height: 88, marginLeft: -11, marginTop: 13 },
   title: {
     marginTop: 0,
     color: '#0E2038',
