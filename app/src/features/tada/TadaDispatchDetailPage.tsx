@@ -35,7 +35,7 @@ export function TadaDispatchDetailPage() {
   const receiptStage = useMemo<'HQ' | 'ACCOUNTS' | null>(() => {
     if (!dispatch || !profile) return null;
     if (dispatch.status === 'AWAITING_HQ_RECEIPT' && ['manager', 'director', 'developer'].includes(profile.role)) return 'HQ';
-    if (['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_HQ'].includes(dispatch.status) && ['accounts', 'developer'].includes(profile.role)) return 'ACCOUNTS';
+    if (['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_HQ'].includes(dispatch.status) && ['accounts', 'director', 'developer'].includes(profile.role)) return 'ACCOUNTS';
     return null;
   }, [dispatch, profile]);
 
@@ -123,7 +123,7 @@ export function TadaDispatchDetailPage() {
         </div>
       </div>
 
-      {profile?.role === 'developer' ? <TadaDeveloperControls dispatch={dispatch} items={allItems} onChanged={async () => { await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]); }} onDispatchDeleted={() => navigate('/ta-da', { replace: true })} /> : null}
+      {['developer', 'director'].includes(profile?.role ?? '') ? <TadaDeveloperControls dispatch={dispatch} items={allItems} onChanged={async () => { await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]); }} onDispatchDeleted={() => navigate('/ta-da', { replace: true })} /> : null}
 
       {receiptStage ? <section className={`mt-2 rounded-xl border p-2.5 sm:p-3 ${receiptStage === 'ACCOUNTS' ? 'border-blue-200 bg-blue-50/70' : 'border-amber-200 bg-amber-50/70'}`}>
         <div className="flex items-start justify-between gap-2">
