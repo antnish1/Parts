@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=full-frontier-jcb-background-no-side-crop-20261022
-source=af59018fe11b4e5a387d1c3c0c9191ac6b3393b6
+reason=mobile-signin-logo-alignment-20261022
+source=5fffb23df9aa9f9809b8f165b987a99cf0207b82
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
