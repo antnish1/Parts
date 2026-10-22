@@ -10,6 +10,8 @@ import { AppIcon } from '@/components/AppIcon';
 import { getActivityReadKeys, getImmutableActivityFeed, markActivityRead } from '@/services/orderActivity';
 import { getNotifications, markNotificationRead } from '@/services/notifications';
 import { colors } from '@/theme/tokens';
+import { useAuth } from '@/auth/AuthProvider';
+import { isManagerApprovalOutcomeNotification } from '@/services/activityRelevance';
 
 function titleForEvent(value:string){
  return value.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
@@ -43,6 +45,7 @@ type ActivityFilter='unread'|'read'|'all';
 
 export default function ActivityScreen(){
  const qc=useQueryClient();
+ const {role}=useAuth();
  const [filter,setFilter]=useState<ActivityFilter>('unread');
  const [search,setSearch]=useState('');
  const activity=useQuery({queryKey:['immutable-activity-feed'],queryFn:()=>getImmutableActivityFeed(120),staleTime:15_000,refetchInterval:45_000});
@@ -52,7 +55,7 @@ export default function ActivityScreen(){
  const feed=useMemo(()=>{
    const combined:FeedEntry[]=[];
    const events=activity.data??[];
-   const alerts=notifications.data??[];
+   const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&isManagerApprovalOutcomeNotification(n.category,n.title)));
    const readKeys=new Set(readState.data??[]);
    const alertsByEvent=new Map(alerts.filter(n=>n.event_key?.startsWith('event:')).map(n=>[n.event_key.slice(6),n]));
    const pairedIds=new Set<string>();
@@ -78,7 +81,7 @@ export default function ActivityScreen(){
      });
    }
    return combined.sort((a,b)=>new Date(b.timestamp).getTime()-new Date(a.timestamp).getTime()).slice(0,120);
- },[activity.data,notifications.data,readState.data]);
+ },[activity.data,notifications.data,readState.data,role]);
 
  const counts=useMemo(()=>({
    unread:feed.filter(entry=>entry.unread).length,

@@ -33,7 +33,8 @@ export function isOrderActivityRelevant(role: UserRole | null | undefined, event
   if (!role) return false;
   if (role === 'developer') return true;
   if (role === 'branch') return true;
-  if (role === 'super' || role === 'manager') return approvalEvents.includes(event);
+  if (role === 'manager') return approvalEvents.includes(event) && !/MANAGER_.*(APPROVED|REJECTED)/.test(event);
+  if (role === 'super') return approvalEvents.includes(event);
   if (role === 'admin') return adminEvents.includes(event);
   if (role === 'viewer' || role === 'hq' || role === 'accounts') return false;
   return false;
@@ -54,4 +55,8 @@ export function isNotificationCategoryRelevant(role: UserRole | null | undefined
   if (!role) return false;
   if (role === 'developer') return true;
   return roleNotificationCategories[role].has(String(category || '').toLowerCase());
+}
+
+export function isManagerApprovalOutcomeNotification(category:string,title:string) {
+  return category.toLowerCase()==='approval' && /\\b(approved|rejected)\\b/i.test(title);
 }

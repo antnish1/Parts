@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getNotifications } from '@/services/notifications';
+import { isManagerApprovalOutcomeNotification } from '@/services/activityRelevance';
 import { getActivityReadKeys, getImmutableActivityFeed } from '@/services/orderActivity';
 import { useAuth } from '@/auth/AuthProvider';
 import { router } from 'expo-router';
@@ -18,7 +19,7 @@ export function HomeBrandHeader() {
   const notifications=useQuery({queryKey:['notifications'],queryFn:getNotifications,staleTime:15_000,refetchInterval:45_000});
   const reads=useQuery({queryKey:['activity-read-keys'],queryFn:getActivityReadKeys,staleTime:15_000,refetchInterval:45_000});
   const readKeys=new Set(reads.data??[]);
-  const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&n.category==='approval'));
+  const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&isManagerApprovalOutcomeNotification(n.category,n.title)));
   const eventIds=new Set<string>();
   let unread=0;
   for(const event of activity.data??[]){
