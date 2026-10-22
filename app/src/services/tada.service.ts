@@ -148,6 +148,14 @@ export async function receiveTadaDispatch(dispatchId: string, stage: 'HQ' | 'ACC
   throwIfError(error);
 }
 
+export async function receiveMissingTadaSvr(itemId: string, remark: string) {
+  const { error } = await supabase.rpc('portal_receive_missing_tada_svr', {
+    p_item_id: itemId,
+    p_remark: remark.trim(),
+  });
+  throwIfError(error);
+}
+
 export async function developerUpdateTadaDispatch(input: {
   dispatchId: string;
   branch: string;
