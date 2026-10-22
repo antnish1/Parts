@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle2, CircleAlert, FilePlus2, Landmark, Pencil, Search, ShieldAlert, Trash2, WalletCards } from 'lucide-react';
+import { CheckCircle2, CircleAlert, FilePlus2, Landmark, Layers3, Pencil, Search, ShieldAlert, Trash2, WalletCards } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
@@ -89,17 +89,36 @@ export function TadaTrackingPage() {
       {isDeveloper ? <div className="mt-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-[10px] text-[#64748b]"><ShieldAlert className="h-4 w-4 shrink-0 text-red-700" /><p><b className="text-red-800">Developer controls active.</b> Use Manage to edit the list or individual SVRs at any stage, or Delete to remove the complete TA/DA list with a mandatory audit reason.</p></div> : null}
       {developerMessage ? <p className="mt-2 rounded-md border border-[#dbe3ec] bg-white px-3 py-2 text-[11px] font-bold text-[#334155]">{developerMessage}</p> : null}
 
-      <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
-        {prioritizedStatuses.map((status) => {
-          const meta = getTadaStatusMeta(status);
-          const Icon = kpiIcons[status];
-          const active = statusFilter === status;
-          return <button key={status} type="button" aria-pressed={active} onClick={() => setStatusFilter((current) => current === status ? 'ALL' : status)} className={`relative overflow-hidden rounded-lg border p-2.5 text-left transition hover:-translate-y-0.5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20 ${meta.surfaceClass} ${active ? 'ring-2 ring-[#2563eb]/25 shadow-sm' : ''}`}>
-            <span className={`absolute inset-y-0 left-0 w-1 ${meta.accentClass}`} />
-            <div className="flex items-start justify-between gap-2 pl-1"><div className="min-w-0"><p className="truncate text-[10px] font-black uppercase tracking-[0.08em] text-[#64748b]">{meta.shortLabel}</p><p className="mt-0.5 text-xl font-black leading-none text-[#172033]">{counts[status]}</p></div><Icon className="h-4 w-4 shrink-0 text-[#475569]" /></div>
-            <p className="mt-1 pl-1 text-[10px] font-bold text-[#64748b]">Tap to filter</p>
-          </button>;
-        })}
+      <div className="mt-3 overflow-x-auto rounded-lg border border-[#e0e7f0] bg-white shadow-[0_1px_3px_rgba(15,23,42,0.04)]">
+        <div className="flex min-w-[720px] divide-x divide-[#e2e8f0]">
+          {prioritizedStatuses.flatMap((status) => status === 'COMPLETED' ? [status, 'ALL' as const] : [status]).map((status) => {
+            const isAll = status === 'ALL';
+            const meta = isAll ? null : getTadaStatusMeta(status);
+            const Icon = isAll ? Layers3 : kpiIcons[status];
+            const active = statusFilter === status;
+            const label = isAll ? 'All' : meta!.shortLabel;
+            const count = isAll ? dispatches.length : counts[status];
+            return <button
+              key={status}
+              type="button"
+              aria-label={`Filter TA/DA bills: ${label}`}
+              aria-pressed={active}
+              onClick={() => setStatusFilter((current) => current === status ? 'ALL' : status)}
+              className={`relative min-w-0 flex-1 bg-white px-3 py-2.5 text-left transition-colors hover:bg-[#f8fbff] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2563eb] ${active ? 'bg-[#f8fbff]' : ''}`}
+            >
+              <div className="flex items-center gap-2">
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eff5ff] text-[#2563eb] ${active ? 'bg-[#e3edff]' : ''}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className={`block truncate text-[9px] font-extrabold uppercase tracking-[0.06em] ${active ? 'text-[#1d4ed8]' : 'text-[#64748b]'}`}>{label}</span>
+                  <span className="mt-0.5 block text-[15px] font-black leading-none tabular-nums text-[#172033]">{count}</span>
+                </span>
+              </div>
+              {active ? <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[2px] bg-[#2563eb]" /> : null}
+            </button>;
+          })}
+        </div>
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2 text-[11px] font-bold text-[#64748b]">
