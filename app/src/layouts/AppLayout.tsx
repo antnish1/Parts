@@ -74,7 +74,7 @@ export function AppLayout() {
   const { profile } = useAuth();
   const isCreditDispatchListPage = location.pathname === '/credit-dispatch';
   const isAdmin = profile?.role === 'admin';
-  const isManager = profile?.role === 'manager';
+  const isManager = (profile?.role === 'manager' || profile?.role === 'director');
   const isAccounts = profile?.role === 'accounts';
   const isDeveloper = profile?.role === 'developer';
   const normalizedBranch = (profile?.branch ?? '').trim().replace(/\s+/g, '_').toUpperCase();
@@ -115,8 +115,8 @@ export function AppLayout() {
   );
 
   const visibleRoleNavItems = useMemo(
-    () => roleNavItems.filter((item) => item.to !== '/parts/location-finder' || isJabalpurParts),
-    [isJabalpurParts, roleNavItems],
+    () => roleNavItems.filter((item) => item.to !== '/parts/location-finder' || isJabalpurParts || profile?.role === 'director'),
+    [isJabalpurParts, profile?.role, roleNavItems],
   );
 
   const desktopPageTitle = useMemo(
