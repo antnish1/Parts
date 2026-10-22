@@ -24,7 +24,7 @@ type Profile = { id: string; role: string; branch: string; is_active: boolean };
 type OrderRow = { id: string; order_no: string; branch: string; approver_id: string | null };
 
 function canAccessOrder(profile: Profile, order: OrderRow) {
-  if (['developer', 'manager', 'admin'].includes(profile.role)) return true;
+  if (['developer', 'manager', 'director', 'admin'].includes(profile.role)) return true;
   if (profile.role === 'super') return true;
   if (profile.role === 'branch') return order.branch === profile.branch;
   return false;
@@ -63,7 +63,7 @@ serve(async (req) => {
     .maybeSingle();
   if (profileError) return json({ error: profileError.message }, 400);
   if (!profile?.is_active) return json({ error: 'Active profile is required.' }, 403);
-  if (!['developer', 'manager', 'admin', 'super', 'branch'].includes(profile.role)) return json({ error: 'This role cannot upload attachments.' }, 403);
+  if (!['developer', 'manager', 'director', 'admin', 'super', 'branch'].includes(profile.role)) return json({ error: 'This role cannot upload attachments.' }, 403);
 
   const form = await req.formData().catch(() => null);
   if (!form) return json({ error: 'Invalid form data.' }, 400);
