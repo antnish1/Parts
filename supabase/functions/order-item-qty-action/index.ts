@@ -38,7 +38,7 @@ serve(async (req) => {
     profile = legacyProfile;
   }
 
-  if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Access denied' }, 403);
+  if (!profile?.is_active || !['super', 'manager', 'director', 'developer'].includes(profile.role)) return json({ error: 'Access denied' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
