@@ -1,4 +1,4 @@
 Parts Connect Portal release marker.
 
-Release marker updated: 2026-08-24.
-Purpose: deploy Dealer Price List duplicate-resolution review before staging.
+Release marker updated: 2026-10-22.
+Purpose: redeploy current main so Delayed VOR sidebar badge includes Pending 1–2 Days together with 3–5 Days and 5+.
