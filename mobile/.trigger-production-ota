@@ -1,5 +1,6 @@
 Parts Connect production OTA trigger
-reason=raise-signin-branding-clear-jcb-overlap-20261022
+reason=new-order-signin-jcb-background-20261022
+source=66f87989fb22bfd1a37b30e1936bfc3aed08b9aa
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
