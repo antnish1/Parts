@@ -58,10 +58,10 @@ export function TadaTrackingPage() {
     });
   }, [dispatches, search, statusFilter]);
 
-  const canCreate = profile?.role && ['branch', 'manager', 'hq', 'developer'].includes(profile.role);
+  const canCreate = profile?.role && ['branch', 'manager', 'director', 'hq', 'developer'].includes(profile.role);
   const prioritizedStatuses = useMemo(() => {
     if (profile?.role === 'accounts') return ['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_ACCOUNTS', 'COMPLETED', 'AWAITING_HQ_RECEIPT', 'PARTIALLY_RECEIVED_HQ'] as const;
-    if (profile?.role === 'manager') return ['AWAITING_HQ_RECEIPT', 'PARTIALLY_RECEIVED_HQ', 'AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_ACCOUNTS', 'COMPLETED'] as const;
+    if (['manager', 'director'].includes(profile?.role ?? '')) return ['AWAITING_HQ_RECEIPT', 'PARTIALLY_RECEIVED_HQ', 'AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_ACCOUNTS', 'COMPLETED'] as const;
     return statusOrder;
   }, [profile?.role]);
 
