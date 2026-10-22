@@ -211,6 +211,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 24,
     marginBottom: 30,
+    transform: [{ translateY: -24 }],
   },
   logo: { width: 88, height: 88 },
   title: {
