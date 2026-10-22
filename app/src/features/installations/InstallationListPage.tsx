@@ -26,7 +26,7 @@ export function InstallationListPage() {
   const search = params.get('q') ?? '';
   const page = Math.max(1, Number(params.get('page') ?? '1') || 1);
   const canCreate = ['admin','manager','director','developer','hq'].includes(profile?.role ?? '') || normalizeBranch(profile?.branch) === 'JABALPUR_PARTS';
-  const isDeveloper = profile?.role === 'developer';
+  const isDeveloper = ['developer', 'director'].includes(profile?.role ?? '');
   const isServiceCrm = profile?.id === INSTALLATION_VIEWER_PROFILE_ID || session?.user?.id === INSTALLATION_VIEWER_PROFILE_ID;
   const filtered = useMemo(() => entries.filter((entry) => {
     const needle = search.trim().toLowerCase();
