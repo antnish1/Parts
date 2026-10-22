@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
 import { HomeBrandHeader } from '@/components/HomeBrandHeader';
@@ -139,8 +139,7 @@ export default function NewOrderScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={[]}>
       <View style={styles.headerShell}><HomeBrandHeader /></View>
-      <ImageBackground source={require('../../assets/branding/JCB-SIGNIN-BACKHOE-20261022.jpeg')} resizeMode="cover" style={styles.orderBackdrop} imageStyle={styles.orderBackdropImage}>
-        <View pointerEvents="none" style={styles.orderBackgroundWash} />
+      <View style={styles.orderBackdrop}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
           <View><Text style={styles.title}>New Order</Text><Text style={styles.subtitle}>{branch} · {profile?.fullName}</Text></View>
@@ -207,7 +206,7 @@ export default function NewOrderScreen() {
           <Pressable disabled={mutation.isPending || machineBusy || busyPart} onPress={validateAndSubmit} style={({ pressed }) => [styles.submit, (pressed || mutation.isPending) && styles.pressed]}>{mutation.isPending ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit Order</Text>}</Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
-      </ImageBackground>
+      </View>
 
       <Modal visible={approverOpen} transparent animationType="slide" onRequestClose={() => setApproverOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setApproverOpen(false)}><Pressable style={styles.sheet} onPress={() => undefined}><Text style={styles.sheetTitle}>Select approver</Text>{(approvers.data ?? []).map((item) => <Pressable key={item.id} style={styles.sheetRow} onPress={() => { setApprover(item); setApproverOpen(false); }}><View><Text style={styles.sheetRowTitle}>{item.full_name}</Text><Text style={styles.sheetRowMeta}>{item.role} · {item.branch}</Text></View></Pressable>)}</Pressable></Pressable>
@@ -231,8 +230,7 @@ function Mini({ label, value, wide = false }: { label: string; value: string; wi
 
 const styles = StyleSheet.create({
   headerShell: { paddingHorizontal: 12, backgroundColor: '#082B5B' },
-  orderBackdrop: { flex: 1 }, orderBackdropImage: { opacity: 0.76 },
-  orderBackgroundWash: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(244,248,252,0.64)' },
+  orderBackdrop: { flex: 1, backgroundColor: '#FFFFFF' },
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background }, content: { padding: 10, gap: 8, paddingBottom: 32 },
   back: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: '#082B5B', fontSize: 19, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   section: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
