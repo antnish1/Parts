@@ -12,7 +12,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 });
 
 const fail = (message: string, code = 'PART_LOCATION_FAILED', status = 400) => json({ ok: false, error: message, code }, status);
-const WRITE_ROLES = new Set(['manager', 'admin', 'developer']);
+const WRITE_ROLES = new Set(['manager', 'director', 'admin', 'developer']);
 
 const clean = (value: unknown) => String(value ?? '').trim();
 const normalizePartNo = (value: unknown) => clean(value).replace(/\s+/g, '').toUpperCase();
