@@ -34,7 +34,7 @@ export function TadaDispatchDetailPage() {
 
   const receiptStage = useMemo<'HQ' | 'ACCOUNTS' | null>(() => {
     if (!dispatch || !profile) return null;
-    if (dispatch.status === 'AWAITING_HQ_RECEIPT' && ['manager', 'developer'].includes(profile.role)) return 'HQ';
+    if (dispatch.status === 'AWAITING_HQ_RECEIPT' && ['manager', 'director', 'developer'].includes(profile.role)) return 'HQ';
     if (['AWAITING_ACCOUNTS_RECEIPT', 'PARTIALLY_RECEIVED_HQ'].includes(dispatch.status) && ['accounts', 'developer'].includes(profile.role)) return 'ACCOUNTS';
     return null;
   }, [dispatch, profile]);
@@ -65,7 +65,7 @@ export function TadaDispatchDetailPage() {
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Late receipt failed.'),
   });
-  const canReceiveMissing = profile?.role === 'manager' || profile?.role === 'developer';
+  const canReceiveMissing = ['manager', 'director', 'developer'].includes(profile?.role ?? '');
   const lateReceiptItem = allItems.find((item) => item.id === lateReceiptItemId);
   const missingAction = (item: typeof allItems[number]) => (
     canReceiveMissing && item.hq_received === false && item.current_location === 'MISSING_HQ'
