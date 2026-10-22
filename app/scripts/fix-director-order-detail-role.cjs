@@ -3,8 +3,8 @@ const path = require('path');
 
 const file = path.resolve(__dirname, '../src/features/orders/OrderDetailPage.tsx');
 let source = fs.readFileSync(file, 'utf8');
-const legacy = "role === 'developer' || role === 'manager' || role === 'director' || isSelectedSuperApprover";
-const fixed = "(['developer', 'manager', 'director'] as readonly string[]).includes(role ?? '') || isSelectedSuperApprover";
+const legacy = "const canEditQty = (role === 'developer' || role === 'manager' || role === 'director' || isSelectedSuperApprover)";
+const fixed = "const canEditQty = ((['developer', 'manager', 'director'] as readonly string[]).includes(role ?? '') || isSelectedSuperApprover)";
 if (source.includes(fixed)) {
   console.log('Director quantity edit type check already applied.');
 } else if (source.includes(legacy)) {
