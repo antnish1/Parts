@@ -68,7 +68,7 @@ export function LoginPage() {
             <UserRound aria-hidden="true" className="h-7 w-7 stroke-[1.7]" />
           </div>
           <h1 id="parts-signin-heading" className="text-[24px] font-extrabold tracking-tight">Sign in</h1>
-          <p className="mb-5 mt-1 text-[11px] font-medium leading-[1.55] text-[#68788c]">Sign in to manage parts orders, dispatches and daily operations.</p>
+          <p className="mb-5 mt-1 text-[11px] font-medium leading-[1.55] text-[#68788c]">Your Gateway to Seamless Parts Operations.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="parts-login-user" className={labelClass}><UserRound className="h-4 w-4" />User ID</label>
