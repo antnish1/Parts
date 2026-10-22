@@ -3,14 +3,17 @@ const path = require('path');
 
 const file = path.resolve(__dirname, '../src/features/orders/OrderDetailPage.tsx');
 let source = fs.readFileSync(file, 'utf8');
-const legacy = "const canEditQty = (role === 'developer' || role === 'manager' || role === 'director' || isSelectedSuperApprover)";
-const fixed = "const canEditQty = ((['developer', 'manager', 'director'] as readonly string[]).includes(role ?? '') || isSelectedSuperApprover)";
-if (source.includes(fixed)) {
-  console.log('Director quantity edit type check already applied.');
-} else if (source.includes(legacy)) {
-  source = source.replace(legacy, fixed);
+// Build-time patches can reintroduce comparisons of the Director role after
+// TypeScript has narrowed the role union. Preserve runtime comparisons while
+// avoiding the impossible-literal type error in those expressions.
+const from = "role === 'director'";
+const to = "String(role) === 'director'";
+if (source.includes(from)) {
+  source = source.replaceAll(from, to);
   fs.writeFileSync(file, source);
-  console.log('Director quantity edit type check applied.');
+  console.log('Normalized Director role checks after build patches.');
+} else if (source.includes(to)) {
+  console.log('Director role checks already normalized.');
 } else {
-  throw new Error('Director quantity edit check pattern not found; inspect current workflow before updating.');
+  throw new Error('Expected Director role check missing; inspect the order detail workflow.');
 }
