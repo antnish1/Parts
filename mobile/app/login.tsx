@@ -52,7 +52,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <ImageBackground source={require('../assets/branding/JCB-SIGNIN-BACKHOE-20261022.jpeg')} style={styles.background} resizeMode="cover">
+    <ImageBackground source={require('../assets/branding/jsign.jpeg')} style={styles.background} resizeMode="cover">
       <View pointerEvents="none" style={styles.backgroundWash} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
         <ScrollView
@@ -75,7 +75,7 @@ export default function LoginScreen() {
             <View style={styles.cardWrap}>
               <View style={styles.card}>
                 <View style={styles.userMedallion}>
-                  <AppIcon name="user" size={28} color="#0B71D9" strokeWidth={1.9} />
+                  <AppIcon name="user" size={30} color="#FFFFFF" strokeWidth={1.9} />
                 </View>
 
                 <Text style={styles.heading}>{addAccountMode ? 'Add account' : 'Sign in'}</Text>
@@ -195,23 +195,22 @@ function GradientBackground() {
 
 const styles = StyleSheet.create({
   background: { flex: 1, backgroundColor: '#EEF6FF' },
-  backgroundWash: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(255,255,255,.08)' },
+  backgroundWash: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(255,255,255,.03)' },
   keyboard: { flex: 1 },
   page: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 36,
+    paddingTop: 46,
+    paddingBottom: 30,
   },
 
   pageKeyboard: { justifyContent: 'flex-start', paddingTop: 10, paddingBottom: 24 },
   brandKeyboard: { marginBottom: 12 },
   brand: {
     alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    marginBottom: 30,
-    transform: [{ translateY: -24 }],
+    paddingHorizontal: 22,
+    marginBottom: 22,
     zIndex: 2,
   },
   logo: { width: 88, height: 88 },
@@ -238,14 +237,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0A7BEF',
   },
 
-  cardWrap: { paddingTop: 22 },
+  cardWrap: { paddingTop: 34, paddingBottom: 4 },
   card: {
     position: 'relative',
-    paddingTop: 56,
-    paddingHorizontal: 28,
-    paddingBottom: 24,
-    borderRadius: 34,
-    backgroundColor: 'rgba(255,255,255,.95)',
+    paddingTop: 50,
+    paddingHorizontal: 26,
+    paddingBottom: 28,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,.97)',
     borderWidth: 1,
     borderColor: 'rgba(211,225,240,.95)',
     shadowColor: '#4B89C9',
@@ -256,21 +255,21 @@ const styles = StyleSheet.create({
   },
   userMedallion: {
     position: 'absolute',
-    top: -31,
+    top: -39,
     alignSelf: 'center',
-    width: 62,
-    height: 62,
-    borderRadius: 31,
+    width: 78,
+    height: 78,
+    borderRadius: 39,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#DCEFFF',
-    borderWidth: 1,
-    borderColor: '#CDE5FB',
+    backgroundColor: '#086DD0',
+    borderWidth: 5,
+    borderColor: '#FFFFFF',
   },
   heading: {
-    textAlign: 'center',
+    textAlign: 'left',
     color: '#0E2038',
-    fontSize: 27,
+    fontSize: 30,
     lineHeight: 32,
     fontWeight: '900',
     letterSpacing: -.45,
@@ -278,9 +277,9 @@ const styles = StyleSheet.create({
   help: {
     marginTop: 6,
     marginBottom: 22,
-    textAlign: 'center',
+    textAlign: 'left',
     color: '#6F7F94',
-    fontSize: 11.5,
+    fontSize: 12.5,
     lineHeight: 17,
     fontWeight: '500',
   },
@@ -297,7 +296,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   inputShell: {
-    minHeight: 60,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -310,7 +309,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    minHeight: 58,
+    minHeight: 52,
     paddingVertical: 0,
     color: '#1A2B43',
     fontSize: 14,
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
 
   button: {
     position: 'relative',
-    minHeight: 60,
+    minHeight: 54,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
