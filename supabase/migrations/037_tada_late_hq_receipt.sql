@@ -64,4 +64,5 @@ begin
 end $$;
 
 revoke all on function public.portal_receive_missing_tada_svr(uuid,text) from public;
+revoke execute on function public.portal_receive_missing_tada_svr(uuid,text) from anon;
 grant execute on function public.portal_receive_missing_tada_svr(uuid,text) to authenticated;
