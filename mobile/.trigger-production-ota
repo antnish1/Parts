@@ -1,6 +1,5 @@
 Parts Connect production OTA trigger
-reason=native-new-order-structural-density-fix-20261022
-source=1793fb3074ea47f11affb5fc51c499d5bb0a008f
+reason=signin-jcb-backhoe-background-asset-refresh-20261022
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
