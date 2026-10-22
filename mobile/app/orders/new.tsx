@@ -159,10 +159,16 @@ export default function NewOrderScreen() {
             </View>
             <Label text="Customer Name" />
             <View style={styles.readOnly}><Text style={customerName ? styles.readOnlyValue : styles.placeholder}>{orderFor === 'Stock' ? 'Not required' : customerName || 'Auto-fetched after machine lookup'}</Text></View>
-            <Label text="Machine Type" />
-            <ChipRow values={MACHINE_TYPES} selected={machineType} disabled={orderFor === 'Stock'} onSelect={setMachineType} />
-            <Label text="Call ID" />
-            <TextInput value={callId} onChangeText={setCallId} placeholder="Enter Call ID" placeholderTextColor={colors.textMuted} style={styles.input} />
+            <View style={styles.twoColumns}>
+              <View style={styles.column}>
+                <Label text="Machine Type" />
+                <ChipRow values={MACHINE_TYPES} selected={machineType} disabled={orderFor === 'Stock'} onSelect={setMachineType} />
+              </View>
+              <View style={styles.column}>
+                <Label text="Call ID" />
+                <TextInput value={callId} onChangeText={setCallId} placeholder="Enter Call ID" placeholderTextColor={colors.textMuted} style={styles.input} />
+              </View>
+            </View>
           </Section>
 
           <View style={styles.partsHeader}><Text style={styles.sectionTitle}>Parts</Text><Pressable onPress={() => setItems((rows) => [...rows, blankItem()])}><Text style={styles.addLink}>+ Add part</Text></Pressable></View>
@@ -180,9 +186,16 @@ export default function NewOrderScreen() {
                 <Mini label="Category" value={item.category || '—'} />
                 <Mini label="In Transit" value={String(item.inTransitQty)} />
               </View>
-              <Label text="Quantity" />
-              <TextInput keyboardType="number-pad" value={item.qty} onChangeText={(value) => updateItem(item.id, { qty: value.replace(/[^0-9]/g, '') })} placeholder="Qty" placeholderTextColor={colors.textMuted} style={styles.input} />
-              <View style={styles.lineTotal}><Text style={styles.lineTotalLabel}>Line value</Text><Text style={styles.lineTotalValue}>₹{((item.dnp ?? 0) * Number(item.qty || 0)).toLocaleString('en-IN')}</Text></View>
+              <View style={styles.quantityRow}>
+                <View style={styles.quantityInput}>
+                  <Label text="Quantity" />
+                  <TextInput keyboardType="number-pad" value={item.qty} onChangeText={(value) => updateItem(item.id, { qty: value.replace(/[^0-9]/g, '') })} placeholder="Qty" placeholderTextColor={colors.textMuted} style={styles.input} />
+                </View>
+                <View style={styles.lineValueBox}>
+                  <Text style={styles.lineTotalLabel}>Line value</Text>
+                  <Text style={styles.lineTotalValue}>₹{((item.dnp ?? 0) * Number(item.qty || 0)).toLocaleString('en-IN')}</Text>
+                </View>
+              </View>
             </View>
           ))}
 
@@ -215,11 +228,12 @@ function Mini({ label, value, wide = false }: { label: string; value: string; wi
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background }, content: { padding: 10, gap: 8, paddingBottom: 32 },
   back: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: colors.text, fontSize: 19, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
-  section: { gap: 5, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
+  section: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
   chips: { gap: 5, paddingRight: 5 }, chip: { minHeight: 34, minWidth: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted }, chipActive: { borderColor: colors.navy, backgroundColor: colors.navy }, chipText: { color: colors.text, fontSize: 12, fontWeight: '800' }, chipTextActive: { color: '#fff' }, disabled: { opacity: 0.45 },
   input: { minHeight: 38, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: '#fff', paddingHorizontal: 10, color: colors.text, fontSize: 12 }, inputActionRow: { flexDirection: 'row', gap: 6 }, lookupButton: { width: 65, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, lookupText: { color: '#fff', fontSize: 11, fontWeight: '900' },
   readOnly: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted, paddingHorizontal: 10 }, readOnlyValue: { color: colors.text, fontSize: 12, fontWeight: '700' }, placeholder: { color: colors.textMuted, fontSize: 11 }, select: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, backgroundColor: '#fff' }, selectValue: { color: colors.text, fontSize: 13, fontWeight: '700' },
-  partsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, addLink: { color: colors.blue, fontSize: 12, fontWeight: '900' }, partCard: { gap: 5, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, partTop: { flexDirection: 'row', justifyContent: 'space-between' }, partIndex: { color: colors.navy, fontSize: 12, fontWeight: '900' }, remove: { color: colors.danger, fontSize: 11, fontWeight: '800' },
+  partsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, addLink: { color: colors.blue, fontSize: 12, fontWeight: '900' }, partCard: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, partTop: { flexDirection: 'row', justifyContent: 'space-between' }, partIndex: { color: colors.navy, fontSize: 12, fontWeight: '900' }, remove: { color: colors.danger, fontSize: 11, fontWeight: '800' },
+  twoColumns: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' }, column: { flex: 1, minWidth: 0 }, quantityRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' }, quantityInput: { flex: 1, minWidth: 0 }, lineValueBox: { flex: 1, minHeight: 38, paddingVertical: 3, alignItems: 'flex-end', justifyContent: 'center' },
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, mini: { flexGrow: 1, flexBasis: '29%', minHeight: 40, padding: 7, borderRadius: 8, backgroundColor: colors.surfaceMuted }, miniWide: { width: '100%' }, miniLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '700' }, miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 3 }, lineTotal: { flexDirection: 'row', justifyContent: 'space-between' }, lineTotalLabel: { color: colors.textMuted, fontSize: 11 }, lineTotalValue: { color: colors.text, fontSize: 13, fontWeight: '900' },
   message: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.dangerSoft }, messageText: { color: colors.danger, fontSize: 12, lineHeight: 18 }, totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: radius.lg, backgroundColor: colors.navy }, totalLabel: { color: '#D6E7FF', fontSize: 12, fontWeight: '700' }, totalValue: { color: '#fff', fontSize: 18, fontWeight: '900' }, submit: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, submitText: { color: '#fff', fontSize: 15, fontWeight: '900' }, pressed: { opacity: 0.75 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,0.65)' }, sheet: { maxHeight: '70%', padding: spacing.lg, gap: spacing.sm, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface }, sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginBottom: spacing.sm }, sheetRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, sheetRowTitle: { color: colors.text, fontSize: 14, fontWeight: '800' }, sheetRowMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
