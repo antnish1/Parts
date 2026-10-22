@@ -232,7 +232,7 @@ function Mini({ label, value, wide = false }: { label: string; value: string; wi
 const styles = StyleSheet.create({
   headerShell: { paddingHorizontal: 12, backgroundColor: '#082B5B' },
   orderBackdrop: { flex: 1 }, orderBackdropImage: { opacity: 0.76 },
-  orderBackgroundWash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(244,248,252,0.64)' },
+  orderBackgroundWash: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(244,248,252,0.64)' },
   safe: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, backgroundColor: colors.background }, content: { padding: 10, gap: 8, paddingBottom: 32 },
   back: { alignSelf: 'flex-start', minHeight: 28, justifyContent: 'center' }, backText: { color: colors.blue, fontSize: 14, fontWeight: '800' }, title: { color: '#082B5B', fontSize: 19, fontWeight: '900' }, subtitle: { color: colors.textMuted, fontSize: 10, marginTop: 1 },
   section: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, sectionTitle: { color: colors.text, fontSize: 12, fontWeight: '900' }, label: { color: colors.textMuted, fontSize: 9, fontWeight: '800', marginTop: 1, textTransform: 'uppercase' },
