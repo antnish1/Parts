@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ArrowRight, ChevronRight, Eye, EyeOff, Handshake, LockKeyhole, Settings, ShieldCheck, UserRound } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
@@ -21,7 +21,6 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const canSubmit = useMemo(() => loginId.trim().length > 0 && password.length >= 6 && isSupabaseConfigured(), [loginId, password]);
 
   if (!isLoading && isAuthenticated && role) return <Navigate to={roleHomePath[role]} replace />;
 
@@ -30,6 +29,7 @@ export function LoginPage() {
     setMessage('');
     if (!isSupabaseConfigured()) return setMessage('Supabase environment variables are missing.');
     if (!loginId.trim() || !password) return setMessage('Enter User ID and password.');
+    if (password.length < 6) return setMessage('Password must contain at least 6 characters.');
     setIsSubmitting(true);
     const authEmail = normalizeLoginIdentifier(loginId);
     const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password });
@@ -95,7 +95,7 @@ export function LoginPage() {
             <div className="flex justify-end">
               <button type="button" className="flex items-center gap-1 text-[10px] font-bold text-[#0877da] hover:underline" onClick={() => setMessage('Please contact your Parts Connect administrator to reset your password.')}>Forgot password? <ChevronRight className="h-3 w-3" /></button>
             </div>
-            <button type="submit" disabled={!canSubmit || isSubmitting} className="flex h-[44px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#073056] to-[#061b38] text-[13px] font-bold text-white shadow-[0_7px_13px_rgba(6,37,75,0.22)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-65">
+            <button type="submit" disabled={isSubmitting} className="flex h-[44px] w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#073056] to-[#061b38] text-[13px] font-bold text-white shadow-[0_7px_13px_rgba(6,37,75,0.22)] cursor-pointer transition hover:brightness-110 disabled:cursor-default disabled:opacity-65">
               {isSubmitting ? 'Verifying...' : 'Sign In'} {!isSubmitting && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
             </button>
           </form>
