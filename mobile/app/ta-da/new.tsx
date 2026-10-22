@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '@/auth/AuthProvider';
 import { Screen } from '@/components/Screen';
-import { BreathingView } from '@/components/BreathingView';
 import { AppIcon } from '@/components/AppIcon';
 import { StateView } from '@/components/StateView';
 import { createTadaDispatch, getTadaBranches, getTadaEngineers, type TadaCreateItem, type TadaEngineer } from '@/services/tada';
