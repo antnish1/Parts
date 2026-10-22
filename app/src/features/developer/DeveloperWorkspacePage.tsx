@@ -9,7 +9,7 @@ import { getTestParts } from '../../services/testPart.service';
 import { createPortalUser, getTestApprovers, getTestProfiles, setTestProfileActive, updateTestProfile } from '../../services/testProfile.service';
 import { getDeveloperCommentsInbox } from '../../services/developerComments.service';
 
-const roles = ['branch', 'admin', 'super', 'manager', 'viewer', 'developer', 'hq', 'accounts'];
+const roles = ['branch', 'admin', 'super', 'manager', 'director', 'viewer', 'developer', 'hq', 'accounts'];
 const inputClass = 'rounded-md border border-[#263244] bg-[#111827] px-2.5 py-1.5 text-xs text-white outline-none focus:border-[#82C8E5]';
 
 export function DeveloperWorkspacePage() {
@@ -42,7 +42,7 @@ export function DeveloperWorkspacePage() {
 
   async function addUser(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!branch) return setMessage('Please select branch from branch master.');
+    if (!branch) return setMessage('Please select a branch or All Branches.');
     setMessage('Creating Supabase Auth user...');
     try {
       await createPortalUser({ email, password, fullName, branch, role, loginId });
@@ -57,7 +57,7 @@ export function DeveloperWorkspacePage() {
   }
 
   async function saveEdit(profile: (typeof profiles)[number]) {
-    if (!editBranch) return setMessage('Please select branch from branch master.');
+    if (!editBranch) return setMessage('Please select a branch or All Branches.');
     setMessage('Saving profile...');
     try {
       await updateTestProfile(profile.id, { fullName: editName, branch: editBranch, role: editRole, loginId: editLoginId, isActive: profile.is_active });
@@ -117,7 +117,7 @@ export function DeveloperWorkspacePage() {
           <input className={inputClass} placeholder="Email optional if User ID used" value={email} onChange={(event) => setEmail(event.target.value)} />
           <input type="password" className={inputClass} placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
           <input className={inputClass} placeholder="Full name" value={fullName} onChange={(event) => setFullName(event.target.value)} />
-          <select className={inputClass} value={branch} onChange={(event) => setBranch(event.target.value)}><option value="">Select Branch</option>{branchOptions}</select>
+          <select className={inputClass} value={branch} onChange={(event) => setBranch(event.target.value)}><option value="">Select Branch</option>{role === "director" ? <option value="ALL_BRANCHES">All Branches</option> : null}{branchOptions}</select>
           <select className={inputClass} value={role} onChange={(event) => setRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select>
           <button type="submit" className="text-xs font-black text-[#82C8E5] hover:underline">Create</button>
         </form>
@@ -173,7 +173,7 @@ export function DeveloperWorkspacePage() {
               return <tr key={profile.id}>
                 <td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editLoginId} onChange={(event) => setEditLoginId(event.target.value.toUpperCase())} /> : profile.login_id || '-'}</td>
                 <td className="px-2.5 py-2 font-black text-white">{editing ? <input className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editName} onChange={(event) => setEditName(event.target.value)} /> : profile.full_name}</td>
-                <td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <select className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editBranch} onChange={(event) => setEditBranch(event.target.value)}><option value="">Select Branch</option>{branchOptions}</select> : profile.branch}</td>
+                <td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <select className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editBranch} onChange={(event) => setEditBranch(event.target.value)}><option value="">Select Branch</option>{editRole === "director" ? <option value="ALL_BRANCHES">All Branches</option> : null}{branchOptions}</select> : profile.branch}</td>
                 <td className="px-2.5 py-2 text-[#d8e3ee]">{editing ? <select className="w-full rounded-md border border-[#263244] bg-[#111827] px-2 py-1 text-xs text-white" value={editRole} onChange={(event) => setEditRole(event.target.value)}>{roles.map((item) => <option key={item} value={item}>{item}</option>)}</select> : profile.role}</td>
                 <td className="px-2.5 py-2 text-[#d8e3ee]">{profile.is_active ? 'Yes' : 'No'}</td>
                 <td className="px-2.5 py-2 text-right"><div className="flex justify-end gap-3">{editing ? <button className="font-black text-[#82C8E5] hover:underline" onClick={() => void saveEdit(profile)}>Save</button> : <button className="font-black text-[#82C8E5] hover:underline" onClick={() => startEdit(profile)}>Edit</button>}{editing ? <button className="font-black text-[#c7d2df] hover:underline" onClick={() => setEditId('')}>Cancel</button> : <button className="font-black text-[#ef6f7b] hover:underline" onClick={() => void toggleActive(profile)}>{profile.is_active ? 'Deactivate' : 'Activate'}</button>}</div></td>
