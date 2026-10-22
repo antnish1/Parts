@@ -11,6 +11,7 @@ import { getActivityReadKeys, getImmutableActivityFeed, markActivityRead } from 
 import { getNotifications, markNotificationRead } from '@/services/notifications';
 import { colors } from '@/theme/tokens';
 import { useAuth } from '@/auth/AuthProvider';
+import { isManagerApprovalOutcomeNotification } from '@/services/activityRelevance';
 
 function titleForEvent(value:string){
  return value.replace(/_/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
@@ -54,7 +55,7 @@ export default function ActivityScreen(){
  const feed=useMemo(()=>{
    const combined:FeedEntry[]=[];
    const events=activity.data??[];
-   const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&n.category==='approval'));
+   const alerts=(notifications.data??[]).filter(n=>!(role==='manager'&&isManagerApprovalOutcomeNotification(n.category,n.title)));
    const readKeys=new Set(readState.data??[]);
    const alertsByEvent=new Map(alerts.filter(n=>n.event_key?.startsWith('event:')).map(n=>[n.event_key.slice(6),n]));
    const pairedIds=new Set<string>();
