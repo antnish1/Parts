@@ -34,6 +34,7 @@ export default function NewOrderScreen() {
   const [missingMachineOpen, setMissingMachineOpen] = useState(false);
   const [manualCustomer, setManualCustomer] = useState('');
   const [approverOpen, setApproverOpen] = useState(false);
+  const [choiceOpen, setChoiceOpen] = useState<'type' | 'for' | null>(null);
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState<{ orderNo: string; warning?: string | null } | null>(null);
 
@@ -145,22 +146,25 @@ export default function NewOrderScreen() {
           <View><Text style={styles.title}>New Order</Text><Text style={styles.subtitle}>{branch} · {profile?.fullName}</Text></View>
 
           <Section title="Order setup">
-            <Label text="Order Type" />
-            <ChipRow values={ORDER_TYPES} selected={orderType} onSelect={selectOrderType} />
-            <Label text="Order For" />
-            <ChipRow values={ORDER_FOR} selected={orderFor} disabled={orderType === 'VOR'} onSelect={(value) => { setOrderFor(value); if (value === 'Stock') { setMachineNo(''); setCustomerName(''); setMachineType(''); } }} />
+            <View style={styles.twoColumns}>
+              <View style={styles.column}><Label text="Order Type" /><Pressable accessibilityRole="button" style={styles.select} onPress={() => setChoiceOpen('type')}><Text style={orderType ? styles.selectValue : styles.placeholder}>{orderType || 'Select type'}  ▾</Text></Pressable></View>
+              <View style={styles.column}><Label text="Order For" /><Pressable accessibilityRole="button" style={styles.select} onPress={() => setChoiceOpen('for')}><Text style={orderFor ? styles.selectValue : styles.placeholder}>{orderFor || 'Select for'}  ▾</Text></Pressable></View>
+            </View>
             <Label text="Approved By" />
             <Pressable style={styles.select} onPress={() => setApproverOpen(true)}><Text style={approver ? styles.selectValue : styles.placeholder}>{approver ? `${approver.full_name} (${approver.role})` : 'Select approver'}</Text></Pressable>
           </Section>
 
           <Section title="Customer details">
-            <Label text="Machine Number" />
-            <View style={styles.inputActionRow}>
-              <TextInput editable={orderFor !== 'Stock' && !machineBusy} autoCapitalize="characters" value={machineNo} onChangeText={(value) => { setMachineNo(value); setCustomerName(''); }} onEndEditing={() => void searchMachine()} placeholder={orderFor === 'Stock' ? 'Not required for Stock' : 'Enter machine number'} placeholderTextColor={colors.textMuted} style={[styles.input, styles.flex]} />
-              <Pressable disabled={orderFor === 'Stock' || machineBusy} onPress={() => void searchMachine()} style={styles.lookupButton}>{machineBusy ? <ActivityIndicator color="#fff" /> : <Text style={styles.lookupText}>Lookup</Text>}</Pressable>
+            <View style={styles.twoColumns}>
+              <View style={styles.column}>
+                <Label text="Machine Number" />
+                <TextInput editable={orderFor !== 'Stock' && !machineBusy} autoCapitalize="characters" value={machineNo} onChangeText={(value) => { setMachineNo(value); setCustomerName(''); }} onEndEditing={() => void searchMachine()} onSubmitEditing={() => void searchMachine()} returnKeyType="search" placeholder={orderFor === 'Stock' ? 'Not required' : 'Machine no.'} placeholderTextColor={colors.textMuted} style={styles.input} />
+              </View>
+              <View style={styles.column}>
+                <Label text="Customer Name" />
+                <View style={styles.readOnly}><Text numberOfLines={1} style={customerName ? styles.readOnlyValue : styles.placeholder}>{machineBusy ? 'Looking up…' : orderFor === 'Stock' ? 'Not required' : customerName || 'Auto-fetched'}</Text></View>
+              </View>
             </View>
-            <Label text="Customer Name" />
-            <View style={styles.readOnly}><Text style={customerName ? styles.readOnlyValue : styles.placeholder}>{orderFor === 'Stock' ? 'Not required' : customerName || 'Auto-fetched after machine lookup'}</Text></View>
             <View style={styles.twoColumns}>
               <View style={styles.column}>
                 <Label text="Machine Type" />
@@ -177,26 +181,21 @@ export default function NewOrderScreen() {
           {items.map((item, index) => (
             <View key={item.id} style={styles.partCard}>
               <View style={styles.partTop}><Text style={styles.partIndex}>Part {index + 1}</Text>{items.length > 1 ? <Pressable onPress={() => setItems((rows) => rows.filter((row) => row.id !== item.id))}><Text style={styles.remove}>Remove</Text></Pressable> : null}</View>
-              <Label text="Part Number" />
-              <View style={styles.inputActionRow}>
-                <TextInput autoCapitalize="characters" editable={!item.loading} value={item.partNo} onChangeText={(value) => updateItem(item.id, { partNo: value, description: '', dnp: null, category: '', inTransitQty: 0 })} onEndEditing={() => void searchPart(item.id)} placeholder="Part No." placeholderTextColor={colors.textMuted} style={[styles.input, styles.flex]} />
-                <Pressable disabled={item.loading} onPress={() => void searchPart(item.id)} style={styles.lookupButton}>{item.loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.lookupText}>Lookup</Text>}</Pressable>
-              </View>
-              <View style={styles.infoGrid}>
-                <Mini label="Description" value={item.description || '—'} wide />
-                <Mini label="DNP" value={item.dnp == null ? '—' : `₹${item.dnp.toLocaleString('en-IN')}`} />
-                <Mini label="Category" value={item.category || '—'} />
-                <Mini label="In Transit" value={String(item.inTransitQty)} />
-              </View>
-              <View style={styles.quantityRow}>
-                <View style={styles.quantityInput}>
+              <View style={styles.twoColumns}>
+                <View style={[styles.column, { flex: 2 }]}>
+                  <Label text="Part Number" />
+                  <TextInput autoCapitalize="characters" editable={!item.loading} value={item.partNo} onChangeText={(value) => updateItem(item.id, { partNo: value, description: '', dnp: null, category: '', inTransitQty: 0 })} onEndEditing={() => void searchPart(item.id)} onSubmitEditing={() => void searchPart(item.id)} returnKeyType="search" placeholder="Part No." placeholderTextColor={colors.textMuted} style={styles.input} />
+                </View>
+                <View style={styles.column}>
                   <Label text="Quantity" />
                   <TextInput keyboardType="number-pad" value={item.qty} onChangeText={(value) => updateItem(item.id, { qty: value.replace(/[^0-9]/g, '') })} placeholder="Qty" placeholderTextColor={colors.textMuted} style={styles.input} />
                 </View>
-                <View style={styles.lineValueBox}>
-                  <Text style={styles.lineTotalLabel}>Line value</Text>
-                  <Text style={styles.lineTotalValue}>₹{((item.dnp ?? 0) * Number(item.qty || 0)).toLocaleString('en-IN')}</Text>
-                </View>
+              </View>
+              <View style={styles.infoGrid}>
+                <Mini label="Description" value={item.loading ? 'Looking up…' : item.description || '—'} />
+                <Mini label="DNP" value={item.dnp == null ? '—' : `₹${item.dnp.toLocaleString('en-IN')}`} />
+                <Mini label="In Transit" value={String(item.inTransitQty)} />
+                <Mini label="Line Value" value={`₹${((item.dnp ?? 0) * Number(item.qty || 0)).toLocaleString('en-IN')}`} />
               </View>
             </View>
           ))}
@@ -208,6 +207,20 @@ export default function NewOrderScreen() {
       </KeyboardAvoidingView>
       </View>
 
+      <Modal visible={choiceOpen !== null} transparent animationType="fade" onRequestClose={() => setChoiceOpen(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setChoiceOpen(null)}>
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>{choiceOpen === 'type' ? 'Order Type' : 'Order For'}</Text>
+            {(choiceOpen === 'type' ? ORDER_TYPES : ORDER_FOR).map((value) => (
+              <Pressable key={value} disabled={choiceOpen === 'for' && orderType === 'VOR' && value === 'Stock'} style={styles.sheetRow} onPress={() => {
+                if (choiceOpen === 'type') selectOrderType(value);
+                else { setOrderFor(value); if (value === 'Stock') { setMachineNo(''); setCustomerName(''); setMachineType(''); } }
+                setChoiceOpen(null);
+              }}><Text style={styles.sheetRowTitle}>{value}</Text></Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
       <Modal visible={approverOpen} transparent animationType="slide" onRequestClose={() => setApproverOpen(false)}>
         <Pressable style={styles.modalBackdrop} onPress={() => setApproverOpen(false)}><Pressable style={styles.sheet} onPress={() => undefined}><Text style={styles.sheetTitle}>Select approver</Text>{(approvers.data ?? []).map((item) => <Pressable key={item.id} style={styles.sheetRow} onPress={() => { setApprover(item); setApproverOpen(false); }}><View><Text style={styles.sheetRowTitle}>{item.full_name}</Text><Text style={styles.sheetRowMeta}>{item.role} · {item.branch}</Text></View></Pressable>)}</Pressable></Pressable>
       </Modal>
@@ -239,8 +252,8 @@ const styles = StyleSheet.create({
   readOnly: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceMuted, paddingHorizontal: 10 }, readOnlyValue: { color: colors.text, fontSize: 12, fontWeight: '700' }, placeholder: { color: colors.textMuted, fontSize: 11 }, select: { minHeight: 38, justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, backgroundColor: '#fff' }, selectValue: { color: colors.text, fontSize: 13, fontWeight: '700' },
   partsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, addLink: { color: colors.blue, fontSize: 12, fontWeight: '900' }, partCard: { gap: 4, padding: 9, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, partTop: { flexDirection: 'row', justifyContent: 'space-between' }, partIndex: { color: colors.navy, fontSize: 12, fontWeight: '900' }, remove: { color: colors.danger, fontSize: 11, fontWeight: '800' },
   twoColumns: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' }, column: { flex: 1, minWidth: 0 }, quantityRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' }, quantityInput: { flex: 1, minWidth: 0 }, lineValueBox: { flex: 1, minHeight: 38, paddingVertical: 3, alignItems: 'flex-end', justifyContent: 'center' },
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, mini: { flexGrow: 1, flexBasis: '29%', minHeight: 40, padding: 7, borderRadius: 8, backgroundColor: colors.surfaceMuted }, miniWide: { width: '100%' }, miniLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '700' }, miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 3 }, lineTotal: { flexDirection: 'row', justifyContent: 'space-between' }, lineTotalLabel: { color: colors.textMuted, fontSize: 11 }, lineTotalValue: { color: colors.text, fontSize: 13, fontWeight: '900' },
-  message: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.dangerSoft }, messageText: { color: colors.danger, fontSize: 12, lineHeight: 18 }, totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: radius.lg, backgroundColor: colors.navy }, totalLabel: { color: '#D6E7FF', fontSize: 12, fontWeight: '700' }, totalValue: { color: '#fff', fontSize: 18, fontWeight: '900' }, submit: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, submitText: { color: '#fff', fontSize: 15, fontWeight: '900' }, pressed: { opacity: 0.75 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 }, mini: { flexGrow: 1, flexBasis: '21%', minHeight: 40, padding: 7, borderRadius: 8, backgroundColor: colors.surfaceMuted }, miniWide: { width: '100%' }, miniLabel: { color: colors.textMuted, fontSize: 8, fontWeight: '700' }, miniValue: { color: colors.text, fontSize: 11, fontWeight: '800', marginTop: 3 }, lineTotal: { flexDirection: 'row', justifyContent: 'space-between' }, lineTotalLabel: { color: colors.textMuted, fontSize: 11 }, lineTotalValue: { color: colors.text, fontSize: 13, fontWeight: '900' },
+  message: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.dangerSoft }, messageText: { color: colors.danger, fontSize: 12, lineHeight: 18 }, totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderRadius: radius.lg, backgroundColor: '#157347' }, totalLabel: { color: '#E8FFF0', fontSize: 12, fontWeight: '700' }, totalValue: { color: '#fff', fontSize: 18, fontWeight: '900' }, submit: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, submitText: { color: '#fff', fontSize: 15, fontWeight: '900' }, pressed: { opacity: 0.75 },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,0.65)' }, sheet: { maxHeight: '70%', padding: spacing.lg, gap: spacing.sm, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface }, sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginBottom: spacing.sm }, sheetRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, sheetRowTitle: { color: colors.text, fontSize: 14, fontWeight: '800' }, sheetRowMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   dialog: { margin: spacing.xl, padding: spacing.xl, gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.surface }, dialogText: { color: colors.textMuted, fontSize: 12, lineHeight: 18 }, dialogActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.lg }, cancel: { color: colors.textMuted, fontSize: 13, fontWeight: '800' }, dialogPrimary: { minHeight: 46, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radius.md, backgroundColor: colors.navy }, dialogPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '900' }, successTitle: { color: colors.success, fontSize: 18, fontWeight: '900' }, successNo: { color: colors.text, fontSize: 22, fontWeight: '900' }, warning: { color: colors.warning, fontSize: 11, lineHeight: 17 }, error: { color: colors.danger, fontSize: 13 }, link: { color: colors.blue, fontSize: 13, fontWeight: '800' },
 });
