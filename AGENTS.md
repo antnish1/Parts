@@ -881,3 +881,12 @@ A future agent entering this repository should act as though it has received thi
 - Apply the exception in `getTrackOrderList` for Track Orders and in the existing order-detail branch guard, both using the same exact-authenticated-account helper. Do not broaden `getOrderList`, the approval register, new order permissions, branch scoped services, manager/admin processing, or any other branch user's scope.
 - Saloni may open any order and post a normal comment using the existing authenticated comment flow. Her exception conveys **no approval, rejection, processing, quantity changes, issuance, or order edits**. Existing active-profile/RLS checks still apply.
 - Fetch Track Orders using stable bounded pages for Saloni, rather than silently truncating at 1,000 orders. Preserve filtering, search, sorting, and comment badges.
+
+## 2026-10-22 — Director global operational access
+
+- The active `director` role is an owner-level operational role with `ALL_BRANCHES` branch scope.
+- Director must see **every current portal navigation module** and data from **all branches**, including TA/DA, Credit Dispatch, Engine & Breaker, order operations, inventory, pricing, reports, and user profiles.
+- Preserve existing role rights and order lifecycle/approval sequences; Director joins existing authorized actions, not a new approval stage.
+- Frontend access alone is insufficient: keep module RLS, database RPC checks, and Edge Function role checks aligned. Only active Director profiles receive these privileges.
+- User-management/maintenance operations for Director use the established authorization and audit mechanisms.
+- Do not regress the Manager/Director combined role checks in `AppLayout` during prebuild patch scripts.
