@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCheck, ChevronDown, MapPin, PackageCheck, ReceiptText } from 'lucide-react';
+import { ArrowLeft, CheckCheck, ChevronDown, MapPin, PackageCheck, ReceiptText, Pencil } from 'lucide-react';
 import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
-import { getTadaDispatch, receiveTadaDispatch, type TadaReceiptResult } from '../../services/tada.service';
+import { getTadaDispatch, receiveTadaDispatch, receiveMissingTadaSvr, type TadaReceiptResult } from '../../services/tada.service';
 import { TadaDeveloperControls } from './TadaDeveloperControls';
 import { getTadaStatusMeta, tadaLocationMeta, TadaMiniBadge, TadaStatusBadge } from './tadaUi';
 
@@ -25,6 +25,8 @@ export function TadaDispatchDetailPage() {
   const { profile } = useAuth();
   const [receiptState, setReceiptState] = useState<ReceiptState>({});
   const [message, setMessage] = useState('');
+  const [lateReceiptItemId, setLateReceiptItemId] = useState<string | null>(null);
+  const [lateRemark, setLateRemark] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['tada-dispatch', dispatchId], queryFn: () => getTadaDispatch(dispatchId), enabled: Boolean(dispatchId) });
   const dispatch = data?.dispatch;
@@ -52,6 +54,27 @@ export function TadaDispatchDetailPage() {
     },
     onError: (mutationError) => setMessage(mutationError instanceof Error ? mutationError.message : 'Unable to record receipt.'),
   });
+
+  const lateReceiptMutation = useMutation({
+    mutationFn: () => receiveMissingTadaSvr(lateReceiptItemId!, lateRemark),
+    onSuccess: async () => {
+      setLateReceiptItemId(null);
+      setLateRemark('');
+      setMessage('Missing SVR marked received at HQ. Original missing record retained.');
+      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]);
+    },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Late receipt failed.'),
+  });
+  const canReceiveMissing = profile?.role === 'manager' || profile?.role === 'developer';
+  const lateReceiptItem = allItems.find((item) => item.id === lateReceiptItemId);
+  const missingAction = (item: typeof allItems[number]) => (
+    canReceiveMissing && item.hq_received === false && item.current_location === 'MISSING_HQ'
+      ? <button type="button" title="Receive missing bill at HQ" aria-label={`Receive missing SVR ${item.svr_no} at HQ`}
+          className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-300 text-emerald-800 hover:bg-emerald-50"
+          onClick={() => { setLateRemark(''); setMessage(''); setLateReceiptItemId(item.id); }}>
+          <Pencil className="h-3.5 w-3.5" />
+        </button> : null
+  );
 
   function setAll(received: boolean) {
     setReceiptState(Object.fromEntries(receiptItems.map((item) => [item.id, { received, reason: received ? '' : (receiptState[item.id]?.reason ?? ''), remark: receiptState[item.id]?.remark ?? '' }])));
@@ -134,14 +157,35 @@ export function TadaDispatchDetailPage() {
           return <div key={item.id} className="rounded-lg border border-[#e2e8f0] p-2">
             <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-[11px] font-black text-[#172033]">{item.svr_no}</p><p className="truncate text-[10px] font-semibold text-[#475569]">{item.engineer_name_snapshot} • {item.machine_no}</p></div><TadaMiniBadge className={location.badgeClass}>{location.label}</TadaMiniBadge></div>
             <div className="mt-1 grid grid-cols-2 gap-x-2 text-[10px] text-[#475569]"><p className="truncate">{item.customer_name}</p><p className="text-right">{item.date_from === item.date_to ? item.date_from : `${item.date_from} → ${item.date_to}`}</p></div>
-            <div className="mt-1.5 flex flex-wrap gap-1"><span className="text-[9px] font-black uppercase text-[#64748b]">HQ</span>{receiptBadge(item.hq_received, item.hq_exception_reason)}<span className="ml-1 text-[9px] font-black uppercase text-[#64748b]">Accounts</span>{item.hq_received !== true ? <TadaMiniBadge className="border-slate-200 bg-slate-50 text-slate-500">—</TadaMiniBadge> : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</div>
+            <div className="mt-1.5 flex flex-wrap gap-1"><span className="text-[9px] font-black uppercase text-[#64748b]">HQ</span>{receiptBadge(item.hq_received, item.hq_exception_reason)}{missingAction(item)}<span className="ml-1 text-[9px] font-black uppercase text-[#64748b]">Accounts</span>{item.hq_received !== true ? <TadaMiniBadge className="border-slate-200 bg-slate-50 text-slate-500">—</TadaMiniBadge> : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</div>
           </div>;
         })}</div>
         <div className="hidden overflow-x-auto rounded-md border border-[#e2e8f0] md:block"><table className="w-full min-w-[1040px] border-collapse text-left text-xs"><thead className="bg-[#f8fafc] text-[10px] uppercase tracking-[0.08em] text-[#64748b]"><tr><th className="px-2.5 py-2">SVR</th><th className="px-2.5 py-2">Engineer</th><th className="px-2.5 py-2">Visit</th><th className="px-2.5 py-2">Machine / Customer</th><th className="px-2.5 py-2">Location</th><th className="px-2.5 py-2">HQ</th><th className="px-2.5 py-2">Accounts</th></tr></thead><tbody className="divide-y divide-[#e2e8f0]">{allItems.map((item) => {
           const location = tadaLocationMeta[item.current_location] ?? { label: item.current_location, badgeClass: 'border-slate-200 bg-slate-50 text-slate-700' };
-          return <tr key={item.id}><td className="px-2.5 py-2 font-black text-[#172033]">{item.svr_no}</td><td className="px-2.5 py-2">{item.engineer_name_snapshot}</td><td className="px-2.5 py-2">{item.date_from === item.date_to ? item.date_from : `${item.date_from} → ${item.date_to}`}</td><td className="px-2.5 py-2"><b>{item.machine_no}</b><br/><span className="text-[10px] text-[#64748b]">{item.customer_name}</span></td><td className="px-2.5 py-2"><TadaMiniBadge className={location.badgeClass}>{location.label}</TadaMiniBadge></td><td className="px-2.5 py-2">{receiptBadge(item.hq_received, item.hq_exception_reason)}</td><td className="px-2.5 py-2">{item.hq_received !== true ? '—' : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</td></tr>;
+          return <tr key={item.id}><td className="px-2.5 py-2 font-black text-[#172033]">{item.svr_no}</td><td className="px-2.5 py-2">{item.engineer_name_snapshot}</td><td className="px-2.5 py-2">{item.date_from === item.date_to ? item.date_from : `${item.date_from} → ${item.date_to}`}</td><td className="px-2.5 py-2"><b>{item.machine_no}</b><br/><span className="text-[10px] text-[#64748b]">{item.customer_name}</span></td><td className="px-2.5 py-2"><TadaMiniBadge className={location.badgeClass}>{location.label}</TadaMiniBadge></td><td className="px-2.5 py-2"><div className="flex items-center gap-1">{receiptBadge(item.hq_received, item.hq_exception_reason)}{missingAction(item)}</div></td><td className="px-2.5 py-2">{item.hq_received !== true ? '—' : receiptBadge(item.accounts_received, item.accounts_exception_reason)}</td></tr>;
         })}</tbody></table></div>
       </section>
+
+      {lateReceiptItem ? <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-label="Receive missing SVR at HQ">
+        <div className="w-full max-w-sm rounded-xl bg-white p-4 shadow-xl">
+          <h2 className="text-sm font-black text-slate-900">Receive missing bill at HQ</h2>
+          <p className="mt-1 text-xs text-slate-600">SVR {lateReceiptItem.svr_no} • {lateReceiptItem.engineer_name_snapshot}</p>
+          <p className="mt-2 text-xs text-red-700">Originally missing: {lateReceiptItem.hq_exception_reason || 'Not received'}</p>
+          <p className="mt-1 text-[11px] text-slate-600">Confirm physical receipt. The original exception stays in the timeline, and Accounts must acknowledge separately.</p>
+          <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
+          <textarea id="late-svr-remark" maxLength={1000} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
+            className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs text-slate-900" placeholder="Received physically at HQ..." />
+          {lateReceiptMutation.isError ? <p className="mt-2 text-xs text-red-700">{lateReceiptMutation.error instanceof Error ? lateReceiptMutation.error.message : 'Unable to record receipt.'}</p> : null}
+          <div className="mt-3 flex justify-end gap-2">
+            <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => setLateReceiptItemId(null)}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-bold">Cancel</button>
+            <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => lateReceiptMutation.mutate()}
+              className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+              {lateReceiptMutation.isPending ? 'Recording…' : 'Confirm received at HQ'}
+            </button>
+          </div>
+        </div>
+      </div> : null}
 
       <details className="group mt-2 rounded-xl border border-[#dbe3ec] bg-white p-2.5 sm:p-3">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2"><div className="flex items-center gap-1.5"><ReceiptText className="h-4 w-4 text-[#475569]"/><p className="text-xs font-black text-[#172033]">Traceability Timeline</p></div><div className="flex items-center gap-1 text-[10px] font-bold text-[#64748b]">{data?.events.length ?? 0} events <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180"/></div></summary>
