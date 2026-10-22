@@ -33,7 +33,7 @@ serve(async (req) => {
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
   const { data: profile } = await adminClient.from('portal_profiles').select('role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
-  if (!profile?.is_active || !['admin', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active admin, manager, or developer can upload inventory' }, 403);
+  if (!profile?.is_active || !['admin', 'manager', 'director', 'developer'].includes(profile.role)) return json({ error: 'Only active admin, manager, or developer can upload inventory' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const reportDate = String(body.reportDate ?? '');
