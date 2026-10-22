@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     .eq('auth_user_id', sessionData.user.id)
     .maybeSingle();
   if (profileError) return json({ error: profileError.message }, 500);
-  if (callerProfile?.role !== 'developer' || callerProfile?.is_active !== true) return json({ error: 'Only active developer users can create portal users.' }, 403);
+  if (!['developer', 'director'].includes(callerProfile?.role ?? '') || callerProfile?.is_active !== true) return json({ error: 'Only active developer or director users can create portal users.' }, 403);
 
   const body = await req.json() as Payload;
   const loginId = normalizeLoginId(String(body.loginId ?? ''));
