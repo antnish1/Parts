@@ -70,3 +70,14 @@ describe('operational notification coverage contracts',()=>{
   expect(ops).toContain("'installation'");
  });
 });
+
+describe('manager approval recipient isolation',()=>{
+ const branchOnly=readFileSync(new URL('../../../supabase/migrations/20261022_manager_approval_branch_notifications.sql',import.meta.url),'utf8');
+ it('sends terminal manager decisions to active users of the originating branch, not managers',()=>{
+  expect(branchOnly).toContain("lower(p.role)='branch'");
+  expect(branchOnly).toContain("is_manager_terminal");
+  expect(branchOnly).toContain("'MANAGER_APPROVED'");
+  expect(branchOnly).toContain("'MANAGER_REJECTED'");
+  expect(branchOnly).not.toMatch(/is_manager_terminal[\s\S]{0,500}lower\(p\.role\)='manager'/);
+ });
+});

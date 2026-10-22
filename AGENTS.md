@@ -1,3 +1,12 @@
+## 39. Manager approval notifications are branch-only (2026-10-22)
+
+- Terminal Manager approval/rejection outcomes for Parts orders must **not** appear in Manager Activity/notifications. They belong to the originating/relevant Branch account(s).
+- Terminal Manager events include `MANAGER_APPROVED`, `MANAGER_DIRECT_APPROVED`, `MANAGER_REJECTED`, `REVIEW_EDITS_MANAGER_APPROVED`, and `REVIEW_ORIGINAL_MANAGER_APPROVED`.
+- Manager Activity should still show work that requires Manager attention (new/pending/forwarded-to-manager events), but not the Manager's own completed approval/rejection result.
+- The database recipient trigger routes future terminal Manager decisions only to active `branch` profiles whose normalized branch matches the order branch. Do not backfill or mutate historical notification/audit rows.
+- The mobile client also suppresses any historical Manager-owned terminal approval notices that were created under earlier recipient rules. Branch Activity remains unchanged.
+- Preserve the underlying order audit events and approval workflow; this is recipient/display scoping only.
+
 # AGENTS.md — Parts Connect Portal
 
 > **MANDATORY FOR ALL FUTURE AGENTS**

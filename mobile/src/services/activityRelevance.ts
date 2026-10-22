@@ -1,6 +1,6 @@
 import type { UserRole } from '@/types/auth';
 
-const approvalEvents = [
+const superApprovalEvents = [
   'ORDER_CREATED',
   'SUPER_APPROVED_PENDING_MANAGER',
   'SUPER_FORWARDED_MANAGER',
@@ -14,6 +14,24 @@ const approvalEvents = [
   'REVIEW_ORIGINAL_MANAGER_APPROVED',
   'REVIEW_ORIGINAL_PENDING_MANAGER',
 ];
+
+const managerApprovalEvents = [
+  'ORDER_CREATED',
+  'SUPER_APPROVED_PENDING_MANAGER',
+  'SUPER_FORWARDED_MANAGER',
+  'ORDER_REJECTED',
+  'REVIEW_QTY_ZEROED',
+  'REVIEW_EDITS_PENDING_MANAGER',
+  'REVIEW_ORIGINAL_PENDING_MANAGER',
+];
+
+export const managerTerminalApprovalEvents = new Set([
+  'MANAGER_APPROVED',
+  'MANAGER_DIRECT_APPROVED',
+  'MANAGER_REJECTED',
+  'REVIEW_EDITS_MANAGER_APPROVED',
+  'REVIEW_ORIGINAL_MANAGER_APPROVED',
+]);
 
 const adminEvents = [
   'MANAGER_APPROVED',
@@ -33,7 +51,8 @@ export function isOrderActivityRelevant(role: UserRole | null | undefined, event
   if (!role) return false;
   if (role === 'developer') return true;
   if (role === 'branch') return true;
-  if (role === 'super' || role === 'manager') return approvalEvents.includes(event);
+  if (role === 'super') return superApprovalEvents.includes(event);
+  if (role === 'manager') return managerApprovalEvents.includes(event);
   if (role === 'admin') return adminEvents.includes(event);
   if (role === 'viewer' || role === 'hq' || role === 'accounts') return false;
   return false;
