@@ -104,7 +104,7 @@ serve(async (req) => {
   if (profileError) return fail(profileError.message, 'PROFILE_LOOKUP_FAILED');
   if (!profile) return fail('No active profile is linked with this login. Please check portal_profiles.auth_user_id.', 'PROFILE_NOT_LINKED');
   if (!profile.is_active) return fail('Only active users can create orders. Please activate this profile in Developer Workspace.', 'PROFILE_INACTIVE');
-  if (!['branch', 'admin', 'super', 'manager', 'developer'].includes(profile.role)) return fail('Role cannot create orders', 'ROLE_NOT_ALLOWED');
+  if (!['branch', 'admin', 'super', 'manager', 'director', 'developer'].includes(profile.role)) return fail('Role cannot create orders', 'ROLE_NOT_ALLOWED');
 
   const body = await req.json().catch(() => ({}));
   const branch = clean(body.branch);
