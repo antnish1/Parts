@@ -61,7 +61,7 @@ export async function getTestApprovers(): Promise<TestProfileOption[]> {
   const { data, error } = await supabase
     .from('portal_profiles')
     .select('id, full_name, branch, role')
-    .in('role', ['super', 'manager'])
+    .in('role', ['super', 'manager', 'director'])
     .eq('is_active', true)
     .order('role', { ascending: false })
     .order('full_name', { ascending: true });
