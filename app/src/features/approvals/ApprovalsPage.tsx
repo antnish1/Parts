@@ -100,7 +100,7 @@ export function ApprovalsPage() {
       orders.filter((order) => {
         if (!isPendingWorkflow(order)) return false;
         if (role === 'super') return order.approver_id === profile?.id && order.status === 'pending_approval';
-        if (((role === 'manager' || role === 'director') || role === 'director')) return true;
+        if (role === 'manager' || role === 'director') return true;
         return role === 'developer';
       }),
     [orders, profile?.id, role],
