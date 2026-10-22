@@ -75,15 +75,7 @@ export default function NewTadaDispatchScreen() {
   const pickerValue = dateTarget === 'from' ? parse(dateFrom) : dateTarget === 'to' ? parse(dateTo || dateFrom) : parse(dispatchDate);
   return <Screen title="New TA/DA Dispatch" scroll={false}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
 
-    <Section
-      icon="inventory"
-      title="Office"
-      right={
-        <BreathingView style={styles.officeMotion}><View style={styles.officeValue}>
-          <Text numberOfLines={1} style={styles.officeValueText}>{office || 'SELECT OFFICE'}</Text>
-        </View></BreathingView>
-      }
-    />
+    <Section icon="inventory" title={`Office - ${office || 'SELECT OFFICE'}`} />
 
     <Section icon="clipboardCheck" title="Add SVR">
       <Field label="SVR No."><TextInput autoCapitalize="characters" value={svrNo} onChangeText={setSvrNo} style={styles.input} /></Field>
