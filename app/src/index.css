@@ -522,3 +522,139 @@ label:has(input[type='file']):hover,
   .print-history-row { border: 1px solid #b8c1cc; padding: 4px 6px; break-inside: avoid; }
   .print-history-row small { display: block; margin-top: 2px; color: #475569 !important; font-size: 6.5px; }
 }
+
+
+/* New Order mobile density: match the compact TA/DA Dispatch form without touching workflow logic. */
+@media (max-width: 767px) {
+  [data-theme='light-pro'] section:has(> form [data-mobile-parts-builder]) {
+    padding: 8px !important;
+  }
+  [data-theme='light-pro'] section:has(> form [data-mobile-parts-builder]) > h1 {
+    margin-bottom: 4px !important;
+    font-size: 18px !important;
+    line-height: 24px !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) {
+    gap: 8px !important;
+    padding-bottom: 80px !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child {
+    gap: 8px !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child > section {
+    padding: 10px !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child > section > p:first-child {
+    margin-bottom: 6px !important;
+    font-size: 11px !important;
+    line-height: 15px !important;
+  }
+  /* Use two-column form rows, like TA/DA's SVR entry. */
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child > section > div.grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child > section > div.grid > div {
+    min-width: 0 !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child > section > div.grid > div:last-child:nth-child(4) {
+    grid-column: auto !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) label {
+    font-size: 9px !important;
+    letter-spacing: .04em !important;
+    line-height: 12px !important;
+  }
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child input,
+  [data-theme='light-pro'] form:has([data-mobile-parts-builder]) > div:first-child select {
+    min-height: 35px !important;
+    height: 35px !important;
+    padding: 5px 8px !important;
+    margin-top: 3px !important;
+    border-radius: 7px !important;
+    font-size: 12px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] {
+    padding: 10px !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:first-child {
+    margin-bottom: 6px !important;
+    align-items: center !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:first-child p {
+    margin-bottom: 0 !important;
+    font-size: 10px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] textarea {
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 6px 45px 6px 8px !important;
+    font-size: 11px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] tbody {
+    gap: 7px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] tr {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px 8px !important;
+    padding: 9px !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(1) {
+    grid-column: 1 / 2 !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(2) {
+    grid-column: 2 / 3 !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(4) {
+    grid-column: 1 / -1 !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(3),
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(6),
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(7) {
+    min-height: 35px !important;
+    padding: 5px 7px !important;
+    gap: 3px !important;
+    border-radius: 7px !important;
+    font-size: 11px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td::before {
+    margin-bottom: 2px !important;
+    font-size: 8px !important;
+    letter-spacing: .04em !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] input {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 6px 8px !important;
+    border-radius: 7px !important;
+    font-size: 12px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] td:nth-child(8) button {
+    min-height: 32px !important;
+    min-width: 70px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:last-child {
+    margin-top: 8px !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:last-child button,
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:last-child label {
+    min-height: 38px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:last-child > p {
+    padding: 7px 9px !important;
+    border-radius: 9px !important;
+  }
+  [data-theme='light-pro'] [data-mobile-parts-builder] > div:last-child > button[type='submit'] {
+    min-height: 42px !important;
+  }
+}
