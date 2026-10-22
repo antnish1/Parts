@@ -56,3 +56,7 @@ export function isNotificationCategoryRelevant(role: UserRole | null | undefined
   if (role === 'developer') return true;
   return roleNotificationCategories[role].has(String(category || '').toLowerCase());
 }
+
+export function isManagerApprovalOutcomeNotification(category:string,title:string) {
+  return category.toLowerCase()==='approval' && /\\b(approved|rejected)\\b/i.test(title);
+}
