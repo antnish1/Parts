@@ -99,3 +99,10 @@ Do not let frontend role checks replace backend permission checks. Receipt, crea
 - The active receipt/submit action should remain easy to reach on mobile (sticky action area is acceptable) without obscuring content.
 - Traceability remains available but may be collapsed by default to protect mobile vertical space.
 - Developer override controls must be visually separated as a privileged/danger area and remain hidden for all non-developer roles.
+
+## Late HQ receipt of missing SVRs (2026-10-22)
+
+- Manager and Developer may mark an SVR previously recorded as `MISSING_HQ` / `hq_received=false` as physically received later, using `portal_receive_missing_tada_svr` only.
+- The original missing receipt row, reason, and remark remain intact; a `MISSING_HQ_SVR_RECEIVED_LATER` event records the previous reason, actor, time, and receipt remark.
+- Update the SVR location to `IN_TRANSIT_TO_ACCOUNTS`, recalculate dispatch summary status, and require separate Accounts acknowledgment. Do not mark Accounts received automatically.
+- Never offer the action to Accounts/branch users or already-received SVRs. Backend authorization is mandatory.
