@@ -40,7 +40,7 @@ export function LoginPage() {
 
   return (
     <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#d9eafa] text-[#0b2340]">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/portalbg.jpeg')] bg-center bg-no-repeat" style={{ backgroundSize: '100% 100%' }} />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/portalbg.jpeg')] bg-right bg-no-repeat" style={{ backgroundSize: '125% 100%' }} />
       <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-full w-full bg-gradient-to-r from-white/90 via-white/5 to-transparent md:w-[51%]" />
       <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-[9px] w-[38%] -skew-y-[13deg] origin-top-left bg-gradient-to-r from-[#082957] via-[#efb324] to-white" />
       <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-[18px] w-[30%] -skew-y-[17deg] origin-bottom-right bg-gradient-to-r from-[#f4bd18] to-[#082957]" />
