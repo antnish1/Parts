@@ -100,7 +100,7 @@ export function ApprovalsPage() {
       orders.filter((order) => {
         if (!isPendingWorkflow(order)) return false;
         if (role === 'super') return order.approver_id === profile?.id && order.status === 'pending_approval';
-        if (role === 'manager') return true;
+        if ((role === 'manager' || role === 'director')) return true;
         return role === 'developer';
       }),
     [orders, profile?.id, role],
@@ -141,7 +141,7 @@ export function ApprovalsPage() {
     if (role !== 'manager') return false;
     if (isManagerApprovalStage(order)) return false;
     if (action !== 'managerApprove') return false;
-    if (order.approver?.role === 'manager' || order.approver_id === profile?.id) return false;
+    if (['manager', 'director'].includes(order.approver?.role ?? '') || order.approver_id === profile?.id) return false;
     return true;
   }
 
