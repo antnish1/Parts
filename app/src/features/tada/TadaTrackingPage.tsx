@@ -33,7 +33,7 @@ export function TadaTrackingPage() {
     refetchInterval: 20000,
   });
 
-  const isDeveloper = profile?.role === 'developer';
+  const isDeveloper = ['developer', 'director'].includes(profile?.role ?? '');
   const deleteMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => developerDeleteTadaDispatch(id, reason),
     onSuccess: async () => {
