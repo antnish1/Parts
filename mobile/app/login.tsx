@@ -52,7 +52,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <ImageBackground source={require('../assets/branding/jcbsign.jpeg')} style={styles.background} resizeMode="cover">
+    <ImageBackground source={require('../assets/branding/SIGN.jpeg')} style={styles.background} resizeMode="cover">
       <View pointerEvents="none" style={styles.backgroundWash} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboard}>
         <ScrollView
