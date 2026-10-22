@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=compact-native-new-order-20261022
-source=1f5f87e9e024a41485c63a8d2dadf34a3ee5e5c3
+reason=native-new-order-structural-density-fix-20261022
+source=1793fb3074ea47f11affb5fc51c499d5bb0a008f
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
