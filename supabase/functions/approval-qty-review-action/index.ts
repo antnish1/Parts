@@ -38,7 +38,7 @@ serve(async (req) => {
     profile = legacyProfile;
   }
 
-  if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approvers can perform review actions' }, 403);
+  if (!profile?.is_active || !['super', 'manager', 'director', 'developer'].includes(profile.role)) return json({ error: 'Only active approvers can perform review actions' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
@@ -69,7 +69,7 @@ serve(async (req) => {
     if (profile.role === 'super' && order.approver_id !== profile.id) return json({ error: 'Only the selected super approver can review this order.' }, 403);
 
     if (action === 'accept_edits') {
-      const nextStatus = profile.role === 'manager' ? 'approved' : 'pending_manager_approval';
+      const nextStatus = (profile.role === 'manager' || profile.role === 'director') ? 'approved' : 'pending_manager_approval';
       const { error: itemError } = await admin
         .from('portal_order_items')
         .update({ row_status: nextStatus, updated_at: now })
@@ -82,11 +82,11 @@ serve(async (req) => {
       if (orderUpdateError) throw orderUpdateError;
       await admin.from('portal_order_events').insert({
         order_id: order.id,
-        event_type: profile.role === 'manager' ? 'REVIEW_EDITS_MANAGER_APPROVED' : 'REVIEW_EDITS_PENDING_MANAGER',
+        event_type: (profile.role === 'manager' || profile.role === 'director') ? 'REVIEW_EDITS_MANAGER_APPROVED' : 'REVIEW_EDITS_PENDING_MANAGER',
         old_status: order.status,
         new_status: nextStatus,
         actor_id: profile.id,
-        notes: profile.role === 'manager'
+        notes: (profile.role === 'manager' || profile.role === 'director')
           ? `${profile.full_name || profile.role} approved with edited quantities.`
           : `${profile.full_name || profile.role} approved edited quantities; pending manager approval.`,
       });
@@ -94,12 +94,12 @@ serve(async (req) => {
     }
 
     if (action === 'approve_original') {
-      const nextStatus = profile.role === 'manager' ? 'approved' : 'pending_manager_approval';
+      const nextStatus = (profile.role === 'manager' || profile.role === 'director') ? 'approved' : 'pending_manager_approval';
       const { error: itemError } = await admin.from('portal_order_items').update({ edited_qty: null, edited_value: null, row_status: nextStatus, updated_at: now }).eq('order_id', order.id);
       if (itemError) throw itemError;
       const { error: orderUpdateError } = await admin.from('portal_orders').update({ status: nextStatus, approval_status: nextStatus, updated_at: now }).eq('id', order.id);
       if (orderUpdateError) throw orderUpdateError;
-      await admin.from('portal_order_events').insert({ order_id: order.id, event_type: profile.role === 'manager' ? 'REVIEW_ORIGINAL_MANAGER_APPROVED' : 'REVIEW_ORIGINAL_PENDING_MANAGER', old_status: order.status, new_status: nextStatus, actor_id: profile.id, notes: profile.role === 'manager' ? `${profile.full_name || profile.role} approved with original quantities.` : `${profile.full_name || profile.role} approved with original quantities; pending manager approval.` });
+      await admin.from('portal_order_events').insert({ order_id: order.id, event_type: (profile.role === 'manager' || profile.role === 'director') ? 'REVIEW_ORIGINAL_MANAGER_APPROVED' : 'REVIEW_ORIGINAL_PENDING_MANAGER', old_status: order.status, new_status: nextStatus, actor_id: profile.id, notes: (profile.role === 'manager' || profile.role === 'director') ? `${profile.full_name || profile.role} approved with original quantities.` : `${profile.full_name || profile.role} approved with original quantities; pending manager approval.` });
       return json({ ok: true, status: nextStatus });
     }
 

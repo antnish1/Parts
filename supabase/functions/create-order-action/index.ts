@@ -142,7 +142,7 @@ serve(async (req) => {
     .eq('id', approverId)
     .maybeSingle();
   if (approverError) return fail(approverError.message, 'APPROVER_LOOKUP_FAILED');
-  if (!approver?.is_active || !['super', 'manager'].includes(approver.role)) return fail('Please select an active super or manager approver.', 'APPROVER_INVALID');
+  if (!approver?.is_active || !['super', 'manager', 'director'].includes(approver.role)) return fail('Please select an active super, manager or director approver.', 'APPROVER_INVALID');
 
   if (orderType === 'VOR' && orderFor !== 'Customer') return fail('VOR order must be for Customer');
   if (orderFor === 'Customer' && (!machineNo || !customerName || !warrantyStatus)) return fail('Customer order requires machine, customer and machine type');
@@ -163,7 +163,7 @@ serve(async (req) => {
 
   try {
     const machineMasterResult = orderFor === 'Customer' ? await saveMissingMachine(adminClient, machineNo, customerName) : null;
-    const initialStatus = approver.role === 'manager' ? 'pending_manager_approval' : 'pending_approval';
+    const initialStatus = ['manager', 'director'].includes(approver.role) ? 'pending_manager_approval' : 'pending_approval';
 
     const orderNo = `PORTAL-${Date.now()}-${Math.floor(Math.random() * 900 + 100)}`;
     const { data: order, error: orderError } = await adminClient.from('portal_orders').insert({
