@@ -31,7 +31,7 @@ export function TadaNewDispatchV2Page() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const isBranchUser = profile?.role === 'branch';
-  const [office, setOffice] = useState(profile?.branch ?? '');
+  const [office, setOffice] = useState(profile?.branch === 'ALL_BRANCHES' ? '' : (profile?.branch ?? ''));
   const [items, setItems] = useState<TadaCreateItem[]>([]);
   const [svrNo, setSvrNo] = useState('');
   const [engineerName, setEngineerName] = useState('');
@@ -50,7 +50,7 @@ export function TadaNewDispatchV2Page() {
   const { data: engineers = [] } = useQuery({ queryKey: ['tada-engineers'], queryFn: getTadaEngineers });
 
   useEffect(() => {
-    if (profile?.branch) setOffice(profile.branch);
+    if (profile?.branch && profile.branch !== 'ALL_BRANCHES') setOffice(profile.branch);
     if (profile?.fullName) setDispatchedBy(profile.fullName);
   }, [profile?.branch, profile?.fullName]);
 
