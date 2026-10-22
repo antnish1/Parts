@@ -29,7 +29,7 @@ function MergeCustomerBox({ currentCustomerId, disabled }: { currentCustomerId: 
 export function CreditCustomerProfilePage() {
   const customerId = new URLSearchParams(window.location.search).get('id') ?? '';
   const { role } = useAuth();
-  const canManageCustomer = ['admin', 'manager', 'developer'].includes(role ?? '');
+  const canManageCustomer = ['admin', 'manager', 'director', 'developer'].includes(role ?? '');
   const queryClient = useQueryClient();
   const customerQuery = useQuery({ queryKey: ['credit-customer', customerId], queryFn: () => getCreditCustomer(customerId), enabled: Boolean(customerId) });
   const ledgerQuery = useQuery({ queryKey: ['credit-customer-ledger', customerId], queryFn: () => getCreditCustomerLedger(customerId), enabled: Boolean(customerId) });
