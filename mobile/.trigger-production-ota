@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=mobile-signin-logo-alignment-20261022
-source=5fffb23df9aa9f9809b8f165b987a99cf0207b82
+reason=new-order-plain-white-background-20261022
+source=bde44bfa397f60382c8efc67a8ed9e88afb164a9
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
