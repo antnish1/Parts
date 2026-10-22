@@ -38,7 +38,7 @@ serve(async (req) => {
     profile = legacyProfile;
   }
 
-  if (!profile?.is_active || !['super', 'manager', 'developer'].includes(profile.role)) return json({ error: 'Only active approver can perform this action' }, 403);
+  if (!profile?.is_active || !['super', 'manager', 'director', 'developer'].includes(profile.role)) return json({ error: 'Only active approver can perform this action' }, 403);
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
@@ -70,7 +70,7 @@ serve(async (req) => {
   }
 
   async function approveByManager(eventType = 'MANAGER_APPROVED') {
-    if (!['manager', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can approve this order' }, 403);
+    if (!['manager', 'director', 'developer'].includes(profile.role)) return json({ error: 'Only manager or developer can approve this order' }, 403);
     await updateOrder('approved', 'approved');
     await updateItems('approved');
     await event(eventType, 'approved', `Manager approved order item rows. Original approver: ${approver?.full_name || '-'}.`);
@@ -87,7 +87,7 @@ serve(async (req) => {
 
   try {
     if (action === 'approve') {
-      if (profile.role === 'manager') return await approveByManager('MANAGER_DIRECT_APPROVED');
+      if ((profile.role === 'manager' || profile.role === 'director')) return await approveByManager('MANAGER_DIRECT_APPROVED');
       if (profile.role !== 'developer' && !isSelectedApprover()) return json({ error: 'Only the selected super approver can approve this order.' }, 403);
       await updateOrder('pending_manager_approval', 'pending_manager_approval');
       await updateItems('pending_manager_approval');
