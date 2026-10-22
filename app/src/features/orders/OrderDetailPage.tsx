@@ -133,7 +133,7 @@ export function OrderDetailPage() {
   const canAdmin = role === 'developer' || role === 'admin' || role === 'director';
   const canProcess = (canAdmin || role === 'manager') && rawStatus === 'approved';
   const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_super_approval', 'pending_manager_approval']);
-  const canEditQty = (role === 'developer' || role === 'manager' || role === 'director' || isSelectedSuperApprover)
+  const canEditQty = ((['developer', 'manager', 'director'] as readonly string[]).includes(role ?? '') || isSelectedSuperApprover)
     && pendingStatuses.has((order.status ?? '').toLowerCase().replace(/[\s-]+/g, '_'))
     && pendingStatuses.has((order.approval_status ?? '').toLowerCase().replace(/[\s-]+/g, '_'));
   const isBlockingAction = !!busyAction || commentMutation.isPending || !!attachmentBusy;
