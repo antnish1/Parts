@@ -42,7 +42,7 @@ export function LoginPage() {
     <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#e5f2ff] text-[#092650]">
       {/* The approved image owns the full hero artwork and branding. Keep it visible above the interactive card. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/jsign.jpeg')] bg-top bg-no-repeat" style={{ backgroundSize: '100% auto' }} />
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col px-[clamp(20px,9vw,54px)] pb-10 pt-[clamp(300px,45vh,590px)] sm:pb-14">
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col justify-center px-[clamp(20px,9vw,54px)] py-20 sm:py-24">
         <section className="relative w-full rounded-[27px] border border-white/90 bg-white px-6 pb-7 pt-14 shadow-[0_16px_38px_rgba(10,60,114,0.17)] sm:px-8 sm:pb-9" aria-labelledby="parts-signin-heading">
           <div className="absolute left-1/2 top-0 flex h-[78px] w-[78px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white bg-gradient-to-br from-[#168df2] to-[#064998] text-white shadow-[0_4px_9px_rgba(9,61,134,0.12)]">
             <UserRound aria-hidden="true" className="h-9 w-9 stroke-[1.8]" />
