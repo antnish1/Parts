@@ -46,13 +46,8 @@ export function LoginPage() {
       <div aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-[18px] w-[30%] -skew-y-[17deg] origin-bottom-right bg-gradient-to-r from-[#f4bd18] to-[#082957]" />
 
       <div className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 items-center px-5 py-16 md:min-h-[100dvh] md:grid-cols-[minmax(0,1fr)_340px_minmax(0,1fr)] md:px-[5.2%] md:py-10">
-        <div className="z-10 mb-12 flex max-w-[345px] flex-col items-start md:mb-0 md:self-stretch md:justify-between md:py-10">
-          <div className="flex items-center gap-4">
-            <div className="rounded-sm border-[3px] border-[#edb928] bg-[#101820] px-2 py-0.5 text-[22px] font-black italic leading-none tracking-[-0.08em] text-white">JCB</div>
-            <span className="h-9 w-px bg-[#697b8b]" />
-            <strong className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-[#071e3b]">FRONTIER JCB</strong>
-          </div>
-          <div className="mt-10 md:mt-auto md:mb-auto md:pt-12">
+        <div className="z-10 mb-12 flex max-w-[345px] flex-col items-start justify-center md:mb-0">
+          <div>
             <span className="mb-4 block h-[3px] w-10 rounded-full bg-[#efbd15]" />
             <h2 className="text-[30px] font-extrabold leading-tight tracking-[-0.04em] text-[#061c38]">Welcome Back</h2>
             <p className="mt-3 max-w-[250px] text-[17px] font-medium leading-[1.4] text-[#68778d]">Sign in to access your<br />Parts Connect portal</p>
