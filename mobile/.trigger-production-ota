@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=mobile-new-order-compact-fields-20261022
-source=33806441f533a75171444691941538aa8ec4bccc
+reason=new-order-right-aligned-branch-user-20261022
+source=f1905cd2c7967b994e4a25e561995b6628f47f17
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
