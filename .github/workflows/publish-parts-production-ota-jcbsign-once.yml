@@ -1,0 +1,62 @@
+name: One-time Parts Connect production OTA (jcbsign)
+
+on:
+  push:
+    branches:
+      - agent/expo-android-foundation
+    paths:
+      - '.github/workflows/publish-parts-production-ota-jcbsign-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    # Restrict this release to the merge of this dedicated release branch.
+    if: contains(github.event.head_commit.message, 'production-ota-jcbsign-once-20261022')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: parts-connect-production-ota-jcbsign-once-20261022
+      cancel-in-progress: false
+    env:
+      EXPO_PUBLIC_SUPABASE_URL: https://ubkwtjyvbdvepzbxoikq.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3
+      EXPO_PUBLIC_APP_ENV: production
+    steps:
+      - name: Verify Expo token exists
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: test -n "$EXPO_TOKEN"
+      - name: Checkout release
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Verify correct runtime and image
+        working-directory: mobile
+        run: |
+          node -e "const a=require('./app.json').expo; if(a.version!=='0.2.0'||a.runtimeVersion.policy!=='appVersion') process.exit(1)"
+          grep -F "require('../assets/branding/jcbsign.jpeg')" app/login.tsx
+          test -s assets/branding/jcbsign.jpeg
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm install
+      - name: Validate mobile bundle
+        working-directory: mobile
+        run: npm run check
+      - name: Publish production Android OTA (no native build)
+        working-directory: mobile
+        run: eas update --channel production --platform android --message "Production sign-in jcbsign background and current mobile fixes" --non-interactive
+      - name: Release summary
+        run: |
+          echo "Android OTA channel: production" >> "$GITHUB_STEP_SUMMARY"
+          echo "Runtime: 0.2.0" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${GITHUB_SHA}" >> "$GITHUB_STEP_SUMMARY"
+          echo "No APK or AAB built." >> "$GITHUB_STEP_SUMMARY"
