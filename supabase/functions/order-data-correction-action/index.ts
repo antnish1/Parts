@@ -45,7 +45,7 @@ async function getProfile(userClient: ReturnType<typeof createClient>, admin: Re
   if (!authData.user) throw new Error('Unauthorized. Please log in again.');
   const { data: profile, error } = await admin.from('portal_profiles').select('id, full_name, role, is_active').eq('auth_user_id', authData.user.id).maybeSingle();
   if (error) throw error;
-  if (!profile?.is_active || !['manager', 'developer'].includes(profile.role)) throw new Error('Only Manager and Developer users can correct order data.');
+  if (!profile?.is_active || !['manager', 'director', 'developer'].includes(profile.role)) throw new Error('Only Manager and Developer users can correct order data.');
   return profile as { id: string; full_name: string; role: string };
 }
 

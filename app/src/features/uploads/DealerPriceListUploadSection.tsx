@@ -74,7 +74,7 @@ function DuplicateRowCard({ row, selected, onSelect }: { row: ParsedPartPriceRow
 export function DealerPriceListUploadSection() {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
-  const canManage = profile?.role === 'admin' || profile?.role === 'developer' || profile?.role === 'manager';
+  const canManage = profile?.role === 'admin' || profile?.role === 'developer' || profile?.role === 'manager' || profile?.role === 'director';
   const [month, setMonth] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');

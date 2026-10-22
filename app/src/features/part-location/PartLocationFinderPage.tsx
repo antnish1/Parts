@@ -8,7 +8,7 @@ import { findPartLocations, type PartLocation } from '../../services/partLocatio
 import { lookupTestPartByNo, suggestTestParts, type TestPart } from '../../services/testPart.service';
 
 const RECENT_KEY = 'pc-part-location-recent';
-const WRITE_ROLES = new Set(['manager', 'admin', 'developer']);
+const WRITE_ROLES = new Set(['manager', 'director', 'admin', 'developer']);
 
 type DetectedCode = { rawValue: string };
 type CodeDetector = { detect: (source: HTMLVideoElement) => Promise<DetectedCode[]> };

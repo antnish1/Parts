@@ -10,7 +10,7 @@ type Profile = { id: string; role: string; branch: string; is_active: boolean };
 type OrderRow = { id: string; branch: string; approver_id: string | null };
 
 function canAccessOrder(profile: Profile, order: OrderRow) {
-  if (['developer', 'manager', 'admin', 'viewer'].includes(profile.role)) return true;
+  if (['developer', 'manager', 'director', 'admin', 'viewer'].includes(profile.role)) return true;
   if (profile.role === 'super') return true;
   if (profile.role === 'branch') return order.branch === profile.branch;
   return false;

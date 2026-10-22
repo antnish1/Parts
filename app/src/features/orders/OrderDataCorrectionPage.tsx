@@ -76,7 +76,7 @@ export function OrderDataCorrectionPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { role } = useAuth();
-  const allowed = role === 'manager' || role === 'developer';
+  const allowed = (role === 'manager' || role === 'director') || role === 'developer';
   const [modal, setModal] = useState<ModalKind>(null);
   const [selectedItem, setSelectedItem] = useState<CorrectionItem | null>(null);
   const [selectedBilling, setSelectedBilling] = useState<CorrectionBilling | null>(null);

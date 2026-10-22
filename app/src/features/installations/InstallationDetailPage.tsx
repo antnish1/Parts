@@ -17,7 +17,7 @@ export function InstallationDetailPage() {
   const query = useQuery({ queryKey:['installation-entry',installationId], queryFn:()=>getInstallationEntry(installationId), enabled:Boolean(installationId) });
   const entry = query.data; const [equipmentNo,setEquipmentNo] = useState(''); const [jcbNo,setJcbNo] = useState(''); const [dbmsInvoiceNo,setDbmsInvoiceNo] = useState(''); const [svrNo,setSvrNo] = useState(''); const [registrationNo,setRegistrationNo] = useState(''); const [message,setMessage] = useState(''); const [uploading,setUploading] = useState<string>(''); const [confirmAction,setConfirmAction] = useState<'submit'|'accept'|null>(null); const [reportBusy,setReportBusy] = useState(false);
   const assignedBranch = Boolean(entry && normalizeBranch(profile?.branch) === normalizeBranch(entry.branch));
-  const privilegedCompleter = ['admin','manager','developer','hq'].includes(profile?.role ?? '');
+  const privilegedCompleter = ['admin','manager','director','developer','hq'].includes(profile?.role ?? '');
   const canComplete = assignedBranch || privilegedCompleter;
   const isServiceCrm = profile?.id === INSTALLATION_VIEWER_PROFILE_ID || session?.user?.id === INSTALLATION_VIEWER_PROFILE_ID;
   const docs = (entry?.portal_installation_documents ?? []).filter((doc)=>doc.is_active);

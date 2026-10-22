@@ -12,7 +12,7 @@ const num = (value: unknown) => {
 };
 
 const closedRowStatuses = new Set(['received', 'issued', 'rejected']);
-const allowedStatusUploadRoles = ['admin', 'manager', 'developer'];
+const allowedStatusUploadRoles = ['admin', 'manager', 'director', 'developer'];
 
 type ApplyReportRow = {
   result: 'SUCCESS' | 'SKIPPED' | 'FAILED';

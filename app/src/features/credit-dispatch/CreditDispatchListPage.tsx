@@ -184,9 +184,9 @@ function normalizeActionBranch(value: string | null | undefined) {
 }
 
 function canReviewStage(row: CreditDispatchRecord, role: string) {
-  if (role === 'developer') return row.approval_status === 'Pending Accounts Approval' || row.approval_status === 'Pending Manager Approval';
+  if (role === 'developer' || role === 'director') return row.approval_status === 'Pending Accounts Approval' || row.approval_status === 'Pending Manager Approval';
   if (role === 'accounts') return row.approval_status === 'Pending Accounts Approval';
-  if (role === 'manager') return row.approval_status === 'Pending Manager Approval';
+  if (role === 'manager' || role === 'director') return row.approval_status === 'Pending Manager Approval';
   return false;
 }
 
@@ -309,7 +309,7 @@ export function CreditDispatchListPage() {
     })) as Record<KpiKey, { count: number; amount: number }>;
   }, [rows]);
   const currentRole = profile?.role ?? '';
-  const canPay = ['branch', 'manager', 'admin', 'developer', 'super'].includes(currentRole);
+  const canPay = ['branch', 'manager', 'director', 'admin', 'developer', 'super'].includes(currentRole);
   const canCorrect = currentRole === 'branch';
   const isBusy = approvalMutation.isPending || paymentMutation.isPending;
 
