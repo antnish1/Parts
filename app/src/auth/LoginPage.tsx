@@ -39,10 +39,12 @@ export function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#e5f2ff] text-[#092650]">
-      {/* The approved image owns the full hero artwork and branding. Keep it visible above the interactive card. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/jsign.jpeg')] bg-top bg-no-repeat" style={{ backgroundSize: '100% auto' }} />
-      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col justify-center px-[clamp(20px,9vw,54px)] py-20 sm:py-24">
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#e5f2ff] text-[#092650] lg:flex lg:items-center lg:justify-end lg:bg-[linear-gradient(125deg,#cce7fc_0%,#e9f5ff_52%,#f6faff_100%)]">
+      {/* Keep mobile reference art at full width; desktop displays it in a bounded hero panel,
+          rather than enlarging the portrait image across the entire monitor. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/jsign.jpeg')] bg-top bg-no-repeat bg-[length:100%_auto] lg:bottom-0 lg:left-0 lg:right-auto lg:top-0 lg:w-[55%] lg:bg-[length:100%_auto]" />
+      <div aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 hidden h-[36%] w-[55%] bg-gradient-to-t from-[#e5f2ff] via-[#e5f2ff]/80 to-transparent lg:block" />
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col justify-center px-[clamp(20px,9vw,54px)] py-20 sm:py-24 lg:mx-0 lg:mr-[max(3vw,32px)] lg:min-h-0 lg:w-[42%] lg:max-w-[480px] lg:px-4">
         <section className="relative w-full rounded-[27px] border border-white/90 bg-white px-6 pb-7 pt-14 shadow-[0_16px_38px_rgba(10,60,114,0.17)] sm:px-8 sm:pb-9" aria-labelledby="parts-signin-heading">
           <div className="absolute left-1/2 top-0 flex h-[78px] w-[78px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white bg-gradient-to-br from-[#168df2] to-[#064998] text-white shadow-[0_4px_9px_rgba(9,61,134,0.12)]">
             <UserRound aria-hidden="true" className="h-9 w-9 stroke-[1.8]" />
