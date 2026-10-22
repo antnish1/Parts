@@ -21,6 +21,8 @@ function isPartLocationWorkspace(path: string) { return path === '/parts/locatio
 
 export function canAccessRoute(role: UserRole, path: string) {
   if (path === '/') return true;
+  // Directors may navigate every portal module; server-side authorization remains enforced.
+  if (role === 'director') return true;
   if (path === '/parts/location-finder/manage') return ['manager', 'director', 'admin', 'developer'].includes(role);
   if (isPartLocationWorkspace(path)) return role !== 'accounts';
   if (isTadaWorkspace(path)) return ['branch', 'manager', 'director', 'hq', 'developer', 'accounts'].includes(role);
