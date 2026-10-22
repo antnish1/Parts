@@ -184,7 +184,7 @@ function normalizeActionBranch(value: string | null | undefined) {
 }
 
 function canReviewStage(row: CreditDispatchRecord, role: string) {
-  if (role === 'developer') return row.approval_status === 'Pending Accounts Approval' || row.approval_status === 'Pending Manager Approval';
+  if (role === 'developer' || role === 'director') return row.approval_status === 'Pending Accounts Approval' || row.approval_status === 'Pending Manager Approval';
   if (role === 'accounts') return row.approval_status === 'Pending Accounts Approval';
   if (role === 'manager' || role === 'director') return row.approval_status === 'Pending Manager Approval';
   return false;
