@@ -60,7 +60,7 @@ serve(async (req) => {
 
   const body = await req.json().catch(() => ({}));
   const action = String(body.action ?? '');
-  const allowedRoles = action === 'process' ? ['admin', 'developer', 'manager'] : ['admin', 'developer'];
+  const allowedRoles = action === 'process' ? ['admin', 'developer', 'manager', 'director'] : ['admin', 'developer', 'director'];
   if (!allowedRoles.includes(profile.role)) return json({ error: 'Your role is not permitted to perform this action' }, 403);
   const orderId = String(body.orderId ?? '');
   if (!orderId) return json({ error: 'Order id is required' }, 400);
