@@ -27,7 +27,7 @@ function primaryItems(items: NavItem[], role?: UserRole) {
     ? ['/orders/new', '/orders/track', '/parts/location-finder', '/docket-scanner']
     : role === 'admin'
       ? ['/', '/orders/track', '/parts/location-finder', '/docket-scanner']
-      : role === 'manager'
+      : (role === 'manager' || role === 'director')
         ? ['/', '/approvals/pending', '/parts/location-finder', '/manager/dashboard']
         : role === 'developer'
           ? ['/', '/orders/track', '/parts/location-finder', '/developer/workspace']
