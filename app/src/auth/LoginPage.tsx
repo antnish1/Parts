@@ -1,14 +1,12 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
-import { Button } from '../components/ui/Button';
+import { ArrowRight, ChevronRight, Eye, EyeOff, LockKeyhole, UserRound } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { roleHomePath } from './roleGuards';
-import { brandLogoSrc } from '../assets/brandLogo';
 
-const inputClass = 'w-full rounded-lg border border-[#6D8196]/45 bg-white px-12 py-3.5 text-sm font-semibold text-[#000080] outline-none transition placeholder:text-[#6D8196] focus:border-[#0047AB]';
-const labelClass = 'mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6D8196]';
+const inputClass = 'h-[52px] w-full rounded-full border border-[#d8e2ed] bg-[#f9fbfe] pl-12 pr-12 text-[14px] font-medium text-[#082753] outline-none transition placeholder:text-[#9ca9bb] focus:border-[#1787ee] focus:ring-2 focus:ring-[#1787ee]/15';
+const labelClass = 'mb-2 flex items-center gap-2.5 text-[13px] font-bold text-[#092650]';
 
 function normalizeLoginIdentifier(value: string) {
   const text = value.trim();
@@ -41,47 +39,47 @@ export function LoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#000080] px-4 py-10 text-[#000080]">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0047AB] via-[#000080] to-[#82C8E5]" />
-      <section className="relative w-full max-w-[430px] rounded-2xl border border-white/40 bg-white p-7 shadow-panel sm:p-8">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-white p-1.5 shadow-md ring-1 ring-[#82C8E5]/45">
-            <img src={brandLogoSrc} alt="Parts Connect Portal logo" className="h-full w-full object-contain" />
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#e5f2ff] text-[#092650]">
+      {/* The approved image owns the full hero artwork and branding. Keep it visible above the interactive card. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[url('/jsign.jpeg')] bg-top bg-no-repeat" style={{ backgroundSize: '100% auto' }} />
+      <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[520px] flex-col px-[clamp(20px,9vw,54px)] pb-10 pt-[clamp(300px,45vh,590px)] sm:pb-14">
+        <section className="relative w-full rounded-[27px] border border-white/90 bg-white px-6 pb-7 pt-14 shadow-[0_16px_38px_rgba(10,60,114,0.17)] sm:px-8 sm:pb-9" aria-labelledby="parts-signin-heading">
+          <div className="absolute left-1/2 top-0 flex h-[78px] w-[78px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[5px] border-white bg-gradient-to-br from-[#168df2] to-[#064998] text-white shadow-[0_4px_9px_rgba(9,61,134,0.12)]">
+            <UserRound aria-hidden="true" className="h-9 w-9 stroke-[1.8]" />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.24em] text-[#0047AB]">Parts Connect Portal</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className={labelClass}>User ID / Email ID</label>
-            <div className="relative">
-              <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0047AB]" />
-              <input className={inputClass} autoComplete="username" placeholder="DAMOH01 or name@company.com" value={loginId} onChange={(event) => setLoginId(event.target.value)} />
+          <h1 id="parts-signin-heading" className="text-[30px] font-extrabold leading-tight tracking-[-0.035em]">Sign in</h1>
+          <p className="mb-6 mt-2 max-w-[350px] text-[13px] font-medium leading-[1.55] text-[#718198]">Use the same User ID and password as the Parts Connect portal.</p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="parts-login-user" className={labelClass}><UserRound className="h-5 w-5 text-[#167bd5]" />User ID</label>
+              <div className="relative">
+                <UserRound aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#7e8da0]" />
+                <input id="parts-login-user" className={inputClass} autoComplete="username" placeholder="e.g. DAMOH01" value={loginId} onChange={(event) => setLoginId(event.target.value)} />
+              </div>
             </div>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <label className="block text-xs font-black uppercase tracking-[0.16em] text-[#6D8196]">Password</label>
-              <button type="button" className="text-xs font-black text-[#0047AB] hover:text-[#000080]" onClick={() => setShowPassword((current) => !current)}>{showPassword ? 'Hide' : 'Show'}</button>
+            <div>
+              <label htmlFor="parts-login-password" className={labelClass}><LockKeyhole className="h-5 w-5 text-[#167bd5]" />Password</label>
+              <div className="relative">
+                <LockKeyhole aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#7e8da0]" />
+                <input id="parts-login-password" className={inputClass} type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
+                <button type="button" className="absolute right-4 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-[#718198] hover:text-[#0969c6]" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
-            <div className="relative">
-              <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0047AB]" />
-              <input className={inputClass} type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter password" value={password} onChange={(event) => setPassword(event.target.value)} />
-              <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6D8196] hover:text-[#0047AB]" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            <div className="flex justify-end">
+              <button type="button" className="flex items-center gap-1 text-[12px] font-bold text-[#0877da] hover:underline" onClick={() => setMessage('Please contact your Parts Connect administrator to reset your password.')}>
+                Forgot password? <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-          </div>
-
-          <Button type="submit" className="h-12 w-full rounded-lg bg-[#0047AB] text-base text-white shadow-none hover:bg-[#000080]" disabled={!canSubmit || isSubmitting}>
-            {isSubmitting ? 'Verifying...' : 'Continue'}
-          </Button>
-        </form>
-
-        {!isSupabaseConfigured() ? <p className="mt-5 rounded-lg border border-[#82C8E5] bg-[#82C8E5]/20 p-4 text-xs font-semibold text-[#000080]">Supabase environment variables are missing.</p> : null}
-        {message ? <p className="mt-5 rounded-lg border border-[#82C8E5] bg-[#82C8E5]/25 p-4 text-sm font-semibold text-[#000080]">{message}</p> : null}
-      </section>
+            <button type="submit" disabled={!canSubmit || isSubmitting} className="flex h-[54px] w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-[#0750a5] to-[#0b99fc] text-[16px] font-bold text-white shadow-[0_6px_17px_rgba(10,112,216,0.21)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-65">
+              {isSubmitting ? 'Verifying...' : 'Sign in'} {!isSubmitting && <ArrowRight aria-hidden="true" className="h-5 w-5" />}
+            </button>
+          </form>
+          {!isSupabaseConfigured() && <p role="alert" className="mt-4 text-xs text-red-700">Supabase environment variables are missing.</p>}
+          {message && <p role="status" className="mt-4 rounded-xl bg-[#eaf4ff] px-3 py-2 text-sm text-[#174f8e]">{message}</p>}
+        </section>
+      </div>
     </main>
   );
 }
