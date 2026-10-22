@@ -1,0 +1,104 @@
+name: Publish Parts Connect Production Android OTA
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Enter PUBLISH to release current mobile branch to production"
+        required: true
+        type: string
+  push:
+    branches:
+      - agent/expo-android-foundation
+    paths:
+      - mobile/.trigger-production-ota
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parts-connect-android-production-ota
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Verify and publish production OTA (no APK/AAB)
+    if: ${{ github.event_name == 'push' || inputs.confirmation == 'PUBLISH' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_SUPABASE_URL: https://ubkwtjyvbdvepzbxoikq.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3
+      EXPO_PUBLIC_APP_ENV: production
+    steps:
+      - name: Checkout canonical mobile branch
+        uses: actions/checkout@v5
+        with:
+          ref: agent/expo-android-foundation
+          fetch-depth: 0
+
+      - name: Require current canonical mobile commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin agent/expo-android-foundation
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/agent/expo-android-foundation)"
+
+      - name: Verify production channel and runtime
+        shell: bash
+        run: |
+          node <<'NODE'
+          const app=require('./mobile/app.json').expo;
+          const eas=require('./mobile/eas.json');
+          if(app.version!=='0.2.0' || app.runtimeVersion?.policy!=='appVersion') throw Error('Unexpected runtime; requires review before publish');
+          if(app.android?.package!=='com.frontier.partsconnect') throw Error('Wrong Android package');
+          if(app.extra?.eas?.projectId!=='3026af5e-622e-48de-bb4f-1ca851373589') throw Error('Wrong EAS project');
+          if(eas.build?.production?.channel!=='production') throw Error('Production build not subscribed to production channel');
+          console.log('Production channel and app runtime verified');
+          NODE
+
+      - name: Require Expo token
+        shell: bash
+        run: |
+          test -n "${EXPO_TOKEN:-}" || { echo "::error::EXPO_TOKEN secret not configured"; exit 1; }
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install mobile dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
+
+      - name: Validate Android bundle
+        working-directory: mobile
+        run: npm run check
+
+      - name: Publish production Android OTA
+        working-directory: mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          eas update --channel production --platform android --message "Parts Connect production 0.2.0 from $(git rev-parse --short HEAD): canonical status badges and latest changes" --non-interactive
+
+      - name: Release summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Parts Connect production Android OTA"
+            echo "- Source: agent/expo-android-foundation"
+            echo "- Channel: production"
+            echo "- Runtime: appVersion 0.2.0"
+            echo "- APK/AAB built: No"
+            echo "- Source commit: `$(git rev-parse HEAD)`"
+          } >> "$GITHUB_STEP_SUMMARY"
