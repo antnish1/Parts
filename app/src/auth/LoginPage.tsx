@@ -51,7 +51,7 @@ export function LoginPage() {
             <span className="mb-4 block h-[3px] w-10 rounded-full bg-[#efbd15]" />
             <h2 className="text-[30px] font-extrabold leading-tight tracking-[-0.04em] text-[#061c38]">Welcome Back</h2>
             <p className="mt-3 max-w-[250px] text-[17px] font-medium leading-[1.4] text-[#68778d]">Sign in to access your<br />Parts Connect portal</p>
-            <div className="mt-9 flex items-center gap-3 text-[10px] font-bold text-[#1b2f49]">
+            <div className="mt-5 flex items-center gap-3 text-[10px] font-bold text-[#1b2f49]">
               <span className="flex items-center gap-1.5"><Settings size={19} className="text-[#0e315c]" />Faster<br />Service</span>
               <span className="h-8 w-px bg-[#ebc65a]" />
               <span className="flex items-center gap-1.5"><ShieldCheck size={19} className="text-[#0e315c]" />Better<br />Support</span>
