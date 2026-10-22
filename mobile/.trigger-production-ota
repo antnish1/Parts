@@ -1,6 +1,5 @@
 Parts Connect production OTA trigger
-reason=new-order-header-green-selected-options-20261022
-source=f8a0b6e569e69ee16c7e1b666f98ecef07ad8439
+reason=raise-signin-branding-clear-jcb-overlap-20261022
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
