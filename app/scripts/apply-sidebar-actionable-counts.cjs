@@ -34,9 +34,12 @@ export function AppLayout() {`,
   'counter helpers',
 );
 
+const managerRoleFlag = source.includes("  const isManager = (profile?.role === 'manager' || profile?.role === 'director');")
+  ? "  const isManager = (profile?.role === 'manager' || profile?.role === 'director');"
+  : "  const isManager = profile?.role === 'manager';";
 replaceOnce(
-  "  const isManager = profile?.role === 'manager';",
-  "  const isManager = profile?.role === 'manager';\n  const isBranch = profile?.role === 'branch';",
+  managerRoleFlag,
+  managerRoleFlag + "\n  const isBranch = profile?.role === 'branch';",
   'branch role flag',
 );
 
