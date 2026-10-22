@@ -1,5 +1,6 @@
 Parts Connect production OTA trigger
-reason=signin-jcb-backhoe-background-asset-refresh-20261022
+reason=new-order-header-green-selected-options-20261022
+source=f8a0b6e569e69ee16c7e1b666f98ecef07ad8439
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
