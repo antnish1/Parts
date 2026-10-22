@@ -1,3 +1,6 @@
 Parts Connect production OTA trigger
-source=838e8dc5abfdd59e9ce3dc96e35a9eacec8ba1c8
-reason=release-latest-mobile-with-processed-status-badge-20261022
+reason=compact-native-new-order-20261022
+source=1f5f87e9e024a41485c63a8d2dadf34a3ee5e5c3
+channel=production
+runtime=0.2.0
+build=no-apk-or-aab
