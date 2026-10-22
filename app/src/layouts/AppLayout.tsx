@@ -29,7 +29,6 @@ import { Button } from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../auth/useAuth';
 import { getOrderList } from '../services/orderList.service';
-import { getDelayedVorEligibleOrderIds } from '../services/delayedVor.service';
 import { getTadaDispatches } from '../services/tada.service';
 import { brandLogoSrc } from '../assets/brandLogo';
 import { RoleAwareNav, type NavItem } from './RoleAwareNav';
@@ -69,18 +68,6 @@ function getDesktopPageTitle(pathname: string, items: NavItem[]) {
   return match?.desktopLabel ?? match?.label ?? 'Parts Connect Portal';
 }
 
-function isDelayedVorSidebarOrder(
-  order: Awaited<ReturnType<typeof getOrderList>>[number],
-  eligibleOrderIds: Set<string>,
-) {
-  if (String(order.order_type ?? '').trim().toUpperCase() !== 'VOR') return false;
-  if (!eligibleOrderIds.has(String(order.id)) || !order.processed_date) return false;
-  const processedAt = new Date(order.processed_date).getTime();
-  if (!Number.isFinite(processedAt)) return false;
-  const ageDays = Math.max(0, Math.floor((Date.now() - processedAt) / 86_400_000));
-  return ageDays >= 1;
-}
-
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -97,14 +84,7 @@ export function AppLayout() {
   const adminCounterQuery = useQuery({
     queryKey: ['admin-approved-orders-nav-counter'],
     queryFn: getOrderList,
-    enabled: Boolean(profile),
-    refetchInterval: 15000,
-  });
-
-  const delayedVorCounterQuery = useQuery({
-    queryKey: ['delayed-vor-nav-item-status-orders'],
-    queryFn: getDelayedVorEligibleOrderIds,
-    enabled: Boolean(profile),
+    enabled: isAdmin || isManager,
     refetchInterval: 15000,
   });
 
@@ -115,8 +95,6 @@ export function AppLayout() {
     refetchInterval: 20000,
   });
 
-  const eligibleDelayedVorOrderIds = new Set(delayedVorCounterQuery.data ?? []);
-  const delayedVorCount = (adminCounterQuery.data ?? []).filter((order) => isDelayedVorSidebarOrder(order, eligibleDelayedVorOrderIds)).length;
   const approvedOrdersCount = (adminCounterQuery.data ?? []).filter((order) => order.status === 'approved').length;
   const managerApprovalCount = (adminCounterQuery.data ?? []).filter((order) => `${order.status} ${order.approval_status}`.toLowerCase().replace(/[^a-z]/g, '').includes('pendingmanagerapproval')).length;
   const tadaDispatches = tadaCounterQuery.data ?? [];
@@ -128,13 +106,12 @@ export function AppLayout() {
     () => navItems.map((item) => {
       if (isAdmin && item.to === '/') return { ...item, label: 'Approved Orders', desktopLabel: 'Approved Orders', badge: approvedOrdersCount };
       if (isManager && item.to === '/approvals/pending') return { ...item, badge: managerApprovalCount };
-      if (item.to === '/orders/delayed-vor') return { ...item, badge: delayedVorCount };
       if (item.to === '/ta-da' && isManager && managerTadaCount > 0) return { ...item, badge: managerTadaCount };
       if (item.to === '/ta-da' && isAccounts && accountsTadaCount > 0) return { ...item, badge: accountsTadaCount };
       if (item.to === '/ta-da' && isDeveloper && developerTadaCount > 0) return { ...item, badge: developerTadaCount };
       return item;
     }),
-    [accountsTadaCount, approvedOrdersCount, delayedVorCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isManager, managerApprovalCount, managerTadaCount],
+    [accountsTadaCount, approvedOrdersCount, developerTadaCount, isAccounts, isAdmin, isDeveloper, isManager, managerApprovalCount, managerTadaCount],
   );
 
   const visibleRoleNavItems = useMemo(
