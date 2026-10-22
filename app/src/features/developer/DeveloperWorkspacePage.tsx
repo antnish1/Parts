@@ -78,7 +78,8 @@ export function DeveloperWorkspacePage() {
     [profiles],
   );
   const profileRoleOptions = useMemo(
-    () => [...new Set(profiles.map((profile) => profile.role).filter(Boolean))].sort(),
+    // Show supported roles even before any account has been assigned to them.
+    () => [...new Set([...roles, ...profiles.map((profile) => profile.role).filter(Boolean)])].sort(),
     [profiles],
   );
   const matchingProfiles = useMemo(() => {
