@@ -27,7 +27,7 @@ function isDelayedVorOrder(order: Awaited<ReturnType<typeof getOrderList>>[numbe
   if (type !== 'VOR' || !eligibleOrderIds.has(String(order.id)) || !order.processed_date) return false;
   const processedAt = new Date(order.processed_date).getTime();
   if (!Number.isFinite(processedAt)) return false;
-  return Math.floor((Date.now() - processedAt) / 86_400_000) >= 3;
+  return Math.floor((Date.now() - processedAt) / 86_400_000) >= 1;
 }
 
 export function AppLayout() {`,
