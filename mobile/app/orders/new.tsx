@@ -245,10 +245,12 @@ export default function NewOrderScreen() {
               <AppIcon name="alert" size={18} color={colors.danger} strokeWidth={2} />
               <Text style={styles.errorTitle}>Action required</Text>
             </View>
-            <Text style={styles.errorDetail}>{message}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Close error" onPress={() => setMessage('')} style={styles.errorDismiss}>
-              <Text style={styles.errorDismissText}>OK</Text>
-            </Pressable>
+            <View style={styles.errorBodyRow}>
+              <Text style={styles.errorDetail}>{message}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Close error" onPress={() => setMessage('')} style={styles.errorDismiss}>
+                <Text style={styles.errorDismissText}>OK</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
@@ -303,11 +305,12 @@ const styles = StyleSheet.create({
   message: { padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.dangerSoft }, messageText: { color: colors.danger, fontSize: 12, lineHeight: 18 }, summaryRow: { flexDirection: 'row', marginTop: 8 }, totalCard: { flex: 1, minWidth: 0, minHeight: 50, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 12, borderRadius: radius.lg, backgroundColor: '#5A9CD3' }, totalLabel: { flexShrink: 1, color: '#FFFFFF', fontSize: 12, fontWeight: '800' }, totalValue: { flexShrink: 0, marginLeft: 6, textAlign: 'right', color: '#FFFFFF', fontSize: 17, fontWeight: '900' }, addPartCard: { flex: 1, minWidth: 0, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.lg, backgroundColor: '#5A9CD3' }, addPartCardText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' }, actionRow: { flexDirection: 'row', gap: 6 }, cancelOrder: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: '#B7C7D9', backgroundColor: '#FFFFFF' }, cancelOrderText: { color: colors.navy, fontSize: 14, fontWeight: '900' }, submit: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md, backgroundColor: colors.navy }, submitText: { color: '#fff', fontSize: 15, fontWeight: '900' }, pressed: { opacity: 0.75 },
   bottomNav: { minHeight: 58, flexDirection: 'row', backgroundColor: '#082B5B', paddingTop: 5, paddingBottom: 4 }, navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }, navText: { color: '#AEC2DC', fontSize: 9, fontWeight: '800' },
   errorBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(9, 26, 49, 0.5)', paddingHorizontal: 26 },
-  errorDialog: { width: '100%', maxWidth: 340, padding: 16, borderRadius: 16, backgroundColor: '#FFFFFF', gap: 12 },
+  errorDialog: { width: '100%', maxWidth: 340, padding: 14, borderRadius: 16, backgroundColor: '#FFFFFF', gap: 9 },
   errorHeader: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   errorTitle: { color: colors.navy, fontSize: 15, fontWeight: '900' },
-  errorDetail: { color: colors.text, fontSize: 13, lineHeight: 19 },
-  errorDismiss: { alignSelf: 'flex-end', minWidth: 82, minHeight: 36, paddingHorizontal: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.navy },
+  errorBodyRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  errorDetail: { flex: 1, color: colors.text, fontSize: 12, lineHeight: 17 },
+  errorDismiss: { minWidth: 56, minHeight: 34, paddingHorizontal: 12, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.navy },
   errorDismissText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,0.65)' }, sheet: { maxHeight: '70%', padding: spacing.lg, gap: spacing.sm, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface }, sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginBottom: spacing.sm }, sheetRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, sheetRowTitle: { color: colors.text, fontSize: 14, fontWeight: '800' }, sheetRowMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
   dialog: { margin: spacing.xl, padding: spacing.xl, gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.surface }, dialogText: { color: colors.textMuted, fontSize: 12, lineHeight: 18 }, dialogActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.lg }, cancel: { color: colors.textMuted, fontSize: 13, fontWeight: '800' }, dialogPrimary: { minHeight: 46, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radius.md, backgroundColor: colors.navy }, dialogPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '900' }, successTitle: { color: colors.success, fontSize: 18, fontWeight: '900' }, successNo: { color: colors.text, fontSize: 22, fontWeight: '900' }, warning: { color: colors.warning, fontSize: 11, lineHeight: 17 }, error: { color: colors.danger, fontSize: 13 }, link: { color: colors.blue, fontSize: 13, fontWeight: '800' },
