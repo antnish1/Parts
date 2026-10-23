@@ -179,7 +179,7 @@ export default function NewOrderScreen() {
           </Section>
 
           <View style={styles.partsHeader}>
-            <Text style={styles.sectionTitle}>Parts</Text>
+            <Text style={styles.title}>Parts</Text>
             <Pressable accessibilityRole="button" accessibilityLabel="Add part" onPress={() => setItems((rows) => [...rows, blankItem()])} style={({ pressed }) => [styles.addPartButton, pressed && styles.pressed]}>
               <Text style={styles.addPartButtonText}>+ Add Part</Text>
             </Pressable>
