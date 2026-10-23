@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=new-order-right-aligned-chevron-20261022
-source=c14468bf6cbb661feca85026d698f3254b573286
+reason=new-order-bottom-navigation-compact-actions-20261023
+source=4c6967fa2093996a386a23aba5002104abd0d67f
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
