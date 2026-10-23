@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/auth/AuthProvider';
 import { HomeBrandHeader } from '@/components/HomeBrandHeader';
@@ -34,6 +34,9 @@ export default function NewOrderScreen() {
   const [machineBusy, setMachineBusy] = useState(false);
   const [missingMachineOpen, setMissingMachineOpen] = useState(false);
   const [manualCustomer, setManualCustomer] = useState('');
+  const [manualCustomerError, setManualCustomerError] = useState('');
+  const lastMachineLookupRef = useRef('');
+  const machineLookupRunningRef = useRef(false);
   const [approverOpen, setApproverOpen] = useState(false);
   const [choiceOpen, setChoiceOpen] = useState<'type' | 'for' | null>(null);
   const [message, setMessage] = useState('');
@@ -62,9 +65,11 @@ export default function NewOrderScreen() {
   }
 
   async function searchMachine() {
-    if (orderFor === 'Stock') return;
+    if (orderFor === 'Stock' || missingMachineOpen || machineLookupRunningRef.current) return;
     const normalized = normalizeMachineNo(machineNo);
-    if (!normalized) return setMessage('Enter Machine Number first.');
+    if (!normalized || normalized === lastMachineLookupRef.current) return;
+    machineLookupRunningRef.current = true;
+    lastMachineLookupRef.current = normalized;
     setMachineBusy(true);
     setMessage('');
     try {
@@ -75,11 +80,15 @@ export default function NewOrderScreen() {
       } else {
         setCustomerName('');
         setManualCustomer('');
+        setManualCustomerError('');
+        Keyboard.dismiss();
         setMissingMachineOpen(true);
       }
     } catch (error) {
+      lastMachineLookupRef.current = '';
       setMessage(error instanceof Error ? error.message : 'Machine lookup failed.');
     } finally {
+      machineLookupRunningRef.current = false;
       setMachineBusy(false);
     }
   }
@@ -159,7 +168,7 @@ export default function NewOrderScreen() {
             <View style={styles.twoColumns}>
               <View style={styles.column}>
                 <Label text="Machine Number" />
-                <TextInput editable={orderFor !== 'Stock' && !machineBusy} autoCapitalize="characters" value={machineNo} onChangeText={(value) => { setMachineNo(value); setCustomerName(''); }} onEndEditing={() => void searchMachine()} onSubmitEditing={() => void searchMachine()} returnKeyType="search" placeholder={orderFor === 'Stock' ? 'Not required' : 'Machine no.'} placeholderTextColor={colors.textMuted} style={styles.input} />
+                <TextInput editable={orderFor !== 'Stock' && !machineBusy} autoCapitalize="characters" value={machineNo} onChangeText={(value) => { lastMachineLookupRef.current = ''; setMachineNo(value); setCustomerName(''); }} onEndEditing={() => void searchMachine()} onSubmitEditing={() => void searchMachine()} returnKeyType="search" placeholder={orderFor === 'Stock' ? 'Not required' : 'Machine no.'} placeholderTextColor={colors.textMuted} style={styles.input} />
               </View>
               <View style={styles.column}>
                 <Label text="Customer Name" />
@@ -273,8 +282,29 @@ export default function NewOrderScreen() {
         <Pressable style={styles.modalBackdrop} onPress={() => setApproverOpen(false)}><Pressable style={styles.sheet} onPress={() => undefined}><Text style={styles.sheetTitle}>Select approver</Text>{(approvers.data ?? []).map((item) => <Pressable key={item.id} style={styles.sheetRow} onPress={() => { setApprover(item); setApproverOpen(false); }}><View><Text style={styles.sheetRowTitle}>{item.full_name}</Text><Text style={styles.sheetRowMeta}>{item.role} · {item.branch}</Text></View></Pressable>)}</Pressable></Pressable>
       </Modal>
 
-      <Modal visible={missingMachineOpen} transparent animationType="fade" onRequestClose={() => setMissingMachineOpen(false)}>
-        <View style={styles.modalBackdrop}><View style={styles.dialog}><Text style={styles.sheetTitle}>Machine not found</Text><Text style={styles.dialogText}>{normalizeMachineNo(machineNo)} is not in machine master. Enter Customer Name; the server will attempt to save the machine when the order is created.</Text><TextInput autoFocus value={manualCustomer} onChangeText={setManualCustomer} placeholder="Customer name" placeholderTextColor={colors.textMuted} style={styles.input} /><View style={styles.dialogActions}><Pressable onPress={() => setMissingMachineOpen(false)}><Text style={styles.cancel}>Cancel</Text></Pressable><Pressable onPress={() => { if (!manualCustomer.trim()) return; setCustomerName(manualCustomer.trim()); setMissingMachineOpen(false); }} style={styles.dialogPrimary}><Text style={styles.dialogPrimaryText}>Use customer</Text></Pressable></View></View></View>
+      <Modal visible={missingMachineOpen} transparent animationType="fade" statusBarTranslucent onRequestClose={() => { Keyboard.dismiss(); setMissingMachineOpen(false); setManualCustomerError(''); }}>
+        <View style={styles.machineModalBackdrop}>
+          <View style={styles.machineDialog}>
+            <Text style={styles.sheetTitle}>Machine not found</Text>
+            <Text style={styles.dialogText}>{normalizeMachineNo(machineNo)} is not in machine master. Enter Customer Name; the server will attempt to save the machine when the order is created.</Text>
+            <TextInput value={manualCustomer} onChangeText={(value) => { setManualCustomer(value); setManualCustomerError(''); }} placeholder="Customer name" placeholderTextColor={colors.textMuted} style={styles.input} returnKeyType="done" />
+            {manualCustomerError ? <Text style={styles.machineFieldError}>{manualCustomerError}</Text> : null}
+            <View style={styles.machineActions}>
+              <Pressable accessibilityRole="button" onPress={() => { Keyboard.dismiss(); setMissingMachineOpen(false); setManualCustomerError(''); }} style={styles.machineCancel}>
+                <Text style={styles.cancel}>Cancel</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" onPress={() => {
+                if (!manualCustomer.trim()) { setManualCustomerError('Enter customer name.'); return; }
+                setCustomerName(manualCustomer.trim());
+                Keyboard.dismiss();
+                setMissingMachineOpen(false);
+                setManualCustomerError('');
+              }} style={styles.dialogPrimary}>
+                <Text style={styles.dialogPrimaryText}>Use customer</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
       </Modal>
 
       <Modal visible={Boolean(success)} transparent animationType="fade" onRequestClose={() => setSuccess(null)}>
@@ -313,5 +343,10 @@ const styles = StyleSheet.create({
   errorDismiss: { minWidth: 56, minHeight: 34, paddingHorizontal: 12, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.navy },
   errorDismissText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2,6,23,0.65)' }, sheet: { maxHeight: '70%', padding: spacing.lg, gap: spacing.sm, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface }, sheetTitle: { color: colors.text, fontSize: 18, fontWeight: '900', marginBottom: spacing.sm }, sheetRow: { minHeight: 58, justifyContent: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }, sheetRowTitle: { color: colors.text, fontSize: 14, fontWeight: '800' }, sheetRowMeta: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  machineModalBackdrop: { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(2,6,23,0.65)', padding: 20 },
+  machineDialog: { width: '100%', maxWidth: 380, alignSelf: 'center', padding: 18, gap: 10, borderRadius: radius.xl, backgroundColor: colors.surface },
+  machineActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginTop: 4 },
+  machineCancel: { minHeight: 46, minWidth: 86, alignItems: 'center', justifyContent: 'center' },
+  machineFieldError: { color: colors.danger, fontSize: 12, fontWeight: '700' },
   dialog: { margin: spacing.xl, padding: spacing.xl, gap: spacing.md, borderRadius: radius.xl, backgroundColor: colors.surface }, dialogText: { color: colors.textMuted, fontSize: 12, lineHeight: 18 }, dialogActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.lg }, cancel: { color: colors.textMuted, fontSize: 13, fontWeight: '800' }, dialogPrimary: { minHeight: 46, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.lg, borderRadius: radius.md, backgroundColor: colors.navy }, dialogPrimaryText: { color: '#fff', fontSize: 13, fontWeight: '900' }, successTitle: { color: colors.success, fontSize: 18, fontWeight: '900' }, successNo: { color: colors.text, fontSize: 22, fontWeight: '900' }, warning: { color: colors.warning, fontSize: 11, lineHeight: 17 }, error: { color: colors.danger, fontSize: 13 }, link: { color: colors.blue, fontSize: 13, fontWeight: '800' },
 });
