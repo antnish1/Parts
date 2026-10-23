@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=new-order-compact-validation-error-popups-20261023
-source=9f71a70d6159ecbc32d4ff40e7a14acfb140bc53
+reason=mobile-parts-heading-and-machine-type-sizing-20261023
+source=d733ee89cfdf822a49ed783c3e2ed9a91bb521ae
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
