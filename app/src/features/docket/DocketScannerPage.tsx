@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import { useAuth } from '../../auth/useAuth';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { PageCard } from '../../components/ui/PageCard';
 import { lookupTestDocketRows, normalizeDocketNo, receiveTestDocketRow, type TestDocketRow } from '../../services/testDocket.service';
@@ -37,6 +38,8 @@ function isRowReceived(row: TestDocketRow) {
 }
 
 export function DocketScannerPage() {
+  const { profile, role } = useAuth();
+  const canReceiveRow = (row: TestDocketRow) => Boolean(profile?.isActive && (role === 'admin' || role === 'developer' || (role === 'branch' && profile.branch?.trim().toUpperCase() === row.branch.trim().toUpperCase())));
   const [docketNo, setDocketNo] = useState('');
   const [scannerStatus, setScannerStatus] = useState('Idle');
   const [rows, setRows] = useState<TestDocketRow[]>([]);
@@ -127,7 +130,7 @@ export function DocketScannerPage() {
   }
 
   async function receiveAllRows() {
-    const pendingRows = rows.filter((row) => !isRowReceived(row));
+    const pendingRows = rows.filter((row) => !isRowReceived(row) && canReceiveRow(row));
     if (pendingRows.length === 0) {
       setScannerStatus(rows.length ? 'All loaded docket rows are already received.' : 'Search or scan a docket before using Receive All.');
       return;
@@ -170,7 +173,7 @@ export function DocketScannerPage() {
     setExpandedRows((current) => ({ ...current, [id]: !current[id] }));
   }
 
-  const pendingReceiveCount = rows.filter((row) => !isRowReceived(row)).length;
+  const pendingReceiveCount = rows.filter((row) => !isRowReceived(row) && canReceiveRow(row)).length;
   const isReceivingAll = busyId === '__all__';
 
   return (
@@ -207,7 +210,7 @@ export function DocketScannerPage() {
                   <p className="mt-0.5 line-clamp-2 text-xs font-semibold text-[#0f172a]">{row.description || '-'}</p>
                   <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-[#f8fbff] p-2 text-center text-xs"><div><p className="text-[10px] uppercase text-[#667085]">Ordered</p><p className="font-black text-[#0f172a]">{effectiveQty(row)}</p></div><div><p className="text-[10px] uppercase text-[#667085]">Billed</p><p className="font-black text-[#0f172a]">{row.billed_qty}</p></div><div><p className="text-[10px] uppercase text-[#667085]">Received</p><p className="font-black text-[#0f172a]">{row.received_qty}</p></div></div>
                   {isExpanded ? <div className="mt-3 grid gap-2 text-xs"><p><span className="font-black text-[#667085]">Order Type:</span> {row.order_type || '-'}</p><p><span className="font-black text-[#667085]">Invoice:</span> {row.invoice_no || '-'}</p><p><span className="font-black text-[#667085]">Transport:</span> {row.transport_name || '-'} • {row.delivery_no || '-'}</p><p><span className="font-black text-[#667085]">Customer:</span> {row.customer_name || '-'} • {row.machine_no || '-'}</p><p><span className="font-black text-[#667085]">Billing Date:</span> {row.billing_date || '-'}</p></div> : null}
-                  <div className="mt-3 flex gap-2"><button type="button" className="min-h-[40px] flex-1 rounded-xl border border-[#d9dee7] text-xs font-black text-[#0f4c81]" onClick={() => toggleRow(key)}>{isExpanded ? 'Hide Details' : 'View Details'}</button><button type="button" className="min-h-[40px] flex-1 rounded-xl border border-[#82C8E5]/40 bg-[#e6f4ff] text-xs font-black text-[#0f4c81] disabled:bg-[#f1f5f9] disabled:text-[#94a3b8]" disabled={!!busyId || isReceived} onClick={() => void receiveRow(row)}>{busyId === key ? 'Saving' : isReceived ? 'Received' : 'Receive'}</button></div>
+                  <div className="mt-3 flex gap-2"><button type="button" className="min-h-[40px] flex-1 rounded-xl border border-[#d9dee7] text-xs font-black text-[#0f4c81]" onClick={() => toggleRow(key)}>{isExpanded ? 'Hide Details' : 'View Details'}</button><button type="button" className="min-h-[40px] flex-1 rounded-xl border border-[#82C8E5]/40 bg-[#e6f4ff] text-xs font-black text-[#0f4c81] disabled:bg-[#f1f5f9] disabled:text-[#94a3b8]" disabled={!!busyId || isReceived || !canReceiveRow(row)} onClick={() => void receiveRow(row)}>{busyId === key ? 'Saving' : isReceived ? 'Received' : 'Receive'}</button></div>
                 </div>
               );
             })}
