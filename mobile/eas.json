@@ -23,7 +23,8 @@
       "env": {
         "EXPO_PUBLIC_SUPABASE_URL": "https://ubkwtjyvbdvepzbxoikq.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_L-SrVLzVHoSt9OKGAu1eTQ_UslGY7m3",
-        "EXPO_PUBLIC_APP_ENV": "production"
+        "EXPO_PUBLIC_APP_ENV": "production",
+        "EAS_NO_FROZEN_LOCKFILE": "1"
       }
     }
   }
