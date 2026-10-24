@@ -11,10 +11,11 @@ import { isDocketRowReceived, lookupDocketRows, normalizeDocketNo, receiveDocket
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function DocketScannerScreen() {
-  const { role } = useAuth();
+  const { role, profile } = useAuth();
   const allowed = ['branch', 'admin', 'super', 'manager', 'developer'].includes(role ?? '');
   // Match web + docket-receive-action: all eligible roles can scan; only Admin/Developer receive.
-  const canReceive = role === 'admin' || role === 'developer';
+  const canReceive = role === 'admin' || role === 'developer' || role === 'branch';
+  const canReceiveRow = (row: DocketRow) => (role === 'admin' || role === 'developer') || (role === 'branch' && Boolean(profile?.branch && profile.branch.trim().toUpperCase() === row.branch.trim().toUpperCase()));
   const [permission, requestPermission] = useCameraPermissions();
   const [docketNo, setDocketNo] = useState('');
   const [rows, setRows] = useState<DocketRow[]>([]);
@@ -88,7 +89,7 @@ export default function DocketScannerScreen() {
   }
 
   async function receiveAll() {
-    const pending = rows.filter((row) => !isDocketRowReceived(row));
+    const pending = rows.filter((row) => !isDocketRowReceived(row) && canReceiveRow(row));
     if (!pending.length) return;
     setReceiveAllOpen(false);
     setBusyId('__all__');
@@ -102,7 +103,7 @@ export default function DocketScannerScreen() {
     setStatus(failed.length ? `${success} received; failed: ${failed.join(', ')}.` : `All ${success} pending row(s) marked as received.`);
   }
 
-  const pendingCount = rows.filter((row) => !isDocketRowReceived(row)).length;
+  const pendingCount = rows.filter((row) => !isDocketRowReceived(row) && canReceiveRow(row)).length;
   return (
     <Screen title="Docket Scanner" scroll={false}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -128,7 +129,7 @@ export default function DocketScannerScreen() {
         <View style={styles.status}><Text style={styles.statusText}>{status}</Text></View>
         </MotionView>
 
-        {rows.length ? <View style={styles.resultHeader}><View><Text style={styles.resultTitle}>{rows.length} row(s)</Text>{!canReceive?<Text style={styles.readOnlyNote}>Read-only for this role. Receiving is restricted to Admin / Developer.</Text>:null}</View>{canReceive?<Pressable disabled={!pendingCount || Boolean(busyId)} onPress={() => setReceiveAllOpen(true)} style={[styles.receiveAll, (!pendingCount || Boolean(busyId)) && styles.disabled]}><Text style={styles.receiveAllText}>{pendingCount ? `Receive All (${pendingCount})` : 'All Received'}</Text></Pressable>:null}</View> : null}
+        {rows.length ? <View style={styles.resultHeader}><View><Text style={styles.resultTitle}>{rows.length} row(s)</Text>{!canReceive?<Text style={styles.readOnlyNote}>Read-only for this role. Branch users can receive only their own branch dockets.</Text>:null}</View>{canReceive?<Pressable disabled={!pendingCount || Boolean(busyId)} onPress={() => setReceiveAllOpen(true)} style={[styles.receiveAll, (!pendingCount || Boolean(busyId)) && styles.disabled]}><Text style={styles.receiveAllText}>{pendingCount ? `Receive All (${pendingCount})` : 'All Received'}</Text></Pressable>:null}</View> : null}
         {rows.map((row, index) => {
           const key = `${row.source_type}-${row.id}`;
           const received = isDocketRowReceived(row);
@@ -136,7 +137,7 @@ export default function DocketScannerScreen() {
             <View style={styles.rowTop}><View style={styles.rowCopy}><Text style={styles.partNo}>{row.part_no}</Text><Text numberOfLines={2} style={styles.description}>{row.description || 'No description'}</Text></View><View style={[styles.badge, received ? styles.badgeDone : styles.badgeOpen]}><Text style={[styles.badgeText, received ? styles.badgeDoneText : styles.badgeOpenText]}>{received ? 'Received' : 'Pending'}</Text></View></View>
             <View style={styles.metaGrid}><Mini label="Order" value={row.final_order_no || row.order_no} /><Mini label="Branch" value={row.branch} /><Mini label="Billed" value={String(row.billed_qty)} /><Mini label="Received" value={String(row.received_qty)} /><Mini label="Invoice" value={row.invoice_no || '—'} /><Mini label="Delivery" value={row.delivery_no || '—'} /><Mini label="Transport" value={row.transport_name || '—'} /></View>
             {received ? <View style={styles.receivedStamp}><Text style={styles.receivedStampLabel}>Received on</Text><Text style={styles.receivedStampValue}>{formatReceivedAt(row.received_at)}</Text></View> : null}
-            {!received && canReceive ? <Pressable disabled={Boolean(busyId)} onPress={() => void receive(row)} style={[styles.receiveButton, Boolean(busyId) && styles.disabled]}>{busyId === key ? <ActivityIndicator color="#fff" /> : <Text style={styles.receiveText}>Mark Received</Text>}</Pressable> : null}
+            {!received && canReceiveRow(row) ? <Pressable disabled={Boolean(busyId)} onPress={() => void receive(row)} style={[styles.receiveButton, Boolean(busyId) && styles.disabled]}>{busyId === key ? <ActivityIndicator color="#fff" /> : <Text style={styles.receiveText}>Mark Received</Text>}</Pressable> : null}
           </View></MotionView>;
         })}
       </ScrollView>
