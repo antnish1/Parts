@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=fix-machine-not-found-cancel-use-customer-20261023
-source=7af7354bb1a20ddb5fed223062bcbd379c1e91b4
+reason=accounts-home-live-attention-20261024
+source=813eb375a51ac4be781924148574b620709658da
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
