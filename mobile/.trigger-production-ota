@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=accounts-home-live-attention-20261024
-source=813eb375a51ac4be781924148574b620709658da
+reason=compact-more-check-for-updates-row-20261024
+source=c99e50e256f0a3a235b1d68be2d0d6e3f1e157cc
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
