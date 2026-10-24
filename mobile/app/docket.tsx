@@ -13,6 +13,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 export default function DocketScannerScreen() {
   const { role } = useAuth();
   const allowed = ['branch', 'admin', 'super', 'manager', 'developer'].includes(role ?? '');
+  // Match web + docket-receive-action: all eligible roles can scan; only Admin/Developer receive.
   const canReceive = role === 'admin' || role === 'developer';
   const [permission, requestPermission] = useCameraPermissions();
   const [docketNo, setDocketNo] = useState('');
@@ -46,10 +47,16 @@ export default function DocketScannerScreen() {
   }
 
   async function openScanner() {
-    if (!permission?.granted) {
-      const next = await requestPermission();
-      if (!next.granted) return setStatus('Camera permission is required to scan docket barcodes.');
+    try {
+      if (!permission?.granted) {
+        const next = await requestPermission();
+        if (!next.granted) return setStatus('Camera permission denied. Allow camera access in phone Settings, or search by docket number.');
+      }
+    } catch (error) {
+      return setStatus(error instanceof Error ? error.message : 'Unable to request camera permission. Use manual docket search.');
     }
+    lastScanRef.current = { value: '', at: 0 };
+    setTorch(false);
     setScannerOpen(true);
     setStatus('Scanner ready. Point the camera at the docket barcode.');
   }
@@ -61,6 +68,9 @@ export default function DocketScannerScreen() {
     if (lastScanRef.current.value === normalized && now - lastScanRef.current.at < 2500) return;
     lastScanRef.current = { value: normalized, at: now };
     setScannerOpen(false);
+    setTorch(false);
+    setDocketNo(normalized);
+    setStatus(`Barcode detected: ${normalized}. Searching docket…`);
     void search(normalized);
   }
 
@@ -137,12 +147,13 @@ export default function DocketScannerScreen() {
             style={StyleSheet.absoluteFill}
             facing="back"
             enableTorch={torch}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf'] }}
             onBarcodeScanned={({ data }) => onBarcode(data)}
           />
           <View style={styles.cameraOverlay} pointerEvents="box-none">
             <View style={styles.cameraTop}><Pressable onPress={() => setScannerOpen(false)} style={styles.cameraControl}><Text style={styles.cameraControlText}>Close</Text></Pressable><Pressable onPress={() => setTorch((value) => !value)} style={styles.cameraControl}><Text style={styles.cameraControlText}>{torch ? 'Torch Off' : 'Torch On'}</Text></Pressable></View>
             <View style={styles.cameraFrame}><View style={styles.focusBox} /></View>
-            <Text style={styles.cameraHint}>Align the docket barcode inside the frame</Text>
+            <Text style={styles.cameraHint}>Align the barcode inside the frame. Supports QR, Code 128/39, EAN, UPC and ITF.</Text>
           </View>
         </SafeAreaView>
       </Modal>
