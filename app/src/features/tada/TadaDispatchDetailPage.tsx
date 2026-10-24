@@ -10,6 +10,7 @@ import { TadaDeveloperControls } from './TadaDeveloperControls';
 import { getTadaStatusMeta, tadaLocationMeta, TadaMiniBadge, TadaStatusBadge } from './tadaUi';
 
 const exceptionReasons = ['Not Found in Packet', 'Document Incomplete', 'Wrong SVR', 'Damaged / Unreadable', 'Other'];
+const lateReceiptReasons = ['Received', ...exceptionReasons];
 type ReceiptState = Record<string, { received: boolean; reason: string; remark: string }>;
 
 function receiptBadge(value: boolean | null, missingReason?: string | null) {
@@ -178,7 +179,7 @@ export function TadaDispatchDetailPage() {
           <select id="late-svr-reason" value={lateReason} onChange={(event) => setLateReason(event.target.value)}
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900">
             <option value="">Select reason</option>
-            {exceptionReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+            {lateReceiptReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
           </select>
           <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
           <textarea id="late-svr-remark" maxLength={950} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
