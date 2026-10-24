@@ -27,6 +27,7 @@ export function TadaDispatchDetailPage() {
   const [message, setMessage] = useState('');
   const [lateReceiptItemId, setLateReceiptItemId] = useState<string | null>(null);
   const [lateRemark, setLateRemark] = useState('');
+  const [lateReason, setLateReason] = useState('');
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['tada-dispatch', dispatchId], queryFn: () => getTadaDispatch(dispatchId), enabled: Boolean(dispatchId) });
   const dispatch = data?.dispatch;
@@ -56,10 +57,11 @@ export function TadaDispatchDetailPage() {
   });
 
   const lateReceiptMutation = useMutation({
-    mutationFn: () => receiveMissingTadaSvr(lateReceiptItemId!, lateRemark),
+    mutationFn: () => receiveMissingTadaSvr(lateReceiptItemId!, `Receipt reason: ${lateReason}${lateRemark.trim() ? `\n${lateRemark.trim()}` : ''}`),
     onSuccess: async () => {
       setLateReceiptItemId(null);
       setLateRemark('');
+      setLateReason('');
       setMessage('Missing SVR marked received at HQ. Original missing record retained.');
       await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]);
     },
@@ -71,7 +73,7 @@ export function TadaDispatchDetailPage() {
     canReceiveMissing && item.hq_received === false && item.current_location === 'MISSING_HQ'
       ? <button type="button" title="Receive missing bill at HQ" aria-label={`Receive missing SVR ${item.svr_no} at HQ`}
           className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-300 text-emerald-800 hover:bg-emerald-50"
-          onClick={() => { setLateRemark(''); setMessage(''); setLateReceiptItemId(item.id); }}>
+          onClick={() => { setLateRemark(''); setLateReason(''); setMessage(''); setLateReceiptItemId(item.id); }}>
           <Pencil className="h-3.5 w-3.5" />
         </button> : null
   );
@@ -172,6 +174,12 @@ export function TadaDispatchDetailPage() {
           <p className="mt-1 text-xs text-slate-600">SVR {lateReceiptItem.svr_no} • {lateReceiptItem.engineer_name_snapshot}</p>
           <p className="mt-2 text-xs text-red-700">Originally missing: {lateReceiptItem.hq_exception_reason || 'Not received'}</p>
           <p className="mt-1 text-[11px] text-slate-600">Confirm physical receipt. The original exception stays in the timeline, and Accounts must acknowledge separately.</p>
+          <label htmlFor="late-svr-reason" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt reason</label>
+          <select id="late-svr-reason" value={lateReason} onChange={(event) => setLateReason(event.target.value)}
+            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900">
+            <option value="">Select reason</option>
+            {exceptionReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
+          </select>
           <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
           <textarea id="late-svr-remark" maxLength={1000} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
             className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs text-slate-900" placeholder="Received physically at HQ..." />
@@ -179,7 +187,7 @@ export function TadaDispatchDetailPage() {
           <div className="mt-3 flex justify-end gap-2">
             <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => setLateReceiptItemId(null)}
               className="rounded-md border border-slate-300 px-3 py-2 text-xs font-bold">Cancel</button>
-            <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => lateReceiptMutation.mutate()}
+            <button type="button" disabled={lateReceiptMutation.isPending || !lateReason} onClick={() => lateReceiptMutation.mutate()}
               className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
               {lateReceiptMutation.isPending ? 'Recording…' : 'Confirm received at HQ'}
             </button>
