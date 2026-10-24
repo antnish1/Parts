@@ -181,7 +181,7 @@ export function TadaDispatchDetailPage() {
             {exceptionReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
           </select>
           <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
-          <textarea id="late-svr-remark" maxLength={1000} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
+          <textarea id="late-svr-remark" maxLength={950} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
             className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs text-slate-900" placeholder="Received physically at HQ..." />
           {lateReceiptMutation.isError ? <p className="mt-2 text-xs text-red-700">{lateReceiptMutation.error instanceof Error ? lateReceiptMutation.error.message : 'Unable to record receipt.'}</p> : null}
           <div className="mt-3 flex justify-end gap-2">
