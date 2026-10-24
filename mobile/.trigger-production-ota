@@ -1,6 +1,6 @@
 Parts Connect production OTA trigger
-reason=compact-more-check-for-updates-row-20261024
-source=c99e50e256f0a3a235b1d68be2d0d6e3f1e157cc
+reason=docket-camera-scan-parity-and-feedback-20261024
+source=d57b4551a8569479440d841705cf9dd5f246941c
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
