@@ -24,4 +24,7 @@ jobs:
         shell: bash
         run: |
           EXPO_DEBUG=1 eas build:view 2b256f73-8cc2-41c5-91a2-8a29c3738ffd --json > /tmp/build.json
-          node -e "const b=require('/tmp/build.json'); console.log(JSON.stringify({status:b.status,error:b.error,logs:b.logs,logFiles:b.logFiles,buildLogsUrl:b.buildLogsUrl},null,2))"
+          node -e "const b=require('/tmp/build.json'); require('fs').writeFileSync('/tmp/eas-log-url',b.logFiles?.[0]||''); console.log(JSON.stringify({status:b.status,error:b.error},null,2))"
+          curl -fsSL "$(cat /tmp/eas-log-url)" > /tmp/eas-log.txt
+          echo "--- EAS remote installation errors ---"
+          grep -inE -C 5 'npm ERR|failed|error|permission denied|postinstall|sharp|lockfile' /tmp/eas-log.txt | tail -160 || true
