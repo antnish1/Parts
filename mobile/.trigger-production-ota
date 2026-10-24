@@ -1,6 +1,7 @@
 Parts Connect production OTA trigger
-reason=docket-camera-scan-parity-and-feedback-20261024
-source=d57b4551a8569479440d841705cf9dd5f246941c
+reason=own-branch-docket-receiving-20261024
+source=5f7bd012848d7bc7c1809258574cea672232794c
+backend=docket-receive-action-v7
 channel=production
 runtime=0.2.0
 build=no-apk-or-aab
