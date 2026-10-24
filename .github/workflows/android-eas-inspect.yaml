@@ -1,0 +1,24 @@
+name: Inspect Failed Expo Android Build
+on:
+  push:
+    branches:
+      - feature/android-native-branding-push-startup-20261024
+    paths:
+      - '.github/workflows/android-eas-inspect.yaml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Inspect EAS failed build
+        working-directory: mobile
+        shell: bash
+        run: |
+          eas build:view b697e467-3b6e-490e-ac88-46b847de99b2 --json > /tmp/build.json
+          node -e "const b=require('/tmp/build.json'); console.log(JSON.stringify({status:b.status,error:b.error,logs:b.logs,logFiles:b.logFiles,buildLogsUrl:b.buildLogsUrl},null,2))"
