@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/auth/AuthProvider';
 import { registerPushToken } from '@/services/notifications';
@@ -30,11 +31,12 @@ export function PushRegistration(){
        const existing=await Notifications.getPermissionsAsync();
        const permission=existing.granted?existing:await Notifications.requestPermissionsAsync();
        if(!permission.granted||cancelled)return;
-       const projectId='3026af5e-622e-48de-bb4f-1ca851373589';
+       const projectId=Constants.easConfig?.projectId ?? '3026af5e-622e-48de-bb4f-1ca851373589';
        const response=await Notifications.getExpoPushTokenAsync({projectId});
        if(cancelled)return;
        registered=response.data;
        await registerPushToken(profile!.id,response.data);
+       console.info('Parts Connect push device registration complete.');
      }catch(error){console.warn('Push registration unavailable:',error);}
    }
    void register();
