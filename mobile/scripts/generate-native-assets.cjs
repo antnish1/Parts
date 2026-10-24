@@ -27,9 +27,9 @@ async function run() {
     .png().toFile(path.join(dest, 'adaptive-foreground.png'));
 
   // White silhouette of the brand silhouette for themed and system notification icons.
-  const alpha = await sharp(logo).resize(250, 250, { fit: 'contain' }).ensureAlpha().extractChannel(3).toBuffer();
-  const whiteMask = await sharp({ create: { width: 250, height: 250, channels: 4, background: '#FFFFFF' } })
-    .joinChannel(alpha).png().toBuffer();
+  const pixels = await sharp(logo).resize(250, 250, { fit: 'contain', background: '#00000000' }).ensureAlpha().raw().toBuffer();
+  for (let i = 0; i < pixels.length; i += 4) { pixels[i] = 255; pixels[i + 1] = 255; pixels[i + 2] = 255; }
+  const whiteMask = await sharp(pixels, { raw: { width: 250, height: 250, channels: 4 } }).png().toBuffer();
   await sharp({ create: { width: 432, height: 432, channels: 4, background: '#00000000' } })
     .composite([{ input: whiteMask, gravity: 'centre' }]).png().toFile(path.join(dest, 'adaptive-monochrome.png'));
   await sharp({ create: { width: 96, height: 96, channels: 4, background: '#00000000' } })
