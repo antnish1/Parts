@@ -173,7 +173,7 @@ export function DocketScannerPage() {
     setExpandedRows((current) => ({ ...current, [id]: !current[id] }));
   }
 
-  const pendingReceiveCount = rows.filter((row) => !isRowReceived(row)).length;
+  const pendingReceiveCount = rows.filter((row) => !isRowReceived(row) && canReceiveRow(row)).length;
   const isReceivingAll = busyId === '__all__';
 
   return (
