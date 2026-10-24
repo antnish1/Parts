@@ -47,10 +47,10 @@ export function UpdateDiagnostics() {
         style={({ pressed }) => [styles.row, (pressed || busy) && styles.pressed]}
       >
         <View style={styles.iconBadge}>
-          <AppIcon name="refresh" size={22} color="#155A9C" strokeWidth={2.1} />
+          <AppIcon name="refresh" size={17} color="#155A9C" strokeWidth={2.1} />
         </View>
         <Text style={styles.title}>{busy ? 'Checking for updates…' : 'Check for updates'}</Text>
-        <AppIcon name="chevronRight" size={25} color="#9AA5B5" strokeWidth={2.6} />
+        <AppIcon name="chevronRight" size={17} color="#9AA5B5" strokeWidth={2.6} />
       </Pressable>
       {message ? <Text accessibilityRole="alert" style={styles.message}>{message}</Text> : null}
     </View>
@@ -58,27 +58,27 @@ export function UpdateDiagnostics() {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: 10 },
+  container: { marginTop: 7 },
   row: {
-    minHeight: 78,
-    borderRadius: 23,
+    minHeight: 56,
+    borderRadius: 15,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E0E4EB',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    gap: 15,
+    paddingHorizontal: 12,
+    gap: 10,
   },
   pressed: { opacity: 0.65 },
   iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#F0F5FD',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: { flex: 1, color: '#1A202B', fontSize: 16, fontWeight: '800' },
+  title: { flex: 1, color: '#1A202B', fontSize: 13, fontWeight: '800' },
   message: { marginTop: 6, paddingHorizontal: 8, fontSize: 11, lineHeight: 16, color: '#44546B' },
 });
