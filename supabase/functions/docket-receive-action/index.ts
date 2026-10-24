@@ -75,8 +75,11 @@ serve(async (req) => {
   const adminClient = createClient(supabaseUrl, serviceKey);
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return json({ error: 'Unauthorized' }, 401);
-  const { data: profile } = await adminClient.from('portal_profiles').select('id,role,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
-  if (!profile?.is_active || !['admin', 'developer'].includes(profile.role)) return json({ error: 'Only active admin or developer can receive dockets' }, 403);
+  const { data: profile } = await adminClient.from('portal_profiles').select('id,role,branch,is_active').eq('auth_user_id', userData.user.id).maybeSingle();
+  if (!profile?.is_active || !['admin', 'developer', 'branch'].includes(profile.role)) return json({ error: 'Only active Branch, Admin or Developer can receive dockets' }, 403);
+  const branchScope = profile.role === 'branch' ? String(profile.branch ?? '').trim().toUpperCase() : null;
+  if (profile.role === 'branch' && !branchScope) return json({ error: 'Your account has no assigned branch' }, 403);
+  const permittedOrder = (orderBranch: unknown) => !branchScope || String(orderBranch ?? '').trim().toUpperCase() === branchScope;
 
   const body = await req.json().catch(() => ({}));
   const billingId = String(body.billingId ?? '');
@@ -109,11 +112,12 @@ serve(async (req) => {
       const itemRow = item as ItemRow;
       const { data: orderForItem, error: orderForItemError } = await adminClient
         .from('portal_orders')
-        .select('id, order_no, status')
+        .select('id, order_no, status, branch')
         .eq('id', itemRow.order_id)
         .maybeSingle();
       if (orderForItemError) throw orderForItemError;
       if (!orderForItem) return json({ error: 'Order not found for item row' }, 404);
+      if (!permittedOrder(orderForItem.branch)) return json({ error: 'Only your assigned branch can receive this docket' }, 403);
 
       const billedQty = num(itemRow.billed_qty) > 0 ? num(itemRow.billed_qty) : effectiveQty(itemRow);
       const docketNo = normalize(String(docket || itemRow.docket_no || ''));
@@ -161,9 +165,10 @@ serve(async (req) => {
     if (orderIds.length !== 1) return json({ error: 'Receive one row/order at a time.' }, 400);
     const activeOrderId = orderIds[0];
 
-    const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status').eq('id', activeOrderId).maybeSingle();
+    const { data: order, error: orderError } = await adminClient.from('portal_orders').select('id,order_no,status,branch').eq('id', activeOrderId).maybeSingle();
     if (orderError) throw orderError;
     if (!order) return json({ error: 'Order not found' }, 404);
+    if (!permittedOrder(order.branch)) return json({ error: 'Only your assigned branch can receive this docket' }, 403);
 
     for (const chunk of chunkRows) {
       if (num(chunk.received_qty) >= num(chunk.billed_qty) && num(chunk.billed_qty) > 0) continue;
