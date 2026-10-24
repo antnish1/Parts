@@ -40,6 +40,12 @@ jobs:
           test -s assets/native/adaptive-monochrome.png
           test -s assets/native/notification-icon.png
           test -s assets/native/splash.png
+      - name: Generate compatible npm lockfile for EAS
+        working-directory: mobile
+        run: npm install --package-lock-only --ignore-scripts --include=dev
+      - name: Verify production npm ci
+        working-directory: mobile
+        run: npm ci --include=dev
       - name: Mobile bundle checks
         working-directory: mobile
         run: npm run check
