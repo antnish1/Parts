@@ -16,7 +16,7 @@
     "updates": {
       "url": "https://u.expo.dev/3026af5e-622e-48de-bb4f-1ca851373589",
       "enabled": true,
-      "checkAutomatically": "ON_LOAD",
+      "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },
     "plugins": [
@@ -35,7 +35,7 @@
         "expo-notifications",
         {
           "icon": "./assets/native/notification-icon.png",
-          "color": "#D82528",
+          "color": "#0B2A52",
           "defaultChannel": "operations"
         }
       ],
@@ -71,7 +71,7 @@
     },
     "android": {
       "package": "com.frontier.partsconnect",
-      "versionCode": 2,
+      "versionCode": 3,
       "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/native/adaptive-foreground.png",

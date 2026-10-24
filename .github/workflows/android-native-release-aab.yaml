@@ -1,0 +1,54 @@
+name: Build Parts Connect Android AAB (native fix)
+on:
+  push:
+    branches:
+      - feature/android-native-branding-push-startup-20261024
+    paths:
+      - '.github/workflows/android-native-release-aab.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-aab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Expo token
+        shell: bash
+        run: test -n "${{ secrets.EXPO_TOKEN }}"
+      - name: Set up Expo EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install dependencies and regenerate blue native branding
+        working-directory: mobile
+        run: npm install
+      - name: Verify blue branding sources and native assets
+        working-directory: mobile
+        shell: bash
+        run: |
+          test -s assets/branding/PCLOGO.png
+          test -s assets/native/icon.png
+          test -s assets/native/adaptive-foreground.png
+          test -s assets/native/adaptive-monochrome.png
+          test -s assets/native/notification-icon.png
+          test -s assets/native/splash.png
+      - name: Generate reproducible npm lockfile for EAS
+        working-directory: mobile
+        run: npm install --package-lock-only --ignore-scripts --include=dev
+      - name: Verify production npm ci
+        working-directory: mobile
+        run: npm ci --include=dev
+      - name: Mobile bundle checks
+        working-directory: mobile
+        run: npm run check
+      - name: Build production Android AAB (no store submission)
+        working-directory: mobile
+        run: eas build --platform android --profile production --non-interactive --clear-cache --wait

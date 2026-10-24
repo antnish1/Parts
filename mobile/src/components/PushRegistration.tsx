@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/auth/AuthProvider';
 import { registerPushToken } from '@/services/notifications';
@@ -23,22 +23,27 @@ export function PushRegistration(){
  useEffect(()=>{
    if(!isAuthenticated||!profile?.id||Platform.OS!=='android')return;
    let cancelled=false;
-   let registered:string|null=null;
+   let inFlight=false;
    async function register(){
+     if(cancelled||inFlight)return;
+     inFlight=true;
      try{
-       await Notifications.setNotificationChannelAsync('operations',{name:'Operations',importance:Notifications.AndroidImportance.HIGH});
+       await Notifications.setNotificationChannelAsync('operations',{name:'Operations',importance:Notifications.AndroidImportance.HIGH,enableVibrate:true});
        const existing=await Notifications.getPermissionsAsync();
        const permission=existing.granted?existing:await Notifications.requestPermissionsAsync();
        if(!permission.granted||cancelled)return;
-       const projectId='3026af5e-622e-48de-bb4f-1ca851373589';
-       const response=await Notifications.getExpoPushTokenAsync({projectId});
+       const response=await Notifications.getExpoPushTokenAsync({projectId:'3026af5e-622e-48de-bb4f-1ca851373589'});
        if(cancelled)return;
-       registered=response.data;
        await registerPushToken(profile!.id,response.data);
-     }catch(error){console.warn('Push registration unavailable:',error);}
+       console.info('Parts Connect push device registered');
+     }catch(error){
+       console.warn('Parts Connect push registration failed; will retry on foreground:',error);
+     }finally{inFlight=false;}
    }
    void register();
-   return ()=>{cancelled=true;/* Account-switch cleanup is handled separately from this registration lifecycle. */};
+   // Retry on foreground if FCM/token registration failed at first sign-in.
+   const sub=AppState.addEventListener('change',state=>{if(state==='active')void register();});
+   return ()=>{cancelled=true;sub.remove();};
  },[isAuthenticated,profile?.id]);
  return null;
 }
