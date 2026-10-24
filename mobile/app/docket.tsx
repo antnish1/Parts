@@ -147,13 +147,13 @@ export default function DocketScannerScreen() {
             style={StyleSheet.absoluteFill}
             facing="back"
             enableTorch={torch}
-            barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf'] }}
+            barcodeScannerSettings={{ barcodeTypes: ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf14'] }}
             onBarcodeScanned={({ data }) => onBarcode(data)}
           />
           <View style={styles.cameraOverlay} pointerEvents="box-none">
             <View style={styles.cameraTop}><Pressable onPress={() => setScannerOpen(false)} style={styles.cameraControl}><Text style={styles.cameraControlText}>Close</Text></Pressable><Pressable onPress={() => setTorch((value) => !value)} style={styles.cameraControl}><Text style={styles.cameraControlText}>{torch ? 'Torch Off' : 'Torch On'}</Text></Pressable></View>
             <View style={styles.cameraFrame}><View style={styles.focusBox} /></View>
-            <Text style={styles.cameraHint}>Align the barcode inside the frame. Supports QR, Code 128/39, EAN, UPC and ITF.</Text>
+            <Text style={styles.cameraHint}>Align the barcode inside the frame. Supports QR, Code 128/39, EAN, UPC and ITF-14.</Text>
           </View>
         </SafeAreaView>
       </Modal>
