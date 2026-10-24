@@ -28,5 +28,15 @@ jobs:
           curl -fsSL "$(cat /tmp/eas-log-url)" > /tmp/eas-log.txt
           echo "--- EAS remote installation errors ---"
           wc -c /tmp/eas-log.txt
-          head -c 1200 /tmp/eas-log.txt | tr -d '\\000'
-          tail -c 3500 /tmp/eas-log.txt | tr -d '\\000'
+          file /tmp/eas-log.txt
+          xxd -l 24 /tmp/eas-log.txt
+          python3 - <<'PY'
+          import gzip,zlib
+          b=open('/tmp/eas-log.txt','rb').read()
+          for fn in (gzip.decompress,zlib.decompress,lambda x:x):
+            try:
+              out=fn(b)
+              print(out[-7000:].decode('utf-8','replace'))
+              break
+            except Exception: pass
+          PY
