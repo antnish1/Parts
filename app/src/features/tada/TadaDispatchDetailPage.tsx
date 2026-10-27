@@ -26,6 +26,11 @@ export function TadaDispatchDetailPage() {
   const { profile } = useAuth();
   const [receiptState, setReceiptState] = useState<ReceiptState>({});
   const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!message || !['Receipt recorded successfully.', 'Missing SVR marked received at HQ. Original missing record retained.', 'Missing SVR row deleted successfully.'].includes(message)) return;
+    const timeout = window.setTimeout(() => setMessage((current) => current === message ? '' : current), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [message]);
   const [lateReceiptItemId, setLateReceiptItemId] = useState<string | null>(null);
   const [lateRemark, setLateRemark] = useState('');
   const [lateReason, setLateReason] = useState('');
