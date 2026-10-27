@@ -105,6 +105,7 @@ Do not let frontend role checks replace backend permission checks. Receipt, crea
 - Manager, Director and Developer may act on an SVR previously recorded as `MISSING_HQ` / `hq_received=false` from the late-HQ popup.
 - The popup action dropdown contains only `Received` and `Delete`.
 - `Received` uses `portal_receive_missing_tada_svr`; the original missing receipt row/reason remains in history, the SVR moves to `IN_TRANSIT_TO_ACCOUNTS`, and Accounts must acknowledge separately.
-- `Delete` must first show an explicit confirmation popup. Only after OK may `portal_delete_missing_tada_svr` delete that one missing-HQ row. The RPC is restricted to rows still at `MISSING_HQ`, with no Accounts receipt, and must leave at least one SVR in the dispatch.
-- A delete recalculates the dispatch counts/status and writes a surviving `MISSING_HQ_SVR_DELETED` timeline event containing the deleted-row snapshot.
+- `Delete` must first show an explicit confirmation popup. Only after OK may `portal_delete_missing_tada_svr` proceed. The RPC is restricted to rows still at `MISSING_HQ`, with no Accounts receipt.
+- If other SVRs remain in the dispatch, delete only the selected missing-HQ row, recalculate dispatch counts/status, and write a surviving `MISSING_HQ_SVR_DELETED` timeline event containing the deleted-row snapshot.
+- If the selected missing-HQ SVR is the final/only row in the dispatch, delete the complete TA/DA dispatch instead. Before the cascading delete, write a permanent external audit snapshot so the deleted dispatch/SVR/receipt/event history remains recoverable. The UI must warn that the complete dispatch will be removed and return to the TA/DA list after success.
 - Never offer either action to Accounts/branch users or already-received SVRs. Backend authorization is mandatory.
