@@ -73,12 +73,18 @@ export function TadaDispatchDetailPage() {
   const deleteMissingMutation = useMutation({
     mutationFn: () => deleteMissingTadaSvr(lateReceiptItemId!),
     onSuccess: async () => {
+      const deletedWholeDispatch = allItems.length <= 1;
       setDeleteMissingConfirmOpen(false);
       setLateReceiptItemId(null);
       setLateRemark('');
       setLateReason('');
+      await queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] });
+      if (deletedWholeDispatch) {
+        navigate('/ta-da', { replace: true });
+        return;
+      }
       setMessage('Missing SVR row deleted successfully.');
-      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]);
+      await refetch();
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Unable to delete missing SVR row.'),
   });
@@ -222,6 +228,8 @@ export function TadaDispatchDetailPage() {
           <h2 className="text-sm font-black text-slate-900">Delete row?</h2>
           <p className="mt-2 text-xs leading-5 text-slate-600">Are you sure you want to delete this row?</p>
           <p className="mt-1 text-[11px] font-bold text-slate-500">SVR {lateReceiptItem.svr_no} • {lateReceiptItem.engineer_name_snapshot}</p>
+          {allItems.length <= 1 ? <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[10px] font-bold leading-4 text-amber-800">This is the only SVR in the dispatch. Deleting it will remove the complete TA/DA dispatch.</p> : null}
+          {deleteMissingMutation.isError ? <p className="mt-2 rounded-md bg-red-50 px-2 py-1.5 text-[10px] font-bold leading-4 text-red-700">{deleteMissingMutation.error instanceof Error ? deleteMissingMutation.error.message : 'Unable to delete missing SVR row.'}</p> : null}
           <div className="mt-4 flex justify-end gap-2">
             <button type="button" disabled={deleteMissingMutation.isPending} onClick={() => { setDeleteMissingConfirmOpen(false); setLateReason(''); }}
               className="rounded-md border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">Cancel</button>
