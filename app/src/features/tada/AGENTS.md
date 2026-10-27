@@ -100,9 +100,11 @@ Do not let frontend role checks replace backend permission checks. Receipt, crea
 - Traceability remains available but may be collapsed by default to protect mobile vertical space.
 - Developer override controls must be visually separated as a privileged/danger area and remain hidden for all non-developer roles.
 
-## Late HQ receipt of missing SVRs (2026-10-22)
+## Late HQ receipt / deletion of missing SVRs (2026-10-27)
 
-- Manager and Developer may mark an SVR previously recorded as `MISSING_HQ` / `hq_received=false` as physically received later, using `portal_receive_missing_tada_svr` only.
-- The original missing receipt row, reason, and remark remain intact; a `MISSING_HQ_SVR_RECEIVED_LATER` event records the previous reason, actor, time, and receipt remark.
-- Update the SVR location to `IN_TRANSIT_TO_ACCOUNTS`, recalculate dispatch summary status, and require separate Accounts acknowledgment. Do not mark Accounts received automatically.
-- Never offer the action to Accounts/branch users or already-received SVRs. Backend authorization is mandatory.
+- Manager, Director and Developer may act on an SVR previously recorded as `MISSING_HQ` / `hq_received=false` from the late-HQ popup.
+- The popup action dropdown contains only `Received` and `Delete`.
+- `Received` uses `portal_receive_missing_tada_svr`; the original missing receipt row/reason remains in history, the SVR moves to `IN_TRANSIT_TO_ACCOUNTS`, and Accounts must acknowledge separately.
+- `Delete` must first show an explicit confirmation popup. Only after OK may `portal_delete_missing_tada_svr` delete that one missing-HQ row. The RPC is restricted to rows still at `MISSING_HQ`, with no Accounts receipt, and must leave at least one SVR in the dispatch.
+- A delete recalculates the dispatch counts/status and writes a surviving `MISSING_HQ_SVR_DELETED` timeline event containing the deleted-row snapshot.
+- Never offer either action to Accounts/branch users or already-received SVRs. Backend authorization is mandatory.
