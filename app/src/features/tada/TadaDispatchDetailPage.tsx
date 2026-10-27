@@ -5,12 +5,12 @@ import { ArrowLeft, CheckCheck, ChevronDown, MapPin, PackageCheck, ReceiptText, 
 import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
-import { getTadaDispatch, receiveTadaDispatch, receiveMissingTadaSvr, type TadaReceiptResult } from '../../services/tada.service';
+import { deleteMissingTadaSvr, getTadaDispatch, receiveTadaDispatch, receiveMissingTadaSvr, type TadaReceiptResult } from '../../services/tada.service';
 import { TadaDeveloperControls } from './TadaDeveloperControls';
 import { getTadaStatusMeta, tadaLocationMeta, TadaMiniBadge, TadaStatusBadge } from './tadaUi';
 
 const exceptionReasons = ['Not Found in Packet', 'Document Incomplete', 'Wrong SVR', 'Damaged / Unreadable', 'Other'];
-const lateReceiptReasons = ['Received', ...exceptionReasons];
+const lateReceiptReasons = ['Received', 'Delete'];
 type ReceiptState = Record<string, { received: boolean; reason: string; remark: string }>;
 
 function receiptBadge(value: boolean | null, missingReason?: string | null) {
@@ -29,6 +29,7 @@ export function TadaDispatchDetailPage() {
   const [lateReceiptItemId, setLateReceiptItemId] = useState<string | null>(null);
   const [lateRemark, setLateRemark] = useState('');
   const [lateReason, setLateReason] = useState('');
+  const [deleteMissingConfirmOpen, setDeleteMissingConfirmOpen] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({ queryKey: ['tada-dispatch', dispatchId], queryFn: () => getTadaDispatch(dispatchId), enabled: Boolean(dispatchId) });
   const dispatch = data?.dispatch;
@@ -58,7 +59,7 @@ export function TadaDispatchDetailPage() {
   });
 
   const lateReceiptMutation = useMutation({
-    mutationFn: () => receiveMissingTadaSvr(lateReceiptItemId!, `Receipt reason: ${lateReason}${lateRemark.trim() ? `\n${lateRemark.trim()}` : ''}`),
+    mutationFn: () => receiveMissingTadaSvr(lateReceiptItemId!, `Receipt reason: Received${lateRemark.trim() ? `\n${lateRemark.trim()}` : ''}`),
     onSuccess: async () => {
       setLateReceiptItemId(null);
       setLateRemark('');
@@ -68,13 +69,26 @@ export function TadaDispatchDetailPage() {
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Late receipt failed.'),
   });
+
+  const deleteMissingMutation = useMutation({
+    mutationFn: () => deleteMissingTadaSvr(lateReceiptItemId!),
+    onSuccess: async () => {
+      setDeleteMissingConfirmOpen(false);
+      setLateReceiptItemId(null);
+      setLateRemark('');
+      setLateReason('');
+      setMessage('Missing SVR row deleted successfully.');
+      await Promise.all([refetch(), queryClient.invalidateQueries({ queryKey: ['tada-dispatches'] })]);
+    },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Unable to delete missing SVR row.'),
+  });
   const canReceiveMissing = ['manager', 'director', 'developer'].includes(profile?.role ?? '');
   const lateReceiptItem = allItems.find((item) => item.id === lateReceiptItemId);
   const missingAction = (item: typeof allItems[number]) => (
     canReceiveMissing && item.hq_received === false && item.current_location === 'MISSING_HQ'
       ? <button type="button" title="Receive missing bill at HQ" aria-label={`Receive missing SVR ${item.svr_no} at HQ`}
           className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-300 text-emerald-800 hover:bg-emerald-50"
-          onClick={() => { setLateRemark(''); setLateReason(''); setMessage(''); setLateReceiptItemId(item.id); }}>
+          onClick={() => { setLateRemark(''); setLateReason(''); setDeleteMissingConfirmOpen(false); setMessage(''); setLateReceiptItemId(item.id); }}>
           <Pencil className="h-3.5 w-3.5" />
         </button> : null
   );
@@ -176,21 +190,44 @@ export function TadaDispatchDetailPage() {
           <p className="mt-2 text-xs text-red-700">Originally missing: {lateReceiptItem.hq_exception_reason || 'Not received'}</p>
           <p className="mt-1 text-[11px] text-slate-600">Confirm physical receipt. The original exception stays in the timeline, and Accounts must acknowledge separately.</p>
           <label htmlFor="late-svr-reason" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt reason</label>
-          <select id="late-svr-reason" value={lateReason} onChange={(event) => setLateReason(event.target.value)}
+          <select id="late-svr-reason" value={lateReason} onChange={(event) => {
+              const value = event.target.value;
+              setLateReason(value);
+              if (value === 'Delete') setDeleteMissingConfirmOpen(true);
+            }}
             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2 py-2 text-xs text-slate-900">
             <option value="">Select reason</option>
             {lateReceiptReasons.map((reason) => <option key={reason} value={reason}>{reason}</option>)}
           </select>
-          <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
-          <textarea id="late-svr-remark" maxLength={950} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs text-slate-900" placeholder="Received physically at HQ..." />
+          {lateReason === 'Received' ? <>
+            <label htmlFor="late-svr-remark" className="mt-3 block text-[10px] font-bold text-slate-600">Receipt remark (optional)</label>
+            <textarea id="late-svr-remark" maxLength={950} rows={2} value={lateRemark} onChange={(event) => setLateRemark(event.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 p-2 text-xs text-slate-900" placeholder="Received physically at HQ..." />
+          </> : null}
           {lateReceiptMutation.isError ? <p className="mt-2 text-xs text-red-700">{lateReceiptMutation.error instanceof Error ? lateReceiptMutation.error.message : 'Unable to record receipt.'}</p> : null}
+          {deleteMissingMutation.isError ? <p className="mt-2 text-xs text-red-700">{deleteMissingMutation.error instanceof Error ? deleteMissingMutation.error.message : 'Unable to delete missing SVR row.'}</p> : null}
           <div className="mt-3 flex justify-end gap-2">
-            <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => setLateReceiptItemId(null)}
+            <button type="button" disabled={lateReceiptMutation.isPending || deleteMissingMutation.isPending} onClick={() => { setDeleteMissingConfirmOpen(false); setLateReceiptItemId(null); }}
               className="rounded-md border border-slate-300 px-3 py-2 text-xs font-bold">Cancel</button>
-            <button type="button" disabled={lateReceiptMutation.isPending || !lateReason} onClick={() => lateReceiptMutation.mutate()}
+            {lateReason === 'Received' ? <button type="button" disabled={lateReceiptMutation.isPending} onClick={() => lateReceiptMutation.mutate()}
               className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
               {lateReceiptMutation.isPending ? 'Recording…' : 'Confirm received at HQ'}
+            </button> : null}
+          </div>
+        </div>
+      </div> : null}
+
+      {lateReceiptItem && deleteMissingConfirmOpen ? <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-950/65 p-4" role="dialog" aria-modal="true" aria-label="Confirm delete missing SVR">
+        <div className="w-full max-w-xs rounded-xl bg-white p-4 shadow-2xl">
+          <h2 className="text-sm font-black text-slate-900">Delete row?</h2>
+          <p className="mt-2 text-xs leading-5 text-slate-600">Are you sure you want to delete this row?</p>
+          <p className="mt-1 text-[11px] font-bold text-slate-500">SVR {lateReceiptItem.svr_no} • {lateReceiptItem.engineer_name_snapshot}</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <button type="button" disabled={deleteMissingMutation.isPending} onClick={() => { setDeleteMissingConfirmOpen(false); setLateReason(''); }}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">Cancel</button>
+            <button type="button" disabled={deleteMissingMutation.isPending} onClick={() => deleteMissingMutation.mutate()}
+              className="rounded-md bg-red-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+              {deleteMissingMutation.isPending ? 'Deleting…' : 'OK'}
             </button>
           </div>
         </div>

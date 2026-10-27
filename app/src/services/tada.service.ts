@@ -156,6 +156,13 @@ export async function receiveMissingTadaSvr(itemId: string, remark: string) {
   throwIfError(error);
 }
 
+export async function deleteMissingTadaSvr(itemId: string) {
+  const { error } = await supabase.rpc('portal_delete_missing_tada_svr', {
+    p_item_id: itemId,
+  });
+  throwIfError(error);
+}
+
 export async function developerUpdateTadaDispatch(input: {
   dispatchId: string;
   branch: string;
