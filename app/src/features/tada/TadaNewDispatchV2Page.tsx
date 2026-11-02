@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/useAuth';
 import { Button } from '../../components/ui/Button';
 import { PageCard } from '../../components/ui/PageCard';
 import { getTestBranches } from '../../services/testBranch.service';
+import { supabase } from '../../lib/supabase';
 import { createTadaDispatch, getTadaEngineers, type TadaCreateItem } from '../../services/tada.service';
 import { TadaMiniBadge } from './tadaUi';
 
@@ -30,7 +31,16 @@ export function TadaNewDispatchV2Page() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { profile } = useAuth();
-  const isBranchUser = profile?.role === 'branch';
+  const { data: canChooseOtherOffice = false } = useQuery({
+    queryKey: ['tada-cross-branch-dispatch-permission', profile?.id],
+    enabled: profile?.role === 'branch',
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('portal_can_create_tada_cross_branch');
+      if (error) return false; // Fail closed until backend permission is deployed.
+      return data === true;
+    },
+  });
+  const isBranchUser = profile?.role === 'branch' && !canChooseOtherOffice;
   const [office, setOffice] = useState(profile?.branch === 'ALL_BRANCHES' ? '' : (profile?.branch ?? ''));
   const [items, setItems] = useState<TadaCreateItem[]>([]);
   const [svrNo, setSvrNo] = useState('');
