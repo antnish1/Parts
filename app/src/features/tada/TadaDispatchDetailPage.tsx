@@ -93,7 +93,7 @@ export function TadaDispatchDetailPage() {
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Unable to delete missing SVR row.'),
   });
-  const canReceiveMissing = ['manager', 'director', 'developer'].includes(profile?.role ?? '');
+  const canReceiveMissing = ['manager', 'director', 'developer', 'accounts'].includes(profile?.role ?? '');
   const lateReceiptItem = allItems.find((item) => item.id === lateReceiptItemId);
   const missingAction = (item: typeof allItems[number]) => (
     canReceiveMissing && item.hq_received === false && item.current_location === 'MISSING_HQ'
