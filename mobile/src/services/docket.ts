@@ -64,7 +64,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
 
   let itemQuery = supabase
     .from('portal_order_items')
-    .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, order:portal_orders!inner(order_no, final_order_no, branch, order_type, customer_name, machine_no, status)')
+    .select('id, order_id, part_no, description, qty, edited_qty, billed_qty, row_status, dbms_invoice_no, dbms_invoice_date, docket_no, transport_name, received_date, order:portal_orders!inner(order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status)')
     .ilike('docket_no', pattern)
     .limit(200);
   if (branchValues?.length) itemQuery = itemQuery.in('order.branch', branchValues);
