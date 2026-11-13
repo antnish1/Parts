@@ -1,7 +1,3 @@
-Parts Connect production OTA trigger
-reason=own-branch-docket-receiving-20261024
-source=5f7bd012848d7bc7c1809258574cea672232794c
-backend=docket-receive-action-v7
-channel=production
-runtime=0.2.0
-build=no-apk-or-aab
+publish production OTA for docket Order For / Customer fix
+source: 7e696a5a3071bcb3fd48bef7a92d67f0d1e61f92
+requested: 2026-11-13
