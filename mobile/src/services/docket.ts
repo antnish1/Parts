@@ -94,7 +94,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
     return {
       id: raw.id, source_type: 'item', order_id: raw.order_id, item_id: raw.id,
       order_no: order?.order_no ?? '-', final_order_no: order?.final_order_no ?? null,
-      branch: order?.branch ?? '-', order_type: order?.order_type ?? null, customer_name: order?.customer_name ?? null,
+      branch: order?.branch ?? '-', order_type: order?.order_type ?? null, order_for: order?.order_for ?? null, customer_name: order?.customer_name ?? null,
       machine_no: order?.machine_no ?? null, order_status: order?.status ?? '-', part_no: raw.part_no,
       description: raw.description ?? null, ordered_qty: num(raw.qty), edited_qty: raw.edited_qty ?? null,
       item_status: raw.row_status ?? null, invoice_no: raw.dbms_invoice_no ?? null, delivery_no: null, billing_date: raw.dbms_invoice_date ?? null,
