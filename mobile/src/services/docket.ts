@@ -10,6 +10,7 @@ export type DocketRow = {
   final_order_no: string | null;
   branch: string;
   order_type: string | null;
+  order_for: string | null;
   customer_name: string | null;
   machine_no: string | null;
   order_status: string;
@@ -54,7 +55,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
 
   let billingQuery = supabase
     .from('portal_order_item_billings')
-    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, order:portal_orders!inner(order_no, final_order_no, branch, order_type, customer_name, machine_no, status), item:portal_order_items!inner(part_no, description, qty, edited_qty, row_status)')
+    .select('id, order_id, item_id, order_no, part_no, billed_qty, received_qty, received_at, billing_date, delivery_no, invoice_no, docket_no, transport_name, order:portal_orders!inner(order_no, final_order_no, branch, order_type, order_for, customer_name, machine_no, status), item:portal_order_items!inner(part_no, description, qty, edited_qty, row_status)')
     .ilike('docket_no', pattern)
     .limit(200);
   if (branchValues?.length) billingQuery = billingQuery.in('order.branch', branchValues);
@@ -76,7 +77,7 @@ export async function lookupDocketRows(value: string): Promise<DocketRow[]> {
     return {
       id: raw.id, source_type: 'billing', order_id: raw.order_id, item_id: raw.item_id,
       order_no: order?.order_no ?? raw.order_no, final_order_no: order?.final_order_no ?? null,
-      branch: order?.branch ?? '-', order_type: order?.order_type ?? null, customer_name: order?.customer_name ?? null,
+      branch: order?.branch ?? '-', order_type: order?.order_type ?? null, order_for: order?.order_for ?? null, customer_name: order?.customer_name ?? null,
       machine_no: order?.machine_no ?? null, order_status: order?.status ?? '-', part_no: item?.part_no ?? raw.part_no,
       description: item?.description ?? null, ordered_qty: num(item?.qty), edited_qty: item?.edited_qty ?? null,
       item_status: item?.row_status ?? null, invoice_no: raw.invoice_no ?? null, delivery_no: raw.delivery_no ?? null, billing_date: raw.billing_date ?? null,
