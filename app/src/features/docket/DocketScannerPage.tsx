@@ -182,15 +182,15 @@ export function DocketScannerPage() {
 
   return (
     <PageCard eyebrow="Docket" title="Docket Scanner" description="Search and receive rows by Docket No only.">
-      <div className="grid gap-3 xl:grid-cols-[0.7fr_1.3fr]">
-        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+      <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="min-w-0 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Scanner Control</p>
-          <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#6D8196] bg-[#111827] text-center text-xs text-[#c7d2df]"><video ref={videoRef} className="h-full w-full object-cover" muted playsInline />{!isScanning ? <span className="absolute">Camera scanner area<br />Manual docket search is active</span> : null}</div>
-          <div className="mt-3 grid grid-cols-2 gap-2"><button className="min-h-[44px] rounded-xl border border-[#263244] text-xs font-black text-[#82C8E5] disabled:opacity-40" disabled={isScanning} onClick={() => void startScanner()}>Start Scanner</button><button className="min-h-[44px] rounded-xl border border-[#263244] text-xs font-black text-[#ef6f7b] disabled:opacity-40" disabled={!isScanning} onClick={stopScanner}>Stop Scanner</button></div>
+          <div className="relative flex h-44 min-w-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-[#6D8196] bg-[#111827] px-4 text-center text-xs leading-5 text-[#c7d2df]"><video ref={videoRef} className="h-full w-full object-cover" muted playsInline />{!isScanning ? <span className="absolute inset-x-4">Camera scanner area<br />Manual docket search is active</span> : null}</div>
+          <div className="mt-3 grid grid-cols-2 gap-2"><button className="min-h-[44px] min-w-0 rounded-xl border border-[#263244] px-2 text-xs font-black leading-4 text-[#82C8E5] disabled:opacity-40" disabled={isScanning} onClick={() => void startScanner()}>Start Scanner</button><button className="min-h-[44px] min-w-0 rounded-xl border border-[#263244] px-2 text-xs font-black leading-4 text-[#ef6f7b] disabled:opacity-40" disabled={!isScanning} onClick={stopScanner}>Stop Scanner</button></div>
           <p className="mt-2 rounded-lg border border-[#263244] bg-[#111827] p-2 text-xs text-[#c7d2df]">Status: {scannerStatus}</p>
         </div>
 
-        <div className="rounded-lg border border-[#263244] bg-[#0b1020] p-3">
+        <div className="min-w-0 rounded-lg border border-[#263244] bg-[#0b1020] p-3">
           <p className="mb-2 text-xs font-black uppercase tracking-[0.12em] text-[#82C8E5]">Docket Row Receive</p>
           <div className="grid gap-2 lg:grid-cols-[1fr_auto_auto]">
             <input className="min-h-[44px] rounded-md border border-[#263244] bg-[#111827] px-3 py-2 text-sm text-white outline-none focus:border-[#82C8E5] lg:min-h-0 lg:py-1.5 lg:text-xs" value={docketNo} onChange={(event) => setDocketNo(normalizeDocketNo(event.target.value))} placeholder="Enter docket number only" onKeyDown={(event) => { if (event.key === 'Enter') void lookupRows(); }} />
