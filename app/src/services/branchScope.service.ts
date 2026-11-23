@@ -53,19 +53,24 @@ export async function getCurrentPortalProfile(): Promise<ProfileRow | null> {
   return (loginProfile as ProfileRow | null) ?? null;
 }
 
-/** Specific, currently active SALONI identity; never a blanket branch-role override. */
-export async function isSaloniCrossBranchTrackViewer(): Promise<boolean> {
+/** Account-specific all-branch Track Orders view: verified active Saloni / Shubham logins only. */
+export async function isSpecialCrossBranchTrackViewer(): Promise<boolean> {
   const { data: sessionData } = await supabase.auth.getSession();
-  if (sessionData.session?.user?.id !== '767bd1c7-3c4c-4925-b125-888a27906250') return false;
+  const authId = sessionData.session?.user?.id;
+  const permitted = [
+    { authId: '767bd1c7-3c4c-4925-b125-888a27906250', profileId: '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8', loginId: 'SALONI' },
+    { authId: 'd49ab8cd-4169-4de3-86a3-a70cf5ad377e', profileId: 'd90d0384-540c-43bf-b7b7-07d60814be67', loginId: 'SHUBHAM' },
+  ].find((candidate) => candidate.authId === authId);
+  if (!permitted || !authId) return false;
   const { data: profile, error } = await supabase
     .from('portal_profiles')
     .select('id, auth_user_id, legacy_user_id, role, is_active')
-    .eq('auth_user_id', sessionData.session.user.id)
+    .eq('auth_user_id', authId)
     .maybeSingle();
   if (error) throw error;
-  return profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8'
-    && profile.auth_user_id === '767bd1c7-3c4c-4925-b125-888a27906250'
-    && profile.legacy_user_id?.trim().toUpperCase() === 'SALONI'
+  return profile?.id === permitted.profileId
+    && profile.auth_user_id === permitted.authId
+    && profile.legacy_user_id?.trim().toUpperCase() === permitted.loginId
     && profile.role === 'branch'
     && profile.is_active === true;
 }
