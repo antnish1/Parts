@@ -890,3 +890,12 @@ A future agent entering this repository should act as though it has received thi
 - Frontend access alone is insufficient: keep module RLS, database RPC checks, and Edge Function role checks aligned. Only active Director profiles receive these privileges.
 - User-management/maintenance operations for Director use the established authorization and audit mechanisms.
 - Do not regress the Manager/Director combined role checks in `AppLayout` during prebuild patch scripts.
+
+
+## 2026-11-23 — Shubham Chakaravarti permission parity with Saloni Patel
+
+- The specifically verified, active branch login SHUBHAM (portal profile `d90d0384-540c-43bf-b7b7-07d60814be67`, Supabase auth `d49ab8cd-4169-4de3-86a3-a70cf5ad377e`) has the same special cross-branch permissions as SALONI, without changing base role or office.
+- Both identities can see all-branch Track Orders, view order details, and add normal order comments through the existing authenticated comments flow. Do not extend this to the global order list, approvals, processing, or editing.
+- Both identities have read-only all-branch visibility to TA/DA and Credit Dispatch, including the existing Credit Dispatch comment-only exception. Neither can perform cross-branch payment, approval, or receipt operations.
+- Both may choose any office when creating a TA/DA dispatch, subject to the existing create RPC and validations. This is a narrowly scoped TA/DA creation exception, not blanket cross-branch write access.
+- Authenticate exact profile ID, auth ID, active branch role and legacy login; never authorize by name alone. Existing SALONI access remains unchanged.
