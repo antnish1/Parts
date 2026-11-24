@@ -265,17 +265,62 @@ serve(async (req) => {
         eway_bill_no: normNo(rawRow.ewayBillNo) || null,
         gst_invoice_no: normNo(rawRow.gstInvoiceNo) || null,
         raw_status: clean(rawRow.rawStatus) || null,
-        idempotency_key: idempotencyKey([activeItem.id, finalOrderNo, partNo, rawRow.billedQty, rawRow.invoiceDate, rawRow.deliveryNo, rawRow.invoiceNo, rawRow.docketNo]),
+        // Docket/transport details are mutable shipment metadata, not billing identity.
+        // Keep billed quantity so separate partial invoice lines with differing quantities remain distinct.
+        idempotency_key: idempotencyKey([activeItem.id, finalOrderNo, partNo, rawRow.billedQty, rawRow.invoiceDate, rawRow.deliveryNo, rawRow.invoiceNo]),
         source: 'status_report_upload',
         created_by: profile.id,
         updated_at: now,
       };
 
-      const { error: billingError } = await adminClient
-        .from('portal_order_item_billings')
-        .upsert([billingPayload], { onConflict: 'idempotency_key' });
-      if (billingError) throw billingError;
-      result.inserted += 1;
+      // Match existing uploads by immutable invoice/delivery identity, even when their
+      // old idempotency key included a blank or different docket. Never alter a receipt.
+      // For insufficient identity use the legacy full key to avoid conflating shipments.
+      const completeBillingIdentity = Boolean(billingPayload.invoice_no && billingPayload.delivery_no && billingPayload.billing_date);
+      if (completeBillingIdentity) {
+        const { data: matches, error: matchingError } = await adminClient
+          .from('portal_order_item_billings')
+          .select('id, docket_no, transport_name, transport_mode, packing_detail, eway_bill_no, gst_invoice_no')
+          .eq('item_id', activeItem.id)
+          .eq('source', 'status_report_upload')
+          .eq('invoice_no', billingPayload.invoice_no!)
+          .eq('delivery_no', billingPayload.delivery_no!)
+          .eq('billing_date', billingPayload.billing_date!)
+          .eq('billed_qty', billingPayload.billed_qty)
+          .limit(2);
+        if (matchingError) throw matchingError;
+        if ((matches ?? []).length > 1) {
+          throw new Error('Multiple billing chunks match the same invoice/delivery/quantity. Reconcile duplicates before re-uploading.');
+        }
+        if (matches?.length === 1) {
+          const existing = matches[0];
+          const metadata = {
+            docket_no: billingPayload.docket_no || existing.docket_no,
+            transport_name: billingPayload.transport_name || existing.transport_name,
+            transport_mode: billingPayload.transport_mode || existing.transport_mode,
+            packing_detail: billingPayload.packing_detail || existing.packing_detail,
+            eway_bill_no: billingPayload.eway_bill_no || existing.eway_bill_no,
+            gst_invoice_no: billingPayload.gst_invoice_no || existing.gst_invoice_no,
+            updated_at: now,
+          };
+          const { error: metadataError } = await adminClient
+            .from('portal_order_item_billings').update(metadata).eq('id', existing.id);
+          if (metadataError) throw metadataError;
+        } else {
+          const { error: billingError } = await adminClient
+            .from('portal_order_item_billings')
+            .upsert([billingPayload], { onConflict: 'idempotency_key' });
+          if (billingError) throw billingError;
+          result.inserted += 1;
+        }
+      } else {
+        billingPayload.idempotency_key = idempotencyKey([activeItem.id, finalOrderNo, partNo, rawRow.billedQty, rawRow.invoiceDate, rawRow.deliveryNo, rawRow.invoiceNo, rawRow.docketNo]);
+        const { error: billingError } = await adminClient
+          .from('portal_order_item_billings')
+          .upsert([billingPayload], { onConflict: 'idempotency_key' });
+        if (billingError) throw billingError;
+        result.inserted += 1;
+      }
 
       const { data: chunks, error: chunkReadError } = await adminClient
         .from('portal_order_item_billings')
@@ -303,7 +348,7 @@ serve(async (req) => {
       if (itemError) throw itemError;
 
       reportRow.result = 'SUCCESS';
-      reportRow.reason = 'billing chunk applied and item status recalculated';
+      reportRow.reason = 'billing chunk matched or applied and item status recalculated';
       reportRow.current_item_status = nextRowStatus;
       reportRow.current_billed_qty = billedTotal;
       result.reportRows.push(reportRow);
@@ -319,7 +364,7 @@ serve(async (req) => {
         old_status: order.status,
         new_status: nextRowStatus,
         actor_id: profile.id,
-        notes: `Status upload added billing chunk for ${partNo}. Total billed ${billedTotal}, total received ${receivedTotal}.`,
+        notes: `Status upload reconciled billing chunk for ${partNo}. Total billed ${billedTotal}, total received ${receivedTotal}.`,
         metadata: { part_no: partNo, chunk: billingPayload, billed_qty_total: billedTotal, received_qty_total: receivedTotal, row_status: nextRowStatus },
       });
       result.updated += 1;
