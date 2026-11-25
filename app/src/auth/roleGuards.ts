@@ -39,6 +39,8 @@ export function canAccessRoute(role: UserRole, path: string) {
   if (/^\/orders\/[^/]+\/correct$/.test(path)) return ['manager', 'director', 'developer'].includes(role);
   if (path === '/orders/new') return role === 'branch';
   if (isUploadsWorkspace(path)) return ['admin', 'manager', 'director', 'developer'].includes(role);
+  // Manager inventory viewing is separate from restricted inventory-upload actions.
+  if (path === '/inventory') return ['manager', 'director', 'developer'].includes(role);
   if (isInventoryWorkspace(path)) return role === 'developer';
   if (role === 'developer') return true;
   if (path.startsWith('/developer')) return false;
