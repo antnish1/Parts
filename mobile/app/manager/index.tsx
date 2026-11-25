@@ -8,6 +8,7 @@ import { AppIcon } from '@/components/AppIcon';
 import { StateView } from '@/components/StateView';
 import { useAuth } from '@/auth/AuthProvider';
 import { Screen } from '@/components/Screen';
+import { MotionView } from '@/components/MotionView';
 import { formatMoney } from '@/services/orders';
 import { getInventoryBranches, getLatestInventoryReportDate, getManagerInventoryLookup, getManagerInventoryTransactions } from '@/services/managerInventory';
 import { colors, spacing } from '@/theme/tokens';
@@ -34,6 +35,11 @@ async function shareCsv(filename: string, header: string[], rows: unknown[][]) {
   await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Share inventory export' });
 }
 
+function formatQty(value: number) {
+  // The source inventory can contain fractional stock; avoid float artifacts in the UI.
+  return value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
 function parseDate(value: string) {
   const parsed = value ? new Date(`${value}T12:00:00`) : new Date();
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -46,6 +52,7 @@ export default function ManagerDashboardScreen() {
   const [branch, setBranch] = useState('all');
   const [reportDate, setReportDate] = useState('');
   const [showDate, setShowDate] = useState(false);
+  const [selectedExport, setSelectedExport] = useState<'inventory' | 'movement'>('inventory');
 
   const latest = useQuery({ queryKey: ['manager-inventory-latest-date'], queryFn: getLatestInventoryReportDate, enabled: allowed });
 
@@ -127,37 +134,57 @@ export default function ManagerDashboardScreen() {
       {!hasSearch ? <StateView icon="package" title="Search a part" message="Enter a part number to view current stock and movement." /> : null}
 
       {hasSearch ? (
-        <View style={styles.summaryStrip}>
-          <Summary label="Qty" value={String(totals.qty)} />
+        <MotionView delay={50} distance={12} style={styles.summaryStrip}>
+          <Summary label="Qty" value={formatQty(totals.qty)} />
           <Divider />
           <Summary label="Value" value={formatMoney(totals.value)} />
           <Divider />
-          <Summary label="In" value={String(totals.received)} />
+          <Summary label="In" value={formatQty(totals.received)} />
           <Divider />
-          <Summary label="Out" value={String(totals.issued)} />
-        </View>
+          <Summary label="Out" value={formatQty(totals.issued)} />
+        </MotionView>
       ) : null}
 
       {hasSearch ? (
-        <View style={styles.exportRow}>
-          <Pressable disabled={!(inventory.data ?? []).length} onPress={() => void exportInventory()} style={[styles.exportButton, !(inventory.data ?? []).length && styles.disabled]}><AppIcon name="package" size={14} color={colors.navy}/><Text style={styles.exportText}>Inventory CSV</Text></Pressable>
-          <Pressable disabled={!(txns.data ?? []).length} onPress={() => void exportTransactions()} style={[styles.exportButton, !(txns.data ?? []).length && styles.disabled]}><AppIcon name="truck" size={14} color={colors.navy}/><Text style={styles.exportText}>Movement CSV</Text></Pressable>
-        </View>
+        <MotionView delay={120} distance={10} style={styles.exportRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Export inventory CSV"
+            accessibilityState={{ selected: selectedExport === 'inventory', disabled: !(inventory.data ?? []).length }}
+            disabled={!(inventory.data ?? []).length}
+            onPress={() => { setSelectedExport('inventory'); void exportInventory(); }}
+            style={({ pressed }) => [styles.exportButton, selectedExport === 'inventory' && styles.exportSelected, pressed && styles.exportPressed, !(inventory.data ?? []).length && styles.disabled]}
+          >
+            <AppIcon name="package" size={16} color={selectedExport === 'inventory' ? colors.success : colors.navy}/>
+            <Text style={[styles.exportText, selectedExport === 'inventory' && styles.exportSelectedText]}>Inventory CSV</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Export movement CSV"
+            accessibilityState={{ selected: selectedExport === 'movement', disabled: !(txns.data ?? []).length }}
+            disabled={!(txns.data ?? []).length}
+            onPress={() => { setSelectedExport('movement'); void exportTransactions(); }}
+            style={({ pressed }) => [styles.exportButton, selectedExport === 'movement' && styles.exportSelected, pressed && styles.exportPressed, !(txns.data ?? []).length && styles.disabled]}
+          >
+            <AppIcon name="truck" size={16} color={selectedExport === 'movement' ? colors.success : colors.navy}/>
+            <Text style={[styles.exportText, selectedExport === 'movement' && styles.exportSelectedText]}>Movement CSV</Text>
+          </Pressable>
+        </MotionView>
       ) : null}
 
       {(inventory.isLoading || txns.isLoading) && hasSearch ? <View style={styles.loading}><ActivityIndicator color={colors.navy} /><Text style={styles.loadingText}>Loading inventory…</Text></View> : null}
       {failed && hasSearch ? <StateView icon="alert" tone="error" title="Inventory could not be loaded" actionLabel="Retry" onAction={() => { void inventory.refetch(); void txns.refetch(); }} /> : null}
 
       {!failed && (inventory.data ?? []).length ? <Text style={styles.section}>Stock</Text> : null}
-      {!failed && (inventory.data ?? []).map((row) => (
-        <View key={row.id} style={styles.row}>
+      {!failed && (inventory.data ?? []).map((row, index) => (
+        <MotionView key={row.id} delay={Math.min(index * 35, 245)} distance={index < 8 ? 8 : 0} duration={index < 8 ? 230 : 0} style={styles.row}>
           <View style={styles.rowIcon}><AppIcon name="inventory" size={15} color={colors.navy}/></View>
           <View style={styles.rowCopy}>
             <View style={styles.rowTop}><Text style={styles.part}>{row.item_code}</Text><Text style={styles.qty}>{Number(row.qty ?? 0)}</Text></View>
             <Text numberOfLines={1} style={styles.desc}>{row.item_name || 'No description'}</Text>
             <Text numberOfLines={1} style={styles.meta}>{row.branch_name || row.branch_key || row.branch_code} · {row.item_group || '—'} · DNP {formatMoney(Number(row.dnp ?? 0))} · {formatMoney(Number(row.inv_value ?? 0))}</Text>
           </View>
-        </View>
+        </MotionView>
       ))}
 
       {hasSearch && !inventory.isLoading && !failed && (inventory.data ?? []).length === 0 ? <StateView icon="inbox" title="No stock rows" message="No inventory position matches this part, date and branch." /> : null}
@@ -182,7 +209,7 @@ export default function ManagerDashboardScreen() {
 }
 
 function Summary({ label, value }: { label: string; value: string }) {
-  return <View style={styles.summary}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} style={styles.summaryValue}>{value}</Text></View>;
+  return <View style={styles.summary}><Text style={styles.summaryLabel}>{label}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.summaryValue}>{value}</Text></View>;
 }
 function Divider(){ return <View style={styles.divider}/>; }
 
@@ -198,15 +225,19 @@ const styles = StyleSheet.create({
   chipActive:{backgroundColor:colors.navy,borderColor:colors.navy},
   chipText:{color:colors.textMuted,fontSize:8.5,fontWeight:'800'},
   chipTextActive:{color:'#fff'},
-  summaryStrip:{minHeight:48,flexDirection:'row',alignItems:'center',paddingHorizontal:8,borderRadius:12,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
-  summary:{flex:1,minWidth:0},
-  summaryLabel:{color:colors.textMuted,fontSize:7.5,fontWeight:'800'},
-  summaryValue:{color:colors.text,fontSize:10,fontWeight:'900',marginTop:2},
-  divider:{width:StyleSheet.hairlineWidth,height:26,backgroundColor:'#DDE4EC'},
-  exportRow:{flexDirection:'row',gap:7},
-  exportButton:{flex:1,minHeight:36,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:5,borderRadius:10,borderWidth:1,borderColor:'#E1E7EE',backgroundColor:'#fff'},
-  exportText:{color:colors.navy,fontSize:8.5,fontWeight:'900'},
-  disabled:{opacity:.4},
+  // Reference: blue four-column centered summary with white text and subtle separators.
+  summaryStrip:{minHeight:88,flexDirection:'row',alignItems:'center',paddingHorizontal:8,borderRadius:17,backgroundColor:'#5D9FD5',overflow:'hidden'},
+  summary:{flex:1,minWidth:0,alignItems:'center',justifyContent:'center',paddingHorizontal:3},
+  summaryLabel:{color:'#FFFFFF',fontSize:11,fontWeight:'800',textAlign:'center'},
+  summaryValue:{color:'#FFFFFF',fontSize:12,fontWeight:'900',marginTop:7,textAlign:'center'},
+  divider:{width:StyleSheet.hairlineWidth,height:48,backgroundColor:'rgba(255,255,255,0.76)'},
+  exportRow:{flexDirection:'row',gap:10,marginTop:3},
+  exportButton:{flex:1,minHeight:53,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:7,borderRadius:17,borderWidth:2,borderColor:colors.navy,backgroundColor:'#FFFFFF'},
+  exportSelected:{borderColor:colors.success,borderWidth:3},
+  exportPressed:{transform:[{scale:0.975}],opacity:0.88},
+  exportText:{color:colors.navy,fontSize:11,fontWeight:'900'},
+  exportSelectedText:{color:colors.success},
+  disabled:{opacity:0.4},
   loading:{flexDirection:'row',alignItems:'center',gap:7,paddingVertical:4},
   loadingText:{color:colors.textMuted,fontSize:9,fontWeight:'700'},
   section:{color:colors.text,fontSize:11,fontWeight:'900',marginTop:2},
