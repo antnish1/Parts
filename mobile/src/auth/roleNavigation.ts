@@ -11,13 +11,14 @@ const tada:WorkAction={key:'tada',label:'TA/DA Tracking',description:'Track phys
 const installations:WorkAction={key:'installations',label:'Engine & Breaker',description:'Invoice intake, installation completion and acceptance.',href:'/installations'};
 const reports:WorkAction={key:'reports',label:'Reports',description:'Operational order summaries with branch and status drill-down.',href:'/reports'};
 const managerDashboard:WorkAction={key:'manager-dashboard',label:'Manager Dashboard',description:'Part-wise inventory position and received/issued movement.',href:'/manager'};
+const inventory:WorkAction={key:'inventory',label:'Inventory',description:'Search branch-wise stock, quantity, DNP and inventory value.',href:'/inventory'};
 const uploads:WorkAction={key:'uploads',label:'Uploads',description:'Inventory, Order Status and Dealer Price protected imports.',href:'/uploads'};
 const developerWorkspace:WorkAction={key:'developer',label:'Developer Workspace',description:'Protected user management, diagnostics and comment inbox.',href:'/developer'};
 export const roleWorkActions:Record<UserRole,WorkAction[]>={
  branch:[{key:'new-order',label:'New Order',description:'Create a parts order with machine and part master lookup.',href:'/orders/new'},trackOrders,pendingIssue,delayedVor,docket,partLocation,installations,credit,tada],
  admin:[{key:'admin-queue',label:'Approved Orders',description:'Process approved orders or reject them with the protected admin workflow.',href:'/admin/approved'},trackOrders,pendingIssue,delayedVor,docket,partLocation,installations,credit,reports,uploads],
  super:[{key:'approval-queue',label:'Approval Queue',description:'Review orders assigned for approval.',href:'/approvals',badgeKey:'pendingApproval'},trackOrders,delayedVor,docket,partLocation,installations,credit,reports],
- manager:[{key:'approval-queue',label:'Manager Approvals',description:'Review escalated approvals.',href:'/approvals',badgeKey:'pendingApproval'},trackOrders,pendingIssue,delayedVor,managerDashboard,docket,partLocation,installations,credit,tada,reports],
+ manager:[{key:'approval-queue',label:'Manager Approvals',description:'Review escalated approvals.',href:'/approvals',badgeKey:'pendingApproval'},trackOrders,pendingIssue,delayedVor,managerDashboard,inventory,docket,partLocation,installations,credit,tada,reports],
  viewer:[trackOrders,delayedVor,partLocation,installations,reports],
  developer:[{key:'approval-queue',label:'Approval Queue',description:'Privileged review access using audited backend functions.',href:'/approvals',badgeKey:'pendingApproval'},{key:'admin-queue',label:'Approved Orders',description:'Process approved orders through the admin Edge Function.',href:'/admin/approved'},trackOrders,pendingIssue,delayedVor,managerDashboard,docket,partLocation,installations,credit,tada,reports,uploads,developerWorkspace],
  hq:[trackOrders,pendingIssue,delayedVor,partLocation,installations,tada,reports],
