@@ -1,3 +1,4 @@
-publish production OTA for docket scanner reference layout
-source: b8e5034f00a42371916c6a1403a7cc4dd5bc5210
-requested: 2026-11-14
+publish production Android OTA: Manager Inventory Workbench card
+source: 0eb19743e3cdd8d5f3ad039f8f56343715e593d1
+requested: 2026-11-25
+reason: user approved merge and publish for PR #346
