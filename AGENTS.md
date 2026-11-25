@@ -899,3 +899,10 @@ A future agent entering this repository should act as though it has received thi
 - Both identities have read-only all-branch visibility to TA/DA and Credit Dispatch, including the existing Credit Dispatch comment-only exception. Neither can perform cross-branch payment, approval, or receipt operations.
 - Both may choose any office when creating a TA/DA dispatch, subject to the existing create RPC and validations. This is a narrowly scoped TA/DA creation exception, not blanket cross-branch write access.
 - Authenticate exact profile ID, auth ID, active branch role and legacy login; never authorize by name alone. Existing SALONI access remains unchanged.
+
+
+## 2026-11-25 — Manager Inventory navigation
+
+- Active Managers can open the **Inventory** read-only lookup as a separate menu item at `/inventory`, in addition to the existing **Manager Dashboard** at `/manager/dashboard`. Both use the same inventory position and transaction lookup component without copying business logic.
+- Do not grant Managers access to `/inventory/upload` or arbitrary `/inventory/*` routes as part of this navigation fix. Developer-only inventory upload permissions remain unchanged; Director access follows its established role guard.
+- Keep the separate navigation entries visible on the responsive portal, including the mobile More menu. The Android native Workbench UI is maintained separately and requires its own source change.
