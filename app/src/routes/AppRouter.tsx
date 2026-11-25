@@ -73,6 +73,7 @@ export function AppRouter() {
           <Route path="/approvals/:queue" element={<ApprovalsPage />} />
           <Route path="/admin/:queue" element={<AdminPage />} />
           <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
+          <Route path="/inventory" element={<ManagerDashboardPage />} />
           <Route path="/developer/workspace" element={<DeveloperWorkspacePage />} />
           <Route path="/uploads" element={<UploadsPage />} />
           <Route path="/inventory/upload" element={<InventoryUploadPage />} />
