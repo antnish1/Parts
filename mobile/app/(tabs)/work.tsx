@@ -30,6 +30,7 @@ function iconFor(action: WorkAction): AppIconName {
   if (action.key.includes('installations')) return 'package';
   if (action.key.includes('reports')) return 'fileChart';
   if (action.key.includes('manager-dashboard')) return 'inventory';
+  if (action.key === 'inventory') return 'inventory';
   if (action.key.includes('uploads')) return 'package';
   if (action.key.includes('developer')) return 'shield';
   if (action.key.includes('admin')) return 'shield';
