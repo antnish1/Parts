@@ -1,4 +1,4 @@
-publish production Android OTA: Manager Inventory Workbench card
-source: 0eb19743e3cdd8d5f3ad039f8f56343715e593d1
+publish production Android OTA: Inventory summary blue KPI, selected CSV, motion effects
+source: ff3c360de63b44c63848aefd5137a9432a34f84d
 requested: 2026-11-25
-reason: user approved merge and publish for PR #346
+reason: user explicitly approved merge and deploy for PR #347
