@@ -1,37 +1,36 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileText } from 'lucide-react';
-import { formatMoney } from '../../services/creditDispatch.service';
-import { getCreditCustomerLedger, riskTone } from '../../services/creditCustomer.service';
+import * as XLSX from 'xlsx';
+import { formatMoney, deriveCreditDispatchRecoveryStatus, type CreditDispatchRecord } from '../../services/creditDispatch.service';
+import { getCreditCustomerLedger } from '../../services/creditCustomer.service';
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return '-';
-  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(value));
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><p className="text-[10px] font-medium uppercase tracking-[0.13em] text-slate-400">{label}</p><p className="mt-1 text-lg font-semibold text-slate-900">{value}</p></div>;
-}
-
+const statusOf = (row: CreditDispatchRecord) => row.approval_status === 'Approved' ? deriveCreditDispatchRecoveryStatus(row) : row.approval_status;
+const included = (row: CreditDispatchRecord) => row.approval_status !== 'Draft' && !row.approval_status.startsWith('Rejected');
+const today = () => new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function Stat({label,value}:{label:string;value:string}) {return <div className="rounded-xl border bg-white p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-lg font-semibold">{value}</p></div>}
 export function CreditCustomerLedgerPage() {
-  const customerId = new URLSearchParams(window.location.search).get('id') ?? '';
-  const query = useQuery({ queryKey: ['credit-customer-ledger', customerId], queryFn: () => getCreditCustomerLedger(customerId), enabled: Boolean(customerId) });
-
-  if (!customerId) return <div className="rounded-3xl bg-red-50 p-6 text-sm font-medium text-red-700">Missing customer id.</div>;
-  if (query.isLoading) return <div className="rounded-3xl bg-white p-6 text-sm font-medium text-slate-500">Loading ledger...</div>;
-  if (query.error || !query.data) return <div className="rounded-3xl bg-red-50 p-6 text-sm font-medium text-red-700">Unable to load customer ledger.</div>;
-
-  const { summary, ledger } = query.data;
-
-  return (
-    <div data-cd-theme="ledger" className="cd-shell mx-auto max-w-7xl space-y-4 pb-20">
-      <div className="cd-hero rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <Link to="/credit-dispatch/customers" className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-slate-500"><ArrowLeft className="h-4 w-4" />Back</Link>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-[11px] font-medium uppercase tracking-[0.15em] text-blue-600">Customer Ledger</p><p className="mt-1 text-lg font-semibold text-slate-900">{summary.customer_name}</p><p className="mt-1 text-sm font-medium text-slate-500">{summary.mobile_no} • {summary.default_branch ?? '-'}</p></div><span className={`w-fit rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-[0.1em] ${riskTone(summary.risk_category)}`}>{summary.risk_category}</span></div>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Total Credit" value={formatMoney(summary.total_credit)} /><Stat label="Received" value={formatMoney(summary.total_received)} /><Stat label="Outstanding" value={formatMoney(summary.outstanding)} /><Stat label="Overdue" value={formatMoney(summary.overdue)} /></div>
-      <div className="grid gap-3 xl:hidden">{ledger.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm font-medium text-slate-500">No approved ledger entries yet.</div> : ledger.map((row) => <article key={`${row.entry_type}-${row.dispatch_id}-${row.sort_at}`} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-slate-900">{row.entry_type}</p><p className="mt-1 text-xs font-medium text-slate-500">{formatDate(row.transaction_date)} • {row.branch}</p></div><FileText className="h-4 w-4 text-blue-500" /></div><p className="mt-3 text-xs font-medium text-slate-500">{row.particulars}</p><div className="mt-3 grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 p-3 text-center"><div><p className="text-[10px] uppercase text-slate-400">Debit</p><p className="text-xs font-semibold text-red-700">{formatMoney(row.debit)}</p></div><div><p className="text-[10px] uppercase text-slate-400">Credit</p><p className="text-xs font-semibold text-emerald-700">{formatMoney(row.credit)}</p></div><div><p className="text-[10px] uppercase text-slate-400">Balance</p><p className="text-xs font-semibold text-slate-900">{formatMoney(row.balance)}</p></div></div></article>)}</div>
-      <div className="hidden overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm xl:block"><table className="min-w-full divide-y divide-slate-100 text-left text-xs"><thead className="bg-slate-50 text-[10px] font-medium uppercase tracking-[0.13em] text-slate-500"><tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Particulars</th><th className="px-4 py-3">Document</th><th className="px-4 py-3">Branch</th><th className="px-4 py-3 text-right">Debit</th><th className="px-4 py-3 text-right">Credit</th><th className="px-4 py-3 text-right">Balance</th></tr></thead><tbody className="divide-y divide-slate-100">{ledger.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-sm font-medium text-slate-500">No approved ledger entries yet.</td></tr> : ledger.map((row) => <tr key={`${row.entry_type}-${row.dispatch_id}-${row.sort_at}`} className="hover:bg-slate-50"><td className="px-4 py-3 font-medium text-slate-600">{formatDate(row.transaction_date)}</td><td className="px-4 py-3"><p className="font-semibold text-slate-900">{row.entry_type}</p><p className="text-slate-500">{row.particulars}</p></td><td className="px-4 py-3 font-medium text-slate-600">{row.document_type} {row.document_no || ''}</td><td className="px-4 py-3 font-medium text-slate-600">{row.branch}</td><td className="px-4 py-3 text-right font-semibold text-red-700">{formatMoney(row.debit)}</td><td className="px-4 py-3 text-right font-semibold text-emerald-700">{formatMoney(row.credit)}</td><td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(row.balance)}</td></tr>)}</tbody></table></div>
-    </div>
-  );
+ const customerId = new URLSearchParams(window.location.search).get('id') ?? '';
+ const [tab,setTab]=useState('Credit Dispatch History');
+ const [filter,setFilter]=useState('All');
+ const [office,setOffice]=useState('All');
+ const query=useQuery({queryKey:['credit-customer-ledger',customerId],queryFn:()=>getCreditCustomerLedger(customerId),enabled:!!customerId,refetchOnMount:'always'});
+ if(!customerId)return <p>Missing customer ID.</p>;
+ if(query.isLoading)return <p>Loading customer ledger...</p>;
+ if(query.error||!query.data)return <p className="text-red-700">Unable to load customer ledger.</p>;
+ const {summary,ledger,dispatches}=query.data;
+ const offices=[...new Set(dispatches.map(row=>row.branch))].sort();
+ const scoped=dispatches.filter(row=>row.approval_status!=='Draft'&&(office==='All'||row.branch===office));
+ const filtered=scoped.filter(row=>filter==='All'||(filter==='Pending Approval'&&row.approval_status.startsWith('Pending'))||(filter==='Outstanding'&&included(row)&&Number(row.balance_amount)>0)||(filter==='Overdue'&&included(row)&&Number(row.balance_amount)>0&&row.due_date<today())||(filter==='Rejected'&&row.approval_status.startsWith('Rejected'))||(filter==='Correction'&&row.approval_status.startsWith('Correction'))||statusOf(row)===filter);
+ const sum=(rows:CreditDispatchRecord[],field:'credit_amount'|'total_received_amount'|'balance_amount')=>rows.reduce((n,r)=>n+Number(r[field]??0),0);
+ const eligible=scoped.filter(included);
+ const transactions=ledger.filter(row=>office==='All'||row.branch===office).reduce<Array<typeof ledger[number]>>((acc,row)=>{acc.push({...row,balance:(acc[acc.length-1]?.balance??0)+Number(row.debit)-Number(row.credit)});return acc},[]);
+ const exportLedger=()=>{const book=XLSX.utils.book_new();XLSX.utils.book_append_sheet(book,XLSX.utils.json_to_sheet(filtered.map(row=>({Dispatch:row.dispatch_no,Office:row.branch,Document:row.document_no,Issued:row.document_date,Due:row.due_date,Credit:row.credit_amount,Received:row.total_received_amount,Balance:row.balance_amount,Approval:row.approval_status,Status:statusOf(row)}))),'Credits');XLSX.utils.book_append_sheet(book,XLSX.utils.json_to_sheet(transactions),'Transactions');XLSX.writeFile(book,'customer-ledger.xlsx')};
+ return <div data-cd-theme="ledger" className="cd-shell w-full space-y-4 pb-20">
+ <div className="rounded-xl border bg-white p-4"><Link to="/credit-dispatch/customers" className="text-blue-700">Back to Customer Ledger</Link><h1 className="mt-2 text-xl font-bold">{summary.customer_name}</h1><p className="text-sm text-slate-500">{summary.mobile_no} · {summary.customer_type} · {offices.length} offices</p></div>
+ <div className="flex flex-wrap gap-2"><select aria-label="Office" className="rounded-lg border p-2" value={office} onChange={e=>setOffice(e.target.value)}>{['All',...offices].map(x=><option key={x} value={x}>{x==='All'?'All Offices':x}</option>)}</select><button type="button" onClick={exportLedger} className="ml-auto rounded-lg border px-4 py-2">Export Excel</button></div>
+ <div className="grid gap-2 grid-cols-2 lg:grid-cols-4"><Stat label="Total Credits" value={String(scoped.length)}/><Stat label="Open Credits" value={String(eligible.filter(r=>Number(r.balance_amount)>0).length)}/><Stat label="Total Credit Issued" value={formatMoney(sum(eligible,'credit_amount'))}/><Stat label="Received" value={formatMoney(sum(eligible,'total_received_amount'))}/><Stat label="Outstanding" value={formatMoney(sum(eligible,'balance_amount'))}/><Stat label="Overdue Exposure" value={formatMoney(sum(eligible.filter(r=>r.due_date<today()),'balance_amount'))}/><Stat label="Pending Approval (included)" value={formatMoney(sum(eligible.filter(r=>r.approval_status.startsWith('Pending')),'balance_amount'))}/><Stat label="Correction (included)" value={formatMoney(sum(eligible.filter(r=>r.approval_status.startsWith('Correction')),'balance_amount'))}/><Stat label="Rejected / unresolved (excluded)" value={formatMoney(sum(scoped.filter(r=>r.approval_status.startsWith('Rejected')),'balance_amount'))}/></div>
+ <div className="flex flex-wrap gap-2">{['Credit Dispatch History','Transaction Ledger'].map(x=><button type="button" key={x} onClick={()=>setTab(x)} className={tab===x?'rounded-lg bg-blue-700 text-white px-4 py-2':'rounded-lg border px-4 py-2'}>{x}</button>)}</div>
+ {tab==='Credit Dispatch History'?<><select aria-label="Credit status" className="rounded-lg border p-2" value={filter} onChange={e=>setFilter(e.target.value)}>{['All','Outstanding','Pending Approval','Correction','Overdue','Pending Payment','Partial Payment','Closed','Rejected'].map(x=><option key={x}>{x}</option>)}</select><div className="overflow-x-auto rounded-xl border bg-white"><table className="w-full text-left text-xs"><thead className="bg-slate-100"><tr>{['Dispatch','Office','Document','Issued','Due','Credit','Received','Balance','Status'].map(x=><th key={x} className="p-3 whitespace-nowrap">{x}</th>)}</tr></thead><tbody>{filtered.map(row=><tr key={row.id} className="border-t"><td className="p-3"><Link className="text-blue-700" to={'/credit-dispatch/'+row.id}>{row.dispatch_no??row.document_no}</Link></td><td className="p-3">{row.branch}</td><td className="p-3">{row.document_type} {row.document_no}</td><td className="p-3">{row.document_date}</td><td className="p-3">{row.due_date}</td><td className="p-3">{formatMoney(row.credit_amount)}</td><td className="p-3 text-emerald-700">{formatMoney(row.total_received_amount)}</td><td className="p-3 text-red-700">{formatMoney(row.balance_amount)}</td><td className="p-3 whitespace-nowrap">{statusOf(row)}</td></tr>)}</tbody></table>{!filtered.length&&<p className="p-4 text-center">No matching credits.</p>}</div><h2 className="font-semibold">Office-wise outstanding</h2><div className="grid gap-2 sm:grid-cols-3">{offices.map(branch=><Stat key={branch} label={branch} value={formatMoney(sum(dispatches.filter(r=>r.branch===branch&&included(r)),'balance_amount'))}/>)}</div></>:<div className="overflow-x-auto rounded-xl border bg-white"><table className="w-full text-left text-xs"><thead className="bg-slate-100"><tr>{['Date','Particulars','Document','Office','Debit','Credit','Balance'].map(x=><th key={x} className="p-3">{x}</th>)}</tr></thead><tbody>{transactions.map((row,i)=><tr key={row.dispatch_id+'-'+i} className="border-t"><td className="p-3">{row.transaction_date}</td><td className="p-3">{row.entry_type} · {row.particulars}</td><td className="p-3">{row.document_type} {row.document_no}</td><td className="p-3">{row.branch}</td><td className="p-3">{formatMoney(row.debit)}</td><td className="p-3">{formatMoney(row.credit)}</td><td className="p-3">{formatMoney(row.balance)}</td></tr>)}</tbody></table>{!transactions.length&&<p className="p-4 text-center">No transactions.</p>}</div>}
+ </div>;
 }
