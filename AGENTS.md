@@ -912,3 +912,8 @@ A future agent entering this repository should act as though it has received thi
 - Only the exact verified active SALONI login (profile `6a4fad26-55bb-4894-a2cd-e2b2cfa070e8`, auth `767bd1c7-3c4c-4925-b125-888a27906250`, role branch, JABALPUR_BHL) may use **Add Payment** for approved Credit Dispatch records belonging to any office.
 - Implement in the Credit Dispatch list desktop/mobile actions, with a separate Supabase authorization helper and narrowly scoped payment/event INSERT policies. Payment amount/status/balance validations remain unchanged.
 - This exception **does not** extend to SHUBHAM, other branch logins, Credit Dispatch creation/editing/approval, TA/DA write access, or any other workflow; the prior 2026-11-23 rule is superseded only for SALONI's cross-office Credit Dispatch payment action.
+
+## 2026-11-28 — Customer Credit Exposure
+
+- Customer register, ledger and aging include Approved, Pending Accounts Approval, Pending Manager Approval and both Correction Requested statuses. Closed approved credits retain history; rejected credits are separately disclosed unresolved exceptions, not counted in exposure. Drafts are excluded. Approval stages and payment authorization remain unchanged.
+- Aggregate dispatch balances once per dispatch; never join payment rows into credit totals. Preserve security-invoker RLS views and existing customer IDs. Individual customer ledger must expose dispatch status and transaction history separately, with office-scoped totals and exports.
