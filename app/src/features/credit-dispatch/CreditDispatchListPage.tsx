@@ -177,7 +177,7 @@ function PaymentDialog({ row, isBusy, onClose, onSubmit }: { row: CreditDispatch
   );
 }
 
-type ActionProps = { row: CreditDispatchRecord; currentRole: string; canPay: boolean; canCorrect: boolean; currentBranch: string; isBusy: boolean; onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => void; onPayment: (row: CreditDispatchRecord) => void; compact?: boolean };
+type ActionProps = { row: CreditDispatchRecord; currentRole: string; canPay: boolean; canCorrect: boolean; currentBranch: string; saloniCrossOfficePayments: boolean; isBusy: boolean; onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => void; onPayment: (row: CreditDispatchRecord) => void; compact?: boolean };
 
 function normalizeActionBranch(value: string | null | undefined) {
   return String(value ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -190,11 +190,11 @@ function canReviewStage(row: CreditDispatchRecord, role: string) {
   return false;
 }
 
-function RowActions({ row, currentRole, canPay, canCorrect, currentBranch, isBusy, onApproval, onPayment, compact }: ActionProps) {
+function RowActions({ row, currentRole, canPay, canCorrect, currentBranch, saloniCrossOfficePayments, isBusy, onApproval, onPayment, compact }: ActionProps) {
   const progressStatus = getCreditDispatchProgressStatus(row);
   const showCorrection = canCorrect && ['Correction Requested by Accounts', 'Correction Requested by Manager'].includes(row.approval_status) && normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch);
   const showApproval = canReviewStage(row, currentRole);
-  const showPayment = canPay && (currentRole !== 'branch' || normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch)) && isCreditDispatchPaymentStage(progressStatus);
+  const showPayment = canPay && (currentRole !== 'branch' || saloniCrossOfficePayments || normalizeActionBranch(row.branch) === normalizeActionBranch(currentBranch)) && isCreditDispatchPaymentStage(progressStatus);
 
   if (showCorrection) return <Link to={`/credit-dispatch/${row.id}/edit`}><Button type="button" className={compact ? 'cd-action cd-action--correct px-3 py-1.5 text-xs' : 'cd-action cd-action--correct w-full'}><RotateCcw className="h-4 w-4" />Edit & Resubmit</Button></Link>;
   if (!showApproval && !showPayment) return <span className="text-xs font-medium text-slate-400">—</span>;
@@ -310,6 +310,8 @@ export function CreditDispatchListPage() {
   }, [rows]);
   const currentRole = profile?.role ?? '';
   const canPay = ['branch', 'manager', 'director', 'admin', 'developer', 'super'].includes(currentRole);
+  // Exact verified profile only; backend verifies the matching Supabase auth identity independently.
+  const saloniCrossOfficePayments = currentRole === 'branch' && profile?.is_active === true && profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8';
   const canCorrect = currentRole === 'branch';
   const isBusy = approvalMutation.isPending || paymentMutation.isPending;
 
@@ -324,7 +326,7 @@ export function CreditDispatchListPage() {
     });
   }, [kpiFilter, rows, searchText, statusFilter]);
 
-  const actionProps = { currentRole, canPay, canCorrect, currentBranch: profile?.branch ?? '', isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
+  const actionProps = { currentRole, canPay, canCorrect, saloniCrossOfficePayments, currentBranch: profile?.branch ?? '', isBusy, onApproval: (row: CreditDispatchRecord, action: CreditDispatchApprovalAction) => setApprovalTarget({ row, action }), onPayment: (row: CreditDispatchRecord) => setPaymentTarget(row) };
 
   return (
     <div data-cd-theme="tracker" className="cd-shell cd-tracker w-full max-w-none space-y-4 pb-20 xl:pb-0">
