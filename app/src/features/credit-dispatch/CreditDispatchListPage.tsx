@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Check, CheckCircle2, Clock, CreditCard, FileSignature, IndianRupee, Plus, RotateCcw, Search, X, XCircle } from 'lucide-react';
@@ -294,8 +294,8 @@ export function CreditDispatchListPage() {
   const [paymentTarget, setPaymentTarget] = useState<CreditDispatchRecord | null>(null);
 
   const dispatchQuery = useQuery({ queryKey: ['credit-dispatches'], queryFn: getCreditDispatches, refetchInterval: 30000 });
-  const approvalMutation = useMutation({ mutationFn: (input: { id: string; action: CreditDispatchApprovalAction; note: string }) => updateCreditDispatchApproval(input.id, input.action, input.note, profile?.id), onSuccess: async () => { setApprovalTarget(null); await Promise.all([queryClient.invalidateQueries({ queryKey: ['credit-dispatches'] }),queryClient.invalidateQueries({ queryKey: ['credit-customers'] }),queryClient.invalidateQueries({ queryKey: ['credit-customer-ledger'] }),queryClient.invalidateQueries({ queryKey: ['credit-aging'] })]); } });
-  const paymentMutation = useMutation({ mutationFn: (input: CreditDispatchPaymentInput) => addCreditDispatchPayment(input), onSuccess: async () => { setPaymentTarget(null); await Promise.all([queryClient.invalidateQueries({ queryKey: ['credit-dispatches'] }),queryClient.invalidateQueries({ queryKey: ['credit-customers'] }),queryClient.invalidateQueries({ queryKey: ['credit-customer-ledger'] }),queryClient.invalidateQueries({ queryKey: ['credit-aging'] })]); } });
+  const approvalMutation = useMutation({ mutationFn: (input: { id: string; action: CreditDispatchApprovalAction; note: string }) => updateCreditDispatchApproval(input.id, input.action, input.note, profile?.id), onSuccess: async () => { setApprovalTarget(null); await queryClient.invalidateQueries({ queryKey: ['credit-dispatches'] }); } });
+  const paymentMutation = useMutation({ mutationFn: (input: CreditDispatchPaymentInput) => addCreditDispatchPayment(input), onSuccess: async () => { setPaymentTarget(null); await queryClient.invalidateQueries({ queryKey: ['credit-dispatches'] }); } });
 
   const rows = dispatchQuery.data ?? [];
   const kpiData = useMemo(() => {
@@ -314,6 +314,7 @@ export function CreditDispatchListPage() {
   const saloniCrossOfficePayments = currentRole === 'branch' && profile?.isActive === true && profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8';
   const canCorrect = currentRole === 'branch';
   const isBusy = approvalMutation.isPending || paymentMutation.isPending;
+  useEffect(() => { if (approvalMutation.isSuccess || paymentMutation.isSuccess) { void Promise.all([queryClient.invalidateQueries({queryKey:['credit-customers']}),queryClient.invalidateQueries({queryKey:['credit-customer-ledger']}),queryClient.invalidateQueries({queryKey:['credit-aging']})]); } }, [approvalMutation.isSuccess,paymentMutation.isSuccess,queryClient]);
 
   const filteredRows = useMemo(() => {
     const q = searchText.trim().toLowerCase();
