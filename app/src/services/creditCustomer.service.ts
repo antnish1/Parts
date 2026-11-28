@@ -25,6 +25,9 @@ export type CreditCustomerOutstanding = {
   default_branch: string | null;
   credit_limit: number | null;
   is_active?: boolean;
+  office?: string;
+  business_partner_code?: string | null;
+  gst_no?: string | null;
   total_dispatches: number;
   open_dispatches: number;
   pending_approval_amount: number;
@@ -101,14 +104,14 @@ export async function searchCreditCustomers(query: string) {
   }));
 }
 
-export async function getCreditCustomerOutstanding() {
+export async function getCreditCustomerOutstanding(office?: string) {
   const { data, error } = await supabase
-    .from('portal_credit_customer_outstanding_view')
+    .from(office && office !== 'All' ? 'portal_credit_customer_office_exposure_view' : 'portal_credit_customer_outstanding_view')
     .select('*')
     .order('outstanding', { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as CreditCustomerOutstanding[];
+  return ((data ?? []) as CreditCustomerOutstanding[]).filter(row => !office || office === 'All' || row.office === office);
 }
 
 export async function getCreditCustomerAging() {
@@ -178,4 +181,10 @@ export async function getCreditCustomerLedger(customerId: string) {
     ledger,
     dispatches: (dispatchesResult.data ?? []) as CreditDispatchRecord[],
   };
+}
+
+export async function getCreditCustomerOffices() {
+  const {data,error}=await supabase.from('portal_credit_customer_office_exposure_view').select('office');
+  if(error)throw error;
+  return [...new Set((data??[]).map(row=>String(row.office)))].sort();
 }
