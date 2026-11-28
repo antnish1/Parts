@@ -311,7 +311,7 @@ export function CreditDispatchListPage() {
   const currentRole = profile?.role ?? '';
   const canPay = ['branch', 'manager', 'director', 'admin', 'developer', 'super'].includes(currentRole);
   // Exact verified profile only; backend verifies the matching Supabase auth identity independently.
-  const saloniCrossOfficePayments = currentRole === 'branch' && profile?.is_active === true && profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8';
+  const saloniCrossOfficePayments = currentRole === 'branch' && profile?.isActive === true && profile?.id === '6a4fad26-55bb-4894-a2cd-e2b2cfa070e8';
   const canCorrect = currentRole === 'branch';
   const isBusy = approvalMutation.isPending || paymentMutation.isPending;
 
