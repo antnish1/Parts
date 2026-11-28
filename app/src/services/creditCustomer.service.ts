@@ -25,6 +25,11 @@ export type CreditCustomerOutstanding = {
   default_branch: string | null;
   credit_limit: number | null;
   is_active?: boolean;
+  total_dispatches: number;
+  open_dispatches: number;
+  pending_approval_amount: number;
+  correction_amount: number;
+  rejected_amount: number;
   total_credit: number;
   total_received: number;
   outstanding: number;
@@ -152,13 +157,15 @@ export async function mergeCreditCustomers(sourceCustomerId: string, targetCusto
 }
 
 export async function getCreditCustomerLedger(customerId: string) {
-  const [summaryResult, ledgerResult] = await Promise.all([
+  const [summaryResult, ledgerResult, dispatchesResult] = await Promise.all([
     supabase.from('portal_credit_customer_outstanding_view').select('*').eq('customer_id', customerId).single(),
     supabase.from('portal_credit_customer_ledger_view').select('*').eq('customer_id', customerId).order('transaction_date', { ascending: true }).order('sort_at', { ascending: true }),
+    supabase.from('portal_credit_dispatches').select('*').eq('customer_id', customerId).order('created_at', { ascending: false }),
   ]);
 
   if (summaryResult.error) throw summaryResult.error;
   if (ledgerResult.error) throw ledgerResult.error;
+  if (dispatchesResult.error) throw dispatchesResult.error;
 
   let balance = 0;
   const ledger = ((ledgerResult.data ?? []) as CreditCustomerLedgerRow[]).map((row) => {
@@ -169,5 +176,6 @@ export async function getCreditCustomerLedger(customerId: string) {
   return {
     summary: summaryResult.data as CreditCustomerOutstanding,
     ledger,
+    dispatches: (dispatchesResult.data ?? []) as CreditDispatchRecord[],
   };
 }
