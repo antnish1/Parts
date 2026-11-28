@@ -3,6 +3,7 @@ import { ensureSalesEmployeeName } from './salesEmployee.service';
 
 export type CreditDispatchRecord = {
   id: string;
+  customer_id?: string | null;
   dispatch_no: string | null;
   branch: string;
   customer_name: string;

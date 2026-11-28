@@ -25,6 +25,14 @@ export type CreditCustomerOutstanding = {
   default_branch: string | null;
   credit_limit: number | null;
   is_active?: boolean;
+  office?: string;
+  business_partner_code?: string | null;
+  gst_no?: string | null;
+  total_dispatches: number;
+  open_dispatches: number;
+  pending_approval_amount: number;
+  correction_amount: number;
+  rejected_amount: number;
   total_credit: number;
   total_received: number;
   outstanding: number;
@@ -96,14 +104,19 @@ export async function searchCreditCustomers(query: string) {
   }));
 }
 
-export async function getCreditCustomerOutstanding() {
-  const { data, error } = await supabase
-    .from('portal_credit_customer_outstanding_view')
-    .select('*')
-    .order('outstanding', { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []) as CreditCustomerOutstanding[];
+export async function getCreditCustomerOutstanding(office?: string) {
+  const scoped=Boolean(office && office!=='All');
+  const rows: CreditCustomerOutstanding[]=[];
+  for(let offset=0;;offset+=500){
+    let request=supabase.from(scoped?'portal_credit_customer_office_exposure_view':'portal_credit_customer_outstanding_view').select('*');
+    if(scoped)request=request.eq('office',office);
+    const {data,error}=await request.order('outstanding',{ascending:false}).order('customer_id').range(offset,offset+499);
+    if(error)throw error;
+    const page=(data??[]) as CreditCustomerOutstanding[];
+    rows.push(...page);
+    if(page.length<500)break;
+  }
+  return rows;
 }
 
 export async function getCreditCustomerAging() {
@@ -152,16 +165,16 @@ export async function mergeCreditCustomers(sourceCustomerId: string, targetCusto
 }
 
 export async function getCreditCustomerLedger(customerId: string) {
-  const [summaryResult, ledgerResult] = await Promise.all([
+  const [summaryResult, ledgerRows, dispatchRows] = await Promise.all([
     supabase.from('portal_credit_customer_outstanding_view').select('*').eq('customer_id', customerId).single(),
-    supabase.from('portal_credit_customer_ledger_view').select('*').eq('customer_id', customerId).order('transaction_date', { ascending: true }).order('sort_at', { ascending: true }),
+    loadCustomerLedgerRows(customerId),
+    loadCustomerDispatchRows(customerId),
   ]);
 
   if (summaryResult.error) throw summaryResult.error;
-  if (ledgerResult.error) throw ledgerResult.error;
 
   let balance = 0;
-  const ledger = ((ledgerResult.data ?? []) as CreditCustomerLedgerRow[]).map((row) => {
+  const ledger = ledgerRows.map((row) => {
     balance += Number(row.debit || 0) - Number(row.credit || 0);
     return { ...row, balance };
   });
@@ -169,5 +182,29 @@ export async function getCreditCustomerLedger(customerId: string) {
   return {
     summary: summaryResult.data as CreditCustomerOutstanding,
     ledger,
+    dispatches: dispatchRows,
   };
+}
+
+export async function getCreditCustomerOffices() {
+  const {data,error}=await supabase.from('portal_credit_customer_office_exposure_view').select('office');
+  if(error)throw error;
+  return [...new Set((data??[]).map(row=>String(row.office)))].sort();
+}
+
+async function loadCustomerLedgerRows(id:string){
+  const rows: CreditCustomerLedgerRow[]=[];
+  for(let offset=0;;offset+=500){
+    const {data,error}=await supabase.from('portal_credit_customer_ledger_view').select('*').eq('customer_id',id).order('transaction_date').order('sort_at').order('dispatch_id').order('entry_type').range(offset,offset+499);
+    if(error)throw error;
+    const page=(data??[]) as CreditCustomerLedgerRow[];rows.push(...page);if(page.length<500)return rows;
+  }
+}
+async function loadCustomerDispatchRows(id:string){
+  const rows: CreditDispatchRecord[]=[];
+  for(let offset=0;;offset+=500){
+    const {data,error}=await supabase.from('portal_credit_dispatches').select('*').eq('customer_id',id).order('created_at',{ascending:false}).order('id').range(offset,offset+499);
+    if(error)throw error;
+    const page=(data??[]) as CreditDispatchRecord[];rows.push(...page);if(page.length<500)return rows;
+  }
 }

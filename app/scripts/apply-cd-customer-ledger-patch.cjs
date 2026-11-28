@@ -29,10 +29,10 @@ patchFile('src/features/credit-dispatch/NewCreditDispatchPage.tsx', (content) =>
 
 patchFile('src/features/credit-dispatch/CreditDispatchListPage.tsx', (content) => {
   let next = content;
-  if (next.includes('/credit-dispatch/customers')) return next;
+  if (next.includes('to="/credit-dispatch/customers"')) return next;
   next = next.replace(
     '<Link to="/credit-dispatch/reports"><Button variant="secondary" className="w-full sm:w-auto">Reports</Button></Link>',
-    '<Link to="/credit-dispatch/customers"><Button variant="secondary" className="w-full sm:w-auto">Customers</Button></Link><Link to="/credit-dispatch/reports"><Button variant="secondary" className="w-full sm:w-auto">Reports</Button></Link>'
+    '<Link to="/credit-dispatch/customers"><Button variant="secondary" className="w-full sm:w-auto">Customer Ledger</Button></Link><Link to="/credit-dispatch/reports"><Button variant="secondary" className="w-full sm:w-auto">Reports</Button></Link>'
   );
   return next;
 });
